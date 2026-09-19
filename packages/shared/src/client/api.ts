@@ -1,10 +1,11 @@
 import type {
   AdminBooking, AdminListing, AdminReview, AdminStats, AdminUser, Amenity, AuditEntry, BookingDetail, ContactMessage,
   DbBrowseResult, DbRow, DbTableSummary, IntegrationStatus, SignInPortal,
-  HostBooking, HostCalendar, HostListing, HostStats, ListingInput, Me, PaymentMethod, PropertyDetail, PropertySummary, SearchQuery,
+  HostBooking, HostCalendar, HostListing, HostStats, ListingInput, Me, PaymentMethod, PaymentRequest, PaymentSettingsView, PropertyDetail, PropertySummary, SearchQuery,
 } from '../api-types'
 import type { ListingStatus, UserRole } from '../types'
-import type { AnnouncementSettings, ContentPage, HomepageSettings, SignInSettings, SiteSettings, UploadSettings } from '../content'
+import type { AnnouncementSettings, ContentPage, HomepageSettings, PublicSite, SignInSettings, SiteSettings, UploadSettings } from '../content'
+import type { CommissionRates, Management } from '../pricing'
 import { request } from './http'
 
 const qs = (params: object) => {
@@ -30,7 +31,7 @@ export const api = {
     return request<{ url: string }>('/uploads', { method: 'POST', body: form })
   },
 
-  site: () => request<SiteSettings>('/site'),
+  site: () => request<PublicSite>('/site'),
   pages: () => request<{ pages: { slug: string; title: string }[] }>('/pages'),
   page: (slug: string) => request<{ page: ContentPage }>(`/pages/${encodeURIComponent(slug)}`),
 
@@ -48,7 +49,12 @@ export const api = {
     paymentMethod: PaymentMethod
     contactPhone: string
     specialRequests: string
-  }) => request<{ booking: BookingDetail }>('/bookings', { method: 'POST', json: data }),
+  }) => request<{ booking: BookingDetail; payment: PaymentRequest | null }>('/bookings', { method: 'POST', json: data }),
+  /** Razorpay Checkout details again, for a checkout that wasn't finished. */
+  bookingPayment: (code: string) => request<{ payment: PaymentRequest }>(`/bookings/${encodeURIComponent(code)}/payment`),
+  /** Sends Razorpay Checkout's signed result so the server can verify it. */
+  confirmPayment: (code: string, result: { razorpay_order_id: string; razorpay_payment_id: string; razorpay_signature: string }) =>
+    request<{ booking: BookingDetail }>(`/bookings/${encodeURIComponent(code)}/pay`, { method: 'POST', json: result }),
   myBookings: () => request<{ bookings: BookingDetail[] }>('/bookings'),
   booking: (code: string) => request<{ booking: BookingDetail }>(`/bookings/${encodeURIComponent(code)}`),
   cancelBooking: (code: string) => request<{ booking: BookingDetail }>(`/bookings/${encodeURIComponent(code)}/cancel`, { method: 'POST' }),
@@ -66,10 +72,13 @@ export const api = {
 export const hostApi = {
   amenities: () => request<{ amenities: Amenity[] }>('/amenities'),
   listings: () => request<{ listings: HostListing[] }>('/host/listings'),
-  listing: (id: number) => request<{ listing: ListingInput & { id: number; slug: string; status: ListingStatus; rejectionReason: string | null } }>(`/host/listings/${id}`),
+  listing: (id: number) => request<{ listing: ListingInput & { id: number; slug: string; status: ListingStatus; rejectionReason: string | null; management: Management } }>(`/host/listings/${id}`),
   createListing: (data: ListingInput) => request<{ id: number }>('/host/listings', { method: 'POST', json: data }),
   updateListing: (id: number, data: ListingInput) => request<void>(`/host/listings/${id}`, { method: 'PUT', json: data }),
   bookings: () => request<{ bookings: HostBooking[] }>('/host/bookings'),
+  acceptBooking: (code: string) => request<{ booking: BookingDetail }>(`/host/bookings/${encodeURIComponent(code)}/accept`, { method: 'POST' }),
+  declineBooking: (code: string, reason: string) =>
+    request<{ booking: BookingDetail }>(`/host/bookings/${encodeURIComponent(code)}/decline`, { method: 'POST', json: { reason } }),
   stats: () => request<HostStats>('/host/stats'),
   calendar: (id: number) => request<HostCalendar>(`/host/listings/${id}/calendar`),
   addBlock: (id: number, data: { checkIn: string; checkOut: string; note: string }) =>
@@ -88,8 +97,10 @@ export const adminApi = {
   reject: (id: number, reason: string) => request<void>(`/admin/listings/${id}/reject`, { method: 'POST', json: { reason } }),
   feature: (id: number, rank: number | null) => request<void>(`/admin/listings/${id}/feature`, { method: 'POST', json: { rank } }),
 
-  bookings: (q?: string) => request<{ bookings: AdminBooking[] }>(`/admin/bookings${qs({ q })}`),
+  setManagement: (id: number, management: Management) => request<void>(`/admin/listings/${id}/management`, { method: 'POST', json: { management } }),
+  bookings: (params: { q?: string; status?: string } = {}) => request<{ bookings: AdminBooking[] }>(`/admin/bookings${qs(params)}`),
   cancelBooking: (code: string) => request<void>(`/admin/bookings/${encodeURIComponent(code)}/cancel`, { method: 'POST' }),
+  retryRefund: (code: string) => request<void>(`/admin/bookings/${encodeURIComponent(code)}/refund`, { method: 'POST' }),
 
   users: (params: { q?: string; role?: UserRole } = {}) => request<{ users: AdminUser[] }>(`/admin/users${qs(params)}`),
   updateUser: (id: number, data: { role?: UserRole; suspended?: boolean }) => request<void>(`/admin/users/${id}`, { method: 'PATCH', json: data }),
@@ -106,7 +117,15 @@ export const adminApi = {
   saveAnnouncement: (value: AnnouncementSettings) => request<void>('/admin/settings/announcement', { method: 'PUT', json: value }),
   saveSignIn: (value: SignInSettings) => request<void>('/admin/settings/signIn', { method: 'PUT', json: value }),
   saveUploads: (value: UploadSettings) => request<void>('/admin/settings/uploads', { method: 'PUT', json: value }),
+  saveCommission: (value: CommissionRates) => request<void>('/admin/settings/commission', { method: 'PUT', json: value }),
   integrations: () => request<IntegrationStatus>('/admin/integrations'),
+  payments: () => request<PaymentSettingsView>('/admin/payments'),
+  /** Blank secrets keep the saved ones. */
+  savePayments: (value: { enabled: boolean; keyId: string; keySecret?: string; webhookSecret?: string; clearWebhookSecret?: boolean }) =>
+    request<PaymentSettingsView>('/admin/payments', { method: 'PUT', json: value }),
+  testPayments: () => request<{ ok: boolean; mode: string }>('/admin/payments/test', { method: 'POST' }),
+  demo: () => request<{ resetAllowed: boolean }>('/admin/demo'),
+  resetDemo: () => request<void>('/admin/demo/reset', { method: 'POST' }),
   pages: () => request<{ pages: ContentPage[] }>('/admin/pages'),
   savePage: (page: ContentPage) => request<void>(`/admin/pages/${encodeURIComponent(page.slug)}`, { method: 'PUT', json: page }),
   deletePage: (slug: string) => request<void>(`/admin/pages/${encodeURIComponent(slug)}`, { method: 'DELETE' }),

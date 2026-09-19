@@ -1,4 +1,4 @@
-import { addDays, quoteStay, todayISO, type ListingInput, type Me, type UserRole } from '@meridian/shared'
+import { addDays, commissionMinor, quoteStay, todayISO, type ListingInput, type Management, type Me, type UserRole } from '@meridian/shared'
 import { col, nextId, nowISO, C } from '../store/db'
 import { projectId } from '../store/firebase'
 import { bookingsRepo, contentRepo, propertiesRepo, toMe, usersRepo, type UserDoc } from '../repositories'
@@ -41,10 +41,10 @@ export const listingInput = (overrides: Partial<ListingInput> = {}): ListingInpu
   coverImage: 'https://example.com/cover.jpg', photos: [], amenities: ['Wifi'], ...overrides,
 })
 
-/** A live listing owned by `host`. */
-export async function createLiveListing(host: TestUser, overrides: Partial<ListingInput> = {}) {
+/** A live listing owned by `host`: self-managed (request to book) unless `management` is 'managed' (instant). */
+export async function createLiveListing(host: TestUser, overrides: Partial<ListingInput> = {}, management: Management = 'managed') {
   const id = await listingService.create(host.me, host.uid, listingInput(overrides))
-  await propertiesRepo.setFields(id, { status: 'Approved' })
+  await propertiesRepo.setFields(id, { status: 'Approved', management })
   return id
 }
 
@@ -54,9 +54,10 @@ export async function insertBooking(propertyId: number, guest: TestUser, checkIn
   const q = quoteStay(property.pricePerNightMinor / 100, checkIn, checkOut, 2)
   const code = newBookingCode()
   await bookingsRepo.create({
-    code, propertyId, guestId: guest.me.id, checkIn, checkOut, nights: q.nights, guests: 2, currency: 'USD',
-    pricePerNightMinor: property.pricePerNightMinor, baseMinor: q.baseAmount * 100, extraGuestMinor: 0, serviceFeeMinor: q.serviceFee * 100,
-    totalMinor: q.total * 100, paymentMethod: 'upi', contactPhone: '+91 90000 00000', specialRequests: null,
+    code, propertyId, guestId: guest.me.id, checkIn, checkOut, nights: q.nights, guests: 2, currency: 'INR',
+    pricePerNightMinor: property.pricePerNightMinor, baseMinor: q.baseAmount * 100, extraGuestMinor: 0, serviceFeeMinor: 0,
+    totalMinor: q.total * 100, commissionPct: 30, commissionMinor: commissionMinor(q.total * 100, 30), hostPayoutMinor: q.total * 100 - commissionMinor(q.total * 100, 30),
+    paymentMethod: 'upi', contactPhone: '+91 90000 00000', specialRequests: null, status: 'Confirmed', paymentStatus: 'test', expiresAt: null,
   }, property, (await usersRepo.findByUid(guest.uid))!)
   return code
 }

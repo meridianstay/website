@@ -1,4 +1,5 @@
 import type { ListingStatus, PropertyType, UserRole } from './types'
+import type { Management } from './pricing'
 
 // Shapes returned by @meridian/api. Shared by the API and every frontend.
 
@@ -29,6 +30,8 @@ export interface PropertySummary {
   description: string
   lat: number
   lng: number
+  /** managed: book instantly; self: the host approves each request. */
+  management: Management
 }
 
 export interface Review {
@@ -62,7 +65,13 @@ export interface PropertyDetail extends PropertySummary {
 
 export type PaymentMethod = 'upi' | 'card' | 'netbanking'
 
-export type BookingState = 'Confirmed' | 'Completed' | 'Cancelled'
+/**
+ * AwaitingPayment: dates held while the guest pays.   Requested: waiting for the host (self-managed).
+ * Confirmed / Completed (confirmed and checked out).  Declined / Expired / Cancelled: ended.
+ */
+export type BookingState = 'AwaitingPayment' | 'Requested' | 'Confirmed' | 'Completed' | 'Declined' | 'Expired' | 'Cancelled'
+
+export type PaymentState = 'test' | 'created' | 'authorized' | 'paid' | 'refunded' | 'partially_refunded' | 'released' | 'failed'
 
 export interface BookingDetail {
   id: number
@@ -79,10 +88,29 @@ export interface BookingDetail {
   total: number
   status: BookingState
   paymentMethod: PaymentMethod
+  paymentStatus: PaymentState
+  /** How much has been refunded to the guest, if anything. */
+  refunded: number
+  /** When a pending request or payment hold lapses. */
+  expiresAt: string | null
+  instantBook: boolean
+  /** The host's message when declining a request. */
+  declineReason: string | null
   contactPhone: string
   specialRequests: string | null
   createdAt: string
   reviewed: boolean
+}
+
+/** Returned when a booking needs online payment: everything Razorpay Checkout needs. */
+export interface PaymentRequest {
+  provider: 'razorpay'
+  keyId: string
+  orderId: string
+  amount: number
+  currency: string
+  /** true: charged now (instant booking). false: authorised now, charged when the host accepts. */
+  captureNow: boolean
 }
 
 export interface SearchQuery {
@@ -129,10 +157,21 @@ export interface ListingInput {
   amenities: string[]
 }
 
-export type HostBooking = BookingDetail & { guestName: string }
+export type HostBooking = BookingDetail & {
+  guestName: string
+  guestEmail: string
+  commissionPct: number
+  commission: number
+  payout: number
+  /** A refund Razorpay refused, waiting for an admin to retry. */
+  refundPending: number
+}
 
 export interface HostStats {
+  /** Payouts after Meridian's commission. */
   earnings: number
+  /** Requests waiting for this host's answer. */
+  requests: number
   listings: number
   live: number
   rated: number
@@ -142,7 +181,7 @@ export interface HostStats {
 
 export interface HostCalendar {
   blocks: { id: number; checkIn: string; checkOut: string; note: string | null }[]
-  bookings: { code: string; checkIn: string; checkOut: string; guestName: string }[]
+  bookings: { code: string; checkIn: string; checkOut: string; guestName: string; requested: boolean }[]
 }
 
 export interface AdminListing extends HostListing {
@@ -150,6 +189,18 @@ export interface AdminListing extends HostListing {
   hostEmail: string
   createdAt: string
   featuredRank: number | null
+}
+
+/** Razorpay settings as the admin panel sees them. Secrets are never returned, only whether they're set. */
+export interface PaymentSettingsView {
+  enabled: boolean
+  keyId: string
+  keySecretLast4: string | null
+  webhookSecretSet: boolean
+  mode: 'test' | 'live' | 'unset'
+  webhookUrl: string
+  encryptionReady: boolean
+  updatedAt: string | null
 }
 
 export interface AdminStats {
@@ -161,8 +212,10 @@ export interface AdminStats {
   suspended: number
   bookings: number
   upcoming: number
+  requests: number
   gbv: number
-  fees: number
+  /** Meridian's commission on confirmed bookings. */
+  commission: number
   new_messages: number
   reviews: number
 }

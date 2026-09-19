@@ -26,19 +26,20 @@ The API in `apps/api/src` is split into layers, and **Firestore is only used in 
 
 ## Collections
 
-Documents use short numeric ids (listing 7, user 12…) so links stay readable. The next number comes from the `counters` collection inside a transaction. Timestamps are ISO strings (`2026-09-19T08:30:00.000Z`); stay dates are `YYYY-MM-DD`. Money is stored as whole numbers in the smallest unit (cents) in fields ending in `Minor`.
+Documents use short numeric ids (listing 7, user 12…) so links stay readable. The next number comes from the `counters` collection inside a transaction. Timestamps are ISO strings (`2026-09-19T08:30:00.000Z`); stay dates are `YYYY-MM-DD`. Money is in Indian rupees, stored as whole numbers of **paise** in fields ending in `Minor` (650000 = ₹6,500).
 
 | Collection | Document id | Holds |
 | --- | --- | --- |
 | `users` | Firebase sign-in id (uid) | `id`, `name`, `email`, `phone`, `role` (guest, host, admin), `avatarUrl`, `createdAt`, `suspendedAt`, `sessionsRevokedAt` |
-| `properties` | listing id | Everything about a stay: title, type, location and map position, price, rooms, `status`, `rejectionReason`, `coverImageUrl`, `photos`, `amenities`, `ratingAvg`, `reviewCount`, `featuredRank` |
-| `properties/{id}/nights` | a date, e.g. `2026-10-21` | One document per booked or blocked night: `{ kind: "booking" \| "block", ref }` |
-| `bookings` | booking code, e.g. `MS-7K3F9Q` | Dates, guests, a **copy of the price and listing at booking time**, the guest's contact details, `status`, payment method and status, `reviewed` |
+| `properties` | listing id | Everything about a stay: title, type, location and map position, price, rooms, `status`, `rejectionReason`, `coverImageUrl`, `photos`, `amenities`, `ratingAvg`, `reviewCount`, `featuredRank`, `management` (`managed`: instant booking; `self`: requests) |
+| `properties/{id}/nights` | a date, e.g. `2026-10-21` | One document per booked, requested or blocked night: `{ kind: "booking" \| "block", ref, holdUntil }`. `holdUntil` is set while a payment or host answer is pending; once it has passed, the night counts as free. |
+| `bookings` | booking code, e.g. `MS-7K3F9Q` | Dates, guests, a **copy of the price and listing at booking time**, the guest's contact details, `status` (`AwaitingPayment`, `Requested`, `Confirmed`, `Declined`, `Expired`, `Cancelled`), `management`, `commissionPct`, `commissionMinor`, `hostPayoutMinor`, `paymentStatus`, `razorpayOrderId`, `razorpayPaymentId`, `refundedMinor`, `expiresAt`, `declineReason`, `reviewed` |
 | `reviews` | review id | `propertyId`, `rating`, `comment`, `authorName`, `bookingCode`, `hiddenAt` |
 | `availabilityBlocks` | block id | Nights a host has closed: `propertyId`, `checkIn`, `checkOut`, `note` |
 | `wishlists` | `{userId}_{propertyId}` | Stays a guest has saved |
 | `amenities` | amenity name | `icon` (Font Awesome name) and display `order` |
-| `siteSettings` | `homepage`, `announcement`, `signIn`, `uploads` | Settings edited in the control center |
+| `siteSettings` | `homepage`, `announcement`, `signIn`, `uploads`, `commission` | Settings edited in the control center |
+| `secrets` | `razorpay` | Razorpay Key ID, and the key secret and webhook secret **encrypted** with `SETTINGS_ENCRYPTION_KEY`. Not shown on the Database screen. |
 | `contentPages` | page address, e.g. `help` | Title, intro and sections of information pages; `published`, `draft` |
 | `contactMessages` | message id | Contact-form messages with status `new`, `read` or `closed` |
 | `auditLog` | automatic | Every admin action: who, what, which record, details |
@@ -47,6 +48,13 @@ Documents use short numeric ids (listing 7, user 12…) so links stay readable. 
 ### How double bookings are prevented
 
 Every confirmed booking and every host block owns one document per night in `properties/{id}/nights`. A booking is created in a **Firestore transaction** that first checks those night documents and only then creates them. If two guests try to book the same night at the same moment, Firestore makes one transaction retry, which then sees the night taken and fails. The automated tests include this race. Cancelling a booking or removing a block deletes its night documents in the same transaction.
+
+### Booking modes and payments
+
+- **Managed** listings book instantly. With Razorpay on, the booking waits in `AwaitingPayment` (dates held for 15 minutes), then becomes `Confirmed` once the payment is verified and captured.
+- **Self-managed** listings take requests: after payment is authorised (not captured) the booking is `Requested`, and the dates are held until the host answers or 24 hours pass. Accepting captures the payment and confirms; declining or expiry releases it.
+- Commission (30% managed, 15% self-managed by default; Settings → Commission) is fixed on each booking when it's made. After a partial refund, commission and payout are recalculated on what the guest actually paid.
+- Every state change goes through one transaction that updates the booking and its night documents together.
 
 ### Sign-in and sessions
 

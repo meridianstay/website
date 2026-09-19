@@ -11,7 +11,7 @@ The code lives in [`apps/api`](../apps/api). Each endpoint below is defined in `
 | Format | JSON in and out. Send `Content-Type: application/json` with a body. |
 | Sign-in | Sign in with Firebase (Google or phone OTP) in the browser, then send the ID token to `POST /api/auth/session`. That sets a session cookie, `ms_session` (HTTP-only, 14 days), used by every app. |
 | Access | **Public**: anyone. **User**: any signed-in account. **Admin**: accounts with the `admin` role. Signed-out calls to protected endpoints return `401`; wrong role returns `403`. |
-| Money | Normal amounts in API responses (e.g. `145` = $145). The database stores cents. Currency is USD. |
+| Money | Indian rupees, as normal amounts in API responses (e.g. `6500` = ₹6,500). The database stores paise. |
 | Dates | Stay dates are `YYYY-MM-DD`. Timestamps are ISO 8601 (`2026-09-19T08:30:00.000Z`). |
 | Stay ranges | `checkIn` up to, not including, `checkOut`. Back-to-back stays may share a day. |
 | No content | Actions that return nothing reply `204 No Content`. |
@@ -103,14 +103,27 @@ Every error returns a JSON body with a message that is safe to show to users. Va
 
 | Method | Path | Access | Body | Returns |
 | --- | --- | --- | --- | --- |
-| POST | `/api/bookings` | User | `{ propertyId, checkIn, checkOut, guests, paymentMethod: "upi" \| "card" \| "netbanking", contactPhone, specialRequests? }` | `201 { booking }`. Price is calculated by the server. `409` if the dates were just booked or are blocked. |
-| GET | `/api/bookings` | User | — | `{ bookings }`, your bookings, newest check-in first |
+| POST | `/api/bookings` | User | `{ propertyId, checkIn, checkOut, guests, paymentMethod: "upi" \| "card" \| "netbanking", contactPhone, specialRequests? }` | `201 { booking, payment }`. Price is calculated by the server. `payment` is `null` in test mode, otherwise the details for Razorpay Checkout (below). `409` if the dates were just booked, requested or blocked. |
+| GET | `/api/bookings` | User | — | `{ bookings }`, your bookings, newest check-in first (abandoned checkouts are left out) |
 | GET | `/api/bookings/:code` | User | — | `{ booking }`, if you are the guest, the host or an admin |
-| POST | `/api/bookings/:code/cancel` | User | — | `{ booking }`. Your own confirmed booking, until the day before check-in. |
+| GET | `/api/bookings/:code/payment` | User | — | `{ payment }` again for your unfinished checkout, while the dates are still held |
+| POST | `/api/bookings/:code/pay` | User | `{ razorpay_order_id, razorpay_payment_id, razorpay_signature }` (what Razorpay Checkout returns) | `{ booking }`, now `Confirmed` (instant) or `Requested`. `400` if the signature doesn't verify. |
+| POST | `/api/bookings/:code/cancel` | User | — | `{ booking }`. Cancel your booking, withdraw a request or abandon a checkout, until the day before check-in. Paid bookings are refunded in full up to 48 hours before check-in, otherwise minus the first night. |
 
-Booking rules: check-in today or later, at most 30 nights, guests within the listing's limit, and you can't book your own listing. Payments are in test mode: nothing is charged.
+Booking rules: check-in today or later, at most 30 nights, guests within the listing's limit, and you can't book your own listing. No guest fee is added.
 
-**Booking object**: `{ id, code, property: { slug, title, type, location, image }, checkIn, checkOut, nights, guests, pricePerNight, baseAmount, extraGuestAmount, serviceFee, total, status: "Confirmed" | "Completed" | "Cancelled", paymentMethod, contactPhone, specialRequests, createdAt, reviewed }`
+Booking modes: listings with `management: "managed"` book instantly (`Confirmed`, or `AwaitingPayment` then `Confirmed` with Razorpay). Self-managed listings create a `Requested` booking the host must answer within 24 hours (`expiresAt`); with Razorpay the payment is only authorised until the host accepts.
+
+**Booking object**: `{ id, code, property: { slug, title, type, location, image }, checkIn, checkOut, nights, guests, pricePerNight, baseAmount, extraGuestAmount, serviceFee (always 0), total, status: "AwaitingPayment" | "Requested" | "Confirmed" | "Completed" | "Declined" | "Expired" | "Cancelled", paymentMethod, paymentStatus: "test" | "created" | "authorized" | "paid" | "refunded" | "partially_refunded" | "released" | "failed", refunded, expiresAt, instantBook, declineReason, contactPhone, specialRequests, createdAt, reviewed }`
+
+**Payment object**: `{ provider: "razorpay", keyId, orderId, amount (paise), currency: "INR", captureNow }`. Pass these to Razorpay Checkout, then send its result to `POST /api/bookings/:code/pay`.
+
+## Payments (Razorpay)
+
+| Method | Path | Access | Returns |
+| --- | --- | --- | --- |
+| POST | `/api/payments/razorpay/webhook` | Razorpay (checked by the `X-Razorpay-Signature` header and the webhook secret) | `{ ok: true }`. Handles `payment.authorized`, `payment.captured` and `payment.failed`, so bookings complete even if the guest's browser closed. |
+| GET | `/api/cron/expire` | `Authorization: Bearer $CRON_SECRET` | `{ expired }`, the number of lapsed checkouts and requests closed |
 
 ## Wishlist
 
@@ -124,7 +137,7 @@ Booking rules: check-in today or later, at most 30 nights, guests within the lis
 
 | Method | Path | Access | Returns |
 | --- | --- | --- | --- |
-| GET | `/api/site` | Public | `{ homepage: {…}, announcement: { enabled, text, linkLabel, linkUrl }, signIn: { google, phone }, uploads: { maxMb } }` |
+| GET | `/api/site` | Public | `{ homepage: {…}, announcement: { enabled, text, linkLabel, linkUrl }, signIn: { google, phone }, uploads: { maxMb }, commission: { managedPct, selfPct }, paymentsOnline }` |
 | GET | `/api/pages` | Public | `{ pages: [{ slug, title }] }`, published pages |
 | GET | `/api/pages/:slug` | Public | `{ page: { slug, title, intro, sections: [{ heading, body: [] }], draft } }` |
 | POST | `/api/contact` | Public | Body `{ name, email, topic, message }`. `201`. |
@@ -137,17 +150,19 @@ Every host endpoint needs a signed-in user and only acts on that user's own list
 
 | Method | Path | Body | Returns |
 | --- | --- | --- | --- |
-| GET | `/api/host/stats` | — | `{ earnings, listings, live, rated, avgRating, upcoming }` (earnings exclude service fees) |
+| GET | `/api/host/stats` | — | `{ earnings, requests, listings, live, rated, avgRating, upcoming }` (earnings are payouts after commission) |
 | GET | `/api/host/listings` | — | `{ listings }` with `status` and `rejectionReason` |
 | GET | `/api/host/listings/:id` | — | `{ listing }` in the editor's format (below) |
 | POST | `/api/host/listings` | Listing (below) | `201 { id }`, status `Pending` |
 | PUT | `/api/host/listings/:id` | Listing | `204`; the listing goes back to `Pending` |
 | POST | `/api/host/listings/:id/pause` | — | `204`; live or pending → paused (`Draft`) |
 | POST | `/api/host/listings/:id/relist` | — | `204`; paused or rejected → `Pending` |
-| GET | `/api/host/listings/:id/calendar` | — | `{ blocks: [{ id, checkIn, checkOut, note }], bookings: [{ code, checkIn, checkOut, guestName }] }` |
+| GET | `/api/host/listings/:id/calendar` | — | `{ blocks: [{ id, checkIn, checkOut, note }], bookings: [{ code, checkIn, checkOut, guestName, requested }] }` |
 | POST | `/api/host/listings/:id/blocks` | `{ checkIn, checkOut, note? }` | `201`. `409` if guests booked those nights or it overlaps a block. |
 | DELETE | `/api/host/listings/:id/blocks/:blockId` | — | `204` |
-| GET | `/api/host/bookings` | — | `{ bookings }` for your listings, each with `guestName` and `guestEmail` |
+| GET | `/api/host/bookings` | — | `{ bookings }` for your listings, each with `guestName`, `guestEmail`, `commissionPct`, `commission` and `payout` |
+| POST | `/api/host/bookings/:code/accept` | — | `{ booking }`, now `Confirmed`; the authorised payment is captured. `400` if already answered or expired. |
+| POST | `/api/host/bookings/:code/decline` | `{ reason? }` (up to 300 characters, shown to the guest) | `{ booking }`, now `Declined`; the guest isn't charged |
 
 **Listing body**: `{ title, type, description, city, region, country, price, beds, baths, maxGuests, lat, lng, coverImage, photos: [url], amenities: [name] }`. Photo links must start with `https://`; up to 12 photos.
 
@@ -159,18 +174,20 @@ Every change here is recorded in the activity log.
 
 | Method | Path | Body / query | Returns |
 | --- | --- | --- | --- |
-| GET | `/api/admin/stats` | — | `{ listings, live, pending, users, hosts, suspended, bookings, upcoming, gbv, fees, new_messages, reviews }` |
+| GET | `/api/admin/stats` | — | `{ listings, live, pending, users, hosts, suspended, bookings, upcoming, requests, gbv, commission, new_messages, reviews }` |
 | GET | `/api/admin/listings` | `?status=Pending\|Approved\|Rejected\|Draft&q=` | `{ listings }` with host and `featuredRank` |
 | POST | `/api/admin/listings/:id/approve` | — | `204` |
 | POST | `/api/admin/listings/:id/reject` | `{ reason }` (5–500 characters, shown to the host) | `204` |
+| POST | `/api/admin/listings/:id/management` | `{ management: "managed" \| "self" }` | `204`. Managed: instant booking and the managed commission. |
 | POST | `/api/admin/listings/:id/feature` | `{ rank: 1–99 }` or `{ rank: null }` to remove | `204`; live listings only |
 
 ### Bookings, users, reviews, messages
 
 | Method | Path | Body / query | Returns |
 | --- | --- | --- | --- |
-| GET | `/api/admin/bookings` | `?q=` (code, guest, email or stay) | `{ bookings }` |
-| POST | `/api/admin/bookings/:code/cancel` | — | `204`; confirmed bookings that haven't ended |
+| GET | `/api/admin/bookings` | `?q=` (code, guest, email or stay), `&status=` | `{ bookings }` with commission, payout, payment status and `refundPending` |
+| POST | `/api/admin/bookings/:code/cancel` | — | `204`; any booking, request or checkout that hasn't ended, refunded in full |
+| POST | `/api/admin/bookings/:code/refund` | — | `204`; retries a refund Razorpay refused |
 | GET | `/api/admin/users` | `?q=&role=guest\|host\|admin` | `{ users }` with `suspended`, `listings`, `bookings` |
 | PATCH | `/api/admin/users/:id` | `{ role?, suspended? }` | `204`. Suspending signs the user out everywhere. You can't change yourself. |
 | GET | `/api/admin/reviews` | `?q=` | `{ reviews }` with `hidden` |
@@ -191,7 +208,17 @@ Every change here is recorded in the activity log.
 | GET | `/api/admin/audit` | — | `{ entries: [{ action, targetType, targetId, details, adminName, createdAt }] }` (latest 300) |
 | GET | `/api/admin/integrations` | — | `{ mode: "live" \| "emulator" \| "unconfigured", projectId, storageBucket, services: { firestore, auth, storage } }`, each `{ ok, message }`. Never includes keys. |
 
-Settings keys for `PUT /api/admin/settings/:key`: `homepage`, `announcement`, `signIn` (`{ google, phone }`, at least one on) and `uploads` (`{ maxMb: 1–4 }`).
+Settings keys for `PUT /api/admin/settings/:key`: `homepage`, `announcement`, `signIn` (`{ google, phone }`, at least one on), `uploads` (`{ maxMb: 1–4 }`) and `commission` (`{ managedPct, selfPct }`, each 0–60).
+
+### Payments and demo data
+
+| Method | Path | Body | Returns |
+| --- | --- | --- | --- |
+| GET | `/api/admin/payments` | — | `{ enabled, keyId, keySecretLast4, webhookSecretSet, mode: "test" \| "live" \| "unset", webhookUrl, encryptionReady, updatedAt }`. Secrets are never returned. |
+| PUT | `/api/admin/payments` | `{ enabled, keyId, keySecret?, webhookSecret?, clearWebhookSecret? }` | The same view. Blank secrets keep the saved ones. `503` without `SETTINGS_ENCRYPTION_KEY`. |
+| POST | `/api/admin/payments/test` | — | `{ ok, mode }`, or `502` with Razorpay's reason |
+| GET | `/api/admin/demo` | — | `{ resetAllowed }` (true while `SEED_DEMO_DATA=true`) |
+| POST | `/api/admin/demo/reset` | — | `204`; replaces listings, bookings, reviews and messages with fresh demo data |
 
 ### Database screen
 

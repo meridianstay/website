@@ -23,12 +23,14 @@ export const availabilityRepo = {
     await firestore.runTransaction(async (tx) => {
       const nightRefs = datesIn(checkIn, checkOut).map((d) => nightsOf(propertyId).doc(d))
       const existing = await tx.getAll(...nightRefs)
-      const taken = existing.filter((n) => n.exists).map((n) => n.data()!.kind as string)
+      const now = nowISO()
+      // A lapsed payment or request hold doesn't stop a block; the expiry sweep closes that booking.
+      const taken = existing.filter((n) => n.exists && !(n.data()!.holdUntil && n.data()!.holdUntil < now)).map((n) => n.data()!.kind as string)
       if (taken.includes('booking')) throw new BlockConflictError('booked')
       if (taken.length) throw new BlockConflictError('blocked')
       const id = await nextId('blocks', tx)
       tx.set(col(C.blocks).doc(String(id)), { id, propertyId, checkIn, checkOut, note, createdAt: nowISO() } satisfies BlockDoc)
-      for (const n of nightRefs) tx.create(n, { kind: 'block', ref: String(id) })
+      for (const n of nightRefs) tx.set(n, { kind: 'block', ref: String(id) })
     })
   },
 

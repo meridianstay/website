@@ -1,4 +1,4 @@
-import { addDays, type Amenity, type DateRange, type ListingInput, type ListingStatus, type PropertySummary, type PropertyType, type SearchQuery } from '@meridian/shared'
+import { addDays, type Amenity, type Management, type DateRange, type ListingInput, type ListingStatus, type PropertySummary, type PropertyType, type SearchQuery } from '@meridian/shared'
 import type { Transaction } from 'firebase-admin/firestore'
 import { C, all, col, firestore, nextId, nightsOf, nowISO } from '../store/db'
 import { amenitiesRepo } from './amenities'
@@ -11,14 +11,16 @@ export interface PropertyDoc {
   pricePerNightMinor: number; bedrooms: number; bathrooms: number; maxGuests: number
   status: ListingStatus; rejectionReason: string | null; coverImageUrl: string; photos: string[]; amenities: string[]
   ratingAvg: number; reviewCount: number; featuredRank: number | null
+  /** managed: run by Meridian, instant booking. self: host-managed, request to book. Set by admins. */
+  management: Management
   approvedAt: string | null; createdAt: string; updatedAt: string
 }
 
-/** Money leaves the data layer in major units (e.g. dollars); documents store minor units. */
+/** Money leaves the data layer in major units (rupees); documents store minor units (paise). */
 export const toPropertySummary = (p: PropertyDoc): PropertySummary => ({
   id: p.id, slug: p.slug, title: p.title, type: p.type, location: `${p.city}, ${p.region}`, price: p.pricePerNightMinor / 100,
   rating: p.ratingAvg, reviewCount: p.reviewCount, beds: p.bedrooms, baths: p.bathrooms, maxGuests: p.maxGuests,
-  image: p.coverImageUrl, description: p.description, lat: p.lat, lng: p.lng,
+  image: p.coverImageUrl, description: p.description, lat: p.lat, lng: p.lng, management: p.management ?? 'self',
 })
 
 export interface HostListing extends PropertySummary { status: ListingStatus; rejectionReason: string | null }
@@ -50,10 +52,11 @@ export const propertiesRepo = {
 
   ref,
 
-  /** True when no night in [checkIn, checkOut) is booked or blocked. */
+  /** True when no night in [checkIn, checkOut) is booked, blocked or held by an unexpired payment or request. */
   async isFree(id: number, checkIn: string, checkOut: string) {
-    const snap = await nightsOf(id).where('__name__', '>=', checkIn).where('__name__', '<', checkOut).limit(1).get()
-    return snap.empty
+    const snap = await nightsOf(id).where('__name__', '>=', checkIn).where('__name__', '<', checkOut).get()
+    const now = nowISO()
+    return snap.docs.every((d) => { const h = d.data().holdUntil as string | null | undefined; return !!h && h < now })
   },
 
   /** Live listings matching the filters; with dates, only stays free for the whole range. */
@@ -93,10 +96,13 @@ export const propertiesRepo = {
   /** Future booked or blocked ranges, for calendars. */
   async unavailableRanges(id: number, today: string): Promise<DateRange[]> {
     const [bookings, blocks] = await Promise.all([
-      all<{ checkIn: string; checkOut: string; status: string }>(col(C.bookings).where('propertyId', '==', id)),
+      all<{ checkIn: string; checkOut: string; status: string; expiresAt?: string | null }>(col(C.bookings).where('propertyId', '==', id)),
       all<{ checkIn: string; checkOut: string }>(col(C.blocks).where('propertyId', '==', id)),
     ])
-    return [...bookings.filter((b) => b.status === 'Confirmed'), ...blocks]
+    const now = nowISO()
+    const holds = (b: { status: string; expiresAt?: string | null }) =>
+      b.status === 'Confirmed' || ((b.status === 'Requested' || b.status === 'AwaitingPayment') && !!b.expiresAt && b.expiresAt > now)
+    return [...bookings.filter(holds), ...blocks]
       .filter((r) => r.checkOut > today)
       .map(({ checkIn, checkOut }) => ({ checkIn, checkOut }))
       .sort((a, b) => a.checkIn.localeCompare(b.checkIn))
@@ -127,7 +133,7 @@ export const propertiesRepo = {
       id: p.id, slug: p.slug, status: p.status, rejectionReason: p.rejectionReason, title: p.title, type: p.type,
       description: p.description, city: p.city, region: p.region, country: p.country, price: p.pricePerNightMinor / 100,
       beds: p.bedrooms, baths: p.bathrooms, maxGuests: p.maxGuests, lat: p.lat, lng: p.lng, coverImage: p.coverImageUrl,
-      photos: p.photos, amenities: p.amenities,
+      photos: p.photos, amenities: p.amenities, management: p.management ?? 'self',
     }
   },
 
@@ -147,10 +153,10 @@ export const propertiesRepo = {
       const now = nowISO()
       const doc: PropertyDoc = {
         id, slug, hostId, title: input.title, type: input.type, description: input.description, city: input.city, region: input.region,
-        country: input.country, lat: input.lat, lng: input.lng, currency: 'USD', pricePerNightMinor: Math.round(input.price * 100),
+        country: input.country, lat: input.lat, lng: input.lng, currency: 'INR', pricePerNightMinor: Math.round(input.price * 100),
         bedrooms: input.beds, bathrooms: input.baths, maxGuests: input.maxGuests, status: 'Pending', rejectionReason: null,
         coverImageUrl: input.coverImage, photos: input.photos, amenities: input.amenities, ratingAvg: 0, reviewCount: 0,
-        featuredRank: null, approvedAt: null, createdAt: now, updatedAt: now,
+        featuredRank: null, management: 'self', approvedAt: null, createdAt: now, updatedAt: now,
       }
       tx.set(ref(id), doc)
       return id

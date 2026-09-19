@@ -78,7 +78,7 @@ export function Search() {
           >
             <label className="text-[10px] font-bold uppercase text-slate-500">
               Min price
-              <input type="number" min={0} inputMode="numeric" value={priceDraft.min} onChange={(e) => setPriceDraft({ ...priceDraft, min: e.target.value })} placeholder="$0" className="block mt-1 w-24 bg-slate-50 border border-slate-200 rounded-xl px-3 py-2 text-sm font-semibold text-slate-800 focus:outline-none focus:border-brand-500" />
+              <input type="number" min={0} inputMode="numeric" value={priceDraft.min} onChange={(e) => setPriceDraft({ ...priceDraft, min: e.target.value })} placeholder="₹0" className="block mt-1 w-24 bg-slate-50 border border-slate-200 rounded-xl px-3 py-2 text-sm font-semibold text-slate-800 focus:outline-none focus:border-brand-500" />
             </label>
             <label className="text-[10px] font-bold uppercase text-slate-500">
               Max price

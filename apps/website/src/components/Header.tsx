@@ -71,10 +71,10 @@ export function Header() {
           <div>
             <p className="text-xs font-bold uppercase text-slate-500 mb-2">Currency</p>
             <div className="border-2 border-brand-500 bg-brand-50/60 rounded-2xl p-3 font-semibold text-slate-900 flex items-center justify-between">
-              US dollar ($) <i className="fa-solid fa-check text-brand-600" aria-hidden="true"></i>
+              Indian rupee (₹) <i className="fa-solid fa-check text-brand-600" aria-hidden="true"></i>
             </div>
           </div>
-          <p className="text-slate-500">More languages and currencies are on the way.</p>
+          <p className="text-slate-500">All prices are shown in Indian rupees.</p>
         </div>
       </Modal>
     </header>

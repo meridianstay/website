@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react'
 import { Link } from 'react-router'
 import { EmptyState, ErrorNote, PageHeader, Panel, Spinner, StatCard, StatusBadge, useAuth } from '@meridian/ui'
-import { formatDateRange, formatPrice } from '@meridian/shared'
+import { formatDateRange, formatPrice, REQUEST_HOURS } from '@meridian/shared'
 import { hostApi, type HostBooking, type HostStats } from '@meridian/shared/client'
 
 export function Dashboard() {
@@ -42,11 +42,20 @@ export function Dashboard() {
       ) : (
         <>
           <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 sm:gap-6 mb-8">
-            <StatCard label="Earnings" value={formatPrice(stats.earnings)} hint="Booked stays, after service fees" tone="brand" />
+            <StatCard label="Earnings" value={formatPrice(stats.earnings)} hint="Your payouts, after commission" tone="brand" />
             <StatCard label="Listings" value={stats.listings} hint={`${stats.live} live`} />
-            <StatCard label="Upcoming stays" value={stats.upcoming} />
+            <StatCard label="Upcoming stays" value={stats.upcoming} hint={stats.requests ? `${stats.requests} request${stats.requests === 1 ? '' : 's'} to answer` : undefined} />
             <StatCard label="Average rating" value={stats.avgRating ? `${stats.avgRating.toFixed(2)} ★` : '—'} hint={`Across ${stats.rated} rated listings`} />
           </div>
+          {stats.requests > 0 && (
+            <Link to="/bookings" className="mb-8 flex items-center justify-between gap-4 bg-amber-50 border border-amber-200 rounded-2xl p-4 text-sm hover:bg-amber-100 transition animate-fade-in">
+              <span className="font-semibold text-amber-900">
+                <i className="fa-solid fa-bell mr-2" aria-hidden="true"></i>
+                You have {stats.requests} booking request{stats.requests === 1 ? '' : 's'} waiting. Answer within {REQUEST_HOURS} hours or they expire.
+              </span>
+              <span className="text-xs font-bold text-amber-900 whitespace-nowrap">Review →</span>
+            </Link>
+          )}
           <Panel title="Upcoming stays" action={<Link to="/bookings" className="text-xs font-bold text-brand-600">All bookings →</Link>}>
             {upcoming.length === 0 ? (
               <p className="text-sm text-slate-500">No upcoming stays yet.</p>

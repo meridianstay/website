@@ -1,8 +1,8 @@
 import { lazy, Suspense, useEffect, useState, type ReactNode } from 'react'
 import { Link, useNavigate, useParams } from 'react-router'
 import { ErrorNote, PageHeader, PhotoUpload, Spinner } from '@meridian/ui'
-import { formatPrice, quoteStay, addDays, todayISO, type Amenity, type PropertyType } from '@meridian/shared'
-import { ApiError, hostApi, type ListingInput } from '@meridian/shared/client'
+import { commissionMinor, commissionPct, defaultCommission, formatPrice, quoteStay, addDays, todayISO, type Amenity, type Management, type PropertyType } from '@meridian/shared'
+import { ApiError, api, hostApi, type ListingInput } from '@meridian/shared/client'
 
 const LocationPicker = lazy(() => import('../components/LocationPicker'))
 
@@ -42,13 +42,19 @@ export function ListingEditor() {
   const [fields, setFields] = useState<Record<string, string>>({})
   const [error, setError] = useState<string | null>(null)
   const [saving, setSaving] = useState(false)
+  const [management, setManagement] = useState<Management>('self')
+  const [rates, setRates] = useState(defaultCommission)
 
   useEffect(() => {
     hostApi.amenities().then((r) => setAmenities(r.amenities)).catch(() => {})
+    api.site().then((s) => setRates(s.commission)).catch(() => {})
     if (editingId) {
       hostApi
         .listing(editingId)
-        .then(({ listing }) => setDraft({ ...listing, photoText: listing.photos.join('\n') }))
+        .then(({ listing }) => {
+          setManagement(listing.management)
+          setDraft({ ...listing, photoText: listing.photos.join('\n') })
+        })
         .catch((e) => setError(e.message))
     }
   }, [editingId])
@@ -88,6 +94,8 @@ export function ListingEditor() {
   }
 
   const sample = quoteStay(draft.price, todayISO(), addDays(todayISO(), 2), 2)
+  const pct = commissionPct(management, rates)
+  const payout = (Math.round(sample.total * 100) - commissionMinor(Math.round(sample.total * 100), pct)) / 100
 
   return (
     <>
@@ -234,12 +242,17 @@ export function ListingEditor() {
 
         {step === 4 && (
           <div className="space-y-4">
-            <Field label="Price per night (USD)" id="price" error={fields.price} hint="This price covers 2 guests. Each extra guest adds 15%.">
+            <Field label="Price per night (₹)" id="price" error={fields.price} hint="This price covers 2 guests. Each extra guest adds 15%.">
               <input id="price" type="number" min={1} max={100000} className={inputClass} value={draft.price} onChange={(e) => update('price', Number(e.target.value))} />
             </Field>
             <div className="bg-slate-50 rounded-2xl p-4 text-sm text-slate-600">
-              A 2-night stay for 2 guests costs guests <span className="font-bold text-slate-900">{formatPrice(sample.total)}</span>, including the {formatPrice(sample.serviceFee)} service fee.
-              You receive <span className="font-bold text-slate-900">{formatPrice(sample.total - sample.serviceFee)}</span>.
+              A 2-night stay for 2 guests costs guests <span className="font-bold text-slate-900">{formatPrice(sample.total)}</span>, with no booking fee added.
+              After Meridian’s {pct}% commission you receive <span className="font-bold text-slate-900">{formatPrice(payout)}</span>.
+              <p className="text-xs text-slate-500 mt-2">
+                {management === 'managed'
+                  ? 'This property is managed by Meridian Stay: guests book instantly, and we handle upkeep and guest care.'
+                  : 'You manage this property yourself: guests send booking requests, which you accept or decline within 24 hours.'}
+              </p>
             </div>
           </div>
         )}

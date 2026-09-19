@@ -82,8 +82,8 @@ export const listingService = {
     const [blocks, bookings] = await Promise.all([availabilityRepo.upcomingBlocks(listing.id, today), bookingsRepo.forProperty(listing.id)])
     return {
       blocks,
-      bookings: bookings.filter((b) => b.status === 'Confirmed' && b.checkOut > today).sort((a, b) => a.checkIn.localeCompare(b.checkIn))
-        .map((b) => ({ code: b.code, checkIn: b.checkIn, checkOut: b.checkOut, guestName: b.guest.name })),
+      bookings: bookings.filter((b) => (b.status === 'Confirmed' || b.status === 'Requested') && b.checkOut > today).sort((a, b) => a.checkIn.localeCompare(b.checkIn))
+        .map((b) => ({ code: b.code, checkIn: b.checkIn, checkOut: b.checkOut, guestName: b.guest.name, requested: b.status === 'Requested' })),
     }
   },
 

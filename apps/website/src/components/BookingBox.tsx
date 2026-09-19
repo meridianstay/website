@@ -1,6 +1,6 @@
 import { useState } from 'react'
 import { useNavigate } from 'react-router'
-import { formatDate, formatPrice, quoteStay, MAX_NIGHTS, daysBetween, type PropertyDetail } from '@meridian/shared'
+import { formatDate, formatPrice, quoteStay, MAX_NIGHTS, REQUEST_HOURS, daysBetween, type PropertyDetail } from '@meridian/shared'
 import { DateRangePicker } from './DateRangePicker'
 import { GuestStepper } from './GuestStepper'
 import { PriceBreakdown } from './PriceBreakdown'
@@ -84,8 +84,12 @@ export function BookingBox({ property, initial }: Props) {
       {error && <p role="alert" className="text-xs font-semibold text-rose-600">{error}</p>}
 
       <button type="button" onClick={reserve} className="w-full bg-gradient-to-r from-brand-600 to-brand-500 hover:from-brand-700 hover:to-brand-600 text-white font-bold py-4 rounded-2xl shadow-lg shadow-brand-500/20 text-sm transition">
-        {ready ? 'Reserve' : 'Check availability'}
+        {!ready ? 'Check availability' : property.management === 'managed' ? 'Reserve' : 'Request to book'}
       </button>
+      <p className={`text-xs text-center font-semibold ${property.management === 'managed' ? 'text-brand-700' : 'text-amber-700'}`}>
+        <i className={`fa-solid ${property.management === 'managed' ? 'fa-bolt' : 'fa-hourglass-half'} mr-1.5`} aria-hidden="true"></i>
+        {property.management === 'managed' ? 'Instant book · managed by Meridian Stay' : `Host confirms within ${REQUEST_HOURS} hours`}
+      </p>
       {quote && (
         <>
           <p className="text-center text-xs text-slate-500 animate-fade-in">You won’t be charged yet</p>

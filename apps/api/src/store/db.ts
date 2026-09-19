@@ -15,6 +15,8 @@ export const C = {
   messages: 'contactMessages',
   audit: 'auditLog',
   counters: 'counters',
+  /** Encrypted integration secrets (Razorpay). Never listed in the admin Database screen. */
+  secrets: 'secrets',
 } as const
 
 export const col = (name: string) => firestore.collection(name)

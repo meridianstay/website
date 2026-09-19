@@ -50,6 +50,11 @@ export function MyListings() {
                 </div>
                 <h3 className="font-bold text-slate-900">{p.title}</h3>
                 <p className="text-xs text-slate-500 mt-1">{p.beds} beds · {p.baths} baths · up to {p.maxGuests} guests</p>
+                <p className="text-xs font-semibold mt-2 text-slate-600">
+                  {p.management === 'managed'
+                    ? <><i className="fa-solid fa-bolt text-brand-600 mr-1" aria-hidden="true"></i>Managed by Meridian · instant book</>
+                    : <><i className="fa-solid fa-user-check text-amber-600 mr-1" aria-hidden="true"></i>Self-managed · you approve requests</>}
+                </p>
                 {p.status === 'Pending' && <p className="text-xs text-amber-700 bg-amber-50 rounded-lg p-2 mt-3">Waiting for review by the Meridian team.</p>}
                 {p.status === 'Draft' && <p className="text-xs text-slate-600 bg-slate-100 rounded-lg p-2 mt-3">Paused. Guests can’t find or book this listing.</p>}
                 {p.status === 'Rejected' && p.rejectionReason && (

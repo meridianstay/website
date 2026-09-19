@@ -2,6 +2,53 @@
 
 Every change to Meridian Stay is recorded here, newest first. Each entry says what changed for the people using the platform, then the notable technical changes.
 
+## 0.6.0 — 2026-09-19
+
+Rupee pricing, commission, two booking modes and Razorpay payments.
+
+### Pricing and commission
+- All prices are in **Indian rupees (₹)**, with Indian digit grouping (₹1,32,829.50). Demo listings have rupee prices.
+- Guests pay **no booking fee**; the fee line is gone from every price breakdown.
+- Meridian earns a **commission** taken from the host's payout: **30%** on properties Meridian manages and **15%** on properties hosts manage themselves. Admins can change both rates in Settings → Commission (new rates apply to new bookings).
+
+### Two booking modes
+- **Managed properties** (run and maintained by Meridian) book **instantly**.
+- **Self-managed properties** take **booking requests**: the guest's dates are held while the host accepts or declines within **24 hours**. Unanswered requests expire and free the dates. Guests can withdraw a request free of charge.
+- Admins set each listing to managed or self-managed on the Listings page. New host listings start as self-managed.
+- Stay pages and checkout say which mode applies ("Instant book" or "Request to book").
+
+### Payments (Razorpay)
+- New **Settings → Payments** in the control center: switch online payments on, enter the Razorpay Key ID, key secret and webhook secret, and test the connection. Secrets are **encrypted** (AES-256-GCM, with `SETTINGS_ENCRYPTION_KEY` from Vercel) and are never shown again. Changes are logged in the activity log without the secrets.
+- Checkout opens **Razorpay Checkout** (UPI, cards, net banking). Every payment's signature is checked on the server before a booking is confirmed.
+- Instant bookings are charged at checkout. Requests are only **authorised**, then charged when the host accepts; declined or expired requests are never charged.
+- Dates are held for 15 minutes while a guest pays. Guests who close the payment window can finish paying from the booking page.
+- A **Razorpay webhook** (`/api/payments/razorpay/webhook`) confirms bookings even if the guest closes the page right after paying.
+- **Refunds** go back through Razorpay automatically: full refund up to 48 hours before check-in, otherwise everything except the first night. Admin cancellations refund in full. If Razorpay refuses a refund, the booking is flagged and an admin can retry it.
+- Without keys, everything runs in **test mode** as before.
+
+### Host portal
+- **Requests to answer**, with time left, the guest's message, commission and payout, and Accept / Decline (with an optional message the guest sees).
+- The dashboard shows a banner for waiting requests, and earnings are now payouts after commission.
+- Bookings list the guest's payment, the commission and the host's payout. The listing wizard shows the payout after commission and the property's booking mode.
+
+### Guest account and website
+- Trips show requests waiting for a host (with the deadline), unfinished payments, and refunds. Cancelling shows how much comes back.
+- The booking page explains each state: payment pending, request sent, confirmed, declined (with the host's message), expired or cancelled.
+
+### Control center
+- Overview shows **commission earned**, bookings awaiting hosts and gross booking value after refunds.
+- Bookings can be filtered by status and show payment, commission and host payout; cancel any upcoming booking or request with a full refund.
+- **Reset demo data** (only while `SEED_DEMO_DATA=true`) replaces listings, bookings and reviews with fresh demo data, keeping real accounts, content and payment keys. Use it once on the live preview to switch it to rupee prices.
+
+### Backend
+- New booking states: `AwaitingPayment`, `Requested`, `Declined`, `Expired`. Booking documents store the management type, commission rate, commission, host payout, Razorpay order and payment ids, refunds and the expiry time.
+- Night documents carry `holdUntil` for payment holds and requests; a lapsed hold counts as free and the next booking takes it over in the same transaction. Lapsed holds are also swept on reads, and by `GET /api/cron/expire` (with `CRON_SECRET`) for an optional scheduler.
+- New endpoints: `GET /bookings/:code/payment`, `POST /bookings/:code/pay`, `POST /host/bookings/:code/accept|decline`, `POST /admin/listings/:id/management`, `POST /admin/bookings/:code/refund`, `GET|PUT /admin/payments`, `POST /admin/payments/test`, `GET /admin/demo`, `POST /admin/demo/reset`, `POST /payments/razorpay/webhook`. `POST /bookings` now also returns `payment`, and `GET /site` returns `paymentsOnline`.
+- 53 automated tests (up from 32), including commission, request accept / decline / expiry, hold takeover, and payments against a fake Razorpay (signature checks, capture on accept, refunds, webhook, encryption).
+
+### Fixes
+- The sign-in error "This sign-in method isn't switched on in Firebase yet" means Google or Phone isn't enabled in the Firebase console; the deployment guide now says exactly where.
+
 ## 0.5.0 — 2026-09-19
 
 The platform now runs entirely on **Firebase**, as the client requested. PostgreSQL has been removed.
@@ -122,11 +169,10 @@ The platform now works end to end: guests can search and book, hosts can list an
 
 ## Not yet built
 
-- **Real payments.** Connect a provider (for example Razorpay for UPI, cards and net banking) at checkout, with refunds on cancellation.
 - **Emails and SMS**: booking confirmations and cancellation notices (Firebase only sends the sign-in codes).
 - **Messaging** between guests and hosts.
-- **Currency and prices** for a local market (currently USD; one setting switches it) and taxes such as GST on invoices.
-- **Host payouts** and payout details.
+- **GST invoices** and taxes on bookings and commission.
+- **Host payouts**: sending hosts their share (e.g. Razorpay Route) and collecting their bank details. Payout amounts are already calculated.
 - **Search engine pages.** Stay pages are built in the browser; moving the website to server rendering (e.g. Next.js) would help Google and link previews.
 - **Legal review** of the pages marked "draft".
 - Automated tests.

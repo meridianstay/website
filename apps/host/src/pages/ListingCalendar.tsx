@@ -96,7 +96,10 @@ export function ListingCalendar() {
               {calendar.bookings.map((b) => (
                 <li key={b.code} className="py-3 flex items-center justify-between text-sm">
                   <span className="font-semibold text-slate-900">{formatDateRange(b.checkIn, b.checkOut)}</span>
-                  <span className="text-slate-500">{b.guestName} · <span className="font-mono text-xs">{b.code}</span></span>
+                  <span className="text-slate-500">
+                    {b.requested && <span className="text-[10px] font-extrabold uppercase bg-amber-100 text-amber-800 px-2 py-0.5 rounded-full mr-2">Request</span>}
+                    {b.guestName} · <span className="font-mono text-xs">{b.code}</span>
+                  </span>
                 </li>
               ))}
             </ul>

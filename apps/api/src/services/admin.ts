@@ -1,4 +1,4 @@
-import { todayISO, type ListingStatus, type Me, type UserRole } from '@meridian/shared'
+import { todayISO, type ListingStatus, type Management, type Me, type UserRole } from '@meridian/shared'
 import { auth } from '../store/firebase'
 import { nowISO } from '../store/db'
 import { auditLogRepo, bookingsRepo, messagesRepo, propertiesRepo, usersRepo, type MessageStatus } from '../repositories'
@@ -40,12 +40,14 @@ export const adminService = {
     return propertiesRepo.listForAdmin({ status, q }, new Map(users.map((u) => [u.id, u])))
   },
 
-  listBookings: (q: string | null) => bookingsRepo.listAll(q, todayISO()),
+  listBookings: (q: string | null, status: string | null) => bookingsRepo.listAll(q, status, todayISO()),
 
-  async cancelBooking(admin: Me, code: string) {
-    const today = todayISO()
-    if (!(await bookingsRepo.cancel(code, (b) => b.checkOut > today))) throw new AppError(400, 'Only upcoming or current confirmed bookings can be cancelled.')
-    await auditLogRepo.record(admin, 'booking.cancel', 'booking', code)
+  /** Managed listings are run by Meridian: instant booking and the managed commission. */
+  async setManagement(admin: Me, id: number, management: string) {
+    collect({ management: management === 'managed' || management === 'self' ? null : 'Choose managed or self-managed.' })
+    await requireListing(id)
+    await propertiesRepo.setFields(id, { management: management as Management })
+    await auditLogRepo.record(admin, 'listing.management', 'property', id, { management })
   },
 
   /** Changes a user's role and/or suspends them. Suspension disables their Firebase login and signs them out. */

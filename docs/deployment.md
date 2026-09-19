@@ -17,7 +17,11 @@ In the [Firebase console](https://console.firebase.google.com):
 1. **Blaze plan.** Upgrade to pay-as-you-go. Firebase requires it for Storage and for SMS sign-in; a free monthly allowance still applies. Set a **budget alert** in Google Cloud Billing.
 2. **Firestore.** Build → Firestore Database → Create database, **production mode**, location **`asia-south1` (Mumbai)**. The location can't be changed later.
 3. **Storage.** Build → Storage → Get started, same location.
-4. **Authentication.** Build → Authentication → Sign-in method → enable **Google** and **Phone**. Under Settings → **Authorized domains**, add `website-seven-sable-30.vercel.app` and your final domain.
+4. **Authentication.** Build → Authentication → **Get started**, then Sign-in method → **Add new provider**:
+   - **Google** → Enable → choose a project support email → Save.
+   - **Phone** → Enable → Save.
+
+   Under Settings → **Authorized domains**, add `website-seven-sable-30.vercel.app` and your final domain. If a login page says *"This sign-in method isn't switched on in Firebase yet"*, the provider you tried isn't enabled here.
 5. **Security rules.** Deploy the rules in [`firebase/`](../firebase), which block all direct browser access (everything goes through the API):
 
    ```bash
@@ -46,6 +50,8 @@ For client previews, add these under **Authentication → Sign-in method → Pho
 
 The demo data creates these people when `SEED_DEMO_DATA=true`, linked to these numbers. Remove the test numbers before a real launch.
 
+While `SEED_DEMO_DATA=true`, **Admin → Settings → Demo data → Reset demo data** replaces all listings, bookings and reviews with fresh demo data (real accounts, content and payment keys are kept). Use it after upgrading to 0.6.0 so the preview shows rupee prices and booking requests.
+
 ## 2. Vercel settings
 
 **Settings → Environment Variables** (Production, and Preview if you use it):
@@ -54,6 +60,8 @@ The demo data creates these people when `SEED_DEMO_DATA=true`, linked to these n
 | --- | --- | --- |
 | `FIREBASE_SERVICE_ACCOUNT` | The **entire contents** of the service-account JSON (Firebase → Project settings → Service accounts → Generate new private key) | **Yes.** Never share it in chat or email. Delete the downloaded file after pasting. |
 | `SEED_DEMO_DATA` | `true` for a client preview; remove for the real launch | No |
+| `SETTINGS_ENCRYPTION_KEY` | Any long random text (e.g. from `openssl rand -base64 32`). Encrypts the Razorpay secrets saved in Settings. **Don't change it later**, or the saved keys must be entered again. | **Yes** |
+| `CRON_SECRET` | Optional. Random text; lets a scheduler call `GET /api/cron/expire` with `Authorization: Bearer <secret>` to expire lapsed requests promptly (they also expire whenever someone opens bookings). | Yes |
 | `FIREBASE_STORAGE_BUCKET` | Only if the bucket isn't `meridianstay-bcfd0.firebasestorage.app` | No |
 
 The Firebase **web config** (API key, project id and so on) is already in [`.env.production`](../.env.production). Those values are public by design and are built into the pages.
@@ -62,7 +70,18 @@ The Firebase **web config** (API key, project id and so on) is already in [`.env
 
 You can delete the old `DATABASE_URL` variable (from the earlier Postgres version).
 
-## 3. Deploy and check
+## 3. Razorpay (payments)
+
+Until this is done, bookings run in test mode and no money is taken.
+
+1. In the [Razorpay Dashboard](https://dashboard.razorpay.com), go to **Account & Settings → API Keys** and generate a key. Start with **Test mode** keys (`rzp_test_…`); switch to Live keys (`rzp_live_…`) after KYC.
+2. In the control center, open **Settings → Payments**, paste the **Key ID** and **Key secret**, turn on **Take payments online**, Save, then press **Test connection**.
+3. In Razorpay, go to **Webhooks → Add new webhook**. Use the webhook URL shown in Settings → Payments (`https://<domain>/api/payments/razorpay/webhook`), choose a secret, and tick `payment.authorized`, `payment.captured` and `payment.failed`. Paste the same secret into **Webhook secret** in Settings → Payments and Save.
+4. Make a test booking with Razorpay's [test cards or UPI](https://razorpay.com/docs/payments/payments/test-card-upi-details/).
+
+How money moves: instant bookings (managed properties) are captured at checkout. Requests (self-managed properties) are only authorised; the payment is captured when the host accepts, and Razorpay releases uncaptured authorisations automatically when a request is declined or expires. Refunds on cancellation are sent through Razorpay automatically.
+
+## 4. Deploy and check
 
 Push to `main`, or press **Redeploy**. Then:
 
@@ -85,7 +104,7 @@ Without `FIREBASE_SERVICE_ACCOUNT`, the API answers every request with "isn’t 
 ## Before a real launch
 
 - Remove `SEED_DEMO_DATA` and the demo test phone numbers, and start from a clean project (or delete the demo users, whose ids start with `demo-`).
-- Connect a payment provider; bookings currently confirm in test mode.
+- Switch Razorpay to **Live** keys in Settings → Payments.
 - Have the pages marked "draft" (terms, privacy, cancellation, host protection) reviewed; edit them in Admin → Website content.
 - Add your own domain in Vercel, and to Firebase Authentication's authorized domains.
 

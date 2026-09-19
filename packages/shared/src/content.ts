@@ -48,6 +48,8 @@ export interface SiteSettings {
   announcement: AnnouncementSettings
   signIn: SignInSettings
   uploads: UploadSettings
+  /** Meridian's commission, in percent, by property management type. */
+  commission: { managedPct: number; selfPct: number }
 }
 
 export const defaultSiteSettings: SiteSettings = {
@@ -67,6 +69,7 @@ export const defaultSiteSettings: SiteSettings = {
   },
   signIn: { google: true, phone: true },
   uploads: { maxMb: 4 },
+  commission: { managedPct: 30, selfPct: 15 },
 }
 
 type DefaultPage = Omit<ContentPage, 'slug' | 'draft'> & { draft?: boolean }
@@ -114,7 +117,7 @@ const pages: Record<string, DefaultPage> = {
     sections: [
       { heading: 'Photos', body: ['Use bright, horizontal photos. Start with the view or the space guests will love most, then bedrooms, bathrooms and the kitchen.'] },
       { heading: 'Description', body: ['Say what makes your place special in the first sentence. Mention how to get there, what’s nearby and what’s included.'] },
-      { heading: 'Pricing', body: ['Check similar stays in your area. The nightly price covers two guests; each extra guest adds 15%.'] },
+      { heading: 'Pricing', body: ['Check similar stays in your area. The nightly price covers two guests; each extra guest adds 15%. Meridian’s commission is deducted from your payout: 15% for properties you manage yourself.'] },
     ],
   },
   'community-guidelines': {
@@ -130,10 +133,10 @@ const pages: Record<string, DefaultPage> = {
     title: 'Help Center',
     intro: 'Answers to the most common questions. Can’t find yours? Contact us.',
     sections: [
-      { heading: 'How do I book a stay?', body: ['Search for a destination, open a stay, choose your dates and guests, then select Reserve. You’ll sign in with Google or your phone number to confirm.'] },
-      { heading: 'How is the price worked out?', body: ['The nightly price covers two guests. Each extra guest adds 15% to the nightly total, and a flat cleaning and service fee of $45 is added per booking.'] },
+      { heading: 'How do I book a stay?', body: ['Search for a destination, open a stay, choose your dates and guests, then select Reserve (or Request to book for stays whose hosts approve each booking). You’ll sign in with Google or your phone number to confirm.'] },
+      { heading: 'How is the price worked out?', body: ['The nightly price covers two guests. Each extra guest adds 15% to the nightly total. There are no extra booking or service fees.'] },
       { heading: 'How do I cancel?', body: ['Go to Trips in your account and choose Cancel booking. You can cancel until the day before check-in. See the cancellation policy for details.'] },
-      { heading: 'Is my payment taken?', body: ['Not yet. Meridian Stay is in testing, so bookings are confirmed without taking payment.'] },
+      { heading: 'When am I charged?', body: ['Stays managed by Meridian are booked instantly and charged when you pay. For stays run by their owners, you send a request: the amount is held on your card or UPI and only charged if the host accepts within 24 hours. Otherwise the hold is released.'] },
       { heading: 'How do I list my property?', body: ['Choose “Meridian your home” at the top of any page. Your listing is reviewed by our team before it goes live.'] },
     ],
   },
@@ -142,7 +145,7 @@ const pages: Record<string, DefaultPage> = {
     intro: 'Plans change. Here’s how cancellations work on Meridian Stay.',
     draft: true,
     sections: [
-      { heading: 'Guests', body: ['You can cancel a confirmed booking from Trips in your account until the day before check-in.', 'Once payments are live, cancellations made at least 48 hours before check-in will be refunded in full, minus any payment processing costs. Later cancellations will be refunded except for the first night.'] },
+      { heading: 'Guests', body: ['You can cancel a confirmed booking from Trips in your account until the day before check-in.', 'Cancellations made at least 48 hours before check-in (by noon on the check-in date) are refunded in full. Later cancellations are refunded except for the first night. Requests that the host hasn’t accepted yet can be cancelled at no cost.'] },
       { heading: 'Hosts', body: ['Hosts should honour every confirmed booking. If a host must cancel, contact us straight away so we can help the guest rebook.'] },
     ],
   },
@@ -181,3 +184,7 @@ const pages: Record<string, DefaultPage> = {
 }
 
 export const defaultPages: ContentPage[] = Object.entries(pages).map(([slug, p]) => ({ slug, draft: false, ...p }))
+
+/** What GET /api/site returns: the settings plus whether online payment (Razorpay) is switched on. */
+export type PublicSite = SiteSettings & { paymentsOnline: boolean }
+export const defaultPublicSite: PublicSite = { ...defaultSiteSettings, paymentsOnline: false }

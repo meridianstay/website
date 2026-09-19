@@ -2,6 +2,9 @@ import { Hono } from 'hono'
 import { todayISO, type ListingStatus, type UserRole } from '@meridian/shared'
 import { auditLogRepo, contentRepo, messagesRepo, reviewsRepo, statsRepo, usersRepo, type MessageStatus } from '../repositories'
 import { integrationsService } from '../services/integrations'
+import { bookingService } from '../services/bookings'
+import { paymentsService } from '../services/payments'
+import { demoResetAllowed, resetDemo } from '../store/resetDemo'
 import { adminService } from '../services/admin'
 import { contentService } from '../services/content'
 import { reviewService } from '../services/reviews'
@@ -18,13 +21,18 @@ const q = (v: string | undefined) => (v && v.trim() ? v.trim() : null)
 const oneOf = <T extends string>(v: string | undefined, allowed: readonly T[]) => (allowed.includes(v as T) ? (v as T) : null)
 const done = () => new Response(null, { status: 204 })
 
-adminRoutes.get('/admin/stats', async (c) => c.json(await statsRepo.forAdmin(todayISO())))
+adminRoutes.get('/admin/stats', async (c) => {
+  await bookingService.sweepSoon()
+  return c.json(await statsRepo.forAdmin(todayISO()))
+})
 
 // ─── Listings ────────────────────────────────────────────────────────────────
 adminRoutes.get('/admin/listings', async (c) =>
   c.json({ listings: await adminService.listListings(oneOf<ListingStatus>(c.req.query('status'), ['Draft', 'Pending', 'Approved', 'Rejected']), q(c.req.query('q'))) }))
 adminRoutes.post('/admin/listings/:id/approve', async (c) => (await adminService.approveListing(admin(c), Number(c.req.param('id'))), done()))
 adminRoutes.post('/admin/listings/:id/reject', async (c) => (await adminService.rejectListing(admin(c), Number(c.req.param('id')), str((await body(c)).reason)), done()))
+adminRoutes.post('/admin/listings/:id/management', async (c) =>
+  (await adminService.setManagement(admin(c), Number(c.req.param('id')), str((await body(c)).management)), done()))
 adminRoutes.post('/admin/listings/:id/feature', async (c) => {
   const rank = (await body(c)).rank
   await adminService.featureListing(admin(c), Number(c.req.param('id')), rank === null ? null : Number(rank))
@@ -32,8 +40,12 @@ adminRoutes.post('/admin/listings/:id/feature', async (c) => {
 })
 
 // ─── Bookings ────────────────────────────────────────────────────────────────
-adminRoutes.get('/admin/bookings', async (c) => c.json({ bookings: await adminService.listBookings(q(c.req.query('q'))) }))
-adminRoutes.post('/admin/bookings/:code/cancel', async (c) => (await adminService.cancelBooking(admin(c), c.req.param('code')), done()))
+adminRoutes.get('/admin/bookings', async (c) => {
+  await bookingService.sweepSoon()
+  return c.json({ bookings: await adminService.listBookings(q(c.req.query('q')), q(c.req.query('status'))) })
+})
+adminRoutes.post('/admin/bookings/:code/cancel', async (c) => (await bookingService.cancelByAdmin(admin(c), c.req.param('code')), done()))
+adminRoutes.post('/admin/bookings/:code/refund', async (c) => (await bookingService.retryRefund(admin(c), c.req.param('code')), done()))
 
 // ─── Users ───────────────────────────────────────────────────────────────────
 adminRoutes.get('/admin/users', async (c) =>
@@ -72,6 +84,30 @@ adminRoutes.get('/admin/audit', async (c) => c.json({ entries: await auditLogRep
 
 // ─── Settings → Integrations ─────────────────────────────────────────────────
 adminRoutes.get('/admin/integrations', async (c) => c.json(await integrationsService.status()))
+
+// ─── Settings → Payments (Razorpay). Secrets are write-only. ─────────────────
+const publicBase = (c: { req: { url: string; header: (k: string) => string | undefined } }) => {
+  const url = new URL(c.req.url)
+  const host = c.req.header('x-forwarded-host') ?? url.host
+  const proto = c.req.header('x-forwarded-proto') ?? url.protocol.replace(':', '')
+  return `${proto}://${host}`
+}
+adminRoutes.get('/admin/payments', async (c) => c.json(await paymentsService.view(publicBase(c))))
+adminRoutes.put('/admin/payments', async (c) => {
+  await paymentsService.save(admin(c), await body(c))
+  return c.json(await paymentsService.view(publicBase(c)))
+})
+adminRoutes.post('/admin/payments/test', async (c) => c.json(await paymentsService.testConnection()))
+
+// ─── Demo data (client previews only) ────────────────────────────────────────
+adminRoutes.get('/admin/demo', (c) => c.json({ resetAllowed: demoResetAllowed() }))
+adminRoutes.post('/admin/demo/reset', async (c) => {
+  if (!demoResetAllowed()) throw new AppError(403, 'Demo reset is only available while SEED_DEMO_DATA is true.')
+  const who = admin(c)
+  await resetDemo()
+  await auditLogRepo.record(who, 'demo.reset', 'settings', 'demo')
+  return done()
+})
 
 // ─── Database screen ─────────────────────────────────────────────────────────
 const rowKey = (raw: string | undefined) => {

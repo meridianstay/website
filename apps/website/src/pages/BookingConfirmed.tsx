@@ -1,16 +1,57 @@
 import { useEffect, useState } from 'react'
-import { Link, useParams } from 'react-router'
-import { formatDateRange, type BookingDetail } from '@meridian/shared'
+import { Link, useLocation, useParams } from 'react-router'
+import { formatDateRange, formatPrice, REQUEST_HOURS, type BookingDetail } from '@meridian/shared'
 import { ApiError, api, appLink } from '@meridian/shared/client'
-import { ErrorNote, Spinner } from '@meridian/ui'
+import { ErrorNote, Spinner, useAuth } from '@meridian/ui'
 import { PriceBreakdown } from '../components/PriceBreakdown'
+import { CheckoutDismissed, payWithRazorpay } from '../lib/razorpay'
 import { useDocumentTitle } from '../lib/useDocumentTitle'
+
+type Tone = 'good' | 'wait' | 'ended'
+
+/** Headline, badge and colour for each booking state. */
+function describe(b: BookingDetail): { tone: Tone; badge: string; title: string; note: string } {
+  const paidOnline = b.paymentStatus !== 'test'
+  switch (b.status) {
+    case 'AwaitingPayment':
+      return { tone: 'wait', badge: 'Payment pending', title: 'Finish paying to book', note: 'Your dates are held for a few minutes while you pay.' }
+    case 'Requested':
+      return {
+        tone: 'wait', badge: 'Request sent', title: 'Your request is with the host',
+        note: `The host has until ${fmtTime(b.expiresAt)} to accept. ${paidOnline ? 'Your payment is only authorised: you’re charged if they accept, and the hold is released if they don’t.' : 'Test mode: no payment is taken.'}`,
+      }
+    case 'Confirmed':
+    case 'Completed':
+      return {
+        tone: 'good', badge: 'Booking confirmed', title: 'You’re going to Nature!',
+        note: `${paidOnline ? `Paid ${formatPrice(b.total)} by Razorpay.` : 'Test mode: no payment was taken.'} Your host has your phone number (${b.contactPhone}) to arrange check-in.`,
+      }
+    case 'Declined':
+      return { tone: 'ended', badge: 'Request declined', title: 'The host couldn’t accept this request', note: `${b.declineReason ? `The host said: “${b.declineReason}” ` : ''}${paidOnline ? 'You haven’t been charged; the payment hold has been released. ' : ''}Try other dates or another stay.` }
+    case 'Expired':
+      return b.paymentStatus === 'created' || b.paymentStatus === 'failed'
+        ? { tone: 'ended', badge: 'Checkout expired', title: 'This checkout expired', note: 'The payment wasn’t completed in time, so the dates were released. You can book again.' }
+        : { tone: 'ended', badge: 'Request expired', title: 'The host didn’t reply in time', note: `Hosts have ${REQUEST_HOURS} hours to answer. ${paidOnline ? 'You haven’t been charged; the hold has been released.' : ''}` }
+    default:
+      return {
+        tone: 'ended', badge: 'Booking cancelled', title: 'This booking was cancelled',
+        note: b.refunded > 0 ? `${formatPrice(b.refunded)} is being refunded to your original payment method (usually 5–7 working days).` : 'No payment was taken for this booking.',
+      }
+  }
+}
+
+const fmtTime = (iso: string | null) =>
+  iso ? new Date(iso).toLocaleString('en-IN', { weekday: 'short', day: 'numeric', month: 'short', hour: 'numeric', minute: '2-digit' }) : 'soon'
 
 export function BookingConfirmed() {
   const { code = '' } = useParams()
+  const { user } = useAuth()
+  const location = useLocation()
   const [booking, setBooking] = useState<BookingDetail | null>(null)
   const [error, setError] = useState<string | null>(null)
-  useDocumentTitle('Booking confirmed')
+  const [notice, setNotice] = useState<string | null>((location.state as { notice?: string | null } | null)?.notice ?? null)
+  const [paying, setPaying] = useState(false)
+  useDocumentTitle('Your booking')
 
   useEffect(() => {
     api.booking(code).then((r) => setBooking(r.booking)).catch((e: ApiError) => setError(e.message))
@@ -19,27 +60,42 @@ export function BookingConfirmed() {
   if (error) return <div className="max-w-xl mx-auto px-5 py-12"><ErrorNote message={error} /></div>
   if (!booking) return <Spinner />
 
-  const cancelled = booking.status === 'Cancelled'
+  const d = describe(booking)
+
+  const pay = async () => {
+    setPaying(true)
+    setNotice(null)
+    try {
+      const { payment } = await api.bookingPayment(booking.code)
+      const result = await payWithRazorpay(payment, { title: booking.property.title, user, phone: booking.contactPhone, method: booking.paymentMethod })
+      setBooking((await api.confirmPayment(booking.code, result)).booking)
+    } catch (err) {
+      if (!(err instanceof CheckoutDismissed)) setNotice((err as Error).message)
+      api.booking(code).then((r) => setBooking(r.booking)).catch(() => {})
+    } finally {
+      setPaying(false)
+    }
+  }
+
+  const header = { good: 'bg-gradient-to-r from-brand-700 to-brand-600', wait: 'bg-gradient-to-r from-amber-600 to-amber-500', ended: 'bg-slate-700' }[d.tone]
 
   return (
     <div className="max-w-2xl mx-auto px-5 py-12">
       <div className="bg-white rounded-3xl border border-slate-200 shadow-sm overflow-hidden">
-        <div className={`${cancelled ? 'bg-slate-700' : 'bg-gradient-to-r from-brand-700 to-brand-600'} text-white p-8 text-center`}>
+        <div className={`${header} text-white p-8 text-center`}>
           <div className="w-16 h-16 bg-white/15 rounded-full flex items-center justify-center mx-auto text-2xl mb-4 animate-scale-in">
-            {cancelled ? (
-              <i className="fa-solid fa-ban" aria-hidden="true"></i>
-            ) : (
+            {d.tone === 'good' ? (
               // Checkmark that draws itself
               <svg viewBox="0 0 24 24" className="w-8 h-8" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
                 <path d="M5 12.5l4.5 4.5L19 7.5" strokeDasharray="24" strokeDashoffset="24" className="animate-draw" />
               </svg>
+            ) : (
+              <i className={`fa-solid ${d.tone === 'wait' ? 'fa-hourglass-half' : 'fa-ban'}`} aria-hidden="true"></i>
             )}
           </div>
-          <span className="bg-brand-yellow-500 text-slate-900 text-[10px] font-extrabold uppercase px-3 py-1 rounded-full">
-            {cancelled ? 'Booking cancelled' : 'Booking confirmed'}
-          </span>
-          <h1 className="text-2xl font-extrabold mt-3">{cancelled ? 'This booking was cancelled' : 'You’re going to Nature!'}</h1>
-          <p className="text-sm text-brand-50 mt-1">Booking reference <span className="font-mono font-bold">{booking.code}</span></p>
+          <span className="bg-brand-yellow-500 text-slate-900 text-[10px] font-extrabold uppercase px-3 py-1 rounded-full">{d.badge}</span>
+          <h1 className="text-2xl font-extrabold mt-3">{d.title}</h1>
+          <p className="text-sm text-white/80 mt-1">Booking reference <span className="font-mono font-bold">{booking.code}</span></p>
         </div>
 
         <div className="p-8 space-y-6">
@@ -52,9 +108,13 @@ export function BookingConfirmed() {
             </div>
           </div>
           <PriceBreakdown quote={booking} />
-          <p className="text-xs text-slate-500 bg-slate-50 rounded-xl p-3">
-            Test mode: no payment was taken. Your host has your phone number ({booking.contactPhone}) to arrange check-in.
-          </p>
+          <p className="text-xs text-slate-500 bg-slate-50 rounded-xl p-3">{d.note}</p>
+          {notice && <ErrorNote message={notice} />}
+          {booking.status === 'AwaitingPayment' && (
+            <button type="button" onClick={pay} disabled={paying} className="w-full bg-gradient-to-r from-brand-600 to-brand-500 hover:from-brand-700 hover:to-brand-600 disabled:from-slate-400 disabled:to-slate-400 text-white font-bold py-4 rounded-2xl text-sm shadow-lg shadow-brand-500/20">
+              {paying ? 'Waiting for payment…' : `Pay ${formatPrice(booking.total)}`}
+            </button>
+          )}
           <div className="flex flex-col sm:flex-row gap-3">
             <a href={appLink('account', '/')} className="flex-1 text-center bg-slate-900 hover:bg-slate-800 text-white font-bold py-3.5 rounded-2xl text-sm">View my trips</a>
             <Link to="/search" className="flex-1 text-center bg-slate-100 hover:bg-slate-200 text-slate-800 font-bold py-3.5 rounded-2xl text-sm">Keep exploring</Link>

@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useState } from 'react'
 import { ErrorNote, PageHeader, Panel, Spinner, StatusBadge } from '@meridian/ui'
-import { formatPrice, type ListingStatus } from '@meridian/shared'
+import { formatPrice, type ListingStatus, type Management } from '@meridian/shared'
 import { adminApi, appLink, type AdminListing } from '@meridian/shared/client'
 import { Chip, Toolbar, tableClass, th, theadClass } from '../components/Toolbar'
 
@@ -34,7 +34,7 @@ export function Listings() {
 
   return (
     <>
-      <PageHeader title="Listings" description="Approve new and edited listings, reject with a reason the host can see, and choose which stays are featured on the homepage (the first six featured stays appear there, in rank order)." />
+      <PageHeader title="Listings" description="Approve new and edited listings, reject with a reason the host can see, and choose which stays are featured on the homepage (the first six featured stays appear there, in rank order). Managed properties are run by Meridian: guests book instantly and the managed commission applies. Self-managed hosts approve each request." />
       <Panel>
         <Toolbar placeholder="Search title, city or host" onSearch={setQ}>
           {filters.map((f) => <Chip key={f} active={filter === f} onClick={() => setFilter(f)}>{filterLabel[f]}</Chip>)}
@@ -44,7 +44,7 @@ export function Listings() {
           <div className="overflow-x-auto">
             <table className={tableClass}>
               <thead className={theadClass}>
-                <tr><th className={th}>Listing</th><th className={th}>Host</th><th className={th}>Price</th><th className={th}>Status</th><th className={th}>Homepage</th><th className={`${th} text-right`}>Actions</th></tr>
+                <tr><th className={th}>Listing</th><th className={th}>Host</th><th className={th}>Price</th><th className={th}>Management</th><th className={th}>Status</th><th className={th}>Homepage</th><th className={`${th} text-right`}>Actions</th></tr>
               </thead>
               <tbody className="divide-y divide-slate-100">
                 {listings.map((p) => (
@@ -61,6 +61,14 @@ export function Listings() {
                     </td>
                     <td className="p-3">{p.hostName}<br /><span className="text-slate-400">{p.hostEmail}</span></td>
                     <td className="p-3 font-bold text-slate-900 tabular-nums">{formatPrice(p.price)}</td>
+                    <td className="p-3">
+                      <label className="sr-only" htmlFor={`mgmt-${p.id}`}>Management for {p.title}</label>
+                      <select id={`mgmt-${p.id}`} value={p.management} onChange={(e) => run(() => adminApi.setManagement(p.id, e.target.value as Management))}
+                        className="bg-slate-50 border border-slate-200 rounded-lg px-2 py-1.5 text-xs font-semibold focus:outline-none focus:border-brand-500">
+                        <option value="managed">Managed · instant</option>
+                        <option value="self">Self-managed · requests</option>
+                      </select>
+                    </td>
                     <td className="p-3"><StatusBadge status={p.status === 'Draft' ? 'Paused' : p.status} /></td>
                     <td className="p-3 whitespace-nowrap">
                       {p.featuredRank ? (

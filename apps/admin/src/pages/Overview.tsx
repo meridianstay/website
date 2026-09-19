@@ -30,9 +30,9 @@ export function Overview() {
         <StatCard label="New messages" value={stats.new_messages} tone={stats.new_messages ? 'warning' : 'default'} />
       </div>
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 sm:gap-6 mb-8">
-        <StatCard label="Confirmed bookings" value={stats.bookings} hint={`${stats.upcoming} upcoming`} />
-        <StatCard label="Gross booking value" value={formatPrice(stats.gbv)} tone="brand" />
-        <StatCard label="Service fees" value={formatPrice(stats.fees)} hint="Test mode: not collected" />
+        <StatCard label="Confirmed bookings" value={stats.bookings} hint={`${stats.upcoming} upcoming · ${stats.requests} awaiting hosts`} />
+        <StatCard label="Gross booking value" value={formatPrice(stats.gbv)} hint="Paid by guests, after refunds" />
+        <StatCard label="Commission earned" value={formatPrice(stats.commission)} tone="brand" hint="Meridian’s share of confirmed stays" />
         <StatCard label="Visible reviews" value={stats.reviews} />
       </div>
 

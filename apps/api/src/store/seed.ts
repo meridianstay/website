@@ -1,5 +1,5 @@
 import { fileURLToPath } from 'node:url'
-import { addDays, galleryImages as g, images, quoteStay, todayISO } from '@meridian/shared'
+import { addDays, commissionMinor, defaultCommission, galleryImages as g, images, quoteStay, REQUEST_HOURS, todayISO } from '@meridian/shared'
 import { auth } from './firebase'
 import { C, col, datesOf, firestore, nightsOf } from './seedHelpers'
 import { newBookingCode } from '../services/bookings'
@@ -46,6 +46,8 @@ interface SeedProperty {
   slug: string; host: string; title: string; type: string; city: string; region: string; country?: string
   price: number; rating: number; reviewCount: number; beds: number; baths: number; maxGuests: number
   status: 'Approved' | 'Pending' | 'Rejected' | 'Draft'; rejectionReason?: string; featured?: number
+  /** Run by Meridian (instant booking, higher commission). Otherwise host-managed, request to book. */
+  managed?: boolean
   cover: string; photos: string[]; amenities: string[]; lat: number; lng: number; description: string
   reviews: [author: string, rating: number, comment: string, daysAgo: number][]
 }
@@ -53,15 +55,15 @@ interface SeedProperty {
 const properties: SeedProperty[] = [
   {
     slug: 'green-valley-organic-farmstay', host: 'meera', title: 'Green Valley Organic Farmstay', type: 'Farmstay',
-    city: 'Coorg', region: 'Karnataka', price: 145, rating: 4.92, reviewCount: 128, beds: 3, baths: 2, maxGuests: 6, status: 'Approved', featured: 1,
+    city: 'Coorg', region: 'Karnataka', price: 6500, rating: 4.92, reviewCount: 128, beds: 3, baths: 2, maxGuests: 6, status: 'Approved', featured: 1,
     cover: images.farmstay, photos: [g.livingCozy, g.kitchen, g.bedroomClassic, g.spa],
     amenities: ['Wifi', 'Free parking', 'Breakfast included', 'Kitchen', 'Garden', 'Bonfire area', 'Pet friendly'], lat: 12.4244, lng: 75.7382,
     description: 'Wake up to the aroma of coffee blossoms and fresh organic breakfasts. Enjoy guided plantation walks and bonfire evenings.\n\nThe farmhouse sits on a working coffee and pepper estate. Three bedrooms open onto a wraparound veranda, and meals are cooked with produce picked the same morning.',
     reviews: [['Rohan D.', 5, 'Peaceful, spotless and the hosts made us feel like family.', 200], ['Kavya S.', 5, 'The plantation walk at sunrise was magical. Food was outstanding.', 150]],
   },
   {
-    slug: 'golden-sunset-hillside-resort', host: 'karan', title: 'Golden Sunset Hillside Resort', type: 'Resort',
-    city: 'Wayanad', region: 'Kerala', price: 240, rating: 4.88, reviewCount: 94, beds: 4, baths: 4, maxGuests: 8, status: 'Approved', featured: 2,
+    slug: 'golden-sunset-hillside-resort', managed: true, host: 'karan', title: 'Golden Sunset Hillside Resort', type: 'Resort',
+    city: 'Wayanad', region: 'Kerala', price: 12500, rating: 4.88, reviewCount: 94, beds: 4, baths: 4, maxGuests: 8, status: 'Approved', featured: 2,
     cover: images.resort, photos: [g.poolDusk, g.mountainDeck, g.spa, g.bedroomDark],
     amenities: ['Wifi', 'Infinity pool', 'Spa', 'Restaurant', 'Air conditioning', 'Free parking', 'Room service'], lat: 11.6854, lng: 76.132,
     description: 'A luxurious mountain resort with infinity pool overlooking misty green valleys and world-class spa facilities.\n\nFour spacious suites, an in-house restaurant serving Kerala cuisine, and sunset views from every balcony.',
@@ -69,15 +71,15 @@ const properties: SeedProperty[] = [
   },
   {
     slug: 'whispering-pines-forest-cottage', host: 'meera', title: 'Whispering Pines Forest Cottage', type: 'Cottage',
-    city: 'Manali', region: 'Himachal Pradesh', price: 120, rating: 4.95, reviewCount: 210, beds: 2, baths: 1, maxGuests: 4, status: 'Approved', featured: 3,
+    city: 'Manali', region: 'Himachal Pradesh', price: 5200, rating: 4.95, reviewCount: 210, beds: 2, baths: 1, maxGuests: 4, status: 'Approved', featured: 3,
     cover: images.cottage, photos: [g.forestCabin, g.livingCozy, g.bedroomClassic, g.kitchen],
     amenities: ['Wifi', 'Fireplace', 'Heating', 'Kitchen', 'Mountain view', 'Free parking'], lat: 32.2432, lng: 77.1892,
     description: 'A rustic wooden cabin nestled inside pine forests with mountain views, fireplace, and stargazing deck.\n\nIt’s a ten-minute walk to Old Manali’s cafés, yet you’ll hear nothing but the river at night.',
     reviews: [['Kabir T.', 5, 'Cosiest cabin we have ever stayed in. The fireplace and the stars made it.', 120]],
   },
   {
-    slug: 'emerald-luxury-pool-villa', host: 'karan', title: 'Emerald Luxury Pool Villa', type: 'Villa',
-    city: 'Lonavala', region: 'Maharashtra', price: 320, rating: 4.97, reviewCount: 82, beds: 5, baths: 5, maxGuests: 10, status: 'Approved', featured: 4,
+    slug: 'emerald-luxury-pool-villa', managed: true, host: 'karan', title: 'Emerald Luxury Pool Villa', type: 'Villa',
+    city: 'Lonavala', region: 'Maharashtra', price: 18500, rating: 4.97, reviewCount: 82, beds: 5, baths: 5, maxGuests: 10, status: 'Approved', featured: 4,
     cover: images.villa, photos: [g.villaPool, g.livingBright, g.bedroomClassic, g.kitchen],
     amenities: ['Wifi', 'Private pool', 'Air conditioning', 'Kitchen', 'Game room', 'Chef on request', 'Free parking'], lat: 18.7537, lng: 73.4068,
     description: 'An architectural masterpiece featuring private plunge pool, manicured lawns, indoor game lounge, and private chef on request.\n\nIdeal for families and groups of friends, two hours from Mumbai and Pune.',
@@ -85,15 +87,15 @@ const properties: SeedProperty[] = [
   },
   {
     slug: 'sunny-citrus-farm-estate', host: 'meera', title: 'Sunny Citrus Farm & Estate', type: 'Farmstay',
-    city: 'Nashik', region: 'Maharashtra', price: 160, rating: 4.85, reviewCount: 64, beds: 3, baths: 2, maxGuests: 6, status: 'Approved', featured: 5,
+    city: 'Nashik', region: 'Maharashtra', price: 7200, rating: 4.85, reviewCount: 64, beds: 3, baths: 2, maxGuests: 6, status: 'Approved', featured: 5,
     cover: images.citrusFarm, photos: [images.farmstay, g.apartment, g.bedroomClassic, g.kitchen],
     amenities: ['Wifi', 'Vineyard tours', 'Breakfast included', 'Garden', 'Free parking', 'Kid friendly'], lat: 19.9975, lng: 73.7898,
     description: 'Experience vineyard tours and citrus picking in a sprawling eco-friendly family farmstay.\n\nThe estate runs on solar power and harvests rainwater. Children can help feed the animals every morning.',
     reviews: [['Neha K.', 4, 'Lovely farm and wonderful hosts. The vineyard tour is a must.', 70]],
   },
   {
-    slug: 'bamboo-zen-treehouse-cottage', host: 'karan', title: 'Bamboo Zen Treehouse Cottage', type: 'Cottage',
-    city: 'Ubud', region: 'Bali', country: 'Indonesia', price: 195, rating: 4.99, reviewCount: 312, beds: 1, baths: 1, maxGuests: 2, status: 'Approved', featured: 6,
+    slug: 'bamboo-zen-treehouse-cottage', managed: true, host: 'karan', title: 'Bamboo Zen Treehouse Cottage', type: 'Cottage',
+    city: 'Ubud', region: 'Bali', country: 'Indonesia', price: 9800, rating: 4.99, reviewCount: 312, beds: 1, baths: 1, maxGuests: 2, status: 'Approved', featured: 6,
     cover: images.treehouse, photos: [g.mountainDeck, g.cliffPool, g.spa, g.bedroomDark],
     amenities: ['Wifi', 'Rainforest view', 'Breakfast included', 'Yoga deck', 'Air conditioning'], lat: -8.5069, lng: 115.2625,
     description: 'A stunning architectural bamboo treehouse overlooking lush green tropical rainforests and river streams.\n\nBuilt for two, with an open-air bath, a yoga deck and breakfast delivered in a basket each morning.',
@@ -101,15 +103,15 @@ const properties: SeedProperty[] = [
   },
   {
     slug: 'alleppey-backwater-houseboat', host: 'meera', title: 'Alleppey Backwater Houseboat', type: 'Cottage',
-    city: 'Alleppey', region: 'Kerala', price: 175, rating: 4.96, reviewCount: 143, beds: 2, baths: 2, maxGuests: 4, status: 'Approved',
+    city: 'Alleppey', region: 'Kerala', price: 8900, rating: 4.96, reviewCount: 143, beds: 2, baths: 2, maxGuests: 4, status: 'Approved',
     cover: g.houseboat, photos: [g.backwaters, g.bedroomDark, g.kitchen],
     amenities: ['Air conditioning', 'Breakfast included', 'Room service', 'Wifi'], lat: 9.4981, lng: 76.3388,
     description: 'A traditional kettuvallam houseboat with two air-conditioned bedrooms, drifting through palm-lined backwaters.\n\nYour crew cooks Kerala meals on board and moors each evening in a quiet village canal.',
     reviews: [['Sanjana R.', 5, 'The crew’s fish curry and the sunset over the paddy fields were unforgettable.', 110]],
   },
   {
-    slug: 'himalayan-pine-view-resort', host: 'tenzin', title: 'Himalayan Pine View Resort', type: 'Resort',
-    city: 'Gangtok', region: 'Sikkim', price: 210, rating: 4.9, reviewCount: 118, beds: 4, baths: 4, maxGuests: 8, status: 'Approved',
+    slug: 'himalayan-pine-view-resort', managed: true, host: 'tenzin', title: 'Himalayan Pine View Resort', type: 'Resort',
+    city: 'Gangtok', region: 'Sikkim', price: 11000, rating: 4.9, reviewCount: 118, beds: 4, baths: 4, maxGuests: 8, status: 'Approved',
     cover: g.himalaya, photos: [g.mountainDeck, g.spa, g.bedroomDark, g.livingCozy],
     amenities: ['Wifi', 'Mountain view', 'Restaurant', 'Spa', 'Heating', 'Room service'], lat: 27.3389, lng: 88.6065,
     description: 'Wake up to Kanchenjunga from your balcony at this family-run resort above Gangtok.\n\nMomos in the restaurant, a hot-stone spa after long hikes, and monastery visits arranged by the hosts.',
@@ -117,7 +119,7 @@ const properties: SeedProperty[] = [
   },
   {
     slug: 'naggar-apple-orchard-farmstay', host: 'tenzin', title: 'Naggar Apple Orchard Farmstay', type: 'Farmstay',
-    city: 'Naggar', region: 'Himachal Pradesh', price: 98, rating: 4.83, reviewCount: 52, beds: 2, baths: 1, maxGuests: 5, status: 'Approved',
+    city: 'Naggar', region: 'Himachal Pradesh', price: 4200, rating: 4.83, reviewCount: 52, beds: 2, baths: 1, maxGuests: 5, status: 'Approved',
     cover: g.gardenCottage, photos: [g.livingCozy, g.kitchen, g.bedroomClassic],
     amenities: ['Wifi', 'Garden', 'Breakfast included', 'Heating', 'Mountain view', 'Kid friendly'], lat: 32.1167, lng: 77.1667,
     description: 'A wooden farmhouse in a working apple orchard above the Kullu valley.\n\nPick apples in season, walk to Naggar Castle, and end the day with home-made cider by the stove.',
@@ -125,7 +127,7 @@ const properties: SeedProperty[] = [
   },
   {
     slug: 'jaipur-heritage-haveli-room', host: 'farhan', title: 'Heritage Haveli Courtyard Room', type: 'Room',
-    city: 'Jaipur', region: 'Rajasthan', price: 95, rating: 4.81, reviewCount: 57, beds: 1, baths: 1, maxGuests: 2, status: 'Approved',
+    city: 'Jaipur', region: 'Rajasthan', price: 3800, rating: 4.81, reviewCount: 57, beds: 1, baths: 1, maxGuests: 2, status: 'Approved',
     cover: g.hotelRoom, photos: [g.jaipurPalace, g.jaipurFort, g.brightRoom],
     amenities: ['Wifi', 'Air conditioning', 'Breakfast included', 'Room service'], lat: 26.9239, lng: 75.8267,
     description: 'A private room in a restored 19th-century haveli, a short walk from Hawa Mahal.\n\nBreakfast is served in the painted courtyard, and the rooftop has views over the old city.',
@@ -133,23 +135,23 @@ const properties: SeedProperty[] = [
   },
   {
     slug: 'rishikesh-riverside-homestay-room', host: 'rohit', title: 'Riverside Homestay Room', type: 'Room',
-    city: 'Rishikesh', region: 'Uttarakhand', price: 65, rating: 4.76, reviewCount: 41, beds: 1, baths: 1, maxGuests: 2, status: 'Approved',
+    city: 'Rishikesh', region: 'Uttarakhand', price: 2400, rating: 4.76, reviewCount: 41, beds: 1, baths: 1, maxGuests: 2, status: 'Approved',
     cover: g.brightRoom, photos: [g.livingCozy, g.mountainDeck],
     amenities: ['Wifi', 'Mountain view', 'Breakfast included', 'Yoga deck'], lat: 30.0869, lng: 78.2676,
     description: 'A bright private room in a family home a few steps from the Ganga.\n\nMorning yoga on the terrace, evening aarti at the ghats, and home-cooked vegetarian meals.',
     reviews: [['Jonas W.', 5, 'Kind family, great food and the yoga deck faces the river.', 20]],
   },
   {
-    slug: 'assagao-coconut-grove-villa', host: 'anjali', title: 'Coconut Grove Pool Villa', type: 'Villa',
-    city: 'Assagao', region: 'Goa', price: 280, rating: 4.93, reviewCount: 76, beds: 4, baths: 4, maxGuests: 8, status: 'Approved',
+    slug: 'assagao-coconut-grove-villa', managed: true, host: 'anjali', title: 'Coconut Grove Pool Villa', type: 'Villa',
+    city: 'Assagao', region: 'Goa', price: 16500, rating: 4.93, reviewCount: 76, beds: 4, baths: 4, maxGuests: 8, status: 'Approved',
     cover: g.modernVilla, photos: [g.beachPool, g.livingBright, g.bedroomClassic, g.kitchen],
     amenities: ['Wifi', 'Private pool', 'Air conditioning', 'Kitchen', 'Free parking', 'Pet friendly'], lat: 15.5937, lng: 73.7652,
     description: 'A Portuguese-style villa in a quiet coconut grove, ten minutes from Anjuna beach.\n\nFour en-suite bedrooms, a private pool and a caretaker who can arrange a Goan cook.',
     reviews: [['Karthik N.', 5, 'Gorgeous villa, spotless pool and perfectly placed for north Goa.', 55]],
   },
   {
-    slug: 'gokarna-cliffside-resort', host: 'anjali', title: 'Gokarna Cliffside Resort', type: 'Resort',
-    city: 'Gokarna', region: 'Karnataka', price: 230, rating: 4.87, reviewCount: 66, beds: 5, baths: 5, maxGuests: 10, status: 'Approved',
+    slug: 'gokarna-cliffside-resort', managed: true, host: 'anjali', title: 'Gokarna Cliffside Resort', type: 'Resort',
+    city: 'Gokarna', region: 'Karnataka', price: 13500, rating: 4.87, reviewCount: 66, beds: 5, baths: 5, maxGuests: 10, status: 'Approved',
     cover: g.seasideResort, photos: [g.cliffPool, g.beachPool, g.spa, g.bedroomClassic],
     amenities: ['Wifi', 'Infinity pool', 'Restaurant', 'Spa', 'Air conditioning'], lat: 14.5479, lng: 74.3188,
     description: 'Suites above Om Beach with an infinity pool facing the Arabian Sea.\n\nWalk the cliff trail to Half Moon beach, then come back for seafood on the terrace.',
@@ -157,28 +159,28 @@ const properties: SeedProperty[] = [
   },
   {
     slug: 'sunrise-garden-view-private-room', host: 'meera', title: 'Sunrise Garden View Private Room', type: 'Room',
-    city: 'Ooty', region: 'Tamil Nadu', price: 80, rating: 0, reviewCount: 0, beds: 1, baths: 1, maxGuests: 2, status: 'Pending',
+    city: 'Ooty', region: 'Tamil Nadu', price: 2800, rating: 0, reviewCount: 0, beds: 1, baths: 1, maxGuests: 2, status: 'Pending',
     cover: images.room, photos: [g.apartment, g.bedroomClassic],
     amenities: ['Wifi', 'Garden', 'Heating', 'Breakfast included'], lat: 11.4102, lng: 76.695,
     description: 'A cozy private room with ensuite bathroom and gorgeous hillside garden views.', reviews: [],
   },
   {
     slug: 'chikmagalur-coffee-estate-bungalow', host: 'meera', title: 'Coffee Estate Bungalow', type: 'Farmstay',
-    city: 'Chikmagalur', region: 'Karnataka', price: 185, rating: 0, reviewCount: 0, beds: 3, baths: 3, maxGuests: 6, status: 'Pending',
+    city: 'Chikmagalur', region: 'Karnataka', price: 8500, rating: 0, reviewCount: 0, beds: 3, baths: 3, maxGuests: 6, status: 'Pending',
     cover: g.livingBright, photos: [g.bedroomClassic, g.kitchen],
     amenities: ['Wifi', 'Breakfast included', 'Garden', 'Free parking', 'Bonfire area'], lat: 13.3161, lng: 75.772,
     description: 'A colonial planter’s bungalow on a 40-acre coffee estate, with estate tours and tastings.', reviews: [],
   },
   {
     slug: 'thar-desert-glamping-camp', host: 'farhan', title: 'Thar Desert Glamping Camp', type: 'Resort',
-    city: 'Jaisalmer', region: 'Rajasthan', price: 150, rating: 0, reviewCount: 0, beds: 6, baths: 6, maxGuests: 12, status: 'Rejected',
+    city: 'Jaisalmer', region: 'Rajasthan', price: 7500, rating: 0, reviewCount: 0, beds: 6, baths: 6, maxGuests: 12, status: 'Rejected',
     rejectionReason: 'Please add photos of the tents and bathrooms, and describe how guests reach the camp from Jaisalmer.',
     cover: g.tentView, photos: [], amenities: ['Bonfire area', 'Restaurant'], lat: 26.9157, lng: 70.9083,
     description: 'Luxury tents in the dunes with folk music, camel rides and dinner under the stars.', reviews: [],
   },
   {
     slug: 'nainital-lakeview-stone-cottage', host: 'rohit', title: 'Lakeview Stone Cottage', type: 'Cottage',
-    city: 'Nainital', region: 'Uttarakhand', price: 130, rating: 4.7, reviewCount: 23, beds: 2, baths: 1, maxGuests: 4, status: 'Draft',
+    city: 'Nainital', region: 'Uttarakhand', price: 5800, rating: 4.7, reviewCount: 23, beds: 2, baths: 1, maxGuests: 4, status: 'Draft',
     cover: g.forestCabin, photos: [g.livingCozy, g.bedroomClassic],
     amenities: ['Wifi', 'Fireplace', 'Mountain view', 'Kitchen'], lat: 29.3919, lng: 79.4542,
     description: 'A stone cottage above Naini Lake, paused by the host during renovation.', reviews: [],
@@ -188,7 +190,8 @@ const properties: SeedProperty[] = [
 
 interface SeedBooking {
   property: string; guest: string; start: number; nights: number; guests: number
-  status?: 'Confirmed' | 'Cancelled'; method?: 'upi' | 'card' | 'netbanking'; requests?: string
+  /** Requested: waiting for the host, `hoursLeft` of the 24 to answer. */
+  status?: 'Confirmed' | 'Cancelled' | 'Requested' | 'Declined' | 'Expired'; hoursLeft?: number; method?: 'upi' | 'card' | 'netbanking'; requests?: string
   review?: [rating: number, comment: string]
 }
 
@@ -217,6 +220,12 @@ const bookings: SeedBooking[] = [
   { property: 'emerald-luxury-pool-villa', guest: 'arjun', start: 70, nights: 3, guests: 8, requests: 'Team offsite. We’ll need the game room.' },
   { property: 'naggar-apple-orchard-farmstay', guest: 'arjun', start: 25, nights: 4, guests: 4 },
   { property: 'gokarna-cliffside-resort', guest: 'vikram', start: 40, nights: 2, guests: 2, status: 'Cancelled' },
+  // Requests waiting for self-managed hosts (Meera, Tenzin), plus answered ones.
+  { property: 'green-valley-organic-farmstay', guest: 'ananya', start: 28, nights: 3, guests: 4, status: 'Requested', hoursLeft: 19, requests: 'Travelling with two kids (6 and 9). Is the farm walk OK for them?' },
+  { property: 'alleppey-backwater-houseboat', guest: 'priya', start: 75, nights: 2, guests: 2, status: 'Requested', hoursLeft: 6, requests: 'Anniversary trip, a candle-light dinner on deck would be lovely.' },
+  { property: 'naggar-apple-orchard-farmstay', guest: 'rahul', start: 18, nights: 2, guests: 3, status: 'Requested', hoursLeft: 22 },
+  { property: 'whispering-pines-forest-cottage', guest: 'maya', start: 14, nights: 2, guests: 2, status: 'Declined' },
+  { property: 'sunny-citrus-farm-estate', guest: 'sid', start: 9, nights: 2, guests: 2, status: 'Expired' },
 ]
 
 const messages: [name: string, email: string, topic: string, message: string, status: 'new' | 'read' | 'closed', daysAgo: number][] = [
@@ -230,9 +239,15 @@ const messages: [name: string, email: string, topic: string, message: string, st
 
 const daysAgo = (n: number) => new Date(Date.now() - n * 86_400_000).toISOString()
 
-/** Loads the demo data into an empty project. Returns false if there are already users. */
-export async function seed(log = console.log): Promise<boolean> {
-  if (!(await col(C.users).limit(1).get()).empty) return false
+/**
+ * Loads the demo data into an empty project. Returns false if there are already users,
+ * unless `force` (used by the demo reset, after it has cleared the demo records).
+ */
+export async function seed(log = console.log, force = false): Promise<boolean> {
+  const existing = await col(C.users).get()
+  if (!existing.empty && !force) return false
+  // Real accounts kept through a demo reset keep their numbers; new ones continue after the highest.
+  const highestUserId = Math.max(0, ...existing.docs.map((d) => Number(d.data().id) || 0))
   const today = todayISO()
   const w = firestore.bulkWriter()
 
@@ -279,17 +294,34 @@ export async function seed(log = console.log): Promise<boolean> {
     const q = quoteStay(p.price, checkIn, checkOut, b.guests)
     const code = newBookingCode()
     const status = b.status ?? 'Confirmed'
+    const totalMinor = q.total * 100
+    const pct = p.seed.managed ? defaultCommission.managedPct : defaultCommission.selfPct
+    const createdAt = status === 'Requested' ? new Date(Date.now() - (REQUEST_HOURS - (b.hoursLeft ?? 12)) * 3_600_000).toISOString()
+      : new Date(Date.parse(checkIn) - 21 * 86_400_000).toISOString()
+    const expiresAt = status === 'Requested' ? new Date(Date.now() + (b.hoursLeft ?? 12) * 3_600_000).toISOString() : null
+    const everConfirmed = status === 'Confirmed' || status === 'Cancelled'
+    // Cancelled well ahead of check-in: refunded in full.
+    const refundedMinor = status === 'Cancelled' ? totalMinor : 0
+    const kept = everConfirmed ? totalMinor - refundedMinor : 0
+    const commission = commissionMinor(status === 'Requested' ? totalMinor : kept, pct)
     w.set(col(C.bookings).doc(code), {
       id: i + 1, code, propertyId: p.id, hostId: host.id, guestId: guest.id,
       property: { slug: p.seed.slug, title: p.seed.title, type: p.seed.type, location: `${p.seed.city}, ${p.seed.region}`, image: p.seed.cover },
       guest: { name: guest.name, email: null, phone: guest.phone },
-      checkIn, checkOut, nights: q.nights, guests: b.guests, currency: 'USD', pricePerNightMinor: p.price * 100,
-      baseMinor: q.baseAmount * 100, extraGuestMinor: q.extraGuestAmount * 100, serviceFeeMinor: q.serviceFee * 100, totalMinor: q.total * 100,
-      status, paymentMethod: b.method ?? 'upi', paymentStatus: 'test', paymentReference: null, contactPhone: guest.phone,
-      specialRequests: b.requests ?? null, createdAt: new Date(Date.parse(checkIn) - 21 * 86_400_000).toISOString(),
-      cancelledAt: status === 'Cancelled' ? new Date(Date.parse(checkIn) - 7 * 86_400_000).toISOString() : null, reviewed: !!b.review,
+      checkIn, checkOut, nights: q.nights, guests: b.guests, currency: 'INR', pricePerNightMinor: p.price * 100,
+      baseMinor: q.baseAmount * 100, extraGuestMinor: q.extraGuestAmount * 100, serviceFeeMinor: 0, totalMinor,
+      management: p.seed.managed ? 'managed' : 'self', instantBook: !!p.seed.managed,
+      commissionPct: pct, commissionMinor: commission, hostPayoutMinor: (status === 'Requested' ? totalMinor : kept) - commission,
+      status, paymentMethod: b.method ?? 'upi', paymentStatus: 'test', razorpayOrderId: null, razorpayPaymentId: null, refundedMinor,
+      expiresAt, contactPhone: guest.phone, specialRequests: b.requests ?? null, createdAt,
+      confirmedAt: everConfirmed ? createdAt : null,
+      cancelledAt: status === 'Cancelled' ? new Date(Date.parse(checkIn) - 7 * 86_400_000).toISOString() : null,
+      decidedAt: status === 'Declined' || status === 'Expired' ? new Date(Date.parse(createdAt) + 20 * 3_600_000).toISOString() : null,
+      declineReason: status === 'Declined' ? 'Sorry, we have a family function at the cottage those nights.' : null, reviewed: !!b.review,
     })
-    if (status === 'Confirmed') for (const d of datesOf(checkIn, checkOut)) w.set(nightsOf(p.id).doc(d), { kind: 'booking', ref: code })
+    if (status === 'Confirmed' || status === 'Requested') {
+      for (const d of datesOf(checkIn, checkOut)) w.set(nightsOf(p.id).doc(d), { kind: 'booking', ref: code, holdUntil: expiresAt })
+    }
     if (b.review) {
       reviewId++
       w.set(col(C.reviews).doc(String(reviewId)), {
@@ -305,7 +337,7 @@ export async function seed(log = console.log): Promise<boolean> {
     const s = p.seed
     w.set(col(C.properties).doc(String(p.id)), {
       id: p.id, slug: s.slug, hostId: ids.get(s.host)!.id, title: s.title, type: s.type, description: s.description, city: s.city, region: s.region,
-      country: s.country ?? 'India', lat: s.lat, lng: s.lng, currency: 'USD', pricePerNightMinor: s.price * 100, bedrooms: s.beds, bathrooms: s.baths,
+      country: s.country ?? 'India', lat: s.lat, lng: s.lng, currency: 'INR', pricePerNightMinor: s.price * 100, management: s.managed ? 'managed' : 'self', bedrooms: s.beds, bathrooms: s.baths,
       maxGuests: s.maxGuests, status: s.status, rejectionReason: s.rejectionReason ?? null, coverImageUrl: s.cover, photos: s.photos,
       amenities: s.amenities, ratingAvg: p.rating, reviewCount: p.count, featuredRank: s.featured ?? null,
       approvedAt: s.status === 'Approved' ? daysAgo(30) : null, createdAt: daysAgo(60 - p.id), updatedAt: daysAgo(30),
@@ -358,12 +390,12 @@ export async function seed(log = console.log): Promise<boolean> {
     w.set(col(C.audit).doc(), { ...admin(who), action, targetType, targetId, details, createdAt: daysAgo(ago) })
   }
 
-  const counters = { users: users.length, properties: properties.length, reviews: reviewId, bookings: bookings.length, blocks: blocks.length, messages: messages.length }
+  const counters = { users: Math.max(users.length, highestUserId), properties: properties.length, reviews: reviewId, bookings: bookings.length, blocks: blocks.length, messages: messages.length }
   for (const [name, value] of Object.entries(counters)) w.set(col(C.counters).doc(name), { value })
 
   // A visible announcement so the preview shows the banner.
   w.set(col(C.settings).doc('announcement'), {
-    value: { enabled: true, text: 'Preview mode: explore freely. Bookings are confirmed without taking payment.', linkLabel: 'How it works', linkUrl: '/how-it-works' },
+    value: { enabled: true, text: 'Preview mode: explore freely. Payments run in test mode until Razorpay keys are added.', linkLabel: 'How it works', linkUrl: '/how-it-works' },
     updatedAt: new Date().toISOString(), updatedBy: null,
   })
 

@@ -1,10 +1,12 @@
 import { useEffect, useState } from 'react'
 import { Link, useNavigate, useParams, useSearchParams } from 'react-router'
-import { formatDateRange, quoteStay, type PaymentMethod, type PropertyDetail } from '@meridian/shared'
+import { formatDateRange, formatPrice, quoteStay, REQUEST_HOURS, type PaymentMethod, type PropertyDetail } from '@meridian/shared'
 import { ApiError, api } from '@meridian/shared/client'
 import { ErrorNote, Spinner, useAuth } from '@meridian/ui'
 import { PriceBreakdown } from '../components/PriceBreakdown'
 import { readSearch } from '../lib/search'
+import { useSite } from '../lib/site'
+import { CheckoutDismissed, payWithRazorpay } from '../lib/razorpay'
 import { useDocumentTitle } from '../lib/useDocumentTitle'
 
 const METHODS: { value: PaymentMethod; label: string; icon: string }[] = [
@@ -24,8 +26,9 @@ export function Checkout() {
   const [form, setForm] = useState({ phone: user?.phone ?? '', requests: '', method: 'upi' as PaymentMethod, agreed: false })
   const [fieldErrors, setFieldErrors] = useState<Record<string, string>>({})
   const [submitError, setSubmitError] = useState<string | null>(null)
-  const [submitting, setSubmitting] = useState(false)
-  useDocumentTitle('Confirm and pay')
+  const [submitting, setSubmitting] = useState<null | 'booking' | 'paying' | 'verifying'>(null)
+  const { paymentsOnline } = useSite()
+  useDocumentTitle('Book your stay')
 
   useEffect(() => {
     api.property(slug).then((r) => setProperty(r.property)).catch((e: ApiError) => setLoadError(e.message))
@@ -50,6 +53,7 @@ export function Checkout() {
   }
 
   const quote = quoteStay(property.price, checkIn, checkOut, guests)
+  const instant = property.management === 'managed'
 
   const submit = async (e: React.FormEvent) => {
     e.preventDefault()
@@ -59,18 +63,31 @@ export function Checkout() {
     setFieldErrors(errors)
     if (Object.keys(errors).length) return
 
-    setSubmitting(true)
+    setSubmitting('booking')
     setSubmitError(null)
+    let code: string | null = null
     try {
-      const { booking } = await api.createBooking({
+      const { booking, payment } = await api.createBooking({
         propertyId: property.id, checkIn, checkOut, guests, paymentMethod: form.method, contactPhone: form.phone.trim(), specialRequests: form.requests.trim(),
       })
+      code = booking.code
+      if (payment) {
+        setSubmitting('paying')
+        const result = await payWithRazorpay(payment, { title: property.title, user, phone: form.phone, method: form.method })
+        setSubmitting('verifying')
+        await api.confirmPayment(booking.code, result)
+      }
       navigate(`/booking/${booking.code}`, { replace: true })
     } catch (err) {
+      // Once the booking exists, its page shows where things stand (and lets them finish paying while the dates are held).
+      if (code) {
+        const notice = err instanceof CheckoutDismissed ? null : (err as Error).message
+        return navigate(`/booking/${code}`, { replace: true, state: { notice } })
+      }
       const e = err as ApiError
-      setFieldErrors(e.fields)
+      setFieldErrors(e.fields ?? {})
       setSubmitError(e.message)
-      setSubmitting(false)
+      setSubmitting(null)
     }
   }
 
@@ -81,7 +98,7 @@ export function Checkout() {
       <Link to={`${backToStay}?checkIn=${checkIn}&checkOut=${checkOut}&guests=${guests}`} className="text-xs font-bold text-slate-600 hover:text-slate-900 inline-flex items-center space-x-2 mb-6">
         <i className="fa-solid fa-arrow-left" aria-hidden="true"></i><span>Back to stay</span>
       </Link>
-      <h1 className="text-3xl font-extrabold text-slate-900 mb-8">Confirm and pay</h1>
+      <h1 className="text-3xl font-extrabold text-slate-900 mb-8">{instant ? 'Confirm and pay' : 'Request to book'}</h1>
 
       <form onSubmit={submit} noValidate className="grid grid-cols-1 lg:grid-cols-5 gap-10">
         <div className="lg:col-span-3 space-y-6">
@@ -110,7 +127,11 @@ export function Checkout() {
           <section className="bg-white rounded-3xl p-6 border border-slate-200 space-y-4">
             <div className="flex items-center justify-between">
               <h2 className="text-lg font-bold text-slate-900">Payment</h2>
-              <span className="text-[10px] font-extrabold uppercase bg-amber-100 text-amber-800 px-2.5 py-1 rounded-full">Test mode</span>
+              {paymentsOnline ? (
+                <span className="text-[10px] font-extrabold uppercase bg-brand-100 text-brand-700 px-2.5 py-1 rounded-full"><i className="fa-solid fa-lock mr-1" aria-hidden="true"></i>Secured by Razorpay</span>
+              ) : (
+                <span className="text-[10px] font-extrabold uppercase bg-amber-100 text-amber-800 px-2.5 py-1 rounded-full">Test mode</span>
+              )}
             </div>
             <fieldset className="grid grid-cols-1 sm:grid-cols-3 gap-3">
               <legend className="sr-only">Payment method</legend>
@@ -124,7 +145,11 @@ export function Checkout() {
             </fieldset>
             <p className="text-xs text-slate-500 bg-slate-50 rounded-xl p-3">
               <i className="fa-solid fa-circle-info mr-1.5" aria-hidden="true"></i>
-              No money is taken while Meridian Stay is in testing. Your booking is confirmed straight away and you won’t be asked for card or bank details.
+              {!paymentsOnline
+                ? `No money is taken while Meridian Stay is in testing. ${instant ? 'Your booking is confirmed straight away' : 'Your request goes straight to the host'} and you won’t be asked for card or bank details.`
+                : instant
+                  ? 'You’ll pay securely in the Razorpay window. Your booking is confirmed as soon as the payment goes through.'
+                  : `You’ll approve the payment in the Razorpay window, but you’re only charged if the host accepts within ${REQUEST_HOURS} hours. If they decline or don’t reply, the hold is released.`}
             </p>
           </section>
 
@@ -141,8 +166,12 @@ export function Checkout() {
             <Link to={backToStay} className="text-sm font-bold text-brand-700 underline">Pick new dates</Link>
           )}
 
-          <button type="submit" disabled={submitting} className="w-full bg-gradient-to-r from-brand-600 to-brand-500 hover:from-brand-700 hover:to-brand-600 disabled:from-slate-400 disabled:to-slate-400 text-white font-bold py-4 rounded-2xl shadow-xl shadow-brand-500/20 text-sm transition">
-            {submitting ? 'Confirming…' : `Confirm booking`}
+          <button type="submit" disabled={!!submitting} className="w-full bg-gradient-to-r from-brand-600 to-brand-500 hover:from-brand-700 hover:to-brand-600 disabled:from-slate-400 disabled:to-slate-400 text-white font-bold py-4 rounded-2xl shadow-xl shadow-brand-500/20 text-sm transition">
+            {submitting === 'booking' ? (instant ? 'Holding your dates…' : 'Sending request…')
+              : submitting === 'paying' ? 'Waiting for payment…'
+              : submitting === 'verifying' ? 'Confirming payment…'
+              : instant ? (paymentsOnline ? `Pay ${formatPrice(quote.total)} and book` : 'Confirm booking')
+              : 'Request to book'}
           </button>
         </div>
 
@@ -157,10 +186,26 @@ export function Checkout() {
               </div>
             </div>
             <PriceBreakdown quote={quote} />
-            <p className="text-xs text-slate-400">Prices in US dollars. The final price is confirmed by Meridian Stay when you book.</p>
+            <BookingModeNote instant={instant} />
+            <p className="text-xs text-slate-400">Prices in Indian rupees, with no booking fees. Free cancellation up to 48 hours before check-in.</p>
           </div>
         </aside>
       </form>
     </div>
+  )
+}
+
+/** Explains instant booking (Meridian-managed) versus requests (host-managed). */
+export function BookingModeNote({ instant }: { instant: boolean }) {
+  return instant ? (
+    <p className="text-xs text-slate-600 bg-brand-50 rounded-xl p-3 flex gap-2">
+      <i className="fa-solid fa-bolt text-brand-600 mt-0.5" aria-hidden="true"></i>
+      <span><span className="font-bold text-slate-900">Instant book.</span> Managed by Meridian Stay, so your booking is confirmed straight away.</span>
+    </p>
+  ) : (
+    <p className="text-xs text-slate-600 bg-amber-50 rounded-xl p-3 flex gap-2">
+      <i className="fa-solid fa-hourglass-half text-amber-600 mt-0.5" aria-hidden="true"></i>
+      <span><span className="font-bold text-slate-900">Request to book.</span> The host confirms within {REQUEST_HOURS} hours. You’re not charged unless they accept.</span>
+    </p>
   )
 }

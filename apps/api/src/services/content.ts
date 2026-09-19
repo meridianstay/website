@@ -3,7 +3,7 @@ import { auditLogRepo, contentRepo } from '../repositories'
 import { AppError, notFound } from '../http/errors'
 import { checkLength, collect, str } from '../http/validate'
 
-// Admin-editable settings (homepage, announcement, sign-in methods, uploads) and information pages.
+// Admin-editable settings (homepage, announcement, sign-in methods, uploads, commission) and information pages.
 
 /** Addresses used by other parts of the site, which pages can't take. */
 const RESERVED_SLUGS = ['search', 'stays', 'book', 'booking', 'login', 'signup', 'contact', 'sitemap', 'api', 'admin', 'host', 'account']
@@ -31,6 +31,9 @@ export const contentService = {
     if (key === 'signIn' && !value.google && !value.phone) fields.google = 'Keep at least one sign-in method on, or guests and hosts can’t log in.'
     // Vercel accepts request bodies up to 4.5 MB, so uploads are capped at 4 MB.
     if (key === 'uploads' && !(Number(value.maxMb) >= 1 && Number(value.maxMb) <= 4)) fields.maxMb = 'Choose between 1 and 4 MB.'
+    if (key === 'commission') {
+      for (const f of ['managedPct', 'selfPct']) if (!(Number(value[f]) >= 0 && Number(value[f]) <= 60)) fields[f] = 'Choose between 0 and 60%.'
+    }
     collect(fields)
     await contentRepo.saveSetting(key, value, admin.id)
     await auditLogRepo.record(admin, 'settings.update', 'settings', key, value)

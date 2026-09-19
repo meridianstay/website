@@ -4,7 +4,7 @@ import { AppError } from './http/errors'
 import { firestore } from './store/firebase'
 import { authRoutes } from './routes/auth'
 import { propertyRoutes } from './routes/properties'
-import { bookingRoutes } from './routes/bookings'
+import { bookingRoutes, paymentRoutes } from './routes/bookings'
 import { wishlistRoutes } from './routes/wishlist'
 import { contactRoutes } from './routes/contact'
 import { hostRoutes } from './routes/host'
@@ -13,7 +13,7 @@ import { siteRoutes } from './routes/site'
 
 /**
  * The HTTP API, mounted at /api. Used by the local server and the Vercel function.
- * Layers: routes (HTTP) → services (business rules) → repositories (SQL) → db (connection, migrations).
+ * Layers: routes (HTTP) → services (business rules) → repositories (Firestore) → store (Firebase connection).
  */
 export const app = new Hono<AppEnv>().basePath('/api')
 
@@ -31,6 +31,7 @@ app.get('/health', async (c) => {
 app.route('/', authRoutes)
 app.route('/', propertyRoutes)
 app.route('/', bookingRoutes)
+app.route('/', paymentRoutes)
 app.route('/', wishlistRoutes)
 app.route('/', contactRoutes)
 app.route('/', hostRoutes)

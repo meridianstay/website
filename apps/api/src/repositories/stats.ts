@@ -1,6 +1,6 @@
 import type { AdminStats, HostStats } from '@meridian/shared'
 import { C, all, col } from '../store/db'
-import type { BookingDoc } from './bookings'
+import { keptMinor, type BookingDoc } from './bookings'
 import type { PropertyDoc } from './properties'
 import type { UserDoc } from './users'
 
@@ -15,7 +15,8 @@ export const statsRepo = {
     const confirmed = bookings.filter((b) => b.status === 'Confirmed')
     const rated = listings.filter((p) => p.reviewCount > 0)
     return {
-      earnings: confirmed.reduce((s, b) => s + b.totalMinor - b.serviceFeeMinor, 0) / 100,
+      earnings: bookings.filter((b) => keptMinor(b) > 0).reduce((s, b) => s + b.hostPayoutMinor, 0) / 100,
+      requests: bookings.filter((b) => b.status === 'Requested').length,
       listings: listings.length,
       live: listings.filter((p) => p.status === 'Approved').length,
       rated: rated.length,
@@ -42,8 +43,9 @@ export const statsRepo = {
       suspended: users.filter((u) => u.suspendedAt).length,
       bookings: confirmed.length,
       upcoming: confirmed.filter((b) => b.checkOut > today).length,
-      gbv: confirmed.reduce((s, b) => s + b.totalMinor, 0) / 100,
-      fees: confirmed.reduce((s, b) => s + b.serviceFeeMinor, 0) / 100,
+      requests: bookings.filter((b) => b.status === 'Requested').length,
+      gbv: bookings.reduce((s, b) => s + keptMinor(b), 0) / 100,
+      commission: bookings.filter((b) => keptMinor(b) > 0).reduce((s, b) => s + b.commissionMinor, 0) / 100,
       new_messages: messages.filter((m) => m.status === 'new').length,
       reviews: reviews.filter((r) => !r.hiddenAt).length,
     }

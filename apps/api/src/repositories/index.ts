@@ -2,7 +2,7 @@
 export { usersRepo, toMe, type UserDoc, type AdminUser } from './users'
 export { propertiesRepo, toPropertySummary, datesIn, type PropertyDoc, type HostListing, type AdminListing } from './properties'
 export { amenitiesRepo } from './amenities'
-export { bookingsRepo, toBooking, NightsTakenError, type BookingDoc, type BookingWithGuest } from './bookings'
+export { bookingsRepo, toBooking, withGuest, keptMinor, NightsTakenError, HOLDING, type BookingDoc, type BookingWithGuest, type StoredStatus } from './bookings'
 export { availabilityRepo, BlockConflictError } from './availability'
 export { reviewsRepo, type ReviewDoc, type AdminReview } from './reviews'
 export { wishlistRepo } from './wishlist'

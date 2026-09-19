@@ -13,10 +13,12 @@ export function PriceBreakdown({ quote }: { quote: Pick<Quote, 'nights' | 'price
           <dd className="tabular-nums">{formatPrice(quote.extraGuestAmount)}</dd>
         </div>
       )}
-      <div className="flex justify-between">
-        <dt>Cleaning &amp; service fee</dt>
-        <dd className="tabular-nums">{formatPrice(quote.serviceFee)}</dd>
-      </div>
+      {quote.serviceFee > 0 && (
+        <div className="flex justify-between">
+          <dt>Service fee</dt>
+          <dd className="tabular-nums">{formatPrice(quote.serviceFee)}</dd>
+        </div>
+      )}
       <div className="flex justify-between font-extrabold text-base text-slate-900 pt-3 border-t border-slate-200">
         <dt>Total</dt>
         <dd className="tabular-nums">{formatPrice(quote.total)}</dd>

@@ -92,12 +92,13 @@ reference/index.html       the original single-file prototype
 - **Sign-in** is by Google or phone OTP through Firebase Authentication. Guests, hosts and admins each have their own login page; the admin one isn't linked from the website and only accepts admins. The API then sets a secure, HTTP-only session cookie shared by every app. Admins choose which sign-in methods are on in Settings.
 - **Roles:** everyone signs up as a guest. Creating a first listing makes you a host. Only an admin can make someone an admin.
 - **Listings** go live only after an admin approves them. Any edit sends a listing back for review.
-- **Pricing** is calculated on the server when booking: the nightly price covers two guests, each extra guest adds 15%, plus a $45 service fee. Money is stored in cents.
+- **Pricing** is in Indian rupees (₹) and calculated on the server when booking: the nightly price covers two guests and each extra guest adds 15%. Guests pay **no booking fee**. Money is stored in paise.
+- **Two kinds of property.** *Managed* properties are run and maintained by Meridian: guests **book instantly** and Meridian's commission is **30%**. *Self-managed* properties are run by the host: guests send a **request**, the host accepts or declines within **24 hours**, and the commission is **15%**. Admins set each listing's type (Listings page) and the rates (Settings → Commission).
+- **Payments** go through **Razorpay** (UPI, cards, net banking). Admins enter the Razorpay keys in Settings → Payments; secrets are encrypted before they're stored and never shown again. Instant bookings are charged at checkout. Requests are only authorised at checkout and charged when the host accepts; declined or expired requests are never charged. Until payments are switched on, everything runs in test mode without taking money.
+- **Cancellations:** full refund up to 48 hours before check-in, otherwise everything except the first night. Refunds go back through Razorpay automatically.
 - **Photos** upload to Firebase Storage through the API. Browsers have no direct access to Firestore or Storage.
 - **Double bookings** are impossible: each booked or blocked night is claimed inside a Firestore transaction, so two guests can never get the same night.
 - **Reviews** can only be written by a guest whose stay has finished, once per booking.
-- **Payments are in test mode.** Bookings are confirmed without taking money and no card details are collected. A payment provider (e.g. Razorpay) plugs in at checkout; see [what's pending](CHANGELOG.md#not-yet-built).
-- **Prices are shown in US dollars.** Switch the whole platform by changing `CURRENCY` in `packages/shared/src/pricing.ts`.
 
 ## Keeping this up to date
 
