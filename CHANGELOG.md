@@ -49,6 +49,7 @@ Rupee pricing, commission, two booking modes and Razorpay payments.
 ### Fixes
 - **Reset demo data** now deletes and recreates everything in parallel, so it finishes well within the hosting time limit on the live Firebase project.
 - The sign-in error "This sign-in method isn't switched on in Firebase yet" means Google or Phone isn't enabled in the Firebase console; the deployment guide now says exactly where.
+- Login pages now say when phone codes are blocked by Firebase's **SMS region policy** (India not allowed) instead of saying the method is off, and when phone sign-in needs the Blaze plan. The deployment guide covers the region policy and authorized domains.
 
 ## 0.5.0 — 2026-09-19
 

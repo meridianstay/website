@@ -21,7 +21,9 @@ In the [Firebase console](https://console.firebase.google.com):
    - **Google** → Enable → choose a project support email → Save.
    - **Phone** → Enable → Save.
 
-   Under Settings → **Authorized domains**, add `website-seven-sable-30.vercel.app` and your final domain. If a login page says *"This sign-in method isn't switched on in Firebase yet"*, the provider you tried isn't enabled here.
+   Under Settings → **Authorized domains**, add `website-seven-sable-30.vercel.app` and your final domain (without it, Google sign-in fails on the live site).
+
+   Under Settings → **SMS region policy**, choose **Allow** and add **India** (or allow all regions). Without it, Firebase refuses to send codes to +91 numbers, even test numbers, and the login page says text messages to this country aren't enabled. If a login page says *"This sign-in method isn't switched on in Firebase yet"*, the provider you tried isn't enabled here.
 5. **Security rules.** Deploy the rules in [`firebase/`](../firebase), which block all direct browser access (everything goes through the API):
 
    ```bash

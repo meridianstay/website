@@ -22,7 +22,7 @@ const FIREBASE_MESSAGES: Record<string, string | null> = {
   'auth/user-disabled': 'This account has been suspended. Contact us if you think this is a mistake.',
   'auth/too-many-requests': 'Too many attempts. Please wait a few minutes and try again.',
   'auth/popup-blocked': 'Your browser blocked the Google window. Allow pop-ups for this site and try again.',
-  'auth/operation-not-allowed': 'This sign-in method isn’t switched on in Firebase yet.',
+  'auth/operation-not-allowed': 'This sign-in method isn’t switched on in Firebase yet (Authentication → Sign-in method).',
   'auth/unauthorized-domain': 'This website address isn’t authorised in Firebase yet (Authentication → Settings → Authorized domains).',
   'auth/popup-closed-by-user': null,
   'auth/cancelled-popup-request': null,
@@ -31,7 +31,14 @@ const FIREBASE_MESSAGES: Record<string, string | null> = {
 function describe(err: unknown): string | null {
   if (import.meta.env.DEV) console.error('[sign-in]', err)
   if (err instanceof ApiError) return err.message
-  if (err instanceof FirebaseError) return err.code in FIREBASE_MESSAGES ? FIREBASE_MESSAGES[err.code] : 'Sign-in didn’t work. Please try again.'
+  if (err instanceof FirebaseError) {
+    // Firebase uses the same code when SMS to a country is blocked by the project's SMS region policy.
+    if (err.code === 'auth/operation-not-allowed' && /region/i.test(err.message)) {
+      return 'Text messages to this country aren’t enabled yet (Firebase → Authentication → Settings → SMS region policy).'
+    }
+    if (err.code === 'auth/billing-not-enabled') return 'Phone sign-in needs the Firebase project on the Blaze plan.'
+    return err.code in FIREBASE_MESSAGES ? FIREBASE_MESSAGES[err.code] : 'Sign-in didn’t work. Please try again.'
+  }
   return 'Sign-in didn’t work. Please try again.'
 }
 
