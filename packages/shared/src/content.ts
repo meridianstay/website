@@ -137,7 +137,7 @@ const pages: Record<string, DefaultPage> = {
       { heading: 'How is the price worked out?', body: ['The nightly price covers two guests. Each extra guest adds 15% to the nightly total. There are no extra booking or service fees.'] },
       { heading: 'How do I cancel?', body: ['Go to Trips in your account and choose Cancel booking. You can cancel until the day before check-in. See the cancellation policy for details.'] },
       { heading: 'When am I charged?', body: ['Stays managed by Meridian are booked instantly and charged when you pay. For stays run by their owners, you send a request: the amount is held on your card or UPI and only charged if the host accepts within 24 hours. Otherwise the hold is released.'] },
-      { heading: 'How do I list my property?', body: ['Choose “Meridian your home” at the top of any page. Your listing is reviewed by our team before it goes live.'] },
+      { heading: 'How do I list my property?', body: ['Choose “List your property” at the top of any page. Your listing is reviewed by our team before it goes live.'] },
     ],
   },
   'cancellation-policy': {

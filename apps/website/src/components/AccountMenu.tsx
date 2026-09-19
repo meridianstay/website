@@ -46,7 +46,7 @@ export function AccountMenu() {
               <a href={appLink('account', '/wishlist')} className={itemClass} role="menuitem"><i className="fa-solid fa-heart w-4 text-rose-500" aria-hidden="true"></i><span>Wishlist</span></a>
               <a href={appLink('account', '/profile')} className={itemClass} role="menuitem"><i className="fa-solid fa-user-gear w-4 text-slate-500" aria-hidden="true"></i><span>Profile</span></a>
               <div className="border-t border-slate-100 my-1" />
-              <a href={appLink('host', '/')} className={itemClass} role="menuitem"><i className="fa-solid fa-house-chimney w-4 text-brand-600" aria-hidden="true"></i><span>{user.role === 'host' ? 'Host dashboard' : 'Meridian your home'}</span></a>
+              <a href={appLink('host', '/')} className={itemClass} role="menuitem"><i className="fa-solid fa-house-chimney w-4 text-brand-600" aria-hidden="true"></i><span>{user.role === 'host' ? 'Host dashboard' : 'List your property'}</span></a>
               <Link to="/help" onClick={close} className={itemClass} role="menuitem"><i className="fa-solid fa-circle-question w-4 text-slate-500" aria-hidden="true"></i><span>Help Center</span></Link>
               <div className="border-t border-slate-100 my-1" />
               <button
@@ -67,7 +67,7 @@ export function AccountMenu() {
               <Link to={`/login?next=${here}`} onClick={close} className={`${itemClass} font-bold text-slate-900`} role="menuitem">Log in or sign up</Link>
               <div className="border-t border-slate-100 my-1" />
               <a href={appLink('host', '/login')} className={itemClass} role="menuitem">Host login</a>
-              <a href={appLink('host', '/new')} className={itemClass} role="menuitem">Meridian your home</a>
+              <a href={appLink('host', '/new')} className={itemClass} role="menuitem">List your property</a>
               <Link to="/help" onClick={close} className={itemClass} role="menuitem">Help Center</Link>
             </>
           )}

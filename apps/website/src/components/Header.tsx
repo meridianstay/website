@@ -49,7 +49,7 @@ export function Header() {
           <InstallAppButton />
           <a href={appLink('host', '/new')} className="hidden sm:flex items-center space-x-2 whitespace-nowrap text-[13px] font-semibold text-slate-800 hover:bg-slate-100 py-2.5 px-4 rounded-full transition">
             <i className="fa-solid fa-house-chimney text-brand-500" aria-hidden="true"></i>
-            <span>Meridian your home</span>
+            <span>List your property</span>
           </a>
           <button type="button" onClick={() => setRegionOpen(true)} aria-label="Language and currency" className="hidden sm:flex w-10 h-10 rounded-full hover:bg-slate-100 items-center justify-center text-slate-700 transition">
             <i className="fa-solid fa-globe text-sm" aria-hidden="true"></i>

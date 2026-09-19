@@ -5,13 +5,14 @@ Every change to Meridian Stay is recorded here, newest first. Each entry says wh
 ## 0.7.0 — 2026-09-19
 
 ### Install as an app
-- New **Download app** button in the website header, beside "Meridian your home". It installs Meridian Stay as an app with its own icon on the home screen, opening full screen like a native app (no app store needed).
+- New **Download app** button in the website header, beside "List your property". It installs Meridian Stay as an app with its own icon on the home screen, opening full screen like a native app (no app store needed).
   - **Android** (Chrome, Samsung Internet) and **Chrome / Edge on computers**: one tap shows the browser's install prompt.
   - **iPhone and iPad**: shows the three Safari steps (Share → Add to Home Screen → Add), since Apple doesn't allow a prompt.
   - Inside Instagram, Facebook and similar in-app browsers, it explains how to open the site in the phone's browser first.
   - The button hides once the app is installed or when the site is already open as the app.
 - Web app manifest with name, colours, app icons (including an Android adaptive icon and an Apple touch icon) and home-screen shortcuts to **Find a stay** and **My trips**.
 - A small service worker makes the site installable and shows a friendly "You're offline" page without a connection. It caches nothing else, so prices and bookings are always current.
+- The header link for hosts, "Meridian your home", is now **List your property** (also in the account menu and the help page).
 - On phones the header drops the language button and uses a slightly smaller logo so everything fits.
 
 ## 0.6.0 — 2026-09-19
