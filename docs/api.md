@@ -79,7 +79,8 @@ Every error returns a JSON body with a message that is safe to show to users. Va
 | `checkIn`, `checkOut` | Only stays free for the whole range (no bookings or host blocks) |
 | `guests` | Stays that fit at least this many guests |
 | `minPrice`, `maxPrice` | Nightly price range |
-| `sort` | `recommended` (default), `price_asc`, `price_desc`, `rating` |
+| `sort` | `recommended` (default), `price_asc`, `price_desc`, `rating`, `newest` |
+| `management` | `managed` (instant book only) or `self` (request to book only) |
 | `featured` | `true`: only stays featured on the homepage, in featured order |
 | `limit` | Up to 100 (default 50) |
 
