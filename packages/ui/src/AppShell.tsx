@@ -3,6 +3,7 @@ import { NavLink, useLocation } from 'react-router'
 import { appLink } from '@meridian/shared/client'
 import { Logo } from './Logo'
 import { useAuth } from './auth'
+import { PageErrorBoundary } from './PageErrorBoundary'
 
 export interface NavItem {
   to: string
@@ -84,7 +85,7 @@ export function AppShell({ subtitle, nav, children }: AppShellProps) {
           </nav>
         </header>
 
-        <main key={pathname} className="flex-1 p-4 sm:p-8 max-w-7xl w-full mx-auto animate-page-in">{children}</main>
+        <main key={pathname} className="flex-1 p-4 sm:p-8 max-w-7xl w-full mx-auto animate-page-in"><PageErrorBoundary>{children}</PageErrorBoundary></main>
       </div>
     </div>
   )
