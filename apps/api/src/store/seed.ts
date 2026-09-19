@@ -255,9 +255,11 @@ export async function seed(log = console.log, force = false): Promise<boolean> {
 
   // People: a Firebase sign-in (by phone) plus a users document keyed by the same id.
   const ids = new Map<string, { id: number; uid: string; name: string; phone: string }>()
+  // Sign-ins are created in parallel (they already exist after a demo reset, which is fine).
+  await Promise.all(users.map((u) =>
+    auth.createUser({ uid: `demo-${u.key}`, phoneNumber: u.phone, displayName: u.name, disabled: !!u.suspended }).catch(() => {})))
   for (const [i, u] of users.entries()) {
     const uid = `demo-${u.key}`
-    await auth.createUser({ uid, phoneNumber: u.phone, displayName: u.name, disabled: !!u.suspended }).catch(() => {})
     const id = i + 1
     ids.set(u.key, { id, uid, name: u.name, phone: u.phone })
     w.set(col(C.users).doc(uid), {

@@ -10,11 +10,14 @@ export const demoResetAllowed = () => emulated || process.env.SEED_DEMO_DATA ===
 const WIPE = [C.properties, C.bookings, C.reviews, C.blocks, C.wishlists, C.messages, C.audit, C.counters, C.amenities]
 
 export async function resetDemo() {
+  // Everything runs in parallel to stay well inside the hosting time limit.
   // recursiveDelete also removes each listing's nights subcollection.
-  for (const name of WIPE) await firestore.recursiveDelete(col(name))
-  const demoUsers = await col(C.users).where('uid', '>=', 'demo-').where('uid', '<', 'demo.').get()
-  const w = firestore.bulkWriter()
-  demoUsers.docs.forEach((d) => w.delete(d.ref))
-  await w.close()
+  const deleteDemoUsers = async () => {
+    const snap = await col(C.users).where('uid', '>=', 'demo-').where('uid', '<', 'demo.').get()
+    const w = firestore.bulkWriter()
+    snap.docs.forEach((d) => w.delete(d.ref))
+    await w.close()
+  }
+  await Promise.all([...WIPE.map((name) => firestore.recursiveDelete(col(name))), deleteDemoUsers()])
   await seed(() => {}, true)
 }
