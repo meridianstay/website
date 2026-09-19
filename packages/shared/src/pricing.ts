@@ -35,8 +35,9 @@ export const commissionPct = (management: Management, rates: CommissionRates) =>
 /** Meridian's cut of a booking total (both in minor units, i.e. paise). */
 export const commissionMinor = (totalMinor: number, pct: number) => Math.round((totalMinor * pct) / 100)
 
-/** "₹6,500" or, when there are paise, "₹1,32,829.50" (Indian digit grouping). */
-export function formatPrice(amount: number): string {
+/** "₹6,500" or, when there are paise, "₹1,32,829.50" (Indian digit grouping). Missing amounts show as "—". */
+export function formatPrice(amount: number | null | undefined): string {
+  if (amount == null || !Number.isFinite(amount)) return '—'
   const digits = Number.isInteger(amount) ? 0 : 2
   return `${CURRENCY.symbol}${amount.toLocaleString(CURRENCY.locale, { minimumFractionDigits: digits, maximumFractionDigits: digits })}`
 }

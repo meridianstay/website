@@ -1,4 +1,4 @@
-import type { BookingDetail, BookingState, HostBooking, Management, PaymentMethod, PaymentState, PropertyType } from '@meridian/shared'
+import { commissionMinor, defaultCommission, type BookingDetail, type BookingState, type HostBooking, type Management, type PaymentMethod, type PaymentState, type PropertyType } from '@meridian/shared'
 import type { Transaction } from 'firebase-admin/firestore'
 import { C, all, col, firestore, nightsOf, nowISO } from '../store/db'
 import { datesIn, type PropertyDoc } from './properties'
@@ -35,6 +35,29 @@ export interface BookingDoc {
   createdAt: string; confirmedAt: string | null; cancelledAt: string | null; decidedAt: string | null
   declineReason: string | null; reviewed: boolean
 }
+
+/**
+ * Fills fields added in 0.6.0 for bookings stored by earlier versions (so old data never breaks a page):
+ * commission at the default rate for the property type, no refunds, confirmed when it was created.
+ */
+export function withDefaults(raw: Partial<BookingDoc> & Pick<BookingDoc, 'code' | 'totalMinor' | 'status' | 'createdAt'>): BookingDoc {
+  const b = raw as BookingDoc
+  const management = b.management ?? 'self'
+  const commissionPct = b.commissionPct ?? (management === 'managed' ? defaultCommission.managedPct : defaultCommission.selfPct)
+  const refundedMinor = b.refundedMinor ?? (b.status === 'Cancelled' ? b.totalMinor : 0)
+  const confirmedAt = b.confirmedAt !== undefined ? b.confirmedAt : b.status === 'Confirmed' || b.status === 'Cancelled' ? b.createdAt : null
+  const kept = confirmedAt && (b.status === 'Confirmed' || b.status === 'Cancelled') ? b.totalMinor - refundedMinor : b.status === 'Requested' ? b.totalMinor : 0
+  const commission = b.commissionMinor ?? commissionMinor(kept, commissionPct)
+  return {
+    ...b, management, instantBook: b.instantBook ?? management === 'managed', commissionPct, commissionMinor: commission,
+    hostPayoutMinor: b.hostPayoutMinor ?? kept - commission, refundedMinor, confirmedAt, paymentStatus: b.paymentStatus ?? 'test',
+    razorpayOrderId: b.razorpayOrderId ?? null, razorpayPaymentId: b.razorpayPaymentId ?? null, expiresAt: b.expiresAt ?? null,
+    decidedAt: b.decidedAt ?? null, declineReason: b.declineReason ?? null, serviceFeeMinor: b.serviceFeeMinor ?? 0,
+  }
+}
+
+/** Reads bookings from a query with defaults filled in. */
+const readAll = async (q: FirebaseFirestore.Query): Promise<BookingDoc[]> => (await all<BookingDoc>(q)).map(withDefaults)
 
 export const HOLDING: StoredStatus[] = ['AwaitingPayment', 'Requested']
 const ACTIVE: StoredStatus[] = ['AwaitingPayment', 'Requested', 'Confirmed']
@@ -122,12 +145,12 @@ export const bookingsRepo = {
 
   async find(code: string) {
     const snap = await ref(code).get()
-    return snap.exists ? (snap.data() as BookingDoc) : null
+    return snap.exists ? withDefaults(snap.data() as BookingDoc) : null
   },
 
   async findByOrder(orderId: string) {
     const snap = await col(C.bookings).where('razorpayOrderId', '==', orderId).limit(1).get()
-    return snap.empty ? null : (snap.docs[0].data() as BookingDoc)
+    return snap.empty ? null : withDefaults(snap.docs[0].data() as BookingDoc)
   },
 
   setFields: (code: string, patch: Partial<BookingDoc>) => ref(code).update(patch),
@@ -140,7 +163,8 @@ export const bookingsRepo = {
   async transition(code: string, from: StoredStatus[], change: (b: BookingDoc) => Partial<BookingDoc> | null) {
     return firestore.runTransaction(async (tx) => {
       const snap = await tx.get(ref(code))
-      const b = snap.data() as BookingDoc | undefined
+      const raw = snap.data() as BookingDoc | undefined
+      const b = raw && withDefaults(raw)
       if (!b || !from.includes(b.status)) return null
       const patch = change(b)
       if (!patch) return null
@@ -161,25 +185,25 @@ export const bookingsRepo = {
 
   /** Holding bookings whose time has run out. */
   async stale(now: string) {
-    const rows = await all<BookingDoc>(col(C.bookings).where('status', 'in', HOLDING))
+    const rows = await readAll(col(C.bookings).where('status', 'in', HOLDING))
     return rows.filter((b) => b.expiresAt && b.expiresAt < now)
   },
 
   async listForGuest(guestId: number, today: string) {
-    const rows = await all<BookingDoc>(col(C.bookings).where('guestId', '==', guestId))
+    const rows = await readAll(col(C.bookings).where('guestId', '==', guestId))
     // Checkouts the guest abandoned before paying aren't trips.
     return rows.filter((b) => !(['Expired', 'Cancelled'].includes(b.status) && ['created', 'failed'].includes(b.paymentStatus)))
       .sort((a, b) => b.checkIn.localeCompare(a.checkIn)).map((b) => toBooking(b, today))
   },
 
   async listForHost(hostId: number, today: string) {
-    const rows = await all<BookingDoc>(col(C.bookings).where('hostId', '==', hostId))
+    const rows = await readAll(col(C.bookings).where('hostId', '==', hostId))
     // Hosts only see bookings once the guest has paid (or requested).
     return rows.filter((b) => b.status !== 'AwaitingPayment').sort((a, b) => b.checkIn.localeCompare(a.checkIn)).map((b) => withGuest(b, today))
   },
 
   async listAll(q: string | null, status: string | null, today: string) {
-    let rows = await all<BookingDoc>(col(C.bookings))
+    let rows = await readAll(col(C.bookings))
     const s = q?.toLowerCase()
     if (s) rows = rows.filter((b) => [b.code, b.guest.name, b.guest.email, b.property.title].some((v) => v?.toLowerCase().includes(s)))
     let out = rows.sort((a, b) => b.createdAt.localeCompare(a.createdAt)).map((b) => withGuest(b, today))
@@ -188,6 +212,6 @@ export const bookingsRepo = {
   },
 
   async forProperty(propertyId: number) {
-    return all<BookingDoc>(col(C.bookings).where('propertyId', '==', propertyId))
+    return readAll(col(C.bookings).where('propertyId', '==', propertyId))
   },
 }

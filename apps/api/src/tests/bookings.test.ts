@@ -226,6 +226,30 @@ describe('booking requests (self-managed listings)', () => {
   })
 })
 
+describe('bookings saved by earlier versions', () => {
+  beforeEach(resetDatabase)
+
+  test('get commission, payout and refund values instead of breaking pages', async () => {
+    const host = await createUser('host')
+    const guest = await createUser()
+    const id = await createLiveListing(host, { price: 1000 }, 'self')
+    const { col, C } = await import('../store/db')
+    // A booking exactly as 0.5.0 stored it, without the payment and commission fields.
+    await col(C.bookings).doc('MS-OLD001').set({
+      id: 900, code: 'MS-OLD001', propertyId: id, hostId: host.me.id, guestId: guest.me.id,
+      property: { slug: 'x', title: 'Old', type: 'Cottage', location: 'Coorg, Karnataka', image: 'https://example.com/a.jpg' },
+      guest: { name: 'Old Guest', email: null, phone: null }, checkIn: day(10), checkOut: day(12), nights: 2, guests: 2, currency: 'USD',
+      pricePerNightMinor: 100000, baseMinor: 200000, extraGuestMinor: 0, serviceFeeMinor: 0, totalMinor: 200000, status: 'Confirmed',
+      paymentMethod: 'upi', paymentStatus: 'test', contactPhone: '+91 90000 00000', specialRequests: null, createdAt: new Date().toISOString(),
+      cancelledAt: null, reviewed: false,
+    })
+    const [row] = await bookingService.listForHost(host.me)
+    assert.deepEqual([row.commissionPct, row.commission, row.payout, row.refunded], [15, 300, 1700, 0])
+    assert.ok(JSON.stringify(row).indexOf('null,') === -1 || Number.isFinite(row.commission))
+    assert.equal((await statsRepo.forHost(host.me.id, today)).earnings, 1700)
+  })
+})
+
 describe('listing management', () => {
   beforeEach(resetDatabase)
 

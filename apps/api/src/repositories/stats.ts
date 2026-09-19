@@ -1,6 +1,6 @@
 import type { AdminStats, HostStats } from '@meridian/shared'
 import { C, all, col } from '../store/db'
-import { keptMinor, type BookingDoc } from './bookings'
+import { keptMinor, withDefaults, type BookingDoc } from './bookings'
 import type { PropertyDoc } from './properties'
 import type { UserDoc } from './users'
 
@@ -10,7 +10,7 @@ export const statsRepo = {
   async forHost(hostId: number, today: string): Promise<HostStats> {
     const [listings, bookings] = await Promise.all([
       all<PropertyDoc>(col(C.properties).where('hostId', '==', hostId)),
-      all<BookingDoc>(col(C.bookings).where('hostId', '==', hostId)),
+      all<BookingDoc>(col(C.bookings).where('hostId', '==', hostId)).then((r) => r.map(withDefaults)),
     ])
     const confirmed = bookings.filter((b) => b.status === 'Confirmed')
     const rated = listings.filter((p) => p.reviewCount > 0)
@@ -29,7 +29,7 @@ export const statsRepo = {
     const [properties, users, bookings, messages, reviews] = await Promise.all([
       all<PropertyDoc>(col(C.properties)),
       all<UserDoc>(col(C.users)),
-      all<BookingDoc>(col(C.bookings)),
+      all<BookingDoc>(col(C.bookings)).then((r) => r.map(withDefaults)),
       all<{ status: string }>(col(C.messages).select('status')),
       all<{ hiddenAt: string | null }>(col(C.reviews).select('hiddenAt')),
     ])

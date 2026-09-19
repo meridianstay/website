@@ -47,6 +47,7 @@ Rupee pricing, commission, two booking modes and Razorpay payments.
 - 53 automated tests (up from 32), including commission, request accept / decline / expiry, hold takeover, and payments against a fake Razorpay (signature checks, capture on accept, refunds, webhook, encryption).
 
 ### Fixes
+- **Host bookings page showed a blank page** when bookings made before this version were listed (they had no commission or refund values, which reached the page as empty numbers and crashed it). Older bookings now get commission, payout and refund values filled in, and prices that are missing show as "—" instead of breaking the page.
 - **Reset demo data** now deletes and recreates everything in parallel, so it finishes well within the hosting time limit on the live Firebase project.
 - The sign-in error "This sign-in method isn't switched on in Firebase yet" means Google or Phone isn't enabled in the Firebase console; the deployment guide now says exactly where.
 - Login pages now say when phone codes are blocked by Firebase's **SMS region policy** (India not allowed) instead of saying the method is off, and when phone sign-in needs the Blaze plan. The deployment guide covers the region policy and authorized domains.
