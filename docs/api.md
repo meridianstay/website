@@ -45,7 +45,7 @@ Every error returns a JSON body with a message that is safe to show to users. Va
 
 | Method | Path | Access | Returns |
 | --- | --- | --- | --- |
-| GET | `/api/health` | Public | `{ "ok": true }` once Firebase is connected |
+| GET | `/api/health` | Public | `{ "ok": true }` when Firestore answers; otherwise `503 { ok: false, firestore: "<Firebase's reason>" }` |
 
 ## Accounts and sign-in
 

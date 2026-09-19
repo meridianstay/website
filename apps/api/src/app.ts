@@ -1,6 +1,7 @@
 import { Hono } from 'hono'
 import { loadUser, type AppEnv } from './http/auth'
 import { AppError } from './http/errors'
+import { firestore } from './store/firebase'
 import { authRoutes } from './routes/auth'
 import { propertyRoutes } from './routes/properties'
 import { bookingRoutes } from './routes/bookings'
@@ -17,7 +18,16 @@ import { siteRoutes } from './routes/site'
 export const app = new Hono<AppEnv>().basePath('/api')
 
 app.use('*', loadUser)
-app.get('/health', (c) => c.json({ ok: true }))
+// Checks that Firestore answers, and says why not (Firebase's message; never includes keys).
+app.get('/health', async (c) => {
+  try {
+    await firestore.collection('siteSettings').limit(1).get()
+    return c.json({ ok: true })
+  } catch (err) {
+    const message = String((err as Error).message ?? err).split('\n')[0].slice(0, 300)
+    return c.json({ ok: false, firestore: message }, 503)
+  }
+})
 app.route('/', authRoutes)
 app.route('/', propertyRoutes)
 app.route('/', bookingRoutes)
