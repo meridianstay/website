@@ -1,26 +1,21 @@
 {
-  "name": "meridianstay-website",
+  "name": "meridianstay",
   "private": true,
-  "version": "0.1.0",
-  "type": "module",
+  "packageManager": "npm@10.9.7",
+  "workspaces": [
+    "apps/*",
+    "packages/*"
+  ],
   "scripts": {
-    "dev": "vite",
-    "build": "tsc --noEmit && vite build",
-    "preview": "vite preview"
-  },
-  "dependencies": {
-    "@fortawesome/fontawesome-free": "^6.4.0",
-    "react": "^19.3.0",
-    "react-dom": "^19.3.0"
+    "dev": "turbo run dev",
+    "build": "turbo run build",
+    "typecheck": "turbo run typecheck",
+    "dev:website": "npm run dev -w @meridian/website",
+    "dev:admin": "npm run dev -w @meridian/admin",
+    "dev:host": "npm run dev -w @meridian/host",
+    "dev:account": "npm run dev -w @meridian/account"
   },
   "devDependencies": {
-    "@types/react": "^19.3.0",
-    "@types/react-dom": "^19.3.0",
-    "@vitejs/plugin-react": "^6.1.1",
-    "autoprefixer": "^10.6.1",
-    "postcss": "^8.5.28",
-    "tailwindcss": "^3.4.19",
-    "typescript": "^7.0.2",
-    "vite": "^8.3.0"
+    "turbo": "^2.11.2"
   }
 }

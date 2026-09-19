@@ -1,0 +1,4 @@
+{
+  "extends": "@meridian/tsconfig/base.json",
+  "include": ["src"]
+}

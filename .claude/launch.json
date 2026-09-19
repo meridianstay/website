@@ -1,17 +1,10 @@
 {
   "version": "0.0.1",
   "configurations": [
-    {
-      "name": "web",
-      "runtimeExecutable": "npm",
-      "runtimeArgs": ["run", "dev", "--", "--port", "5173", "--strictPort"],
-      "port": 5173
-    },
-    {
-      "name": "reference",
-      "runtimeExecutable": "python3",
-      "runtimeArgs": ["-m", "http.server", "4173", "--directory", "reference"],
-      "port": 4173
-    }
+    { "name": "website", "runtimeExecutable": "npm", "runtimeArgs": ["run", "dev:website"], "port": 5173 },
+    { "name": "admin", "runtimeExecutable": "npm", "runtimeArgs": ["run", "dev:admin"], "port": 5174 },
+    { "name": "host", "runtimeExecutable": "npm", "runtimeArgs": ["run", "dev:host"], "port": 5175 },
+    { "name": "account", "runtimeExecutable": "npm", "runtimeArgs": ["run", "dev:account"], "port": 5176 },
+    { "name": "reference", "runtimeExecutable": "python3", "runtimeArgs": ["-m", "http.server", "4173", "--directory", "reference"], "port": 4173 }
   ]
 }

@@ -1,0 +1,5 @@
+{
+  "extends": "@meridian/tsconfig/base.json",
+  "compilerOptions": { "types": [] },
+  "include": ["src"]
+}
