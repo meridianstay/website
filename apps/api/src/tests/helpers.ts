@@ -1,4 +1,4 @@
-import { addDays, commissionMinor, quoteStay, todayISO, type ListingInput, type Management, type Me, type UserRole } from '@meridian/shared'
+import { addDays, commissionMinor, defaultDayUse, defaultHouseRules, quoteStay, todayISO, type ListingInput, type Management, type Me, type UserRole } from '@meridian/shared'
 import { col, nextId, nowISO, C } from '../store/db'
 import { projectId } from '../store/firebase'
 import { bookingsRepo, contentRepo, propertiesRepo, toMe, usersRepo, type UserDoc } from '../repositories'
@@ -38,7 +38,9 @@ export async function createUser(role: UserRole = 'guest'): Promise<TestUser> {
 export const listingInput = (overrides: Partial<ListingInput> = {}): ListingInput => ({
   title: 'Test Cottage', type: 'Cottage', description: 'A quiet test cottage with a garden view.', city: 'Coorg', region: 'Karnataka',
   country: 'India', price: 100, beds: 1, baths: 1, maxGuests: 2, lat: 12.4, lng: 75.7,
-  coverImage: 'https://example.com/cover.jpg', photos: [], amenities: ['Wifi'], ...overrides,
+  coverImage: 'https://example.com/cover.jpg', photos: [], amenities: ['Wifi'], areaSqft: null, gatheringCapacity: null,
+  checkInTime: '14:00', checkOutTime: '11:00', houseRules: { ...defaultHouseRules }, securityDeposit: 0, address: '12 Test Road, Coorg',
+  overnight: true, dayUse: { ...defaultDayUse }, ...overrides,
 })
 
 /** A live listing owned by `host`: self-managed (request to book) unless `management` is 'managed' (instant). */
@@ -58,6 +60,8 @@ export async function insertBooking(propertyId: number, guest: TestUser, checkIn
     pricePerNightMinor: property.pricePerNightMinor, baseMinor: q.baseAmount * 100, extraGuestMinor: 0, serviceFeeMinor: 0,
     totalMinor: q.total * 100, commissionPct: 30, commissionMinor: commissionMinor(q.total * 100, 30), hostPayoutMinor: q.total * 100 - commissionMinor(q.total * 100, 30),
     paymentMethod: 'upi', contactPhone: '+91 90000 00000', specialRequests: null, status: 'Confirmed', paymentStatus: 'test', expiresAt: null,
+    kind: 'stay', startTime: null, endTime: null, hours: null, guestBreakdown: { adults: 2, children: 0, infants: 0, pets: 0 },
+    securityDepositMinor: 0, checkInTime: '14:00', checkOutTime: '11:00',
   }, property, (await usersRepo.findByUid(guest.uid))!)
   return code
 }

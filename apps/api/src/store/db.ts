@@ -25,6 +25,9 @@ export const nowISO = () => new Date().toISOString()
 /** Nights booked or blocked, one document per date: properties/{id}/nights/{YYYY-MM-DD}. */
 export const nightsOf = (propertyId: number) => col(C.properties).doc(String(propertyId)).collection('nights')
 
+/** Day-use bookings per date: properties/{id}/days/{YYYY-MM-DD} = { slots: [{ ref, start, end, holdUntil }] }. */
+export const daysOf = (propertyId: number) => col(C.properties).doc(String(propertyId)).collection('days')
+
 /**
  * Next number in a sequence (listings, reviews, users…), so records keep short numeric ids.
  * Pass a transaction to allocate inside it.

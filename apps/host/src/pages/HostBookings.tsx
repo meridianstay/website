@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react'
 import { EmptyState, ErrorNote, PageHeader, Panel, Spinner, StatusBadge } from '@meridian/ui'
-import { formatDateRange, formatPrice, REQUEST_HOURS } from '@meridian/shared'
+import { bookingWhen, formatPrice, REQUEST_HOURS } from '@meridian/shared'
 import { hostApi, type HostBooking } from '@meridian/shared/client'
 
 export function HostBookings() {
@@ -45,7 +45,7 @@ export function HostBookings() {
                     <tr key={b.code}>
                       <td className="p-3 font-semibold text-slate-900">{b.guestName}{b.specialRequests && <p className="font-normal text-slate-500 max-w-[220px] mt-1">“{b.specialRequests}”</p>}</td>
                       <td className="p-3">{b.property.title}</td>
-                      <td className="p-3 whitespace-nowrap">{formatDateRange(b.checkIn, b.checkOut)}</td>
+                      <td className="p-3 whitespace-nowrap">{b.kind === 'dayuse' && <span className="block text-[10px] font-extrabold uppercase text-brand-yellow-600">Day out</span>}{bookingWhen(b)}</td>
                       <td className="p-3 tabular-nums">{b.guests}</td>
                       <td className="p-3 whitespace-nowrap">{b.contactPhone}</td>
                       <td className="p-3 tabular-nums">{b.status === 'Declined' || b.status === 'Expired' ? <span className="text-slate-400">Not charged</span> : formatPrice(b.total - b.refunded)}</td>
@@ -97,7 +97,7 @@ function RequestCard({ booking: b, onDone }: { booking: HostBooking; onDone: () 
         <div>
           <p className="font-bold text-sm text-slate-900">{b.guestName} <span className="font-normal text-slate-500">· {b.guests} {b.guests === 1 ? 'guest' : 'guests'}</span></p>
           <p className="text-xs text-slate-600">{b.property.title}</p>
-          <p className="text-xs font-semibold text-slate-800 mt-1">{formatDateRange(b.checkIn, b.checkOut)} · {b.nights} {b.nights === 1 ? 'night' : 'nights'}</p>
+          <p className="text-xs font-semibold text-slate-800 mt-1">{b.kind === 'dayuse' ? 'Day out · ' : ''}{bookingWhen(b)}</p>
         </div>
         <span className={`text-[10px] font-extrabold uppercase px-2.5 py-1 rounded-full whitespace-nowrap ${urgent ? 'bg-rose-100 text-rose-700' : 'bg-amber-100 text-amber-800'}`}>
           <i className="fa-solid fa-hourglass-half mr-1" aria-hidden="true"></i>{timeLeft(b.expiresAt)}

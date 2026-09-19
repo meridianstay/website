@@ -5,7 +5,7 @@ import { bookingService } from '../services/bookings'
 import { reviewService } from '../services/reviews'
 import { PROPERTY_TYPES } from '../services/listings'
 import { body, currentUser, requireUser, type AppEnv } from '../http/auth'
-import { notFound } from '../http/errors'
+import { AppError, notFound } from '../http/errors'
 import { str } from '../http/validate'
 
 export const propertyRoutes = new Hono<AppEnv>()
@@ -47,15 +47,30 @@ propertyRoutes.get('/properties/:slug', async (c) => {
     usersRepo.findById(p.hostId),
     propertiesRepo.amenitiesOf(p),
     reviewsRepo.visibleForProperty(p.id),
-    propertiesRepo.unavailableRanges(p.id, todayISO()),
+    propertiesRepo.unavailableRanges(p.id, todayISO(), p.checkInTime),
     user ? bookingService.reviewableCode(p.id, user.id) : null,
   ])
   return c.json({
     property: {
       ...toPropertySummary(p), gallery: p.photos, amenities, reviews, bookedRanges, reviewableBookingCode, status: p.status,
+      areaSqft: p.areaSqft, gatheringCapacity: p.gatheringCapacity, checkInTime: p.checkInTime, checkOutTime: p.checkOutTime,
+      houseRules: p.houseRules, securityDeposit: p.securityDepositMinor / 100,
+      dayUseSettings: p.dayUse.enabled ? {
+        enabled: true, blockHours: p.dayUse.blockHours, price: p.dayUse.priceMinor / 100, extraHourPrice: p.dayUse.extraHourMinor / 100,
+        opensAt: p.dayUse.opensAt, closesAt: p.dayUse.closesAt,
+      } : null,
       host: { name: host?.name ?? 'Host', joinedAt: host?.createdAt ?? p.createdAt, avatar: host?.avatarUrl ?? null },
     },
   })
+})
+
+/** Busy hours on a date, for the day-use time picker. */
+propertyRoutes.get('/properties/:slug/day', async (c) => {
+  const date = c.req.query('date') ?? ''
+  if (!isISODate(date)) throw new AppError(400, 'Choose a date.')
+  const p = await propertiesRepo.findBySlug(c.req.param('slug'))
+  if (!p || p.status !== 'Approved' || !p.dayUse.enabled) throw notFound('stay')
+  return c.json({ date, opensAt: p.dayUse.opensAt, closesAt: p.dayUse.closesAt, busy: await propertiesRepo.dayBusy(p, date) })
 })
 
 propertyRoutes.post('/properties/:slug/reviews', requireUser, async (c) => {

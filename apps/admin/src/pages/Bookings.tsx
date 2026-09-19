@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useState } from 'react'
 import { ErrorNote, PageHeader, Panel, Spinner, StatusBadge } from '@meridian/ui'
-import { formatDateRange, formatPrice } from '@meridian/shared'
+import { bookingWhen, formatPrice } from '@meridian/shared'
 import { adminApi, appLink, type AdminBooking } from '@meridian/shared/client'
 import { Chip, Toolbar, tableClass, th, theadClass } from '../components/Toolbar'
 
@@ -61,7 +61,7 @@ export function Bookings() {
                       <a href={appLink('website', `/stays/${b.property.slug}`)} target="_blank" rel="noreferrer" className="hover:underline">{b.property.title}</a>
                       <br /><span className="text-slate-400">{b.instantBook ? 'Managed · instant' : 'Self-managed · request'}</span>
                     </td>
-                    <td className="p-3 whitespace-nowrap">{formatDateRange(b.checkIn, b.checkOut)}<br /><span className="text-slate-400">{b.guests} guests</span></td>
+                    <td className="p-3 whitespace-nowrap">{bookingWhen(b)}<br /><span className="text-slate-400">{b.kind === 'dayuse' ? 'Day out · ' : ''}{b.guests} guests</span></td>
                     <td className="p-3 font-bold text-slate-900 tabular-nums">{formatPrice(b.total)}</td>
                     <td className="p-3 whitespace-nowrap">
                       {paymentLabel[b.paymentStatus] ?? b.paymentStatus}

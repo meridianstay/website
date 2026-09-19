@@ -66,6 +66,7 @@ Every error returns a JSON body with a message that is safe to show to users. Va
 | Method | Path | Access | Returns |
 | --- | --- | --- | --- |
 | GET | `/api/properties` | Public | `{ properties: PropertySummary[] }`, live listings only |
+| GET | `/api/properties/:slug/day` | Public | `?date=YYYY-MM-DD` → `{ date, opensAt, closesAt, busy: [{ start, end, reason }] }` for day use |
 | GET | `/api/properties/:slug` | Public | `{ property: PropertyDetail }`. Hosts and admins can also preview their listings that aren’t live yet. |
 | GET | `/api/locations` | Public | `{ locations: ["Coorg, Karnataka", …] }` for search suggestions |
 | GET | `/api/amenities` | Public | `{ amenities: [{ name, icon }] }` |
@@ -104,7 +105,7 @@ Every error returns a JSON body with a message that is safe to show to users. Va
 
 | Method | Path | Access | Body | Returns |
 | --- | --- | --- | --- | --- |
-| POST | `/api/bookings` | User | `{ propertyId, checkIn, checkOut, guests, paymentMethod: "upi" \| "card" \| "netbanking", contactPhone, specialRequests? }` | `201 { booking, payment }`. Price is calculated by the server. `payment` is `null` in test mode, otherwise the details for Razorpay Checkout (below). `409` if the dates were just booked, requested or blocked. |
+| POST | `/api/bookings` | User | `{ propertyId, checkIn, checkOut, guests, paymentMethod: "upi" \| "card" \| "netbanking", contactPhone, specialRequests?, adults?, children?, infants?, pets? }`. For a day out: `kind: "dayuse"`, `checkIn` (the date), `startTime: "HH:MM"`, `hours` (no `checkOut`). | `201 { booking, payment }`. Price is calculated by the server. `payment` is `null` in test mode, otherwise the details for Razorpay Checkout (below). `409` if the dates were just booked, requested or blocked. |
 | GET | `/api/bookings` | User | — | `{ bookings }`, your bookings, newest check-in first (abandoned checkouts are left out) |
 | GET | `/api/bookings/:code` | User | — | `{ booking }`, if you are the guest, the host or an admin |
 | GET | `/api/bookings/:code/payment` | User | — | `{ payment }` again for your unfinished checkout, while the dates are still held |

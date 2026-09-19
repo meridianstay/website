@@ -1,10 +1,10 @@
 import { useEffect, useState } from 'react'
 import { Link, useNavigate, useParams, useSearchParams } from 'react-router'
-import { formatDateRange, formatPrice, quoteStay, REQUEST_HOURS, type PaymentMethod, type PropertyDetail } from '@meridian/shared'
+import { formatDate, formatDateRange, formatPrice, formatTime, HOUSE_RULES, minutesOf, quoteDayUse, quoteStay, REQUEST_HOURS, type PaymentMethod, type PropertyDetail } from '@meridian/shared'
 import { ApiError, api } from '@meridian/shared/client'
 import { ErrorNote, Spinner, useAuth } from '@meridian/ui'
 import { PriceBreakdown } from '../components/PriceBreakdown'
-import { readSearch } from '../lib/search'
+import { bookingQuery, partyLabel, readBooking } from '../lib/booking'
 import { useSite } from '../lib/site'
 import { CheckoutDismissed, payWithRazorpay } from '../lib/razorpay'
 import { useDocumentTitle } from '../lib/useDocumentTitle'
@@ -20,7 +20,10 @@ export function Checkout() {
   const [params] = useSearchParams()
   const { user } = useAuth()
   const navigate = useNavigate()
-  const { checkIn, checkOut, guests } = readSearch(params)
+  const choice = readBooking(params)
+  const { checkIn, checkOut, party } = choice
+  const guests = party.adults + party.children
+  const isDay = choice.kind === 'dayuse'
   const [property, setProperty] = useState<PropertyDetail | null>(null)
   const [loadError, setLoadError] = useState<string | null>(null)
   const [form, setForm] = useState({ phone: user?.phone ?? '', requests: '', method: 'upi' as PaymentMethod, agreed: false })
@@ -38,21 +41,31 @@ export function Checkout() {
   if (!property) return <Spinner />
 
   const backToStay = `/stays/${property.slug}`
-  const guestsOk = guests >= 1 && guests <= property.maxGuests
-  const datesTaken = checkIn && checkOut && property.bookedRanges.some((r) => r.checkIn < checkOut && r.checkOut > checkIn)
-  if (!checkIn || !checkOut || !guestsOk || datesTaken) {
+  const day = property.dayUseSettings
+  const max = isDay ? property.gatheringCapacity ?? property.maxGuests : property.maxGuests
+  const guestsOk = guests >= 1 && guests <= max && (party.pets === 0 || property.houseRules.pets)
+  const datesTaken = !isDay && checkIn && checkOut && property.bookedRanges.some((r) => r.checkIn < checkOut && r.checkOut > checkIn)
+  const choiceOk = isDay ? !!(day && checkIn && choice.startTime && choice.hours >= day.blockHours) : !!(property.overnight && checkIn && checkOut)
+  if (!choiceOk || !guestsOk || datesTaken) {
     return (
       <div className="max-w-xl mx-auto px-5 py-16 text-center space-y-4">
         <h1 className="text-2xl font-extrabold text-slate-900">{datesTaken ? 'Those dates were just booked' : 'Choose your dates first'}</h1>
         <p className="text-sm text-slate-500">
-          {datesTaken ? 'Someone booked some of these nights. Pick new dates on the stay page.' : `Pick check-in and check-out dates and up to ${property.maxGuests} guests.`}
+          {datesTaken ? 'Someone booked some of these nights. Pick new dates on the stay page.' : isDay ? `Pick a date, start time and up to ${max} guests.` : `Pick check-in and check-out dates and up to ${max} guests.`}
         </p>
         <Link to={backToStay} className="inline-block bg-slate-900 text-white text-xs font-bold py-3 px-6 rounded-2xl">Back to {property.title}</Link>
       </div>
     )
   }
 
-  const quote = quoteStay(property.price, checkIn, checkOut, guests)
+  const quote = isDay
+    ? (() => {
+        const q = quoteDayUse(day!, choice.hours)
+        return { nights: 0, pricePerNight: q.basePrice, baseAmount: q.basePrice, extraGuests: 0, extraGuestAmount: q.extraAmount, serviceFee: 0, total: q.total, kind: 'dayuse' as const, hours: choice.hours }
+      })()
+    : quoteStay(property.price, checkIn, checkOut, guests)
+  const endTime = isDay ? `${String(Math.floor((minutesOf(choice.startTime) + choice.hours * 60) / 60)).padStart(2, '0')}:${String((minutesOf(choice.startTime) + choice.hours * 60) % 60).padStart(2, '0')}` : ''
+  const changeLink = `${backToStay}?${bookingQuery(choice)}`
   const instant = property.management === 'managed'
 
   const submit = async (e: React.FormEvent) => {
@@ -68,7 +81,8 @@ export function Checkout() {
     let code: string | null = null
     try {
       const { booking, payment } = await api.createBooking({
-        propertyId: property.id, checkIn, checkOut, guests, paymentMethod: form.method, contactPhone: form.phone.trim(), specialRequests: form.requests.trim(),
+        propertyId: property.id, checkIn, checkOut: isDay ? '' : checkOut, guests, paymentMethod: form.method, contactPhone: form.phone.trim(), specialRequests: form.requests.trim(),
+        kind: choice.kind, startTime: isDay ? choice.startTime : undefined, hours: isDay ? choice.hours : undefined, ...party,
       })
       code = booking.code
       if (payment) {
@@ -95,7 +109,7 @@ export function Checkout() {
 
   return (
     <div className="max-w-[1180px] mx-auto px-5 py-10">
-      <Link to={`${backToStay}?checkIn=${checkIn}&checkOut=${checkOut}&guests=${guests}`} className="text-xs font-bold text-slate-600 hover:text-slate-900 inline-flex items-center space-x-2 mb-6">
+      <Link to={changeLink} className="text-xs font-bold text-slate-600 hover:text-slate-900 inline-flex items-center space-x-2 mb-6">
         <i className="fa-solid fa-arrow-left" aria-hidden="true"></i><span>Back to stay</span>
       </Link>
       <h1 className="text-3xl font-extrabold text-slate-900 mb-8">{instant ? 'Confirm and pay' : 'Request to book'}</h1>
@@ -105,10 +119,30 @@ export function Checkout() {
           <section className="bg-white rounded-3xl p-6 border border-slate-200 space-y-4">
             <h2 className="text-lg font-bold text-slate-900">Your trip</h2>
             <dl className="grid grid-cols-2 gap-4 text-sm">
-              <div><dt className="text-xs font-bold uppercase text-slate-400">Dates</dt><dd className="font-semibold text-slate-900">{formatDateRange(checkIn, checkOut)}</dd></div>
-              <div><dt className="text-xs font-bold uppercase text-slate-400">Guests</dt><dd className="font-semibold text-slate-900">{guests} {guests === 1 ? 'guest' : 'guests'}</dd></div>
+              {isDay ? (
+                <div><dt className="text-xs font-bold uppercase text-slate-400">Day out</dt><dd className="font-semibold text-slate-900">{formatDate(checkIn, { weekday: 'short', month: 'short', day: 'numeric' })} · {formatTime(choice.startTime)}–{formatTime(endTime)} ({choice.hours} h)</dd></div>
+              ) : (
+                <div><dt className="text-xs font-bold uppercase text-slate-400">Dates</dt><dd className="font-semibold text-slate-900">{formatDateRange(checkIn, checkOut)}</dd><dd className="text-xs text-slate-500">Check-in {formatTime(property.checkInTime)} · check-out {formatTime(property.checkOutTime)}</dd></div>
+              )}
+              <div><dt className="text-xs font-bold uppercase text-slate-400">Guests</dt><dd className="font-semibold text-slate-900">{partyLabel(party)}</dd></div>
             </dl>
-            <Link to={`${backToStay}?checkIn=${checkIn}&checkOut=${checkOut}&guests=${guests}`} className="text-xs font-bold text-brand-700 underline">Change dates or guests</Link>
+            <Link to={changeLink} className="text-xs font-bold text-brand-700 underline">{isDay ? 'Change date, time or guests' : 'Change dates or guests'}</Link>
+          </section>
+
+          <section className="bg-white rounded-3xl p-6 border border-slate-200 space-y-3">
+            <h2 className="text-lg font-bold text-slate-900">House rules</h2>
+            <ul className="grid grid-cols-1 sm:grid-cols-2 gap-2 text-sm">
+              {HOUSE_RULES.map((r) => (
+                <li key={r.key} className="flex items-center gap-2 text-slate-700">
+                  <i className={`fa-solid ${property.houseRules[r.key] ? 'fa-circle-check text-brand-600' : 'fa-circle-xmark text-rose-500'}`} aria-hidden="true"></i>
+                  {property.houseRules[r.key] ? r.yes : r.no}
+                </li>
+              ))}
+            </ul>
+            {property.houseRules.notes && <p className="text-sm text-slate-600 bg-slate-50 rounded-xl p-3 whitespace-pre-line">{property.houseRules.notes}</p>}
+            {property.securityDeposit > 0 && (
+              <p className="text-sm text-slate-700 bg-amber-50 rounded-xl p-3"><i className="fa-solid fa-shield-halved text-amber-600 mr-2" aria-hidden="true"></i>A refundable security deposit of <span className="font-bold">{formatPrice(property.securityDeposit)}</span> is paid to the host at check-in and returned at check-out.</p>
+            )}
           </section>
 
           <section className="bg-white rounded-3xl p-6 border border-slate-200 space-y-4">
@@ -156,7 +190,7 @@ export function Checkout() {
           <label className="flex items-start space-x-3 text-sm text-slate-600">
             <input type="checkbox" checked={form.agreed} onChange={(e) => setForm({ ...form, agreed: e.target.checked })} className="mt-1 accent-brand-600" aria-invalid={!!fieldErrors.agreed} />
             <span>
-              I agree to the <Link to="/terms" className="underline font-semibold">terms</Link>, the <Link to="/cancellation-policy" className="underline font-semibold">cancellation policy</Link> and the host’s house rules.
+              I agree to the <Link to="/terms" className="underline font-semibold">terms</Link>, the <Link to="/cancellation-policy" className="underline font-semibold">cancellation policy</Link> and the house rules above.
               {fieldErrors.agreed && <span className="block text-xs text-rose-600 font-semibold mt-1">{fieldErrors.agreed}</span>}
             </span>
           </label>

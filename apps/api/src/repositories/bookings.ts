@@ -1,6 +1,7 @@
-import { commissionMinor, defaultCommission, type BookingDetail, type BookingState, type HostBooking, type Management, type PaymentMethod, type PaymentState, type PropertyType } from '@meridian/shared'
+import { addDays, commissionMinor, defaultCommission, type BookingDetail, type GuestBreakdown, type BookingState, type HostBooking, type Management, type PaymentMethod, type PaymentState, type PropertyType } from '@meridian/shared'
 import type { Transaction } from 'firebase-admin/firestore'
-import { C, all, col, firestore, nightsOf, nowISO } from '../store/db'
+import { C, all, col, daysOf, firestore, nightsOf, nowISO } from '../store/db'
+import { dayUseConflict, isLive, stayClashesWithDayUse, type DaySlot, type NightLock } from './schedule'
 import { datesIn, type PropertyDoc } from './properties'
 import type { UserDoc } from './users'
 
@@ -34,6 +35,11 @@ export interface BookingDoc {
   contactPhone: string; specialRequests: string | null
   createdAt: string; confirmedAt: string | null; cancelledAt: string | null; decidedAt: string | null
   declineReason: string | null; reviewed: boolean
+  /** stay: nights checkIn → checkOut. dayuse: one day (checkIn), startTime → endTime ("HH:MM"). */
+  kind: 'stay' | 'dayuse'; startTime: string | null; endTime: string | null; hours: number | null
+  guestBreakdown: GuestBreakdown; securityDepositMinor: number; checkInTime: string; checkOutTime: string
+  /** The property's exact address when booked; shown only once the booking is confirmed. */
+  address: string
 }
 
 /**
@@ -53,6 +59,9 @@ export function withDefaults(raw: Partial<BookingDoc> & Pick<BookingDoc, 'code' 
     hostPayoutMinor: b.hostPayoutMinor ?? kept - commission, refundedMinor, confirmedAt, paymentStatus: b.paymentStatus ?? 'test',
     razorpayOrderId: b.razorpayOrderId ?? null, razorpayPaymentId: b.razorpayPaymentId ?? null, expiresAt: b.expiresAt ?? null,
     decidedAt: b.decidedAt ?? null, declineReason: b.declineReason ?? null, serviceFeeMinor: b.serviceFeeMinor ?? 0,
+    kind: b.kind ?? 'stay', startTime: b.startTime ?? null, endTime: b.endTime ?? null, hours: b.hours ?? null,
+    guestBreakdown: b.guestBreakdown ?? { adults: b.guests, children: 0, infants: 0, pets: 0 }, securityDepositMinor: b.securityDepositMinor ?? 0,
+    checkInTime: b.checkInTime ?? '14:00', checkOutTime: b.checkOutTime ?? '11:00', address: b.address ?? '',
   }
 }
 
@@ -62,6 +71,7 @@ const readAll = async (q: FirebaseFirestore.Query): Promise<BookingDoc[]> => (aw
 export const HOLDING: StoredStatus[] = ['AwaitingPayment', 'Requested']
 const ACTIVE: StoredStatus[] = ['AwaitingPayment', 'Requested', 'Confirmed']
 
+/** The dates or hours are taken. `message` says why when it's useful to show. */
 export class NightsTakenError extends Error {}
 
 /** The guest's money that stays with the platform and host (total minus refunds) for a booking that was confirmed. */
@@ -74,7 +84,10 @@ export function toBooking(b: BookingDoc, today: string): BookingDetail {
     pricePerNight: b.pricePerNightMinor / 100, baseAmount: b.baseMinor / 100, extraGuestAmount: b.extraGuestMinor / 100,
     serviceFee: b.serviceFeeMinor / 100, total: b.totalMinor / 100, status, paymentMethod: b.paymentMethod,
     paymentStatus: b.paymentStatus, refunded: b.refundedMinor / 100, expiresAt: HOLDING.includes(b.status) ? b.expiresAt : null,
-    instantBook: b.instantBook, declineReason: b.declineReason ?? null, contactPhone: b.contactPhone, specialRequests: b.specialRequests, createdAt: b.createdAt, reviewed: b.reviewed,
+    instantBook: b.instantBook, kind: b.kind, startTime: b.startTime, endTime: b.endTime, hours: b.hours, guestBreakdown: b.guestBreakdown,
+    securityDeposit: b.securityDepositMinor / 100, checkInTime: b.checkInTime, checkOutTime: b.checkOutTime,
+    address: (b.status === 'Confirmed' && b.address) || null,
+    declineReason: b.declineReason ?? null, contactPhone: b.contactPhone, specialRequests: b.specialRequests, createdAt: b.createdAt, reviewed: b.reviewed,
   }
 }
 
@@ -94,7 +107,8 @@ const ref = (code: string) => col(C.bookings).doc(code)
 export type NewBooking = Pick<BookingDoc,
   'code' | 'propertyId' | 'guestId' | 'checkIn' | 'checkOut' | 'nights' | 'guests' | 'currency' | 'pricePerNightMinor' | 'baseMinor' |
   'extraGuestMinor' | 'serviceFeeMinor' | 'totalMinor' | 'commissionPct' | 'commissionMinor' | 'hostPayoutMinor' | 'paymentMethod' |
-  'contactPhone' | 'specialRequests' | 'status' | 'paymentStatus' | 'expiresAt'>
+  'contactPhone' | 'specialRequests' | 'status' | 'paymentStatus' | 'expiresAt' | 'kind' | 'startTime' | 'endTime' | 'hours' |
+  'guestBreakdown' | 'securityDepositMinor' | 'checkInTime' | 'checkOutTime'>
 
 /** Frees a booking's nights, but only those it still owns (an expired hold may have been taken over). */
 async function releaseNights(tx: Transaction, b: BookingDoc) {
@@ -109,37 +123,70 @@ export const bookingsRepo = {
    * and that booking is marked Expired. Throws NightsTakenError if any night is booked, blocked or validly held.
    */
   async create(input: NewBooking, property: PropertyDoc, guest: UserDoc) {
-    const nights = datesIn(input.checkIn, input.checkOut)
     const now = nowISO()
-    const stale: string[] = []
     await firestore.runTransaction(async (tx) => {
-      stale.length = 0
-      const nightRefs = nights.map((d) => nightsOf(property.id).doc(d))
-      const [counter, ...existing] = await tx.getAll(col(C.counters).doc('bookings'), ...nightRefs)
-      for (const n of existing) {
-        if (!n.exists) continue
-        const night = n.data() as { kind: string; ref: string; holdUntil?: string | null }
-        if (night.kind === 'booking' && night.holdUntil && night.holdUntil < now) stale.push(night.ref)
-        else throw new NightsTakenError()
+      // ── Reads (Firestore needs every read before the first write) ──
+      const counterRef = col(C.counters).doc('bookings')
+      let staleRefs: string[] = []
+      let writeLocks: () => void
+      if (input.kind === 'dayuse') {
+        const date = input.checkIn
+        const [counter, nightSnap, beforeSnap, daySnap] = await tx.getAll(
+          counterRef, nightsOf(property.id).doc(date), nightsOf(property.id).doc(addDays(date, -1)), daysOf(property.id).doc(date))
+        const slots = ((daySnap.data()?.slots ?? []) as DaySlot[])
+        const conflict = dayUseConflict({
+          start: input.startTime!, end: input.endTime!, slots, now, checkInTime: property.checkInTime, checkOutTime: property.checkOutTime,
+          night: (nightSnap.data() as NightLock | undefined) ?? null, nightBefore: (beforeSnap.data() as NightLock | undefined) ?? null,
+        })
+        if (conflict) throw new NightsTakenError(conflict)
+        staleRefs = slots.filter((sl) => !isLive(sl.holdUntil, now)).map((sl) => sl.ref)
+        const kept = slots.filter((sl) => isLive(sl.holdUntil, now))
+        writeLocks = () => tx.set(daySnap.ref, {
+          slots: [...kept, { ref: input.code, start: input.startTime!, end: input.endTime!, holdUntil: HOLDING.includes(input.status) ? input.expiresAt : null }],
+        })
+        await finish(counter)
+      } else {
+        const nightRefs = datesIn(input.checkIn, input.checkOut).map((d) => nightsOf(property.id).doc(d))
+        const dayDates = [...datesIn(input.checkIn, input.checkOut), input.checkOut]
+        const snaps = await tx.getAll(counterRef, ...nightRefs, ...dayDates.map((d) => daysOf(property.id).doc(d)))
+        const [counter, ...rest] = snaps
+        const existing = rest.slice(0, nightRefs.length)
+        const daySnaps = rest.slice(nightRefs.length)
+        for (const n of existing) {
+          if (!n.exists) continue
+          const night = n.data() as NightLock
+          if (night.kind === 'booking' && night.holdUntil && night.holdUntil < now) staleRefs.push(night.ref)
+          else throw new NightsTakenError()
+        }
+        const days = new Map(dayDates.map((d, i) => [d, ((daySnaps[i].data()?.slots ?? []) as DaySlot[])]))
+        if (stayClashesWithDayUse({ checkIn: input.checkIn, checkOut: input.checkOut, days, checkInTime: property.checkInTime, checkOutTime: property.checkOutTime, now })) {
+          throw new NightsTakenError('A day-use booking overlaps these dates.')
+        }
+        const holdUntil = HOLDING.includes(input.status) ? input.expiresAt : null
+        writeLocks = () => { for (const n of nightRefs) tx.set(n, { kind: 'booking', ref: input.code, holdUntil }) }
+        await finish(counter)
       }
-      const staleDocs = stale.length ? await tx.getAll(...[...new Set(stale)].map(ref)) : []
-      const id = ((counter.data()?.value as number | undefined) ?? 0) + 1
-      tx.set(col(C.counters).doc('bookings'), { value: id })
-      for (const s of staleDocs) {
-        const b = s.data() as BookingDoc | undefined
-        if (b && HOLDING.includes(b.status)) tx.update(s.ref, { status: 'Expired', decidedAt: now })
+
+      async function finish(counter: FirebaseFirestore.DocumentSnapshot) {
+        const staleDocs = staleRefs.length ? await tx.getAll(...[...new Set(staleRefs)].map(ref)) : []
+        // ── Writes ──
+        const id = ((counter.data()?.value as number | undefined) ?? 0) + 1
+        tx.set(counterRef, { value: id })
+        for (const sd of staleDocs) {
+          const b = sd.data() as BookingDoc | undefined
+          if (b && HOLDING.includes(b.status)) tx.update(sd.ref, { status: 'Expired', decidedAt: now })
+        }
+        const doc: BookingDoc = {
+          ...input, id, hostId: property.hostId, management: property.management ?? 'self', instantBook: (property.management ?? 'self') === 'managed',
+          property: { slug: property.slug, title: property.title, type: property.type, location: `${property.city}, ${property.region}`, image: property.coverImageUrl },
+          guest: { name: guest.name, email: guest.email, phone: guest.phone },
+          razorpayOrderId: null, razorpayPaymentId: null, refundedMinor: 0, address: property.address ?? '',
+          createdAt: now, confirmedAt: input.status === 'Confirmed' ? now : null, cancelledAt: null, decidedAt: null, declineReason: null, reviewed: false,
+        }
+        tx.create(ref(input.code), doc)
+        writeLocks()
+        if (!guest.phone) tx.update(col(C.users).doc(guest.uid), { phone: input.contactPhone })
       }
-      const doc: BookingDoc = {
-        ...input, id, hostId: property.hostId, management: property.management ?? 'self', instantBook: (property.management ?? 'self') === 'managed',
-        property: { slug: property.slug, title: property.title, type: property.type, location: `${property.city}, ${property.region}`, image: property.coverImageUrl },
-        guest: { name: guest.name, email: guest.email, phone: guest.phone },
-        razorpayOrderId: null, razorpayPaymentId: null, refundedMinor: 0,
-        createdAt: now, confirmedAt: input.status === 'Confirmed' ? now : null, cancelledAt: null, decidedAt: null, declineReason: null, reviewed: false,
-      }
-      tx.create(ref(input.code), doc)
-      const holdUntil = HOLDING.includes(input.status) ? input.expiresAt : null
-      for (const n of nightRefs) tx.set(n, { kind: 'booking', ref: input.code, holdUntil })
-      if (!guest.phone) tx.update(col(C.users).doc(guest.uid), { phone: input.contactPhone })
     })
   },
 
@@ -169,13 +216,19 @@ export const bookingsRepo = {
       const patch = change(b)
       if (!patch) return null
       const next = { ...b, ...patch }
-      const nightRefs = datesIn(b.checkIn, b.checkOut).map((d) => nightsOf(b.propertyId).doc(d))
-      if (!ACTIVE.includes(next.status)) {
+      const active = ACTIVE.includes(next.status)
+      const holdUntil = HOLDING.includes(next.status) ? next.expiresAt : null
+      if (b.kind === 'dayuse') {
+        const dayRef = daysOf(b.propertyId).doc(b.checkIn)
+        const slots = (((await tx.get(dayRef)).data()?.slots ?? []) as DaySlot[])
+        tx.update(ref(code), patch)
+        tx.set(dayRef, { slots: active ? slots.map((sl) => (sl.ref === code ? { ...sl, holdUntil } : sl)) : slots.filter((sl) => sl.ref !== code) })
+      } else if (!active) {
         const release = await releaseNights(tx, b)
         tx.update(ref(code), patch)
         release()
       } else {
-        const holdUntil = HOLDING.includes(next.status) ? next.expiresAt : null
+        const nightRefs = datesIn(b.checkIn, b.checkOut).map((d) => nightsOf(b.propertyId).doc(d))
         tx.update(ref(code), patch)
         for (const n of nightRefs) tx.set(n, { kind: 'booking', ref: code, holdUntil })
       }

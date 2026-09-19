@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react'
 import { Link, useParams } from 'react-router'
 import { ErrorNote, PageHeader, Panel, Spinner } from '@meridian/ui'
-import { formatDateRange, todayISO } from '@meridian/shared'
+import { formatTime, formatDate, formatDateRange, todayISO } from '@meridian/shared'
 import { ApiError, hostApi, type HostCalendar, type HostListing } from '@meridian/shared/client'
 
 const inputClass = 'w-full bg-slate-50 border border-slate-200 rounded-2xl p-3 text-sm focus:outline-none focus:border-brand-500'
@@ -95,7 +95,7 @@ export function ListingCalendar() {
             <ul className="divide-y divide-slate-100">
               {calendar.bookings.map((b) => (
                 <li key={b.code} className="py-3 flex items-center justify-between text-sm">
-                  <span className="font-semibold text-slate-900">{formatDateRange(b.checkIn, b.checkOut)}</span>
+                  <span className="font-semibold text-slate-900">{b.startTime && b.endTime ? `${formatDate(b.checkIn, { weekday: 'short', day: 'numeric', month: 'short' })} · Day out ${formatTime(b.startTime)}–${formatTime(b.endTime)}` : formatDateRange(b.checkIn, b.checkOut)}</span>
                   <span className="text-slate-500">
                     {b.requested && <span className="text-[10px] font-extrabold uppercase bg-amber-100 text-amber-800 px-2 py-0.5 rounded-full mr-2">Request</span>}
                     {b.guestName} · <span className="font-mono text-xs">{b.code}</span>

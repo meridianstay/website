@@ -14,6 +14,9 @@ bookingRoutes.post('/bookings', async (c) => {
   const result = await bookingService.create(currentUser(c), currentUid(c), {
     propertyId: Number(b.propertyId), checkIn: str(b.checkIn), checkOut: str(b.checkOut), guests: Number(b.guests),
     paymentMethod: str(b.paymentMethod), contactPhone: str(b.contactPhone), specialRequests: str(b.specialRequests),
+    kind: str(b.kind) || 'stay', startTime: str(b.startTime) || undefined, hours: b.hours === undefined ? undefined : Number(b.hours),
+    adults: b.adults === undefined ? undefined : Number(b.adults), children: b.children === undefined ? undefined : Number(b.children),
+    infants: b.infants === undefined ? undefined : Number(b.infants), pets: b.pets === undefined ? undefined : Number(b.pets),
   })
   return c.json(result, 201)
 })

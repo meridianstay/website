@@ -62,8 +62,20 @@ export function PropertyCard({ property, linkSearch = '', onHover, index = 0 }: 
         </div>
         <div className="mt-6 flex items-center justify-between">
           <div>
-            <span className="text-xl font-extrabold text-slate-900">{formatPrice(property.price)}</span>
-            <span className="text-xs text-slate-500"> / night</span>
+            {property.overnight ? (
+              <>
+                <span className="text-xl font-extrabold text-slate-900">{formatPrice(property.price)}</span>
+                <span className="text-xs text-slate-500"> / night</span>
+              </>
+            ) : property.dayUse && (
+              <>
+                <span className="text-xl font-extrabold text-slate-900">{formatPrice(property.dayUse.price)}</span>
+                <span className="text-xs text-slate-500"> for {property.dayUse.blockHours}h</span>
+              </>
+            )}
+            {property.overnight && property.dayUse && (
+              <span className="block text-[11px] font-semibold text-brand-yellow-600"><i className="fa-solid fa-sun mr-1" aria-hidden="true"></i>Day out {formatPrice(property.dayUse.price)} for {property.dayUse.blockHours}h</span>
+            )}
           </div>
           <span aria-hidden="true" className="bg-brand-50 group-hover:bg-brand-100 text-brand-700 text-xs font-bold py-2.5 px-4 rounded-xl transition">
             View Details

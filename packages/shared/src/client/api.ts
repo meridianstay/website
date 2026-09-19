@@ -43,6 +43,9 @@ export const api = {
   locations: () => request<{ locations: string[] }>('/locations'),
   searchProperties: (query: SearchQuery) => request<{ properties: PropertySummary[] }>(`/properties${qs(query)}`),
   property: (slug: string) => request<{ property: PropertyDetail }>(`/properties/${encodeURIComponent(slug)}`),
+  /** Busy hours on a date, for booking day use. */
+  propertyDay: (slug: string, date: string) =>
+    request<{ date: string; opensAt: string; closesAt: string; busy: { start: string; end: string; reason: string }[] }>(`/properties/${encodeURIComponent(slug)}/day${qs({ date })}`),
   addReview: (slug: string, data: { bookingCode: string; rating: number; comment: string }) =>
     request<void>(`/properties/${encodeURIComponent(slug)}/reviews`, { method: 'POST', json: data }),
 
@@ -54,6 +57,13 @@ export const api = {
     paymentMethod: PaymentMethod
     contactPhone: string
     specialRequests: string
+    kind?: 'stay' | 'dayuse'
+    startTime?: string
+    hours?: number
+    adults?: number
+    children?: number
+    infants?: number
+    pets?: number
   }) => request<{ booking: BookingDetail; payment: PaymentRequest | null }>('/bookings', { method: 'POST', json: data }),
   /** Razorpay Checkout details again, for a checkout that wasn't finished. */
   bookingPayment: (code: string) => request<{ payment: PaymentRequest }>(`/bookings/${encodeURIComponent(code)}/payment`),

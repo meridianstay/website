@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react'
 import { Link, useLocation, useParams } from 'react-router'
-import { formatDateRange, formatPrice, REQUEST_HOURS, type BookingDetail } from '@meridian/shared'
+import { bookingWhen, formatTime, formatPrice, REQUEST_HOURS, type BookingDetail } from '@meridian/shared'
 import { ApiError, api, appLink } from '@meridian/shared/client'
 import { ErrorNote, Spinner, useAuth } from '@meridian/ui'
 import { PriceBreakdown } from '../components/PriceBreakdown'
@@ -104,11 +104,27 @@ export function BookingConfirmed() {
             <div>
               <Link to={`/stays/${booking.property.slug}`} className="font-bold text-slate-900 hover:underline">{booking.property.title}</Link>
               <p className="text-xs text-slate-500">{booking.property.location}</p>
-              <p className="text-sm font-semibold text-slate-800 mt-1">{formatDateRange(booking.checkIn, booking.checkOut)} · {booking.guests} {booking.guests === 1 ? 'guest' : 'guests'}</p>
+              <p className="text-sm font-semibold text-slate-800 mt-1">{bookingWhen(booking)} · {booking.guests} {booking.guests === 1 ? 'guest' : 'guests'}</p>
             </div>
           </div>
           <PriceBreakdown quote={booking} />
           <p className="text-xs text-slate-500 bg-slate-50 rounded-xl p-3">{d.note}</p>
+          {(booking.status === 'Confirmed' || booking.status === 'Completed') && (
+            <dl className="grid sm:grid-cols-2 gap-3 text-sm">
+              {booking.address && (
+                <div className="sm:col-span-2 bg-brand-50 rounded-xl p-3">
+                  <dt className="text-xs font-bold uppercase text-brand-700"><i className="fa-solid fa-location-dot mr-1.5" aria-hidden="true"></i>Address</dt>
+                  <dd className="text-slate-800 mt-1 whitespace-pre-line">{booking.address}</dd>
+                </div>
+              )}
+              {booking.kind === 'stay' && (
+                <div className="bg-slate-50 rounded-xl p-3"><dt className="text-xs font-bold uppercase text-slate-500">Times</dt><dd className="text-slate-800 mt-1">Check-in from {formatTime(booking.checkInTime)} · check-out by {formatTime(booking.checkOutTime)}</dd></div>
+              )}
+              {booking.securityDeposit > 0 && (
+                <div className="bg-amber-50 rounded-xl p-3"><dt className="text-xs font-bold uppercase text-amber-700">Security deposit</dt><dd className="text-slate-800 mt-1">{formatPrice(booking.securityDeposit)} at check-in, refunded at check-out</dd></div>
+              )}
+            </dl>
+          )}
           {notice && <ErrorNote message={notice} />}
           {booking.status === 'AwaitingPayment' && (
             <button type="button" onClick={pay} disabled={paying} className="w-full bg-gradient-to-r from-brand-600 to-brand-500 hover:from-brand-700 hover:to-brand-600 disabled:from-slate-400 disabled:to-slate-400 text-white font-bold py-4 rounded-2xl text-sm shadow-lg shadow-brand-500/20">

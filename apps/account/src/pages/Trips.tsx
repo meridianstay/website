@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react'
 import { EmptyState, ErrorNote, PageHeader, Panel, Spinner, StatusBadge } from '@meridian/ui'
-import { formatDateRange, formatPrice, guestRefundMinor, type BookingDetail } from '@meridian/shared'
+import { bookingWhen, formatPrice, guestRefundMinor, type BookingDetail } from '@meridian/shared'
 import { api, appLink } from '@meridian/shared/client'
 
 export function Trips() {
@@ -81,7 +81,7 @@ function Trip({ booking: b, onChange }: { booking: BookingDetail; onChange: (b: 
             <StatusBadge status={b.status} />
           </div>
           <p className="text-xs text-slate-500 mt-0.5">{b.property.location}</p>
-          <p className="text-xs text-slate-700 mt-2">{formatDateRange(b.checkIn, b.checkOut)} · {b.nights} {b.nights === 1 ? 'night' : 'nights'} · {b.guests} {b.guests === 1 ? 'guest' : 'guests'}</p>
+          <p className="text-xs text-slate-700 mt-2">{bookingWhen(b)} · {b.guests} {b.guests === 1 ? 'guest' : 'guests'}</p>
           <p className="text-sm font-extrabold text-slate-900 mt-1 tabular-nums">{formatPrice(b.total)} <span className="text-xs font-normal text-slate-400 font-mono ml-1">{b.code}</span></p>
         </div>
       </div>

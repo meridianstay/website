@@ -74,3 +74,12 @@ export function guestRefundMinor(totalMinor: number, pricePerNightMinor: number,
   const hoursLeft = (checkInNoon - now.getTime()) / 3_600_000
   return hoursLeft >= 48 ? totalMinor : Math.max(0, totalMinor - pricePerNightMinor)
 }
+
+/**
+ * Refund when a guest cancels a paid day-use booking: in full up to 48 hours before it starts,
+ * half up to 24 hours before, nothing after that.
+ */
+export function dayUseRefundMinor(totalMinor: number, date: string, startTime: string, now = new Date()) {
+  const hoursLeft = (Date.parse(`${date}T${startTime}:00+05:30`) - now.getTime()) / 3_600_000
+  return hoursLeft >= 48 ? totalMinor : hoursLeft >= 24 ? Math.round(totalMinor / 2) : 0
+}

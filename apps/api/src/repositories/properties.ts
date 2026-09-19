@@ -1,6 +1,7 @@
-import { addDays, type Amenity, type Management, type DateRange, type ListingInput, type ListingStatus, type PropertySummary, type PropertyType, type SearchQuery } from '@meridian/shared'
+import { addDays, defaultDayUse, defaultHouseRules, type Amenity, type HouseRules, type Management, type DateRange, type ListingInput, type ListingStatus, type PropertySummary, type PropertyType, type SearchQuery } from '@meridian/shared'
 import type { Transaction } from 'firebase-admin/firestore'
-import { C, all, col, firestore, nextId, nightsOf, nowISO } from '../store/db'
+import { C, all, col, daysOf, firestore, nextId, nightsOf, nowISO } from '../store/db'
+import { busyPeriods, type DaySlot, type NightLock } from './schedule'
 import { amenitiesRepo } from './amenities'
 
 // Collection: properties/{id}, with properties/{id}/nights/{date} marking each booked or blocked night.
@@ -13,20 +14,56 @@ export interface PropertyDoc {
   ratingAvg: number; reviewCount: number; featuredRank: number | null
   /** managed: run by Meridian, instant booking. self: host-managed, request to book. Set by admins. */
   management: Management
+  areaSqft: number | null; gatheringCapacity: number | null; checkInTime: string; checkOutTime: string
+  houseRules: HouseRules; securityDepositMinor: number
+  /** Exact address; only shown to guests with a confirmed booking. */
+  address: string
+  /** Offers overnight stays at pricePerNightMinor. */
+  overnight: boolean
+  dayUse: { enabled: boolean; blockHours: number; priceMinor: number; extraHourMinor: number; opensAt: string; closesAt: string }
   approvedAt: string | null; createdAt: string; updatedAt: string
 }
+
+/** Fills fields added after a listing was stored (older listings), so every reader sees a complete document. */
+export function withPropDefaults(p: PropertyDoc): PropertyDoc {
+  return {
+    ...p,
+    management: p.management ?? 'self', areaSqft: p.areaSqft ?? null, gatheringCapacity: p.gatheringCapacity ?? null,
+    checkInTime: p.checkInTime ?? '14:00', checkOutTime: p.checkOutTime ?? '11:00',
+    houseRules: { ...defaultHouseRules, ...p.houseRules }, securityDepositMinor: p.securityDepositMinor ?? 0, address: p.address ?? '',
+    overnight: p.overnight ?? true,
+    dayUse: p.dayUse ?? { enabled: false, blockHours: defaultDayUse.blockHours, priceMinor: defaultDayUse.price * 100, extraHourMinor: defaultDayUse.extraHourPrice * 100, opensAt: defaultDayUse.opensAt, closesAt: defaultDayUse.closesAt },
+  }
+}
+
+const readProps = async (q: FirebaseFirestore.Query): Promise<PropertyDoc[]> => (await all<PropertyDoc>(q)).map(withPropDefaults)
+
+/** Public map positions are rounded to about 1 km; the exact address is shared once a booking is confirmed. */
+const approx = (n: number) => Math.round(n * 100) / 100
 
 /** Money leaves the data layer in major units (rupees); documents store minor units (paise). */
 export const toPropertySummary = (p: PropertyDoc): PropertySummary => ({
   id: p.id, slug: p.slug, title: p.title, type: p.type, location: `${p.city}, ${p.region}`, price: p.pricePerNightMinor / 100,
   rating: p.ratingAvg, reviewCount: p.reviewCount, beds: p.bedrooms, baths: p.bathrooms, maxGuests: p.maxGuests,
-  image: p.coverImageUrl, description: p.description, lat: p.lat, lng: p.lng, management: p.management ?? 'self',
+  image: p.coverImageUrl, description: p.description, lat: approx(p.lat), lng: approx(p.lng), management: p.management ?? 'self',
+  overnight: p.overnight ?? true,
+  dayUse: p.dayUse?.enabled ? { price: p.dayUse.priceMinor / 100, blockHours: p.dayUse.blockHours } : null,
 })
 
 export interface HostListing extends PropertySummary { status: ListingStatus; rejectionReason: string | null }
 export interface AdminListing extends HostListing { featuredRank: number | null; hostName: string; hostEmail: string; createdAt: string }
 
 const ref = (id: number) => col(C.properties).doc(String(id))
+
+/** The newer listing fields, converted for storage (rupees → paise). */
+const detailFields = (input: ListingInput) => ({
+  areaSqft: input.areaSqft, gatheringCapacity: input.gatheringCapacity, checkInTime: input.checkInTime, checkOutTime: input.checkOutTime,
+  houseRules: input.houseRules, securityDepositMinor: Math.round(input.securityDeposit * 100), address: input.address, overnight: input.overnight,
+  dayUse: {
+    enabled: input.dayUse.enabled, blockHours: input.dayUse.blockHours, priceMinor: Math.round(input.dayUse.price * 100),
+    extraHourMinor: Math.round(input.dayUse.extraHourPrice * 100), opensAt: input.dayUse.opensAt, closesAt: input.dayUse.closesAt,
+  },
+})
 
 /** Every date from checkIn up to (not including) checkOut. */
 export function datesIn(checkIn: string, checkOut: string) {
@@ -48,7 +85,7 @@ type Filters = Required<Pick<SearchQuery, 'limit'>> & Omit<SearchQuery, 'limit'>
 export const propertiesRepo = {
   async get(id: number, tx?: Transaction) {
     const snap = tx ? await tx.get(ref(id)) : await ref(id).get()
-    return snap.exists ? (snap.data() as PropertyDoc) : null
+    return snap.exists ? withPropDefaults(snap.data() as PropertyDoc) : null
   },
 
   ref,
@@ -62,7 +99,7 @@ export const propertiesRepo = {
 
   /** Live listings matching the filters; with dates, only stays free for the whole range. */
   async search(f: Filters): Promise<PropertySummary[]> {
-    let rows = await all<PropertyDoc>(col(C.properties).where('status', '==', 'Approved'))
+    let rows = await readProps(col(C.properties).where('status', '==', 'Approved'))
     const where = f.where?.toLowerCase()
     rows = rows.filter((p) =>
       (!where || `${p.title} ${p.city}, ${p.region}, ${p.country}`.toLowerCase().includes(where)) &&
@@ -81,13 +118,13 @@ export const propertiesRepo = {
   },
 
   async locations() {
-    const rows = await all<PropertyDoc>(col(C.properties).where('status', '==', 'Approved'))
+    const rows = await readProps(col(C.properties).where('status', '==', 'Approved'))
     return [...new Set(rows.map((p) => `${p.city}, ${p.region}`))].sort()
   },
 
   async findBySlug(slug: string) {
     const snap = await col(C.properties).where('slug', '==', slug).limit(1).get()
-    return snap.empty ? null : (snap.docs[0].data() as PropertyDoc)
+    return snap.empty ? null : withPropDefaults(snap.docs[0].data() as PropertyDoc)
   },
 
   async amenitiesOf(p: PropertyDoc): Promise<Amenity[]> {
@@ -95,12 +132,16 @@ export const propertiesRepo = {
     return p.amenities.filter((n) => icons.has(n)).map((name) => ({ name, icon: icons.get(name)! }))
   },
 
-  /** Future booked or blocked ranges, for calendars. */
-  async unavailableRanges(id: number, today: string): Promise<DateRange[]> {
-    const [bookings, blocks] = await Promise.all([
-      all<{ checkIn: string; checkOut: string; status: string; expiresAt?: string | null }>(col(C.bookings).where('propertyId', '==', id)),
+  /**
+   * Future booked or blocked ranges, for the overnight calendar. A day-use booking only closes that
+   * night when it runs past the check-in time.
+   */
+  async unavailableRanges(id: number, today: string, checkInTime = '14:00'): Promise<DateRange[]> {
+    const [allBookings, blocks] = await Promise.all([
+      all<{ checkIn: string; checkOut: string; status: string; expiresAt?: string | null; kind?: string; endTime?: string | null }>(col(C.bookings).where('propertyId', '==', id)),
       all<{ checkIn: string; checkOut: string }>(col(C.blocks).where('propertyId', '==', id)),
     ])
+    const bookings = allBookings.filter((b) => b.kind !== 'dayuse' || (b.endTime ?? '23:59') > checkInTime)
     const now = nowISO()
     const holds = (b: { status: string; expiresAt?: string | null }) =>
       b.status === 'Confirmed' || ((b.status === 'Requested' || b.status === 'AwaitingPayment') && !!b.expiresAt && b.expiresAt > now)
@@ -108,6 +149,18 @@ export const propertiesRepo = {
       .filter((r) => r.checkOut > today)
       .map(({ checkIn, checkOut }) => ({ checkIn, checkOut }))
       .sort((a, b) => a.checkIn.localeCompare(b.checkIn))
+  },
+
+  /** Busy periods on a date for day use: overnight guests arriving or leaving, and other day-use bookings. */
+  async dayBusy(p: PropertyDoc, date: string) {
+    const [night, before, day] = await Promise.all([
+      nightsOf(p.id).doc(date).get(), nightsOf(p.id).doc(addDays(date, -1)).get(), daysOf(p.id).doc(date).get(),
+    ])
+    return busyPeriods({
+      night: (night.data() as NightLock | undefined) ?? null, nightBefore: (before.data() as NightLock | undefined) ?? null,
+      slots: (day.data()?.slots ?? []) as DaySlot[], opensAt: p.dayUse.opensAt, closesAt: p.dayUse.closesAt,
+      checkInTime: p.checkInTime, checkOutTime: p.checkOutTime, now: nowISO(),
+    })
   },
 
   /** Adds (+1) or removes (-1) one review's rating from the running average, inside a transaction. */
@@ -120,7 +173,7 @@ export const propertiesRepo = {
   // ── Host side ──────────────────────────────────────────────────────────────
 
   async listForHost(hostId: number): Promise<HostListing[]> {
-    const rows = await all<PropertyDoc>(col(C.properties).where('hostId', '==', hostId))
+    const rows = await readProps(col(C.properties).where('hostId', '==', hostId))
     return rows.sort((a, b) => b.createdAt.localeCompare(a.createdAt))
       .map((p) => ({ ...toPropertySummary(p), status: p.status, rejectionReason: p.rejectionReason }))
   },
@@ -136,6 +189,9 @@ export const propertiesRepo = {
       description: p.description, city: p.city, region: p.region, country: p.country, price: p.pricePerNightMinor / 100,
       beds: p.bedrooms, baths: p.bathrooms, maxGuests: p.maxGuests, lat: p.lat, lng: p.lng, coverImage: p.coverImageUrl,
       photos: p.photos, amenities: p.amenities, management: p.management ?? 'self',
+      areaSqft: p.areaSqft, gatheringCapacity: p.gatheringCapacity, checkInTime: p.checkInTime, checkOutTime: p.checkOutTime,
+      houseRules: p.houseRules, securityDeposit: p.securityDepositMinor / 100, address: p.address, overnight: p.overnight,
+      dayUse: { enabled: p.dayUse.enabled, blockHours: p.dayUse.blockHours, price: p.dayUse.priceMinor / 100, extraHourPrice: p.dayUse.extraHourMinor / 100, opensAt: p.dayUse.opensAt, closesAt: p.dayUse.closesAt },
     }
   },
 
@@ -158,7 +214,7 @@ export const propertiesRepo = {
         country: input.country, lat: input.lat, lng: input.lng, currency: 'INR', pricePerNightMinor: Math.round(input.price * 100),
         bedrooms: input.beds, bathrooms: input.baths, maxGuests: input.maxGuests, status: 'Pending', rejectionReason: null,
         coverImageUrl: input.coverImage, photos: input.photos, amenities: input.amenities, ratingAvg: 0, reviewCount: 0,
-        featuredRank: null, management: 'self', approvedAt: null, createdAt: now, updatedAt: now,
+        featuredRank: null, management: 'self', approvedAt: null, createdAt: now, updatedAt: now, ...detailFields(input),
       }
       tx.set(ref(id), doc)
       return id
@@ -172,7 +228,7 @@ export const propertiesRepo = {
       country: input.country, lat: input.lat, lng: input.lng, pricePerNightMinor: Math.round(input.price * 100),
       bedrooms: input.beds, bathrooms: input.baths, maxGuests: input.maxGuests, coverImageUrl: input.coverImage,
       photos: input.photos, amenities: input.amenities, status: 'Pending', rejectionReason: null, approvedAt: null,
-      featuredRank: null, updatedAt: nowISO(),
+      featuredRank: null, updatedAt: nowISO(), ...detailFields(input),
     })
   },
 
@@ -183,7 +239,7 @@ export const propertiesRepo = {
   // ── Admin side ─────────────────────────────────────────────────────────────
 
   async listForAdmin(filters: { status?: ListingStatus | null; q?: string | null }, hosts: Map<number, { name: string; email: string | null; phone: string | null }>): Promise<AdminListing[]> {
-    let rows = await all<PropertyDoc>(filters.status ? col(C.properties).where('status', '==', filters.status) : col(C.properties))
+    let rows = await readProps(filters.status ? col(C.properties).where('status', '==', filters.status) : col(C.properties))
     const q = filters.q?.toLowerCase()
     if (q) rows = rows.filter((p) => [p.title, p.city, hosts.get(p.hostId)?.name, hosts.get(p.hostId)?.email].some((v) => v?.toLowerCase().includes(q)))
     rows.sort((a, b) => Number(b.status === 'Pending') - Number(a.status === 'Pending') || b.createdAt.localeCompare(a.createdAt))

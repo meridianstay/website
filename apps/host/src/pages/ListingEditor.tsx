@@ -1,7 +1,7 @@
 import { lazy, Suspense, useEffect, useState, type ReactNode } from 'react'
 import { Link, useNavigate, useParams } from 'react-router'
 import { ErrorNote, PageHeader, PhotoUpload, Spinner } from '@meridian/ui'
-import { commissionMinor, commissionPct, defaultCommission, formatPrice, quoteStay, addDays, todayISO, type Amenity, type Management, type PropertyType } from '@meridian/shared'
+import { commissionMinor, commissionPct, defaultCommission, defaultDayUse, defaultHouseRules, formatPrice, formatTime, HOUSE_RULES, quoteDayUse, quoteStay, addDays, todayISO, type Amenity, type DayUseSettings, type HouseRules, type Management, type PropertyType } from '@meridian/shared'
 import { ApiError, api, hostApi, type ListingInput } from '@meridian/shared/client'
 
 const LocationPicker = lazy(() => import('../components/LocationPicker'))
@@ -14,19 +14,23 @@ const propertyTypes: { type: PropertyType; icon: string; blurb: string }[] = [
   { type: 'Resort', icon: 'umbrella-beach', blurb: 'Several units with shared amenities' },
 ]
 
-const steps = ['Property type', 'Location', 'Rooms & amenities', 'Photos & description', 'Price', 'Review']
+const steps = ['Property type', 'Location', 'Rooms & amenities', 'Photos & description', 'House rules', 'Price', 'Review']
 
 // Which step each server-side field error belongs to.
 const fieldStep: Record<string, number> = {
-  type: 0, title: 1, city: 1, region: 1, location: 1, beds: 2, baths: 2, maxGuests: 2,
-  coverImage: 3, photos: 3, description: 3, price: 4,
+  type: 0, title: 1, city: 1, region: 1, location: 1, address: 1, beds: 2, baths: 2, maxGuests: 2, areaSqft: 2, gatheringCapacity: 2,
+  coverImage: 3, photos: 3, description: 3,
+  checkInTime: 4, checkOutTime: 4, securityDeposit: 4, houseRulesNotes: 4, quietAfter: 4,
+  price: 5, overnight: 5, dayUsePrice: 5, dayUseExtra: 5, dayUseBlock: 5, dayUseHours: 5,
 }
 
 type Draft = Omit<ListingInput, 'type' | 'lat' | 'lng'> & { type: PropertyType | null; lat: number | null; lng: number | null; photoText: string }
 
 const emptyDraft: Draft = {
-  type: null, title: '', description: '', city: '', region: '', country: 'India', price: 100, beds: 1, baths: 1, maxGuests: 2,
+  type: null, title: '', description: '', city: '', region: '', country: 'India', price: 3000, beds: 1, baths: 1, maxGuests: 2,
   lat: null, lng: null, coverImage: '', photos: [], photoText: '', amenities: [],
+  areaSqft: null, gatheringCapacity: null, checkInTime: '14:00', checkOutTime: '11:00', houseRules: { ...defaultHouseRules },
+  securityDeposit: 0, address: '', overnight: true, dayUse: { ...defaultDayUse },
 }
 
 const inputClass = 'w-full bg-slate-50 border border-slate-200 rounded-2xl p-3 text-sm focus:outline-none focus:border-brand-500'
@@ -70,7 +74,8 @@ export function ListingEditor() {
     draft.title.trim().length >= 3 && draft.city.trim().length >= 2 && draft.region.trim().length >= 2 && draft.lat !== null,
     draft.maxGuests >= 1,
     isUrl(draft.coverImage) && photos.every(isUrl) && draft.description.trim().length >= 20,
-    draft.price >= 1,
+    true,
+    (draft.overnight || draft.dayUse.enabled) && (!draft.overnight || draft.price >= 1) && (!draft.dayUse.enabled || draft.dayUse.price >= 1),
     true,
   ][step]
 
@@ -93,6 +98,9 @@ export function ListingEditor() {
     }
   }
 
+  const setRules = (patch: Partial<HouseRules>) => setDraft((d) => d && { ...d, houseRules: { ...d.houseRules, ...patch } })
+  const setDayUse = (patch: Partial<DayUseSettings>) => setDraft((d) => d && { ...d, dayUse: { ...d.dayUse, ...patch } })
+  const daySample = quoteDayUse(draft.dayUse, draft.dayUse.blockHours + 2)
   const sample = quoteStay(draft.price, todayISO(), addDays(todayISO(), 2), 2)
   const pct = commissionPct(management, rates)
   const payout = (Math.round(sample.total * 100) - commissionMinor(Math.round(sample.total * 100), pct)) / 100
@@ -156,6 +164,9 @@ export function ListingEditor() {
                 <input id="country" className={inputClass} value={draft.country} onChange={(e) => update('country', e.target.value)} />
               </Field>
             </div>
+            <Field label="Full address" id="address" error={fields.address} hint="Only shared with guests once their booking is confirmed.">
+              <textarea id="address" rows={2} maxLength={300} className={inputClass} value={draft.address} onChange={(e) => update('address', e.target.value)} placeholder="House / farm name, road, village, landmark, PIN code" />
+            </Field>
             <div>
               <p className="block text-xs font-bold uppercase text-slate-500 mb-1">Map location</p>
               <p className="text-xs text-slate-400 mb-2">Click the map to drop a pin on your property, then drag it to adjust. Guests see the area, not the exact address.</p>
@@ -175,6 +186,14 @@ export function ListingEditor() {
               <Counter label="Bedrooms" value={draft.beds} min={0} onChange={(v) => update('beds', v)} />
               <Counter label="Bathrooms" value={draft.baths} min={0} onChange={(v) => update('baths', v)} />
               <Counter label="Max guests" value={draft.maxGuests} min={1} onChange={(v) => update('maxGuests', v)} />
+            </div>
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+              <Field label="Area in sq ft (optional)" id="areaSqft" error={fields.areaSqft}>
+                <input id="areaSqft" type="number" min={50} className={inputClass} value={draft.areaSqft ?? ''} onChange={(e) => update('areaSqft', e.target.value ? Number(e.target.value) : null)} placeholder="e.g. 2400" />
+              </Field>
+              <Field label="Gathering capacity (optional)" id="gatheringCapacity" error={fields.gatheringCapacity} hint="Most people for a day event or party. Can be more than overnight guests.">
+                <input id="gatheringCapacity" type="number" min={1} className={inputClass} value={draft.gatheringCapacity ?? ''} onChange={(e) => update('gatheringCapacity', e.target.value ? Number(e.target.value) : null)} placeholder="e.g. 25" />
+              </Field>
             </div>
             <fieldset>
               <legend className="block text-xs font-bold uppercase text-slate-500 mb-3">Amenities</legend>
@@ -241,23 +260,109 @@ export function ListingEditor() {
         )}
 
         {step === 4 && (
-          <div className="space-y-4">
-            <Field label="Price per night (₹)" id="price" error={fields.price} hint="This price covers 2 guests. Each extra guest adds 15%.">
-              <input id="price" type="number" min={1} max={100000} className={inputClass} value={draft.price} onChange={(e) => update('price', Number(e.target.value))} />
-            </Field>
-            <div className="bg-slate-50 rounded-2xl p-4 text-sm text-slate-600">
-              A 2-night stay for 2 guests costs guests <span className="font-bold text-slate-900">{formatPrice(sample.total)}</span>, with no booking fee added.
-              After Meridian’s {pct}% commission you receive <span className="font-bold text-slate-900">{formatPrice(payout)}</span>.
-              <p className="text-xs text-slate-500 mt-2">
-                {management === 'managed'
-                  ? 'This property is managed by Meridian Stay: guests book instantly, and we handle upkeep and guest care.'
-                  : 'You manage this property yourself: guests send booking requests, which you accept or decline within 24 hours.'}
-              </p>
+          <div className="space-y-6">
+            <div className="grid grid-cols-2 gap-4">
+              <Field label="Check-in time" id="checkInTime" error={fields.checkInTime}>
+                <TimeSelect id="checkInTime" value={draft.checkInTime} onChange={(v) => update('checkInTime', v)} />
+              </Field>
+              <Field label="Check-out time" id="checkOutTime" error={fields.checkOutTime}>
+                <TimeSelect id="checkOutTime" value={draft.checkOutTime} onChange={(v) => update('checkOutTime', v)} />
+              </Field>
             </div>
+            <fieldset>
+              <legend className="block text-xs font-bold uppercase text-slate-500 mb-3">What guests may do</legend>
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+                {HOUSE_RULES.map((r) => {
+                  const on = draft.houseRules[r.key]
+                  return (
+                    <label key={r.key} className={`flex items-center justify-between gap-3 p-3 rounded-xl border cursor-pointer text-sm ${on ? 'border-brand-500 bg-brand-50/60' : 'border-slate-200'}`}>
+                      <span className="flex items-center gap-3">
+                        <i className={`fa-solid fa-${r.icon} w-4 text-brand-600`} aria-hidden="true"></i>
+                        <span><span className="block font-semibold text-slate-900">{r.label}</span><span className="block text-xs text-slate-500">{on ? r.yes : r.no}</span></span>
+                      </span>
+                      <input type="checkbox" role="switch" className="accent-brand-600 w-4 h-4" checked={on} onChange={() => setRules({ [r.key]: !on })} />
+                    </label>
+                  )
+                })}
+              </div>
+            </fieldset>
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+              <Field label="Quiet hours from" id="quietAfter" error={fields.quietAfter} hint="Leave as “No quiet hours” if there are none.">
+                <TimeSelect id="quietAfter" value={draft.houseRules.quietAfter} allowEmpty onChange={(v) => setRules({ quietAfter: v })} />
+              </Field>
+              <Field label="Refundable security deposit (₹)" id="securityDeposit" error={fields.securityDeposit} hint="Collected at check-in and returned at check-out. 0 for none.">
+                <input id="securityDeposit" type="number" min={0} step={500} className={inputClass} value={draft.securityDeposit} onChange={(e) => update('securityDeposit', Number(e.target.value))} />
+              </Field>
+            </div>
+            <Field label="Other rules (optional)" id="houseRulesNotes" error={fields.houseRulesNotes} hint="E.g. music off by 11 pm, no outside caterers, ID for every adult.">
+              <textarea id="houseRulesNotes" rows={3} maxLength={1000} className={inputClass} value={draft.houseRules.notes} onChange={(e) => setRules({ notes: e.target.value })} />
+            </Field>
           </div>
         )}
 
         {step === 5 && (
+          <div className="space-y-6">
+            {fields.overnight && <p className="text-xs text-rose-600 font-semibold">{fields.overnight}</p>}
+            <section className={`rounded-2xl border-2 p-4 space-y-4 ${draft.overnight ? 'border-brand-500' : 'border-slate-200'}`}>
+              <label className="flex items-center justify-between gap-3 cursor-pointer">
+                <span><span className="block font-bold text-slate-900"><i className="fa-solid fa-moon text-brand-600 mr-2" aria-hidden="true"></i>Overnight stays</span><span className="block text-xs text-slate-500">Guests stay from check-in to check-out the next day or later.</span></span>
+                <input type="checkbox" role="switch" className="accent-brand-600 w-5 h-5" checked={draft.overnight} onChange={(e) => update('overnight', e.target.checked)} />
+              </label>
+              {draft.overnight && (
+                <>
+                  <Field label="Price per night (₹)" id="price" error={fields.price} hint="This price covers 2 guests. Each extra guest adds 15%.">
+                    <input id="price" type="number" min={1} max={100000} className={inputClass} value={draft.price} onChange={(e) => update('price', Number(e.target.value))} />
+                  </Field>
+                  <p className="text-sm text-slate-600 bg-slate-50 rounded-xl p-3">
+                    A 2-night stay for 2 guests costs <span className="font-bold text-slate-900">{formatPrice(sample.total)}</span>, with no booking fee added. After Meridian’s {pct}% commission you receive <span className="font-bold text-slate-900">{formatPrice(payout)}</span>.
+                  </p>
+                </>
+              )}
+            </section>
+
+            <section className={`rounded-2xl border-2 p-4 space-y-4 ${draft.dayUse.enabled ? 'border-brand-500' : 'border-slate-200'}`}>
+              <label className="flex items-center justify-between gap-3 cursor-pointer">
+                <span><span className="block font-bold text-slate-900"><i className="fa-solid fa-sun text-brand-yellow-500 mr-2" aria-hidden="true"></i>Day use (“Day out”)</span><span className="block text-xs text-slate-500">Picnics, pool days, parties and get-togethers, booked by the hour on a single day.</span></span>
+                <input type="checkbox" role="switch" className="accent-brand-600 w-5 h-5" checked={draft.dayUse.enabled} onChange={(e) => setDayUse({ enabled: e.target.checked })} />
+              </label>
+              {draft.dayUse.enabled && (
+                <>
+                  <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+                    <Field label="Hours included" id="blockHours" error={fields.dayUseBlock} hint="Also the shortest booking.">
+                      <select id="blockHours" className={inputClass} value={draft.dayUse.blockHours} onChange={(e) => setDayUse({ blockHours: Number(e.target.value) })}>
+                        {[2, 3, 4, 5, 6, 8, 10, 12].map((h) => <option key={h} value={h}>{h} hours</option>)}
+                      </select>
+                    </Field>
+                    <Field label={`Price for ${draft.dayUse.blockHours} hours (₹)`} id="dayUsePrice" error={fields.dayUsePrice}>
+                      <input id="dayUsePrice" type="number" min={1} className={inputClass} value={draft.dayUse.price} onChange={(e) => setDayUse({ price: Number(e.target.value) })} />
+                    </Field>
+                    <Field label="Each extra hour (₹)" id="dayUseExtra" error={fields.dayUseExtra}>
+                      <input id="dayUseExtra" type="number" min={0} className={inputClass} value={draft.dayUse.extraHourPrice} onChange={(e) => setDayUse({ extraHourPrice: Number(e.target.value) })} />
+                    </Field>
+                  </div>
+                  <div className="grid grid-cols-2 gap-3">
+                    <Field label="Earliest start" id="opensAt" error={fields.dayUseHours}>
+                      <TimeSelect id="opensAt" value={draft.dayUse.opensAt} onChange={(v) => setDayUse({ opensAt: v })} />
+                    </Field>
+                    <Field label="Latest finish" id="closesAt">
+                      <TimeSelect id="closesAt" value={draft.dayUse.closesAt} onChange={(v) => setDayUse({ closesAt: v })} />
+                    </Field>
+                  </div>
+                  <p className="text-sm text-slate-600 bg-slate-50 rounded-xl p-3">
+                    A {draft.dayUse.blockHours + 2}-hour day out costs guests <span className="font-bold text-slate-900">{formatPrice(daySample.total)}</span>. Day use fits around overnight guests automatically: it has to finish by check-in time ({formatTime(draft.checkInTime)}) when guests arrive, and start after check-out ({formatTime(draft.checkOutTime)}) when they leave.
+                  </p>
+                </>
+              )}
+            </section>
+            <p className="text-xs text-slate-500">
+              {management === 'managed'
+                ? 'This property is managed by Meridian Stay: guests book instantly, and we handle upkeep and guest care.'
+                : 'You manage this property yourself: guests send booking requests, which you accept or decline within 24 hours.'}
+            </p>
+          </div>
+        )}
+
+        {step === 6 && (
           <div>
             <h2 className="text-lg font-bold text-slate-900 mb-4">Check your listing</h2>
             {isUrl(draft.coverImage) && <img src={draft.coverImage} alt="" className="h-48 w-full object-cover rounded-2xl mb-4" />}
@@ -266,7 +371,10 @@ export function ListingEditor() {
               <Row label="Title" value={draft.title} />
               <Row label="Location" value={`${draft.city}, ${draft.region}, ${draft.country}`} />
               <Row label="Size" value={`${draft.beds} bedrooms · ${draft.baths} bathrooms · up to ${draft.maxGuests} guests`} />
-              <Row label="Price" value={`${formatPrice(draft.price)} / night`} />
+              <Row label="Price" value={[draft.overnight && `${formatPrice(draft.price)} / night`, draft.dayUse.enabled && `Day use ${formatPrice(draft.dayUse.price)} for ${draft.dayUse.blockHours} h`].filter(Boolean).join(' · ')} />
+              <Row label="Times" value={`Check-in ${formatTime(draft.checkInTime)} · check-out ${formatTime(draft.checkOutTime)}`} />
+              <Row label="House rules" value={HOUSE_RULES.map((r) => (draft.houseRules[r.key] ? r.yes : r.no)).join(' · ')} />
+              <Row label="Security deposit" value={draft.securityDeposit ? formatPrice(draft.securityDeposit) : 'None'} />
               <Row label="Photos" value={`${1 + photos.length}`} />
               <Row label="Amenities" value={draft.amenities.join(', ') || 'None'} />
             </dl>
@@ -324,5 +432,16 @@ function Row({ label, value }: { label: string; value: string }) {
       <dt className="text-xs font-bold uppercase text-slate-400">{label}</dt>
       <dd className="font-semibold text-slate-900">{value}</dd>
     </div>
+  )
+}
+
+const TIMES = Array.from({ length: 48 }, (_, i) => `${String(Math.floor(i / 2)).padStart(2, '0')}:${i % 2 ? '30' : '00'}`)
+
+function TimeSelect({ id, value, onChange, allowEmpty = false }: { id: string; value: string; onChange: (v: string) => void; allowEmpty?: boolean }) {
+  return (
+    <select id={id} className={inputClass} value={value} onChange={(e) => onChange(e.target.value)}>
+      {allowEmpty && <option value="">No quiet hours</option>}
+      {TIMES.map((t) => <option key={t} value={t}>{formatTime(t)}</option>)}
+    </select>
   )
 }

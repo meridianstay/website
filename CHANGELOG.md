@@ -2,6 +2,30 @@
 
 Every change to Meridian Stay is recorded here, newest first. Each entry says what changed for the people using the platform, then the notable technical changes.
 
+## 0.10.0 — 2026-09-20
+
+Inspired by what works on the local competitor (FarmhouseHub), in Meridian's own look.
+
+### Day use (“Day out”)
+- Hosts can now offer **overnight stays, day use, or both**. Day use is a block of hours (e.g. ₹4,500 for 6 hours) plus a price per extra hour, between the host's opening times, for picnics, pool days and parties.
+- Stay pages have **Stay | Day out** tabs. For a day out, guests pick a date, then a start time and length: only free times are offered, and the box lists what's already taken that day.
+- Day use and overnight stays work around each other automatically: a day out must finish by check-in time when guests arrive that day, start after check-out when guests leave, and can't overlap another day out; nights in the middle of a stay are closed. Hosts can't block a date that has day-use bookings. All of this is checked inside one database transaction, like double-booking protection.
+- Day outs go through the same flows as stays: instant or request, Razorpay, commission, expiry and cancellation. Refunds for day outs: in full up to 48 hours before, half up to 24 hours before, none after.
+- Cards show "Day out ₹… for 6h"; bookings everywhere show the date and hours (e.g. "Thu 1 Oct · 11 am–7 pm (8 h)").
+
+### Property details
+- New listing details: **area (sq ft)**, **gathering capacity** (for day events), **check-in and check-out times**, structured **house rules** (couples, pets, non-veg, alcohol, parties and decorations, bachelor groups, smoking, quiet hours, other rules) and a **refundable security deposit** paid at check-in.
+- The host's listing wizard has a new **House rules** step, and the **Price** step now has overnight and day-use sections.
+- Stay pages show key-fact chips, a Day out section and the house rules. Checkout lists the rules and the deposit.
+- **Guests: adults, children, infants and pets.** Adults and children count towards capacity and price; infants are free; pets only where the house rules allow.
+- The **exact address** (a new, private listing field) is shown to the guest only once the booking is confirmed. Map positions on public pages are rounded to about 1 km.
+
+### Backend
+- New day-use schedule in `properties/{id}/days/{date}`; the rules are in `apps/api/src/repositories/schedule.ts`. New endpoint `GET /api/properties/:slug/day?date=` returns busy hours.
+- `POST /api/bookings` accepts `kind: "dayuse"`, `startTime`, `hours`, and `adults`, `children`, `infants`, `pets`. Bookings and listings saved earlier get sensible defaults.
+- Demo data: every listing has details and rules; four listings offer day use; two sample day outs.
+- 70 automated tests (9 new for day use).
+
 ## 0.9.0 — 2026-09-20
 
 ### Homepage builder

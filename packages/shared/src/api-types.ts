@@ -1,5 +1,6 @@
 import type { ListingStatus, PropertyType, UserRole } from './types'
 import type { Management } from './pricing'
+import type { DayUseSettings, GuestBreakdown, HouseRules } from './listing'
 
 // Shapes returned by @meridian/api. Shared by the API and every frontend.
 
@@ -32,6 +33,10 @@ export interface PropertySummary {
   lng: number
   /** managed: book instantly; self: the host approves each request. */
   management: Management
+  /** Offers overnight stays (`price` per night). */
+  overnight: boolean
+  /** Day-use price for the base block of hours, when offered. */
+  dayUse: { price: number; blockHours: number } | null
 }
 
 export interface Review {
@@ -54,6 +59,13 @@ export interface DateRange {
 }
 
 export interface PropertyDetail extends PropertySummary {
+  areaSqft: number | null
+  gatheringCapacity: number | null
+  checkInTime: string
+  checkOutTime: string
+  houseRules: HouseRules
+  securityDeposit: number
+  dayUseSettings: DayUseSettings | null
   gallery: string[]
   amenities: Amenity[]
   host: { name: string; joinedAt: string; avatar: string | null }
@@ -94,6 +106,19 @@ export interface BookingDetail {
   /** When a pending request or payment hold lapses. */
   expiresAt: string | null
   instantBook: boolean
+  /** stay: overnight (checkIn → checkOut). dayuse: one day, startTime → endTime. */
+  kind: 'stay' | 'dayuse'
+  /** Day use only: "HH:MM" times and length in hours. */
+  startTime: string | null
+  endTime: string | null
+  hours: number | null
+  guestBreakdown: GuestBreakdown
+  /** Refundable deposit to pay at check-in (₹). */
+  securityDeposit: number
+  checkInTime: string
+  checkOutTime: string
+  /** The property's exact address, once the booking is confirmed. */
+  address: string | null
   /** The host's message when declining a request. */
   declineReason: string | null
   contactPhone: string
@@ -157,6 +182,21 @@ export interface ListingInput {
   coverImage: string
   photos: string[]
   amenities: string[]
+  /** Built-up area in square feet, if the host gives it. */
+  areaSqft: number | null
+  /** Most people allowed for a day event or party (can exceed overnight guests). */
+  gatheringCapacity: number | null
+  /** Standard times for overnight stays, "HH:MM". */
+  checkInTime: string
+  checkOutTime: string
+  houseRules: HouseRules
+  /** Refundable deposit collected at check-in (₹); 0 for none. */
+  securityDeposit: number
+  /** Exact address, shared with guests only once a booking is confirmed. */
+  address: string
+  /** Offers overnight stays at `price` per night. */
+  overnight: boolean
+  dayUse: DayUseSettings
 }
 
 export type HostBooking = BookingDetail & {
@@ -183,7 +223,8 @@ export interface HostStats {
 
 export interface HostCalendar {
   blocks: { id: number; checkIn: string; checkOut: string; note: string | null }[]
-  bookings: { code: string; checkIn: string; checkOut: string; guestName: string; requested: boolean }[]
+  /** Day-use bookings have start and end times (same date). */
+  bookings: { code: string; checkIn: string; checkOut: string; guestName: string; requested: boolean; startTime: string | null; endTime: string | null }[]
 }
 
 export interface AdminListing extends HostListing {

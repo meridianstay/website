@@ -1,4 +1,5 @@
 import {
+  addDays, countedGuests, dayUseRefundMinor, formatTime, isTime, minutesOf, quoteDayUse, type GuestBreakdown,
   commissionMinor, commissionPct, daysBetween, guestRefundMinor, isISODate, MAX_NIGHTS, PAYMENT_HOLD_MINUTES, quoteStay, REQUEST_HOURS,
   todayISO, type BookingDetail, type Me, type PaymentMethod, type PaymentRequest,
 } from '@meridian/shared'
@@ -23,16 +24,21 @@ export const newBookingCode = () => `MS-${Array.from({ length: 6 }, () => ALPHAB
 export interface BookingRequest {
   propertyId: number; checkIn: string; checkOut: string; guests: number
   paymentMethod: string; contactPhone: string; specialRequests: string
+  /** stay (default) or dayuse. Day use books `hours` from `startTime` on `checkIn`. */
+  kind?: string; startTime?: string; hours?: number
+  adults?: number; children?: number; infants?: number; pets?: number
 }
+
+const toHHMM = (mins: number) => (mins >= 24 * 60 ? '' : `${String(Math.floor(mins / 60)).padStart(2, '0')}:${String(mins % 60).padStart(2, '0')}`)
 
 const datesTaken = () =>
   new AppError(409, 'Some of those nights were just booked. Please choose different dates.', { checkIn: 'Those dates are no longer available.' })
 
 const inMinutes = (m: number) => new Date(Date.now() + m * 60_000).toISOString()
 
-/** When a host must answer by: 24 hours, but never after check-in day's noon (IST), and at least an hour. */
-export function requestDeadline(checkIn: string, now = Date.now()) {
-  const checkInNoon = Date.parse(`${checkIn}T12:00:00+05:30`)
+/** When a host must answer by: 24 hours, but never after noon on check-in day (or a day-use start time, IST), and at least an hour. */
+export function requestDeadline(checkIn: string, now = Date.now(), startTime = '12:00') {
+  const checkInNoon = Date.parse(`${checkIn}T${startTime}:00+05:30`)
   return new Date(Math.max(now + 3_600_000, Math.min(now + REQUEST_HOURS * 3_600_000, checkInNoon))).toISOString()
 }
 
@@ -73,13 +79,17 @@ let lastSweep = 0
 export const bookingService = {
   async create(guest: Me, uid: string, req: BookingRequest): Promise<{ booking: BookingDetail; payment: PaymentRequest | null }> {
     const today = todayISO()
-    const { checkIn, checkOut, guests, contactPhone, specialRequests } = req
-    const datesValid = isISODate(checkIn) && isISODate(checkOut)
+    const kind = req.kind === 'dayuse' ? 'dayuse' : 'stay'
+    const { checkIn, contactPhone, specialRequests } = req
+    const party: GuestBreakdown = {
+      adults: Number(req.adults ?? req.guests), children: Number(req.children ?? 0), infants: Number(req.infants ?? 0), pets: Number(req.pets ?? 0),
+    }
+    const guests = countedGuests(party)
+    const whole = (n: number, min: number, max: number) => Number.isInteger(n) && n >= min && n <= max
     collect({
-      checkIn: !datesValid ? 'Choose your check-in and check-out dates.' : checkIn < today ? 'Check-in can’t be in the past.' : null,
-      checkOut: datesValid && checkOut <= checkIn ? 'Check-out must be after check-in.'
-        : datesValid && daysBetween(checkIn, checkOut) > MAX_NIGHTS ? `Stays can be at most ${MAX_NIGHTS} nights.` : null,
-      guests: Number.isInteger(guests) && guests >= 1 ? null : 'Add at least one guest.',
+      guests: whole(party.adults, 1, 100) ? (whole(party.children, 0, 50) ? null : 'Check the number of children.') : 'Add at least one adult.',
+      infants: whole(party.infants, 0, 5) ? null : 'At most 5 infants.',
+      pets: whole(party.pets, 0, 3) ? null : 'At most 3 pets.',
       paymentMethod: PAYMENT_METHODS.includes(req.paymentMethod as PaymentMethod) ? null : 'Choose a payment method.',
       contactPhone: checkPhone(contactPhone),
       specialRequests: specialRequests.length > 500 ? 'Keep special requests under 500 characters.' : null,
@@ -88,11 +98,52 @@ export const bookingService = {
     const property = await propertiesRepo.get(req.propertyId)
     if (!property || property.status !== 'Approved') throw new AppError(404, 'This stay isn’t available for booking.')
     if (property.hostId === guest.id) throw new AppError(400, 'You can’t book your own listing.')
-    if (guests > property.maxGuests) collect({ guests: `This stay fits up to ${property.maxGuests} guests.` })
+    if (party.pets > 0 && !property.houseRules.pets) collect({ pets: 'This property doesn’t allow pets.' })
 
-    // The browser shows a preview; the price charged is always recalculated here.
-    const q = quoteStay(property.pricePerNightMinor / 100, checkIn, checkOut, guests)
-    const totalMinor = Math.round(q.total * 100)
+    let slot: { checkOut: string; nights: number; startTime: string | null; endTime: string | null; hours: number | null
+      pricePerNightMinor: number; baseMinor: number; extraMinor: number; totalMinor: number; deadline: string }
+    if (kind === 'dayuse') {
+      const d = property.dayUse
+      if (!d.enabled) throw new AppError(400, 'This property doesn’t offer day use.')
+      const hours = Number(req.hours)
+      const start = req.startTime ?? ''
+      const end = isTime(start) && Number.isInteger(hours) ? toHHMM(minutesOf(start) + hours * 60) : ''
+      const capacity = property.gatheringCapacity ?? property.maxGuests
+      const nowIST = new Date(Date.now() + 5.5 * 3_600_000).toISOString()
+      collect({
+        checkIn: !isISODate(checkIn) ? 'Choose a date.' : checkIn < today ? 'The date can’t be in the past.'
+          : checkIn === today && isTime(start) && `${checkIn}T${start}` <= nowIST.slice(0, 16) ? 'Choose a start time later today.' : null,
+        startTime: !isTime(start) ? 'Choose a start time.' : minutesOf(start) < minutesOf(d.opensAt) ? `Day use starts from ${formatTime(d.opensAt)}.` : null,
+        hours: !Number.isInteger(hours) || hours < d.blockHours ? `Book at least ${d.blockHours} hours.`
+          : !end || minutesOf(start) + hours * 60 > minutesOf(d.closesAt) ? `Day use ends by ${formatTime(d.closesAt)}.` : null,
+        guests: guests > capacity ? `Up to ${capacity} people for day use.` : null,
+      })
+      const q = quoteDayUse({ blockHours: d.blockHours, price: d.priceMinor / 100, extraHourPrice: d.extraHourMinor / 100 }, hours)
+      slot = {
+        checkOut: addDays(checkIn, 1), nights: 0, startTime: start, endTime: end, hours,
+        pricePerNightMinor: d.priceMinor, baseMinor: d.priceMinor, extraMinor: Math.round(q.extraAmount * 100), totalMinor: Math.round(q.total * 100),
+        deadline: requestDeadline(checkIn, Date.now(), start),
+      }
+    } else {
+      const checkOut = req.checkOut
+      const datesValid = isISODate(checkIn) && isISODate(checkOut)
+      if (!property.overnight) throw new AppError(400, 'This property only offers day use.')
+      collect({
+        checkIn: !datesValid ? 'Choose your check-in and check-out dates.' : checkIn < today ? 'Check-in can’t be in the past.' : null,
+        checkOut: datesValid && checkOut <= checkIn ? 'Check-out must be after check-in.'
+          : datesValid && daysBetween(checkIn, checkOut) > MAX_NIGHTS ? `Stays can be at most ${MAX_NIGHTS} nights.` : null,
+        guests: guests > property.maxGuests ? `This stay fits up to ${property.maxGuests} guests.` : null,
+      })
+      // The browser shows a preview; the price charged is always recalculated here.
+      const q = quoteStay(property.pricePerNightMinor / 100, checkIn, checkOut, guests)
+      slot = {
+        checkOut, nights: q.nights, startTime: null, endTime: null, hours: null, pricePerNightMinor: property.pricePerNightMinor,
+        baseMinor: Math.round(q.baseAmount * 100), extraMinor: Math.round(q.extraGuestAmount * 100), totalMinor: Math.round(q.total * 100),
+        deadline: requestDeadline(checkIn),
+      }
+    }
+
+    const totalMinor = slot.totalMinor
     const instant = (property.management ?? 'self') === 'managed'
     const pct = commissionPct(property.management ?? 'self', (await contentRepo.settings()).commission)
     const cfg = await paymentsService.activeConfig()
@@ -101,16 +152,21 @@ export const bookingService = {
     const guestDoc = (await usersRepo.findByUid(uid))!
     try {
       await bookingsRepo.create({
-        code, propertyId: property.id, guestId: guest.id, checkIn, checkOut, nights: q.nights, guests, currency: 'INR',
-        pricePerNightMinor: property.pricePerNightMinor, baseMinor: Math.round(q.baseAmount * 100),
-        extraGuestMinor: Math.round(q.extraGuestAmount * 100), serviceFeeMinor: Math.round(q.serviceFee * 100), totalMinor,
+        code, propertyId: property.id, guestId: guest.id, checkIn, checkOut: slot.checkOut, nights: slot.nights, guests, currency: 'INR',
+        pricePerNightMinor: slot.pricePerNightMinor, baseMinor: slot.baseMinor,
+        // For day use this is the extra hours; for stays, the extra-guest charge.
+        extraGuestMinor: slot.extraMinor, serviceFeeMinor: 0, totalMinor,
         commissionPct: pct, ...split({ commissionPct: pct }, totalMinor),
         paymentMethod: req.paymentMethod as PaymentMethod, contactPhone, specialRequests: specialRequests || null,
         status, paymentStatus: cfg ? 'created' : 'test',
-        expiresAt: status === 'AwaitingPayment' ? inMinutes(PAYMENT_HOLD_MINUTES) : status === 'Requested' ? requestDeadline(checkIn) : null,
+        expiresAt: status === 'AwaitingPayment' ? inMinutes(PAYMENT_HOLD_MINUTES) : status === 'Requested' ? slot.deadline : null,
+        kind, startTime: slot.startTime, endTime: slot.endTime, hours: slot.hours, guestBreakdown: party,
+        securityDepositMinor: property.securityDepositMinor, checkInTime: property.checkInTime, checkOutTime: property.checkOutTime,
       }, property, guestDoc)
     } catch (err) {
-      if (err instanceof NightsTakenError) throw datesTaken()
+      if (err instanceof NightsTakenError) throw kind === 'dayuse'
+        ? new AppError(409, err.message || 'Those hours were just booked. Please choose another time.', { startTime: err.message || 'Those hours are no longer available.' })
+        : datesTaken()
       throw err
     }
 
@@ -225,15 +281,17 @@ export const bookingService = {
   },
 
   /**
-   * Guests can cancel until the day before check-in. Paid bookings are refunded in full up to 48 hours
-   * before check-in, otherwise minus the first night. Requests and unpaid checkouts are cancelled free.
+   * Guests can cancel until the day before check-in. Paid stays are refunded in full up to 48 hours before
+   * check-in, otherwise minus the first night; paid day use in full up to 48 hours before, half up to 24 hours
+   * before, nothing later. Requests and unpaid checkouts are cancelled free.
    */
   async cancelByGuest(guest: Me, code: string) {
     const today = todayISO()
     let refundMinor = 0
     const before = await bookingsRepo.transition(code, ['AwaitingPayment', 'Requested', 'Confirmed'], (b) => {
       if (b.guestId !== guest.id || b.checkIn <= today) return null
-      refundMinor = b.status === 'Confirmed' ? guestRefundMinor(b.totalMinor, b.pricePerNightMinor, b.checkIn)
+      refundMinor = b.status === 'Confirmed'
+        ? (b.kind === 'dayuse' ? dayUseRefundMinor(b.totalMinor, b.checkIn, b.startTime ?? '12:00') : guestRefundMinor(b.totalMinor, b.pricePerNightMinor, b.checkIn))
         : b.status === 'Requested' ? b.totalMinor : 0
       const kept = b.status === 'Confirmed' ? b.totalMinor - refundMinor : 0
       return {

@@ -1,4 +1,5 @@
-import { C, all, col, firestore, nextId, nightsOf, nowISO } from '../store/db'
+import { C, all, col, daysOf, firestore, nextId, nightsOf, nowISO } from '../store/db'
+import { isLive, type DaySlot } from './schedule'
 import { datesIn } from './properties'
 
 // Collection: availabilityBlocks/{id} — nights a host has closed. Each also claims its night documents.
@@ -21,8 +22,10 @@ export const availabilityRepo = {
   /** Claims the nights for a block; throws BlockConflictError if any is booked or already blocked. */
   async addBlock(propertyId: number, checkIn: string, checkOut: string, note: string | null) {
     await firestore.runTransaction(async (tx) => {
-      const nightRefs = datesIn(checkIn, checkOut).map((d) => nightsOf(propertyId).doc(d))
-      const existing = await tx.getAll(...nightRefs)
+      const dates = datesIn(checkIn, checkOut)
+      const nightRefs = dates.map((d) => nightsOf(propertyId).doc(d))
+      const [existing, days] = await Promise.all([tx.getAll(...nightRefs), tx.getAll(...dates.map((d) => daysOf(propertyId).doc(d)))])
+      if (days.some((d) => ((d.data()?.slots ?? []) as DaySlot[]).some((sl) => isLive(sl.holdUntil, nowISO())))) throw new BlockConflictError('booked')
       const now = nowISO()
       // A lapsed payment or request hold doesn't stop a block; the expiry sweep closes that booking.
       const taken = existing.filter((n) => n.exists && !(n.data()!.holdUntil && n.data()!.holdUntil < now)).map((n) => n.data()!.kind as string)

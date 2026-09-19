@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react'
 import { Link } from 'react-router'
 import { EmptyState, ErrorNote, PageHeader, Panel, Spinner, StatCard, StatusBadge, useAuth } from '@meridian/ui'
-import { formatDateRange, formatPrice, REQUEST_HOURS } from '@meridian/shared'
+import { bookingWhen, formatPrice, REQUEST_HOURS } from '@meridian/shared'
 import { hostApi, type HostBooking, type HostStats } from '@meridian/shared/client'
 
 export function Dashboard() {
@@ -65,7 +65,7 @@ export function Dashboard() {
                   <li key={b.code} className="py-3 flex items-center justify-between gap-4">
                     <div className="min-w-0">
                       <p className="font-bold text-sm text-slate-900 truncate">{b.property.title}</p>
-                      <p className="text-xs text-slate-500">{b.guestName} · {formatDateRange(b.checkIn, b.checkOut)} · {b.guests} guests</p>
+                      <p className="text-xs text-slate-500">{b.guestName} · {b.kind === 'dayuse' ? 'Day out · ' : ''}{bookingWhen(b)} · {b.guests} guests</p>
                     </div>
                     <StatusBadge status={b.status} />
                   </li>

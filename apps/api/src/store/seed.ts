@@ -1,7 +1,7 @@
 import { fileURLToPath } from 'node:url'
 import { addDays, commissionMinor, defaultCommission, galleryImages as g, images, quoteStay, REQUEST_HOURS, todayISO } from '@meridian/shared'
 import { auth } from './firebase'
-import { C, col, datesOf, firestore, nightsOf } from './seedHelpers'
+import { C, col, datesOf, daysOf, firestore, nightsOf } from './seedHelpers'
 import { newBookingCode } from '../services/bookings'
 import { reviewerName } from '../services/reviews'
 
@@ -237,6 +237,34 @@ const messages: [name: string, email: string, topic: string, message: string, st
 ]
 
 
+// Property details (demo): area, capacities, rules, deposit, a sample address, and day use on a few properties.
+const DAY_USE: Record<string, { price: number; extra: number; block: number }> = {
+  'green-valley-organic-farmstay': { price: 4500, extra: 600, block: 6 },
+  'emerald-luxury-pool-villa': { price: 12000, extra: 1800, block: 6 },
+  'assagao-coconut-grove-villa': { price: 9500, extra: 1500, block: 8 },
+  'sunny-citrus-farm-estate': { price: 3800, extra: 500, block: 6 },
+}
+function details(s: SeedProperty) {
+  const big = s.type === 'Villa' || s.type === 'Resort'
+  const d = DAY_USE[s.slug]
+  return {
+    areaSqft: { Room: 350, Cottage: 1100, Farmstay: 2400, Villa: 4200, Resort: 9000 }[s.type as 'Room'] ?? 1200,
+    gatheringCapacity: d ? s.maxGuests * 3 : big ? s.maxGuests * 2 : null,
+    checkInTime: '14:00', checkOutTime: s.type === 'Resort' ? '12:00' : '11:00',
+    houseRules: {
+      couples: true, pets: s.amenities.includes('Pet friendly'), nonVeg: s.slug !== 'jaipur-heritage-haveli-room' && s.slug !== 'rishikesh-riverside-homestay-room',
+      alcohol: big, parties: big || !!d, bachelors: big, smoking: false, quietAfter: big ? '23:00' : '22:00',
+      notes: s.type === 'Farmstay' ? 'Please don’t pick fruit or disturb the animals without the caretaker. Bonfire until 11 pm.' : '',
+    },
+    securityDepositMinor: (big ? 5000 : s.type === 'Room' ? 0 : 2000) * 100,
+    address: `Sample address: ${s.title}, near the main road, ${s.city}, ${s.region} (demo)`,
+    overnight: true,
+    dayUse: d
+      ? { enabled: true, blockHours: d.block, priceMinor: d.price * 100, extraHourMinor: d.extra * 100, opensAt: '08:00', closesAt: '22:00' }
+      : { enabled: false, blockHours: 6, priceMinor: 300000, extraHourMinor: 40000, opensAt: '08:00', closesAt: '22:00' },
+  }
+}
+
 const daysAgo = (n: number) => new Date(Date.now() - n * 86_400_000).toISOString()
 
 /**
@@ -343,6 +371,7 @@ export async function seed(log = console.log, force = false): Promise<boolean> {
       maxGuests: s.maxGuests, status: s.status, rejectionReason: s.rejectionReason ?? null, coverImageUrl: s.cover, photos: s.photos,
       amenities: s.amenities, ratingAvg: p.rating, reviewCount: p.count, featuredRank: s.featured ?? null,
       approvedAt: s.status === 'Approved' ? daysAgo(30) : null, createdAt: daysAgo(60 - p.id), updatedAt: daysAgo(30),
+      ...details(s),
     })
   }
 
@@ -392,7 +421,38 @@ export async function seed(log = console.log, force = false): Promise<boolean> {
     w.set(col(C.audit).doc(), { ...admin(who), action, targetType, targetId, details, createdAt: daysAgo(ago) })
   }
 
-  const counters = { users: Math.max(users.length, highestUserId), properties: properties.length, reviews: reviewId, bookings: bookings.length, blocks: blocks.length, messages: messages.length }
+  // Two day-use bookings ("Day out") for the demo.
+  const dayOuts: [slug: string, guest: string, inDays: number, start: string, hours: number, party: number][] = [
+    ['emerald-luxury-pool-villa', 'neha', 9, '10:00', 8, 12],
+    ['green-valley-organic-farmstay', 'sid', 20, '09:00', 6, 8],
+  ]
+  for (const [i, [slug, who, inDays, start, hours, people]] of dayOuts.entries()) {
+    const p = props.get(slug)!
+    const d = DAY_USE[slug]
+    const guest = ids.get(who)!
+    const date = addDays(today, inDays)
+    const end = `${String(Number(start.slice(0, 2)) + hours).padStart(2, '0')}:00`
+    const totalMinor = (d.price + Math.max(0, hours - d.block) * d.extra) * 100
+    const pct = p.seed.managed ? defaultCommission.managedPct : defaultCommission.selfPct
+    const commission = commissionMinor(totalMinor, pct)
+    const code = newBookingCode()
+    w.set(col(C.bookings).doc(code), {
+      id: bookings.length + i + 1, code, propertyId: p.id, hostId: ids.get(p.seed.host)!.id, guestId: guest.id,
+      property: { slug, title: p.seed.title, type: p.seed.type, location: `${p.seed.city}, ${p.seed.region}`, image: p.seed.cover },
+      guest: { name: guest.name, email: null, phone: guest.phone }, checkIn: date, checkOut: addDays(date, 1), nights: 0, guests: people,
+      currency: 'INR', pricePerNightMinor: d.price * 100, baseMinor: d.price * 100, extraGuestMinor: Math.max(0, hours - d.block) * d.extra * 100,
+      serviceFeeMinor: 0, totalMinor, management: p.seed.managed ? 'managed' : 'self', instantBook: !!p.seed.managed,
+      commissionPct: pct, commissionMinor: commission, hostPayoutMinor: totalMinor - commission, status: 'Confirmed', paymentMethod: 'upi',
+      paymentStatus: 'test', razorpayOrderId: null, razorpayPaymentId: null, refundedMinor: 0, expiresAt: null, contactPhone: guest.phone,
+      specialRequests: i === 0 ? 'Birthday pool party for 12. We’ll bring our own cake and decorations.' : 'Family picnic, please arrange a farm walk for the kids.',
+      createdAt: daysAgo(3), confirmedAt: daysAgo(3), cancelledAt: null, decidedAt: null, declineReason: null, reviewed: false,
+      kind: 'dayuse', startTime: start, endTime: end, hours, guestBreakdown: { adults: people - 2, children: 2, infants: 0, pets: 0 },
+      securityDepositMinor: details(p.seed).securityDepositMinor, checkInTime: '14:00', checkOutTime: '11:00', address: details(p.seed).address,
+    })
+    w.set(daysOf(p.id).doc(date), { slots: [{ ref: code, start, end, holdUntil: null }] })
+  }
+
+  const counters = { users: Math.max(users.length, highestUserId), properties: properties.length, reviews: reviewId, bookings: bookings.length + dayOuts.length, blocks: blocks.length, messages: messages.length }
   for (const [name, value] of Object.entries(counters)) w.set(col(C.counters).doc(name), { value })
 
   // A visible announcement so the preview shows the banner.
