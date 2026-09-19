@@ -9,6 +9,9 @@ import './index.css'
 import App from './App'
 import { WishlistProvider } from './lib/wishlist'
 import { SiteProvider } from './lib/site'
+import { initInstall } from './lib/install'
+
+initInstall()
 
 createRoot(document.getElementById('root')!).render(
   <StrictMode>

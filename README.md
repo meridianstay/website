@@ -100,6 +100,12 @@ reference/index.html       the original single-file prototype
 - **Double bookings** are impossible: each booked or blocked night is claimed inside a Firestore transaction, so two guests can never get the same night.
 - **Reviews** can only be written by a guest whose stay has finished, once per booking.
 
+## Installing as a phone app
+
+The website is a **Progressive Web App**: the **Download app** button in the header adds Meridian Stay to a phone's home screen with its own icon, opening full screen. Android and desktop Chrome/Edge get a one-tap install prompt; iPhones get Safari's "Add to Home Screen" steps. The files are in `apps/website/public`: `manifest.webmanifest` (name, colours, icons, shortcuts), `icons/`, `sw.js` (offline page only, no caching of data) and `offline.html`. The install logic is `apps/website/src/lib/install.ts`.
+
+To change the app icon, replace the PNGs in `apps/website/public/icons/` (192×192 and 512×512, plus a 512×512 `maskable` version with the logo inside the middle 80%, and a 180×180 `apple-touch-icon`).
+
 ## Keeping this up to date
 
 Every change to the repository gets an entry in [CHANGELOG.md](CHANGELOG.md), in the same commit.
