@@ -34,8 +34,17 @@ await build({
   format: 'esm',
   // Everything, including firebase-admin, is bundled into one file (the shape Vercel runs most reliably).
   external: [],
-  // Some bundled CommonJS dependencies call require(); give ESM a working one.
-  banner: { js: "import { createRequire as __cr } from 'node:module'; const require = __cr(import.meta.url);" },
+  // Bundled CommonJS dependencies (firebase-admin, gRPC) expect require, __filename and __dirname.
+  banner: {
+    js: [
+      "import { createRequire as __cr } from 'node:module';",
+      "import { fileURLToPath as __fu } from 'node:url';",
+      "import { dirname as __dn } from 'node:path';",
+      'const require = __cr(import.meta.url);',
+      'const __filename = __fu(import.meta.url);',
+      'const __dirname = __dn(__filename);',
+    ].join(' '),
+  },
   logLevel: 'info',
 })
 writeFileSync(`${fn}/.vc-config.json`, JSON.stringify({ runtime: 'nodejs22.x', handler: 'index.mjs', launcherType: 'Nodejs', shouldAddHelpers: false, maxDuration: 30 }, null, 2))
