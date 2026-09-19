@@ -10,3 +10,42 @@ body {
 ::-webkit-scrollbar-track { background: #f1f5f9; }
 ::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 4px; }
 ::-webkit-scrollbar-thumb:hover { background: #94a3b8; }
+
+:focus-visible {
+  outline: 2px solid #059669;
+  outline-offset: 2px;
+}
+
+/* Keep in-page anchor targets clear of the sticky header. */
+[id] {
+  scroll-margin-top: 96px;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after {
+    animation-duration: 0.01ms !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
+}
+
+/* Map price markers */
+.ms-pin {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  transform: translate(-50%, -50%);
+  white-space: nowrap;
+  background: #0f172a;
+  color: #fff;
+  font: 700 12px/1 Inter, sans-serif;
+  padding: 7px 11px;
+  border-radius: 999px;
+  border: 2px solid #fff;
+  box-shadow: 0 6px 16px rgb(15 23 42 / 0.3);
+  cursor: pointer;
+}
+.ms-pin-active {
+  background: #059669;
+  transform: translate(-50%, -50%) scale(1.1);
+}

@@ -1,7 +1,36 @@
-const columns = [
-  { heading: 'About Meridian', links: ['How it works', 'Newsroom & Press', 'Investors', 'Eco-Sustainability'] },
-  { heading: 'Hosting', links: ['List your property', 'Host protection cover', 'Explore hosting resources', 'Community guidelines'] },
-  { heading: 'Support', links: ['Help Center', 'Cancellation options', 'Trust & Safety', 'Contact Us'] },
+import { Link } from 'react-router'
+import { appLink } from '@meridian/shared/client'
+
+type FooterLink = { label: string; to: string; external?: boolean }
+
+const columns: { heading: string; links: FooterLink[] }[] = [
+  {
+    heading: 'About Meridian',
+    links: [
+      { label: 'How it works', to: '/how-it-works' },
+      { label: 'Newsroom & Press', to: '/newsroom' },
+      { label: 'Investors', to: '/investors' },
+      { label: 'Eco-Sustainability', to: '/sustainability' },
+    ],
+  },
+  {
+    heading: 'Hosting',
+    links: [
+      { label: 'List your property', to: appLink('host', '/new'), external: true },
+      { label: 'Host protection cover', to: '/host-protection' },
+      { label: 'Explore hosting resources', to: '/hosting-resources' },
+      { label: 'Community guidelines', to: '/community-guidelines' },
+    ],
+  },
+  {
+    heading: 'Support',
+    links: [
+      { label: 'Help Center', to: '/help' },
+      { label: 'Cancellation options', to: '/cancellation-policy' },
+      { label: 'Trust & Safety', to: '/trust-safety' },
+      { label: 'Contact Us', to: '/contact' },
+    ],
+  },
 ]
 
 export function Footer() {
@@ -25,8 +54,12 @@ export function Footer() {
               <h4 className="text-[11px] font-bold text-slate-900 uppercase tracking-wider mb-4">{col.heading}</h4>
               <ul className="space-y-2.5 font-light">
                 {col.links.map((link) => (
-                  <li key={link}>
-                    <a href="#" className="hover:text-brand-600 transition">{link}</a>
+                  <li key={link.label}>
+                    {link.external ? (
+                      <a href={link.to} className="hover:text-brand-600 transition">{link.label}</a>
+                    ) : (
+                      <Link to={link.to} className="hover:text-brand-600 transition">{link.label}</Link>
+                    )}
                   </li>
                 ))}
               </ul>
@@ -35,11 +68,11 @@ export function Footer() {
         </div>
 
         <div className="mt-10 pt-6 border-t border-slate-100 flex flex-col sm:flex-row items-center justify-between gap-3 text-[11px] text-slate-400">
-          <p>© 2026 Meridian Stay Inc. All rights reserved.</p>
+          <p>© {new Date().getFullYear()} Meridian Stay Inc. All rights reserved.</p>
           <div className="flex items-center space-x-6">
-            <a href="#" className="hover:text-slate-700">Privacy</a>
-            <a href="#" className="hover:text-slate-700">Terms</a>
-            <a href="#" className="hover:text-slate-700">Sitemap</a>
+            <Link to="/privacy" className="hover:text-slate-700">Privacy</Link>
+            <Link to="/terms" className="hover:text-slate-700">Terms</Link>
+            <Link to="/sitemap" className="hover:text-slate-700">Sitemap</Link>
           </div>
         </div>
       </div>

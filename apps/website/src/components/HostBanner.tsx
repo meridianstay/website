@@ -1,4 +1,5 @@
 import { images } from '@meridian/shared'
+import { appLink } from '@meridian/shared/client'
 
 export function HostBanner() {
   return (
@@ -10,14 +11,15 @@ export function HostBanner() {
           <p className="text-sm text-brand-50/90 mt-4 max-w-lg font-light leading-relaxed">
             Join thousands of successful hosts. List your property on Meridian Stay today and start welcoming nature-loving guests from around the globe.
           </p>
-          <button type="button" className="mt-6 bg-white hover:bg-brand-50 text-brand-700 font-bold text-sm py-3.5 px-12 rounded-xl shadow-lg transition">
+          <a href={appLink('host', '/new')} className="inline-block mt-6 bg-white hover:bg-brand-50 text-brand-700 font-bold text-sm py-3.5 px-12 rounded-xl shadow-lg transition">
             Become a Host
-          </button>
+          </a>
         </div>
         <div className="flex justify-center lg:justify-end">
           <img
             src={images.hostBanner}
             alt="Resort pool at dusk"
+            loading="lazy"
             className="w-full max-w-[350px] h-[236px] object-cover rounded-2xl border-4 border-white/25 shadow-2xl"
           />
         </div>

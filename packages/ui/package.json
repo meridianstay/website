@@ -4,7 +4,8 @@
   "private": true,
   "type": "module",
   "exports": {
-    ".": "./src/index.ts"
+    ".": "./src/index.ts",
+    "./motion.css": "./src/motion.css"
   },
   "scripts": {
     "typecheck": "tsc --noEmit -p ."
@@ -15,5 +16,8 @@
   },
   "devDependencies": {
     "@meridian/tsconfig": "*"
+  },
+  "dependencies": {
+    "@meridian/shared": "*"
   }
 }

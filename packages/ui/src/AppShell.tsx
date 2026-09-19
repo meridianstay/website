@@ -1,6 +1,8 @@
 import type { ReactNode } from 'react'
-import { NavLink } from 'react-router'
+import { NavLink, useLocation } from 'react-router'
+import { appLink } from '@meridian/shared/client'
 import { Logo } from './Logo'
+import { useAuth } from './auth'
 
 export interface NavItem {
   to: string
@@ -13,7 +15,6 @@ export interface NavItem {
 interface AppShellProps {
   subtitle: string
   nav: NavItem[]
-  user: { name: string; email: string; role: string; avatar?: string }
   children: ReactNode
 }
 
@@ -22,15 +23,24 @@ const linkClass = ({ isActive }: { isActive: boolean }) =>
     isActive ? 'bg-brand-50 text-brand-700' : 'text-slate-600 hover:bg-slate-100 hover:text-slate-900'
   }`
 
-/** Sidebar layout shared by the admin, host and account panels. */
-export function AppShell({ subtitle, nav, user, children }: AppShellProps) {
+/** Sidebar layout shared by the admin, host and account panels. Expects a signed-in user. */
+export function AppShell({ subtitle, nav, children }: AppShellProps) {
+  const { user, logout } = useAuth()
+  const { pathname } = useLocation()
+  if (!user) return null
+
+  const signOut = async () => {
+    await logout()
+    window.location.assign(appLink('website', '/'))
+  }
+
   return (
     <div className="min-h-screen bg-slate-50 text-slate-800 antialiased lg:flex">
       <aside className="hidden lg:flex lg:flex-col w-64 shrink-0 bg-white border-r border-slate-200 h-screen sticky top-0">
         <div className="h-20 px-6 flex items-center border-b border-slate-100">
-          <Logo subtitle={subtitle} />
+          <Logo subtitle={subtitle} href={appLink('website', '/')} />
         </div>
-        <nav className="flex-1 p-4 space-y-1" aria-label="Main">
+        <nav className="flex-1 p-4 space-y-1 overflow-y-auto" aria-label="Main">
           {nav.map((item) => (
             <NavLink key={item.to} to={item.to} end={item.end} className={linkClass}>
               <i className={`fa-solid fa-${item.icon} w-4 text-center`} aria-hidden="true"></i>
@@ -38,8 +48,17 @@ export function AppShell({ subtitle, nav, user, children }: AppShellProps) {
             </NavLink>
           ))}
         </nav>
-        <div className="p-4 border-t border-slate-100">
-          <UserBadge user={user} />
+        <div className="p-4 border-t border-slate-100 space-y-3">
+          <a href={appLink('website', '/')} className="flex items-center space-x-3 px-4 py-2 rounded-xl text-sm font-semibold text-slate-600 hover:bg-slate-100">
+            <i className="fa-solid fa-arrow-left w-4 text-center" aria-hidden="true"></i>
+            <span>Back to Meridian Stay</span>
+          </a>
+          <div className="flex items-center justify-between gap-2">
+            <UserBadge user={user} />
+            <button type="button" onClick={signOut} aria-label="Log out" title="Log out" className="w-9 h-9 shrink-0 rounded-full text-slate-500 hover:bg-rose-50 hover:text-rose-600">
+              <i className="fa-solid fa-right-from-bracket" aria-hidden="true"></i>
+            </button>
+          </div>
         </div>
       </aside>
 
@@ -47,8 +66,13 @@ export function AppShell({ subtitle, nav, user, children }: AppShellProps) {
         {/* Compact header and scrolling nav below the lg breakpoint */}
         <header className="lg:hidden sticky top-0 z-40 bg-white/95 backdrop-blur-md border-b border-slate-200">
           <div className="h-16 px-4 flex items-center justify-between">
-            <Logo subtitle={subtitle} />
-            <Avatar user={user} />
+            <Logo subtitle={subtitle} href={appLink('website', '/')} />
+            <div className="flex items-center space-x-2">
+              <Avatar user={user} />
+              <button type="button" onClick={signOut} aria-label="Log out" className="w-9 h-9 rounded-full text-slate-500 hover:bg-rose-50 hover:text-rose-600">
+                <i className="fa-solid fa-right-from-bracket" aria-hidden="true"></i>
+              </button>
+            </div>
           </div>
           <nav className="px-3 pb-3 flex space-x-1 overflow-x-auto" aria-label="Main">
             {nav.map((item) => (
@@ -60,25 +84,28 @@ export function AppShell({ subtitle, nav, user, children }: AppShellProps) {
           </nav>
         </header>
 
-        <main className="flex-1 p-4 sm:p-8 max-w-7xl w-full mx-auto">{children}</main>
+        <main key={pathname} className="flex-1 p-4 sm:p-8 max-w-7xl w-full mx-auto animate-page-in">{children}</main>
       </div>
     </div>
   )
 }
 
-function Avatar({ user }: { user: AppShellProps['user'] }) {
+type ShellUser = { name: string; email: string; avatar: string | null }
+
+export function Avatar({ user, size = 'md' }: { user: ShellUser; size?: 'sm' | 'md' }) {
+  const box = size === 'sm' ? 'w-8 h-8 text-xs' : 'w-9 h-9 text-sm'
   return user.avatar ? (
-    <img src={user.avatar} alt="" className="w-9 h-9 rounded-full object-cover border border-brand-yellow-400" />
+    <img src={user.avatar} alt="" className={`${box} rounded-full object-cover border border-brand-yellow-400`} />
   ) : (
-    <div className="w-9 h-9 rounded-full bg-brand-100 text-brand-700 font-bold text-sm flex items-center justify-center border border-brand-yellow-400">
-      {user.name.charAt(0)}
+    <div className={`${box} rounded-full bg-brand-100 text-brand-700 font-bold flex items-center justify-center border border-brand-yellow-400`}>
+      {user.name.charAt(0).toUpperCase()}
     </div>
   )
 }
 
-function UserBadge({ user }: { user: AppShellProps['user'] }) {
+function UserBadge({ user }: { user: ShellUser }) {
   return (
-    <div className="flex items-center space-x-3">
+    <div className="flex items-center space-x-3 min-w-0">
       <Avatar user={user} />
       <div className="min-w-0">
         <p className="text-sm font-semibold text-slate-900 truncate">{user.name}</p>

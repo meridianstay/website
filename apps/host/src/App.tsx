@@ -1,10 +1,10 @@
 import { Route, Routes } from 'react-router'
-import { AppShell, type NavItem } from '@meridian/ui'
-import { demoHost } from '@meridian/shared'
+import { AppShell, RequireAuth, type NavItem, useHideSplash } from '@meridian/ui'
 import { Dashboard } from './pages/Dashboard'
 import { MyListings } from './pages/MyListings'
-import { Onboarding } from './pages/Onboarding'
+import { ListingEditor } from './pages/ListingEditor'
 import { HostBookings } from './pages/HostBookings'
+import { ListingCalendar } from './pages/ListingCalendar'
 
 const nav: NavItem[] = [
   { to: '/', label: 'Dashboard', icon: 'chart-line', end: true },
@@ -14,14 +14,20 @@ const nav: NavItem[] = [
 ]
 
 export default function App() {
+  useHideSplash()
   return (
-    <AppShell subtitle="Host Portal" nav={nav} user={demoHost}>
-      <Routes>
-        <Route index element={<Dashboard />} />
-        <Route path="listings" element={<MyListings />} />
-        <Route path="bookings" element={<HostBookings />} />
-        <Route path="new" element={<Onboarding />} />
-      </Routes>
-    </AppShell>
+    <RequireAuth>
+      <AppShell subtitle="Host Portal" nav={nav}>
+        <Routes>
+          <Route index element={<Dashboard />} />
+          <Route path="listings" element={<MyListings />} />
+          <Route path="listings/:id/edit" element={<ListingEditor />} />
+          <Route path="listings/:id/calendar" element={<ListingCalendar />} />
+          <Route path="bookings" element={<HostBookings />} />
+          <Route path="new" element={<ListingEditor />} />
+          <Route path="*" element={<Dashboard />} />
+        </Routes>
+      </AppShell>
+    </RequireAuth>
   )
 }
