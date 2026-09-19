@@ -1,4 +1,5 @@
 import { Route, Routes } from 'react-router'
+import { appLink } from '@meridian/shared/client'
 import { AppShell, RequireAuth, type NavItem, useHideSplash } from '@meridian/ui'
 import { Overview } from './pages/Overview'
 import { Listings } from './pages/Listings'
@@ -11,6 +12,8 @@ import { PageEditor } from './pages/PageEditor'
 import { Activity } from './pages/Activity'
 import { Database } from './pages/Database'
 import { DatabaseTable } from './pages/DatabaseTable'
+import { AdminLogin } from './pages/AdminLogin'
+import { Settings } from './pages/Settings'
 
 const nav: NavItem[] = [
   { to: '/', label: 'Overview', icon: 'gauge-high', end: true },
@@ -22,29 +25,39 @@ const nav: NavItem[] = [
   { to: '/website', label: 'Website content', icon: 'pen-to-square' },
   { to: '/activity', label: 'Activity log', icon: 'clock-rotate-left' },
   { to: '/database', label: 'Database', icon: 'database' },
+  { to: '/settings', label: 'Settings', icon: 'gear' },
 ]
 
 export default function App() {
   useHideSplash()
   return (
-    <RequireAuth roles={['admin']}>
-      <AppShell subtitle="Control Center" nav={nav}>
-        <Routes>
-          <Route index element={<Overview />} />
-          <Route path="listings" element={<Listings />} />
-          <Route path="bookings" element={<Bookings />} />
-          <Route path="users" element={<Users />} />
-          <Route path="reviews" element={<Reviews />} />
-          <Route path="messages" element={<Messages />} />
-          <Route path="website" element={<Website />} />
-          <Route path="website/pages/new" element={<PageEditor />} />
-          <Route path="website/pages/:slug" element={<PageEditor />} />
-          <Route path="activity" element={<Activity />} />
-          <Route path="database" element={<Database />} />
-          <Route path="database/:table" element={<DatabaseTable />} />
-          <Route path="*" element={<Overview />} />
-        </Routes>
-      </AppShell>
-    </RequireAuth>
+    <Routes>
+      <Route path="login" element={<AdminLogin />} />
+      <Route
+        path="*"
+        element={
+          <RequireAuth roles={['admin']} loginHref={appLink('admin', '/login')}>
+            <AppShell subtitle="Control Center" nav={nav}>
+              <Routes>
+                <Route index element={<Overview />} />
+                <Route path="listings" element={<Listings />} />
+                <Route path="bookings" element={<Bookings />} />
+                <Route path="users" element={<Users />} />
+                <Route path="reviews" element={<Reviews />} />
+                <Route path="messages" element={<Messages />} />
+                <Route path="website" element={<Website />} />
+                <Route path="website/pages/new" element={<PageEditor />} />
+                <Route path="website/pages/:slug" element={<PageEditor />} />
+                <Route path="activity" element={<Activity />} />
+                <Route path="database" element={<Database />} />
+                <Route path="database/:table" element={<DatabaseTable />} />
+                <Route path="settings" element={<Settings />} />
+                <Route path="*" element={<Overview />} />
+              </Routes>
+            </AppShell>
+          </RequireAuth>
+        }
+      />
+    </Routes>
   )
 }

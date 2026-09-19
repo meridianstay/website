@@ -1,30 +1,34 @@
 import type { Context, MiddlewareHandler } from 'hono'
 import { deleteCookie, getCookie, setCookie } from 'hono/cookie'
 import type { Me, UserRole } from '@meridian/shared'
-import { authService } from '../services/auth'
+import { authService, type Portal } from '../services/auth'
 
-export type AppEnv = { Variables: { user: Me | null } }
+export type AppEnv = { Variables: { user: Me | null; uid: string | null } }
 
 const COOKIE = 'ms_session'
 const isProd = process.env.NODE_ENV === 'production'
 // Set COOKIE_DOMAIN=.meridianstay.com when apps move to subdomains so they share the session.
 const domain = () => process.env.COOKIE_DOMAIN || undefined
 
-export async function signIn(c: Context, userId: number) {
-  const { token, expires } = await authService.startSession(userId)
-  setCookie(c, COOKIE, token, { httpOnly: true, sameSite: 'Lax', secure: isProd, path: '/', expires, domain: domain() })
+/** Verifies a Firebase ID token for a portal and sets the session cookie. */
+export async function signIn(c: Context, idToken: string, portal: Portal) {
+  const { user, cookie, expires } = await authService.signIn(idToken, portal)
+  setCookie(c, COOKIE, cookie, { httpOnly: true, sameSite: 'Lax', secure: isProd, path: '/', expires, domain: domain() })
+  return user
 }
 
-export async function signOut(c: Context) {
-  const token = getCookie(c, COOKIE)
-  if (token) await authService.endSession(token)
+export async function signOut(c: Context<AppEnv>) {
+  const uid = c.get('uid')
+  if (uid) await authService.signOutEverywhere(uid)
   deleteCookie(c, COOKIE, { path: '/', domain: domain() })
 }
 
 /** Loads the signed-in user (or null) for every request. */
 export const loadUser: MiddlewareHandler<AppEnv> = async (c, next) => {
-  const token = getCookie(c, COOKIE)
-  c.set('user', token ? await authService.userForToken(token) : null)
+  const cookie = getCookie(c, COOKIE)
+  const signedIn = cookie ? await authService.userForCookie(cookie) : null
+  c.set('user', signedIn?.me ?? null)
+  c.set('uid', signedIn?.uid ?? null)
   await next()
 }
 
@@ -42,6 +46,7 @@ export const requireRole = (...roles: UserRole[]): MiddlewareHandler<AppEnv> => 
 
 /** The signed-in user; only call after requireUser/requireRole. */
 export const currentUser = (c: Context<AppEnv>) => c.get('user')!
+export const currentUid = (c: Context<AppEnv>) => c.get('uid')!
 
 /** Reads a JSON body, treating a missing or broken body as empty. */
 export const body = async (c: Context): Promise<Record<string, unknown>> => (await c.req.json().catch(() => ({}))) ?? {}

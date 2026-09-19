@@ -1,9 +1,9 @@
 // Builds the whole platform for Vercel using the Build Output API (https://vercel.com/docs/build-output-api):
 //   /           website        /admin    admin control center
 //   /host       host portal    /account  guest account
-//   /api/*      serverless function (Hono API + Postgres)
+//   /api/*      serverless function (Hono API + Firebase Admin SDK)
 import { execSync } from 'node:child_process'
-import { cpSync, mkdirSync, rmSync, writeFileSync } from 'node:fs'
+import { cpSync, mkdirSync, readFileSync, rmSync, writeFileSync } from 'node:fs'
 import { build } from 'esbuild'
 
 const out = '.vercel/output'
@@ -32,12 +32,15 @@ await build({
   platform: 'node',
   target: 'node22',
   format: 'esm',
-  external: ['pg-native'],
+  // firebase-admin loads data files at runtime, so it's installed next to the bundle instead of inlined.
+  external: ['firebase-admin', 'firebase-admin/*'],
   // Some bundled CommonJS dependencies call require(); give ESM a working one.
   banner: { js: "import { createRequire as __cr } from 'node:module'; const require = __cr(import.meta.url);" },
   logLevel: 'info',
 })
-cpSync('apps/api/db/migrations', `${fn}/migrations`, { recursive: true })
+const adminVersion = JSON.parse(readFileSync('node_modules/firebase-admin/package.json', 'utf8')).version
+writeFileSync(`${fn}/package.json`, JSON.stringify({ type: 'module', private: true, dependencies: { 'firebase-admin': adminVersion } }, null, 2))
+run(`npm install --omit=dev --no-audit --no-fund --prefix ${fn}`)
 writeFileSync(`${fn}/.vc-config.json`, JSON.stringify({ runtime: 'nodejs22.x', handler: 'index.mjs', launcherType: 'Nodejs', shouldAddHelpers: false, maxDuration: 30 }, null, 2))
 
 // Hashed assets can be cached forever; HTML must always be fresh.

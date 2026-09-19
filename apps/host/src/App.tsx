@@ -1,10 +1,12 @@
 import { Route, Routes } from 'react-router'
 import { AppShell, RequireAuth, type NavItem, useHideSplash } from '@meridian/ui'
+import { appLink } from '@meridian/shared/client'
 import { Dashboard } from './pages/Dashboard'
 import { MyListings } from './pages/MyListings'
 import { ListingEditor } from './pages/ListingEditor'
 import { HostBookings } from './pages/HostBookings'
 import { ListingCalendar } from './pages/ListingCalendar'
+import { HostLogin } from './pages/HostLogin'
 
 const nav: NavItem[] = [
   { to: '/', label: 'Dashboard', icon: 'chart-line', end: true },
@@ -16,18 +18,26 @@ const nav: NavItem[] = [
 export default function App() {
   useHideSplash()
   return (
-    <RequireAuth>
-      <AppShell subtitle="Host Portal" nav={nav}>
-        <Routes>
-          <Route index element={<Dashboard />} />
-          <Route path="listings" element={<MyListings />} />
-          <Route path="listings/:id/edit" element={<ListingEditor />} />
-          <Route path="listings/:id/calendar" element={<ListingCalendar />} />
-          <Route path="bookings" element={<HostBookings />} />
-          <Route path="new" element={<ListingEditor />} />
-          <Route path="*" element={<Dashboard />} />
-        </Routes>
-      </AppShell>
-    </RequireAuth>
+    <Routes>
+      <Route path="login" element={<HostLogin />} />
+      <Route
+        path="*"
+        element={
+          <RequireAuth loginHref={appLink('host', '/login')}>
+            <AppShell subtitle="Host Portal" nav={nav}>
+              <Routes>
+                <Route index element={<Dashboard />} />
+                <Route path="listings" element={<MyListings />} />
+                <Route path="listings/:id/edit" element={<ListingEditor />} />
+                <Route path="listings/:id/calendar" element={<ListingCalendar />} />
+                <Route path="bookings" element={<HostBookings />} />
+                <Route path="new" element={<ListingEditor />} />
+                <Route path="*" element={<Dashboard />} />
+              </Routes>
+            </AppShell>
+          </RequireAuth>
+        }
+      />
+    </Routes>
   )
 }

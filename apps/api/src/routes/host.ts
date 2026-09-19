@@ -2,7 +2,7 @@ import { Hono } from 'hono'
 import { todayISO } from '@meridian/shared'
 import { amenitiesRepo, bookingsRepo, propertiesRepo, statsRepo } from '../repositories'
 import { listingService, parseListing } from '../services/listings'
-import { body, currentUser, requireUser, type AppEnv } from '../http/auth'
+import { body, currentUid, currentUser, requireUser, type AppEnv } from '../http/auth'
 import { str } from '../http/validate'
 
 // Anyone signed in can host: creating a first listing turns a guest into a host.
@@ -18,7 +18,7 @@ hostRoutes.get('/host/listings', async (c) => c.json({ listings: await propertie
 hostRoutes.get('/host/listings/:id', async (c) => c.json({ listing: await listingService.getForEditing(currentUser(c), id(c)) }))
 hostRoutes.get('/host/bookings', async (c) => c.json({ bookings: await bookingsRepo.listForHost(currentUser(c).id, todayISO()) }))
 
-hostRoutes.post('/host/listings', async (c) => c.json({ id: await listingService.create(currentUser(c), parseListing(await body(c))) }, 201))
+hostRoutes.post('/host/listings', async (c) => c.json({ id: await listingService.create(currentUser(c), currentUid(c), parseListing(await body(c))) }, 201))
 
 hostRoutes.put('/host/listings/:id', async (c) => {
   await listingService.update(currentUser(c), id(c), parseListing(await body(c)))

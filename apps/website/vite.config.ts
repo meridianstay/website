@@ -18,6 +18,8 @@ const panelSlash: Plugin = {
 // The website is the front door in development: it serves / and forwards the API and the
 // other apps' paths, so the whole platform (and its login cookie) lives on one address.
 export default defineConfig({
+  // Shared .env files (e.g. the Firebase web config in .env.production) live at the repo root.
+  envDir: '../..',
   plugins: [panelSlash, react()],
   base: process.env.VITE_BASE_PATH ?? '/',
   server: {

@@ -1,10 +1,10 @@
 import type {
   AdminBooking, AdminListing, AdminReview, AdminStats, AdminUser, Amenity, AuditEntry, BookingDetail, ContactMessage,
-  DbBrowseResult, DbRow, DbTableSummary,
+  DbBrowseResult, DbRow, DbTableSummary, IntegrationStatus, SignInPortal,
   HostBooking, HostCalendar, HostListing, HostStats, ListingInput, Me, PaymentMethod, PropertyDetail, PropertySummary, SearchQuery,
 } from '../api-types'
 import type { ListingStatus, UserRole } from '../types'
-import type { AnnouncementSettings, ContentPage, HomepageSettings, SiteSettings } from '../content'
+import type { AnnouncementSettings, ContentPage, HomepageSettings, SignInSettings, SiteSettings, UploadSettings } from '../content'
 import { request } from './http'
 
 const qs = (params: object) => {
@@ -18,13 +18,17 @@ const qs = (params: object) => {
 
 export const api = {
   me: () => request<{ user: Me | null }>('/auth/me'),
-  login: (email: string, password: string) => request<{ user: Me }>('/auth/login', { method: 'POST', json: { email, password } }),
-  signup: (name: string, email: string, password: string) =>
-    request<{ user: Me }>('/auth/signup', { method: 'POST', json: { name, email, password } }),
+  /** Exchanges a Firebase ID token for a Meridian Stay session on one of the three portals. */
+  session: (idToken: string, portal: SignInPortal) => request<{ user: Me }>('/auth/session', { method: 'POST', json: { idToken, portal } }),
   logout: () => request<void>('/auth/logout', { method: 'POST' }),
   updateMe: (data: { name: string; phone: string }) => request<{ user: Me }>('/me', { method: 'PATCH', json: data }),
-  changePassword: (currentPassword: string, newPassword: string) =>
-    request<void>('/me/password', { method: 'POST', json: { currentPassword, newPassword } }),
+  /** Uploads a photo to Firebase Storage and returns its link. */
+  upload: (file: File, purpose: 'listing' | 'avatar') => {
+    const form = new FormData()
+    form.append('file', file)
+    form.append('purpose', purpose)
+    return request<{ url: string }>('/uploads', { method: 'POST', body: form })
+  },
 
   site: () => request<SiteSettings>('/site'),
   pages: () => request<{ pages: { slug: string; title: string }[] }>('/pages'),
@@ -100,6 +104,9 @@ export const adminApi = {
   settings: () => request<SiteSettings>('/admin/settings'),
   saveHomepage: (value: HomepageSettings) => request<void>('/admin/settings/homepage', { method: 'PUT', json: value }),
   saveAnnouncement: (value: AnnouncementSettings) => request<void>('/admin/settings/announcement', { method: 'PUT', json: value }),
+  saveSignIn: (value: SignInSettings) => request<void>('/admin/settings/signIn', { method: 'PUT', json: value }),
+  saveUploads: (value: UploadSettings) => request<void>('/admin/settings/uploads', { method: 'PUT', json: value }),
+  integrations: () => request<IntegrationStatus>('/admin/integrations'),
   pages: () => request<{ pages: ContentPage[] }>('/admin/pages'),
   savePage: (page: ContentPage) => request<void>(`/admin/pages/${encodeURIComponent(page.slug)}`, { method: 'PUT', json: page }),
   deletePage: (slug: string) => request<void>(`/admin/pages/${encodeURIComponent(slug)}`, { method: 'DELETE' }),

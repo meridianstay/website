@@ -1,62 +1,80 @@
-import { createHash, randomBytes } from 'node:crypto'
 import type { Me } from '@meridian/shared'
-import { hashPassword, verifyPassword } from '../lib/passwords'
-import { sessionsRepo, usersRepo } from '../repositories'
+import { auth } from '../store/firebase'
+import { contentRepo, toMe, usersRepo, type UserDoc } from '../repositories'
+import { nowISO } from '../store/db'
 import { AppError } from '../http/errors'
-import { checkEmail, checkLength, checkPhone, collect } from '../http/validate'
+import { checkLength, checkPhone, collect } from '../http/validate'
 
-// Accounts, passwords and sessions.
+// Sign-in with Firebase (Google or phone OTP) and Meridian Stay sessions.
 
-export const SESSION_DAYS = 30
-export const hashToken = (token: string) => createHash('sha256').update(token).digest('hex')
+/** Where the person is signing in. Each portal has its own login page. */
+export type Portal = 'guest' | 'host' | 'admin'
+
+/** Firebase session cookies can last at most 14 days. */
+export const SESSION_MS = 14 * 86_400_000
+
+const providerSetting = { 'google.com': 'google', phone: 'phone' } as const
+
+export interface SignedInUser { me: Me; uid: string }
 
 export const authService = {
-  async signup(name: string, email: string, password: string): Promise<Me> {
-    collect({
-      name: checkLength(name, 'Name', 1, 80),
-      email: checkEmail(email),
-      password: checkLength(password, 'Password', 8, 200),
-    })
-    if (await usersRepo.emailExists(email)) {
-      throw new AppError(409, 'An account with this email already exists. Log in instead.', { email: 'This email is already registered.' })
+  /**
+   * Exchanges a fresh Firebase ID token for a session cookie.
+   * Creates the account on first sign-in (as a guest) and applies the portal's rules.
+   */
+  async signIn(idToken: string, portal: Portal) {
+    let decoded
+    try {
+      decoded = await auth.verifyIdToken(idToken)
+    } catch {
+      throw new AppError(401, 'Your sign-in expired. Please try again.')
     }
-    return usersRepo.create({ name, email, passwordHash: hashPassword(password) })
-  },
+    const provider = decoded.firebase?.sign_in_provider as keyof typeof providerSetting
+    if (!(provider in providerSetting)) throw new AppError(403, 'Please sign in with Google or your phone number.')
 
-  async login(email: string, password: string): Promise<Me> {
-    const row = await usersRepo.findForLogin(email)
-    if (!row || !verifyPassword(password, row.password_hash)) throw new AppError(401, 'That email and password don’t match an account.')
-    if (row.suspended_at) throw new AppError(403, 'This account has been suspended. Contact us if you think this is a mistake.')
-    return (await usersRepo.findById(row.id))!
-  },
+    // Admins can always sign in, so turning a method off can't lock the team out.
+    if (portal !== 'admin') {
+      const { signIn } = await contentRepo.settings()
+      if (!signIn[providerSetting[provider]]) throw new AppError(403, 'That sign-in method is currently turned off.')
+    }
 
-  /** Creates a session and returns the raw token for the cookie. */
-  async startSession(userId: number) {
-    const token = randomBytes(32).toString('base64url')
-    const expires = new Date(Date.now() + SESSION_DAYS * 86_400_000)
-    await sessionsRepo.create(hashToken(token), userId, expires)
-    return { token, expires }
-  },
-
-  userForToken(token: string) {
-    return sessionsRepo.findUser(hashToken(token))
-  },
-
-  endSession(token: string) {
-    return sessionsRepo.delete(hashToken(token))
-  },
-
-  updateProfile(userId: number, name: string, phone: string) {
-    collect({ name: checkLength(name, 'Name', 1, 80), phone: phone ? checkPhone(phone) : null })
-    return usersRepo.updateProfile(userId, { name, phone: phone || null })
-  },
-
-  async changePassword(userId: number, current: string, next: string) {
-    const hash = await usersRepo.passwordHash(userId)
-    collect({
-      currentPassword: hash && verifyPassword(current, hash) ? null : 'Your current password isn’t right.',
-      newPassword: checkLength(next, 'New password', 8, 200) ?? (next === current ? 'Choose a password you haven’t used here.' : null),
+    const user = await usersRepo.upsertFromSignIn({
+      uid: decoded.uid,
+      name: (decoded.name as string | undefined) ?? null,
+      email: decoded.email ?? null,
+      phone: decoded.phone_number ?? null,
+      avatarUrl: decoded.picture ?? null,
     })
-    await usersRepo.setPasswordHash(userId, hashPassword(next))
+    if (user.suspendedAt) throw new AppError(403, 'This account has been suspended. Contact us if you think this is a mistake.')
+    if (portal === 'admin' && user.role !== 'admin') throw new AppError(403, 'This account doesn’t have access to the control center.')
+
+    const cookie = await auth.createSessionCookie(idToken, { expiresIn: SESSION_MS })
+    return { user: toMe(user), cookie, expires: new Date(Date.now() + SESSION_MS) }
+  },
+
+  /** The signed-in user for a session cookie, or null if invalid, signed out or suspended. */
+  async userForCookie(cookie: string): Promise<SignedInUser | null> {
+    try {
+      const decoded = await auth.verifySessionCookie(cookie)
+      const user = await usersRepo.findByUid(decoded.uid)
+      if (!user || user.suspendedAt) return null
+      if (user.sessionsRevokedAt && decoded.iat * 1000 < Date.parse(user.sessionsRevokedAt)) return null
+      return { me: toMe(user), uid: user.uid }
+    } catch {
+      return null
+    }
+  },
+
+  /** Signs the user out on every device. */
+  async signOutEverywhere(uid: string) {
+    await usersRepo.update(uid, { sessionsRevokedAt: nowISO() })
+    await auth.revokeRefreshTokens(uid).catch(() => {})
+  },
+
+  async updateProfile(uid: string, name: string, phone: string) {
+    collect({ name: checkLength(name, 'Name', 1, 80), phone: phone ? checkPhone(phone) : null })
+    return toMe(await usersRepo.update(uid, { name, phone: phone || null }))
   },
 }
+
+export type { UserDoc }

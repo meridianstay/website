@@ -7,7 +7,7 @@ const TOPICS = ['Booking help', 'Hosting', 'Payments & refunds', 'Trust & safety
 
 export function Contact() {
   const { user } = useAuth()
-  const [form, setForm] = useState({ name: user?.name ?? '', email: user?.email ?? '', topic: 'Booking help', message: '' })
+  const [form, setForm] = useState({ name: user?.name ?? '', email: user?.email ?? '', topic: 'Booking help', message: '' } as { name: string; email: string; topic: string; message: string })
   const [fields, setFields] = useState<Record<string, string>>({})
   const [status, setStatus] = useState<'idle' | 'sending' | 'sent'>('idle')
   const [error, setError] = useState<string | null>(null)

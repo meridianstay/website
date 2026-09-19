@@ -1,121 +1,83 @@
-# Database structure
+# Data and backend
 
-Meridian Stay uses **PostgreSQL** (14 or newer). The schema lives in versioned SQL files in [`apps/api/db/migrations`](../apps/api/db/migrations). They are applied in filename order, and each one runs once (tracked in `schema_migrations`). Never edit a migration that has already run anywhere; add a new numbered file instead.
+Meridian Stay runs entirely on **Firebase**:
 
-| Migration | What it adds |
+| Firebase service | What it holds |
 | --- | --- |
-| `001_initial_schema.sql` | Users, sessions, listings, photos, amenities, bookings, reviews, wishlists, contact messages |
-| `002_control_center.sql` | Suspensions, hidden reviews, featured listings, host date blocks, editable site content, admin audit log |
+| **Cloud Firestore** | All platform data: users, listings, bookings, reviews, wishlists, site content, messages, the admin activity log |
+| **Authentication** | Sign-in with Google or phone OTP. Firebase keeps the sign-in identities; roles and profiles live in Firestore. |
+| **Cloud Storage** | Uploaded listing photos and profile pictures |
 
-## How the backend uses the database
+Browsers never read or write Firestore or Storage directly. The security rules in [`firebase/`](../firebase) deny all direct access, and everything goes through the API (`apps/api`), which uses the Firebase Admin SDK and enforces roles and business rules.
 
-The API in `apps/api/src` is split into layers, and **SQL only appears in the repositories**:
+## How the backend is organised
+
+The API in `apps/api/src` is split into layers, and **Firestore is only used in the repositories**:
 
 | Folder | Job |
 | --- | --- |
 | `routes/` | HTTP only: read the request, call a service or repository, send the reply |
-| `services/` | Business rules: booking checks, listing review, moderation, content validation |
-| `repositories/` | All SQL, one file per table or area (`users`, `properties`, `bookings`, `reviews`, …) |
-| `db/` | Connection pool, transactions, migrations, demo seed |
-| `explorer/` | Which tables the admin Database screen may show and edit |
+| `services/` | Business rules: sign-in, booking checks, listing review, moderation, content, uploads |
+| `repositories/` | All Firestore reads and writes, one file per collection or area |
+| `store/` | Firebase connection (`firebase.ts`), collection names and helpers (`db.ts`), demo data (`seed.ts`) |
+| `explorer/` | Which collections and fields the admin Database screen may show and edit |
 | `http/` | Errors, sign-in middleware, validation, rate limits |
-| `tests/` | Automated tests against a throwaway `_test` database |
+| `tests/` | Automated tests, run against their own Firebase emulators |
 
-Repository functions take an optional database client, so a service can run several of them in one transaction (for example, locking a listing, checking blocks and inserting a booking).
+## Collections
 
-Run the tests with `npm test` (needs a local database called `meridianstay_test`; create it with `createdb meridianstay_test`). The test runner refuses any database whose name doesn't end in `_test`, so it can never wipe real data.
+Documents use short numeric ids (listing 7, user 12…) so links stay readable. The next number comes from the `counters` collection inside a transaction. Timestamps are ISO strings (`2026-09-19T08:30:00.000Z`); stay dates are `YYYY-MM-DD`. Money is stored as whole numbers in the smallest unit (cents) in fields ending in `Minor`.
+
+| Collection | Document id | Holds |
+| --- | --- | --- |
+| `users` | Firebase sign-in id (uid) | `id`, `name`, `email`, `phone`, `role` (guest, host, admin), `avatarUrl`, `createdAt`, `suspendedAt`, `sessionsRevokedAt` |
+| `properties` | listing id | Everything about a stay: title, type, location and map position, price, rooms, `status`, `rejectionReason`, `coverImageUrl`, `photos`, `amenities`, `ratingAvg`, `reviewCount`, `featuredRank` |
+| `properties/{id}/nights` | a date, e.g. `2026-10-21` | One document per booked or blocked night: `{ kind: "booking" \| "block", ref }` |
+| `bookings` | booking code, e.g. `MS-7K3F9Q` | Dates, guests, a **copy of the price and listing at booking time**, the guest's contact details, `status`, payment method and status, `reviewed` |
+| `reviews` | review id | `propertyId`, `rating`, `comment`, `authorName`, `bookingCode`, `hiddenAt` |
+| `availabilityBlocks` | block id | Nights a host has closed: `propertyId`, `checkIn`, `checkOut`, `note` |
+| `wishlists` | `{userId}_{propertyId}` | Stays a guest has saved |
+| `amenities` | amenity name | `icon` (Font Awesome name) and display `order` |
+| `siteSettings` | `homepage`, `announcement`, `signIn`, `uploads` | Settings edited in the control center |
+| `contentPages` | page address, e.g. `help` | Title, intro and sections of information pages; `published`, `draft` |
+| `contactMessages` | message id | Contact-form messages with status `new`, `read` or `closed` |
+| `auditLog` | automatic | Every admin action: who, what, which record, details |
+| `counters` | sequence name | The last number used for each kind of record |
+
+### How double bookings are prevented
+
+Every confirmed booking and every host block owns one document per night in `properties/{id}/nights`. A booking is created in a **Firestore transaction** that first checks those night documents and only then creates them. If two guests try to book the same night at the same moment, Firestore makes one transaction retry, which then sees the night taken and fails. The automated tests include this race. Cancelling a booking or removing a block deletes its night documents in the same transaction.
+
+### Sign-in and sessions
+
+1. The browser signs in with Firebase (Google popup or phone OTP) and sends the resulting ID token to `POST /api/auth/session`, saying which login page (portal) it came from.
+2. The API verifies the token, creates the user on first sign-in (as a guest), refuses suspended users, and on the admin portal refuses anyone who isn't an admin.
+3. It then sets a **Firebase session cookie** (HTTP-only, 14 days) shared by every app.
+4. Logging out, or being suspended, sets `sessionsRevokedAt`, which invalidates every earlier session. Suspension also disables the account in Firebase Authentication.
+
+Roles are stored only in Firestore and can only be changed by admins (or become `host` automatically with a first listing).
+
+### Ratings
+
+`ratingAvg` and `reviewCount` on each listing are updated in the same transaction as adding, hiding or restoring a review, so pages never need to recount. Demo listings start with imported totals.
 
 ## Managing data
 
-- **Admin → Database** in the control center lets admins browse every table, search, sort, and edit or delete rows where it's safe. Password hashes and session tokens are never shown. Business actions such as approving listings, suspending users, cancelling bookings or hiding reviews stay on their own pages so their rules always apply. Every change is written to the activity log with before and after values. The allowed tables and columns are listed in [`apps/api/src/explorer/registry.ts`](../apps/api/src/explorer/registry.ts).
-- **The Neon console** has its own table editor and SQL runner for anything the admin screen doesn't cover. Changes made there bypass the app's rules and aren't logged, so use it with care.
+- **Admin → Database** in the control center lets admins browse every collection, search, sort and edit the fields that are safe to change directly, with type checks and range checks. Every change is recorded in the activity log with before and after values. Business actions (approving listings, suspending users, cancelling bookings, hiding reviews, host blocks) stay on their own pages so their rules always apply. The allowed collections and fields are listed in [`explorer/registry.ts`](../apps/api/src/explorer/registry.ts).
+- **The Firebase console** (Firestore, Authentication, Storage) shows the same data directly. Changes made there bypass the app's rules and aren't logged, so use it with care.
 
-## Conventions
+## Local development and tests
 
-- **Money** is stored as whole numbers in the smallest unit (cents or paise) in `*_minor` columns, with a `currency` code. The API converts to normal amounts.
-- **Stay dates** are `date` (`check_in`, `check_out`). A stay covers the nights from check-in up to, but not including, check-out, so back-to-back bookings share a day.
-- **Timestamps** are `timestamptz`. Tables that change have `updated_at`, kept current by a trigger.
-- **Emails** are `citext`, so `Priya@…` and `priya@…` are the same account.
-- **Fixed lists** are Postgres enums: `user_role`, `property_type`, `listing_status`, `booking_status`, `payment_method`, `payment_status`.
+`npm run emulators` starts the Firebase emulators (Auth, Firestore, Storage, and an Emulator UI at http://localhost:4000). The API connects to them automatically in development (settings in `apps/api/.env.emulators`) and loads the demo data on first start. Emulator data is kept in memory, so restarting them clears it; restart the API afterwards to reload the demo data.
 
-## How the tables relate
+`npm test` starts a **separate** set of emulators (ports in `firebase.test.json`, project `demo-meridianstay-test`), runs the tests and shuts them down, so tests never touch your development data. The test helpers refuse to run against any project whose id doesn't end in `-test`.
 
-```mermaid
-erDiagram
-  users ||--o{ sessions : "signs in with"
-  users ||--o{ properties : "hosts"
-  users ||--o{ bookings : "books"
-  users ||--o{ reviews : "writes"
-  users ||--o{ wishlist_items : "saves"
-  users ||--o{ admin_audit_log : "acts (admins)"
-  properties ||--o{ property_photos : "has"
-  properties ||--o{ property_amenities : "offers"
-  amenities ||--o{ property_amenities : "listed in"
-  properties ||--o{ bookings : "receives"
-  properties ||--o{ availability_blocks : "closed on"
-  properties ||--o{ reviews : "rated by"
-  properties ||--o{ wishlist_items : "saved in"
-  bookings ||--o| reviews : "reviewed once"
-```
-
-`site_settings`, `content_pages` and `contact_messages` stand alone.
-
-## Tables
-
-### People
-
-**`users`**: everyone with an account. `role` is `guest`, `host` or `admin`. `suspended_at` blocks log-in; suspending also deletes the user's sessions. Passwords are stored as scrypt hashes in `password_hash`.
-
-**`sessions`**: one row per signed-in browser. Only a SHA-256 hash of the session token is stored (`token_hash`); the token itself lives in the visitor's HTTP-only cookie. Sessions expire after 30 days.
-
-### Listings
-
-**`properties`**: a stay. Key columns:
-
-| Column | Meaning |
-| --- | --- |
-| `slug` | The stay's web address, e.g. `/stays/green-valley-organic-farmstay` |
-| `host_id` | The owner (`users.id`) |
-| `type` | Farmstay, Room, Resort, Cottage or Villa |
-| `city`, `region`, `country`, `latitude`, `longitude` | Location, shown as "City, Region" and on maps |
-| `price_per_night_minor`, `currency` | Nightly price for up to 2 guests |
-| `bedrooms`, `bathrooms`, `max_guests` | Size |
-| `status` | `Pending` (waiting for review) → `Approved` (live) or `Rejected` (with `rejection_reason`); `Draft` means paused by the host |
-| `featured_rank` | Set by admins; the homepage shows the first six in rank order |
-| `rating_avg`, `review_count` | Kept up to date as reviews are added, hidden or restored, so pages don't recount every time |
-
-**`property_photos`**: extra photos in display order (`position`). The cover photo is `properties.cover_image_url`.
-
-**`amenities`** and **`property_amenities`**: the amenity list (with a Font Awesome icon name) and which stays offer which.
-
-**`availability_blocks`**: nights a host has closed (`start_date` to `end_date`, same half-open rule as bookings). Blocks can't overlap each other, and the API won't let a block cover confirmed bookings.
-
-### Bookings
-
-**`bookings`**: one reservation. It keeps a **copy of the price at booking time** (`price_per_night_minor`, `base_amount_minor`, `extra_guest_amount_minor`, `service_fee_minor`, `total_minor`), so later price changes never alter past bookings. A check constraint makes sure the total adds up.
-
-- `code` is the reference shown to guests, e.g. `MS-7K3F9Q`.
-- `status` is `Confirmed` or `Cancelled`. "Completed" isn't stored; a confirmed booking whose check-out date has passed is shown as completed.
-- `payment_status` is `test` while payments run in test mode; `payment_reference` will hold the payment provider's ID.
-
-**No double bookings:** the constraint `bookings_no_overlap` is a PostgreSQL *exclusion constraint*. The database itself refuses two confirmed bookings for the same stay whose date ranges overlap, even if two guests click "Confirm" at the same moment. The API also locks the listing row while booking so bookings and host blocks can't race each other.
-
-### Reviews and wishlists
-
-**`reviews`**: one per completed booking (`booking_id` is unique). `hidden_at` is set when an admin hides a review; hidden reviews aren't shown or counted. Reviews imported with the demo data have no booking.
-
-**`wishlist_items`**: a guest's saved stays.
-
-### Website content and administration
-
-**`site_settings`**: small JSON documents admins edit, keyed by name: `homepage` (hero text, featured section titles) and `announcement` (the banner at the top of the website).
-
-**`content_pages`**: information pages such as Help, Terms and Privacy. `sections` is JSON: `[{ "heading": "…", "body": ["paragraph", …] }]`. `published = false` hides a page; `is_draft` shows a "draft" notice on it. Default pages are added on first start and never overwritten afterwards.
-
-**`contact_messages`**: messages from the website's contact form, with a status of `new`, `read` or `closed`.
-
-**`admin_audit_log`**: every action taken in the control center: who, what, which record, and details such as a rejection reason.
+The Firebase CLI in this repo is version 13, which works with Java 17. Newer versions need Java 21 (`brew install openjdk@21`).
 
 ## Demo data
 
-[`apps/api/src/db/seed.ts`](../apps/api/src/db/seed.ts) fills an **empty** database with fictional demo data. It runs automatically in development, and on a deployment only when `SEED_DEMO_DATA=true`. Booking dates are relative to the day it runs, so there are always past and upcoming stays. It never runs on a database that already has users.
+[`store/seed.ts`](../apps/api/src/store/seed.ts) fills an empty project with fictional demo data: 16 people, 17 listings, bookings in every state, reviews, blocks, messages and admin history. It runs in development, and in production only when `SEED_DEMO_DATA=true`. It never runs if any users exist. Each demo person has a Firebase sign-in with a test phone number; see [deployment](deployment.md#demo-accounts).
+
+## Scaling notes
+
+Some list screens (search, admin tables, statistics) read whole collections and filter in the API. That is simple and fast at this platform's size (thousands of documents). When listings or bookings grow into the tens of thousands, add Firestore indexes (`firebase/firestore.indexes.json`) and move those filters into queries, starting with search and the admin bookings list.

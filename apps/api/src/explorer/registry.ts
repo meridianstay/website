@@ -1,84 +1,94 @@
-// Which tables the admin Database screen shows, and what admins may do there.
-// Business actions (approving listings, suspending users, cancelling bookings, hiding reviews) stay on
-// their own admin pages so their rules and side effects always apply; this screen covers the rest.
+// Which Firestore collections the admin Database screen shows, and what admins may do there.
+// Business actions (approving listings, suspending users, cancelling bookings, hiding reviews, host blocks)
+// stay on their own admin pages so their rules and side effects always apply.
 
-export interface TableConfig {
+export type FieldType = 'string' | 'number' | 'boolean' | 'json'
+
+export interface FieldConfig {
+  name: string
+  type: FieldType
+  editable?: boolean
+  insertable?: boolean
+  nullable?: boolean
+  options?: string[]
+}
+
+export interface CollectionConfig {
   label: string
   description: string
-  primaryKey: string[]
-  /** Never sent to the browser. */
-  hidden?: string[]
-  /** Columns that can be changed here. */
-  editable?: string[]
-  /** Columns that can be filled in when adding a row (adding is off when absent). */
-  insertable?: string[]
+  fields: FieldConfig[]
   deletable?: boolean
+  /** Document id for new rows comes from this field (otherwise Firestore picks one). */
+  idFrom?: string
   defaultSort: string
-  /** Shown above the table, e.g. where to make other changes. */
   note?: string
 }
 
-export const tables: Record<string, TableConfig> = {
+const ro = (name: string, type: FieldType = 'string'): FieldConfig => ({ name, type })
+const ed = (name: string, type: FieldType = 'string', extra: Partial<FieldConfig> = {}): FieldConfig => ({ name, type, editable: true, ...extra })
+
+export const collections: Record<string, CollectionConfig> = {
   users: {
-    label: 'Users', description: 'Everyone with an account.', primaryKey: ['id'], defaultSort: 'id',
-    hidden: ['password_hash'], editable: ['name', 'phone', 'avatar_url'],
-    note: 'Change roles and suspend accounts on the Users page. Passwords are never shown.',
+    label: 'Users', description: 'Everyone with an account (keyed by Firebase sign-in id).', defaultSort: 'id',
+    fields: [ro('id', 'number'), ed('name'), ro('email'), ed('phone', 'string', { nullable: true }), ro('role'), ed('avatarUrl', 'string', { nullable: true }),
+      ro('createdAt'), ro('suspendedAt')],
+    note: 'Change roles and suspend accounts on the Users page. Sign-in details live in Firebase Authentication.',
   },
   properties: {
-    label: 'Listings', description: 'Every stay, in any status.', primaryKey: ['id'], defaultSort: 'id',
-    editable: ['title', 'description', 'city', 'region', 'country', 'latitude', 'longitude', 'price_per_night_minor',
-      'bedrooms', 'bathrooms', 'max_guests', 'cover_image_url', 'featured_rank'],
+    label: 'Listings', description: 'Every stay, in any status.', defaultSort: 'id',
+    fields: [ro('id', 'number'), ro('slug'), ro('hostId', 'number'), ed('title'), ro('type'), ro('status'), ed('description'), ed('city'), ed('region'), ed('country'),
+      ed('lat', 'number'), ed('lng', 'number'), ed('pricePerNightMinor', 'number'), ed('bedrooms', 'number'), ed('bathrooms', 'number'), ed('maxGuests', 'number'),
+      ed('coverImageUrl'), ro('photos', 'json'), ro('amenities', 'json'), ed('featuredRank', 'number', { nullable: true }), ro('ratingAvg', 'number'),
+      ro('reviewCount', 'number'), ro('rejectionReason'), ro('createdAt'), ro('updatedAt')],
     note: 'Approve, reject and feature on the Listings page. Prices are in cents (14500 = $145).',
   },
-  property_photos: {
-    label: 'Listing photos', description: 'Extra photos per listing, in display order.', primaryKey: ['id'], defaultSort: 'property_id',
-    editable: ['url', 'caption', 'position'], insertable: ['property_id', 'url', 'caption', 'position'], deletable: true,
-  },
-  amenities: {
-    label: 'Amenities', description: 'The amenity list hosts choose from.', primaryKey: ['id'], defaultSort: 'id',
-    editable: ['name', 'icon'], insertable: ['name', 'icon'], deletable: true,
-    note: 'Icons are Font Awesome names, e.g. wifi, mug-hot, water-ladder.',
-  },
-  property_amenities: {
-    label: 'Listing amenities', description: 'Which listings offer which amenities.', primaryKey: ['property_id', 'amenity_id'],
-    defaultSort: 'property_id', insertable: ['property_id', 'amenity_id'], deletable: true,
-  },
   bookings: {
-    label: 'Bookings', description: 'Every reservation. Amounts are in cents.', primaryKey: ['id'], defaultSort: 'id',
-    editable: ['contact_phone', 'special_requests'],
-    note: 'Cancel bookings on the Bookings page. Prices are a snapshot from booking time and can’t be edited.',
-  },
-  availability_blocks: {
-    label: 'Blocked dates', description: 'Nights hosts have closed.', primaryKey: ['id'], defaultSort: 'start_date',
-    editable: ['note'], deletable: true,
+    label: 'Bookings', description: 'Every reservation. Amounts are in cents.', defaultSort: 'createdAt',
+    fields: [ro('code'), ro('id', 'number'), ro('propertyId', 'number'), ro('guestId', 'number'), ro('hostId', 'number'), ro('checkIn'), ro('checkOut'),
+      ro('nights', 'number'), ro('guests', 'number'), ro('totalMinor', 'number'), ro('status'), ro('paymentMethod'), ro('paymentStatus'),
+      ed('contactPhone'), ed('specialRequests', 'string', { nullable: true }), ro('reviewed', 'boolean'), ro('property', 'json'), ro('guest', 'json'),
+      ro('createdAt'), ro('cancelledAt')],
+    note: 'Cancel bookings on the Bookings page so the nights are freed. Prices are a snapshot from booking time.',
   },
   reviews: {
-    label: 'Reviews', description: 'Guest reviews, including hidden ones.', primaryKey: ['id'], defaultSort: 'id',
+    label: 'Reviews', description: 'Guest reviews, including hidden ones.', defaultSort: 'id',
+    fields: [ro('id', 'number'), ro('propertyId', 'number'), ro('authorName'), ro('rating', 'number'), ro('comment'), ro('bookingCode'), ro('createdAt'), ro('hiddenAt')],
     note: 'Hide and restore reviews on the Reviews page so ratings stay correct.',
   },
-  wishlist_items: {
-    label: 'Wishlists', description: 'Stays guests have saved.', primaryKey: ['user_id', 'property_id'], defaultSort: 'created_at', deletable: true,
+  availabilityBlocks: {
+    label: 'Blocked dates', description: 'Nights hosts have closed.', defaultSort: 'checkIn',
+    fields: [ro('id', 'number'), ro('propertyId', 'number'), ro('checkIn'), ro('checkOut'), ed('note', 'string', { nullable: true }), ro('createdAt')],
+    note: 'Hosts add and remove blocks from their calendar so the nights stay in sync.',
   },
-  contact_messages: {
-    label: 'Contact messages', description: 'Messages from the contact form.', primaryKey: ['id'], defaultSort: 'id',
-    editable: ['status'], deletable: true,
+  wishlists: {
+    label: 'Wishlists', description: 'Stays guests have saved.', defaultSort: 'createdAt', deletable: true,
+    fields: [ro('userId', 'number'), ro('propertyId', 'number'), ro('createdAt')],
   },
-  sessions: {
-    label: 'Sessions', description: 'Signed-in browsers. Tokens are never shown.', primaryKey: ['token_hash'], defaultSort: 'created_at',
-    hidden: ['token_hash'],
+  amenities: {
+    label: 'Amenities', description: 'The amenity list hosts choose from.', defaultSort: 'order', deletable: true, idFrom: 'name',
+    fields: [{ name: 'name', type: 'string', insertable: true }, ed('icon', 'string', { insertable: true }), ed('order', 'number', { insertable: true })],
+    note: 'Icons are Font Awesome names, e.g. wifi, mug-hot, water-ladder.',
   },
-  site_settings: {
-    label: 'Site settings', description: 'Homepage text and the announcement banner.', primaryKey: ['key'], defaultSort: 'key',
+  contactMessages: {
+    label: 'Contact messages', description: 'Messages from the contact form.', defaultSort: 'createdAt', deletable: true,
+    fields: [ro('id', 'number'), ro('name'), ro('email'), ro('topic'), ro('message'), ed('status', 'string', { options: ['new', 'read', 'closed'] }), ro('createdAt')],
+  },
+  siteSettings: {
+    label: 'Site settings', description: 'Homepage text, banner, sign-in methods and upload limits.', defaultSort: 'updatedAt',
+    fields: [ro('value', 'json'), ro('updatedAt'), ro('updatedBy', 'number')],
+    note: 'Edit these on the Website content and Settings pages.',
+  },
+  contentPages: {
+    label: 'Information pages', description: 'Help, policies and other pages.', defaultSort: 'slug',
+    fields: [ro('slug'), ro('title'), ro('intro'), ro('published', 'boolean'), ro('draft', 'boolean'), ro('sections', 'json'), ro('updatedAt')],
     note: 'Edit these on the Website content page.',
   },
-  content_pages: {
-    label: 'Information pages', description: 'Help, policies and other pages.', primaryKey: ['slug'], defaultSort: 'slug',
-    note: 'Edit these on the Website content page.',
+  auditLog: {
+    label: 'Activity log', description: 'Every admin action, including changes made here.', defaultSort: 'createdAt',
+    fields: [ro('adminName'), ro('action'), ro('targetType'), ro('targetId'), ro('details', 'json'), ro('createdAt')],
   },
-  admin_audit_log: {
-    label: 'Activity log', description: 'Every admin action, including changes made here.', primaryKey: ['id'], defaultSort: 'id',
-  },
-  schema_migrations: {
-    label: 'Migrations', description: 'Database structure versions that have been applied.', primaryKey: ['name'], defaultSort: 'name',
+  counters: {
+    label: 'Counters', description: 'The last number used for each kind of record.', defaultSort: 'value',
+    fields: [ro('value', 'number')],
   },
 }

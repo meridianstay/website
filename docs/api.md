@@ -2,20 +2,20 @@
 
 The Meridian Stay API is served at **`/api`** on the same domain as the apps, for example `https://website-seven-sable-30.vercel.app/api`. In development it runs at `http://localhost:8787/api`; the website's dev server forwards `/api` to it.
 
-The code lives in [`apps/api`](../apps/api). Each endpoint below is defined in `src/routes/`. Routes call services (business rules), which call repositories (SQL).
+The code lives in [`apps/api`](../apps/api). Each endpoint below is defined in `src/routes/`. Routes call services (business rules), which call repositories (Firestore).
 
 ## Conventions
 
 | Topic | Rule |
 | --- | --- |
 | Format | JSON in and out. Send `Content-Type: application/json` with a body. |
-| Sign-in | A session cookie, `ms_session` (HTTP-only), set by sign-up or log-in. Browsers send it automatically; other clients must keep and resend it. |
+| Sign-in | Sign in with Firebase (Google or phone OTP) in the browser, then send the ID token to `POST /api/auth/session`. That sets a session cookie, `ms_session` (HTTP-only, 14 days), used by every app. |
 | Access | **Public**: anyone. **User**: any signed-in account. **Admin**: accounts with the `admin` role. Signed-out calls to protected endpoints return `401`; wrong role returns `403`. |
 | Money | Normal amounts in API responses (e.g. `145` = $145). The database stores cents. Currency is USD. |
 | Dates | Stay dates are `YYYY-MM-DD`. Timestamps are ISO 8601 (`2026-09-19T08:30:00.000Z`). |
 | Stay ranges | `checkIn` up to, not including, `checkOut`. Back-to-back stays may share a day. |
 | No content | Actions that return nothing reply `204 No Content`. |
-| Rate limits | Sign-up, log-in and password change: 10 per 15 minutes per IP. Contact form: 5. Over the limit returns `429`. |
+| Rate limits | Sign-in: 30 per 15 minutes per IP. Uploads: 60. Contact form: 5. Over the limit returns `429`. |
 
 ### Errors
 
@@ -31,13 +31,13 @@ Every error returns a JSON body with a message that is safe to show to users. Va
 | Status | Meaning |
 | --- | --- |
 | `400` | Invalid input, or an action not allowed in the current state |
-| `401` | Not signed in, or wrong email/password |
+| `401` | Not signed in, or the Firebase sign-in token is invalid or expired |
 | `403` | Signed in but not allowed (wrong role, suspended account, review not allowed) |
 | `404` | Not found, or not visible to you |
-| `409` | Conflict: dates already booked or blocked, email already registered |
+| `409` | Conflict: dates already booked or blocked |
 | `429` | Too many attempts |
 | `500` | Unexpected server error (details are logged, not returned) |
-| `503` | Database not configured or still starting (Vercel only) |
+| `503` | Firebase not configured (`FIREBASE_SERVICE_ACCOUNT` missing) or still starting (Vercel only) |
 
 ---
 
@@ -45,20 +45,21 @@ Every error returns a JSON body with a message that is safe to show to users. Va
 
 | Method | Path | Access | Returns |
 | --- | --- | --- | --- |
-| GET | `/api/health` | Public | `{ "ok": true }` once the database is ready |
+| GET | `/api/health` | Public | `{ "ok": true }` once Firebase is connected |
 
 ## Accounts and sign-in
 
 | Method | Path | Access | Body | Returns |
 | --- | --- | --- | --- | --- |
 | GET | `/api/auth/me` | Public | — | `{ user }`, or `{ user: null }` when signed out |
-| POST | `/api/auth/signup` | Public | `{ name, email, password }` (password 8+ characters) | `201 { user }` and sets the session cookie. `409` if the email is taken. |
-| POST | `/api/auth/login` | Public | `{ email, password }` | `{ user }` and sets the cookie. `401` wrong details, `403` suspended. |
-| POST | `/api/auth/logout` | Public | — | `204`, ends the session |
-| PATCH | `/api/me` | User | `{ name, phone }` (phone optional) | `{ user }` |
-| POST | `/api/me/password` | User | `{ currentPassword, newPassword }` | `204` |
+| POST | `/api/auth/session` | Public | `{ idToken, portal: "guest" \| "host" \| "admin" }` | `{ user }` and sets the session cookie. First sign-in creates a guest account. `401` bad token; `403` suspended, method turned off in Settings, or a non-admin on the admin portal. |
+| POST | `/api/auth/logout` | Public | — | `204`; signs the user out on every device |
+| PATCH | `/api/me` | User | `{ name, phone }` (phone optional; a contact number) | `{ user }` |
+| POST | `/api/uploads` | User | Multipart form: `file` (JPG, PNG or WebP), `purpose` = `listing` or `avatar` | `201 { url }`, a Firebase Storage link. `avatar` also sets the profile photo. Size limit set in Settings (max 4 MB). |
 
-**User object** (`user`): `{ id, name, email, phone, role: "guest" | "host" | "admin", avatar, createdAt }`
+`idToken` comes from the Firebase JS SDK after `signInWithPopup` (Google) or `signInWithPhoneNumber` + `confirm` (phone): `await firebaseUser.getIdToken()`. The admin portal always accepts both methods; guest and host portals accept only the methods switched on in Admin → Settings.
+
+**User object** (`user`): `{ id, name, email, phone, role: "guest" | "host" | "admin", avatar, createdAt }`. `email` is `null` for phone sign-ins.
 
 ## Stays (public)
 
@@ -123,7 +124,7 @@ Booking rules: check-in today or later, at most 30 nights, guests within the lis
 
 | Method | Path | Access | Returns |
 | --- | --- | --- | --- |
-| GET | `/api/site` | Public | `{ homepage: {…}, announcement: { enabled, text, linkLabel, linkUrl } }` |
+| GET | `/api/site` | Public | `{ homepage: {…}, announcement: { enabled, text, linkLabel, linkUrl }, signIn: { google, phone }, uploads: { maxMb } }` |
 | GET | `/api/pages` | Public | `{ pages: [{ slug, title }] }`, published pages |
 | GET | `/api/pages/:slug` | Public | `{ page: { slug, title, intro, sections: [{ heading, body: [] }], draft } }` |
 | POST | `/api/contact` | Public | Body `{ name, email, topic, message }`. `201`. |
@@ -188,27 +189,34 @@ Every change here is recorded in the activity log.
 | PUT | `/api/admin/pages/:slug` | `{ title, intro, sections, draft, published }` | `204`; creates or updates. Some addresses are reserved (e.g. `search`, `admin`). |
 | DELETE | `/api/admin/pages/:slug` | — | `204` |
 | GET | `/api/admin/audit` | — | `{ entries: [{ action, targetType, targetId, details, adminName, createdAt }] }` (latest 300) |
+| GET | `/api/admin/integrations` | — | `{ mode: "live" \| "emulator" \| "unconfigured", projectId, storageBucket, services: { firestore, auth, storage } }`, each `{ ok, message }`. Never includes keys. |
+
+Settings keys for `PUT /api/admin/settings/:key`: `homepage`, `announcement`, `signIn` (`{ google, phone }`, at least one on) and `uploads` (`{ maxMb: 1–4 }`).
 
 ### Database screen
 
-Direct access to the tables listed in [`src/explorer/registry.ts`](../apps/api/src/explorer/registry.ts). Password hashes and session tokens are never returned. Only whitelisted columns can be edited, and the database's own rules still apply.
+Direct access to the Firestore collections listed in [`src/explorer/registry.ts`](../apps/api/src/explorer/registry.ts). Only registered fields are returned, only whitelisted fields can be edited, and values are type- and range-checked. Rows are identified by their Firestore document id, `_id`.
 
 | Method | Path | Body / query | Returns |
 | --- | --- | --- | --- |
 | GET | `/api/admin/db/tables` | — | `{ tables: [{ name, label, description, rows, canEdit, canInsert, canDelete }] }` |
 | GET | `/api/admin/db/tables/:table` | `?page=&pageSize=` (max 100) `&q=&sort=&dir=asc\|desc` | `{ table, columns, rows, keys, total, page, pageSize, sort, dir }` |
 | POST | `/api/admin/db/tables/:table/rows` | Values for the table's insertable columns | `201 { row }` |
-| PATCH | `/api/admin/db/tables/:table/rows` | `{ key: { id: 5 }, changes: { title: "…" } }` | `{ row }` |
-| DELETE | `/api/admin/db/tables/:table/rows` | `?key={"id":5}` (URL-encoded JSON) | `204` |
+| PATCH | `/api/admin/db/tables/:table/rows` | `{ key: { _id: "5" }, changes: { title: "…" } }` | `{ row }` |
+| DELETE | `/api/admin/db/tables/:table/rows` | `?key={"_id":"5"}` (URL-encoded JSON) | `204` |
 
 ## Trying it from the command line
 
-```bash
-curl -c cookies.txt -H 'Content-Type: application/json' \
-  -d '{"email":"priya@meridianstay.test","password":"meridian123"}' \
-  http://localhost:8787/api/auth/login
+Against the local emulators (`npm run emulators`, `npm run dev`), you can sign in by phone through the Auth emulator's REST API, then use the cookie:
 
+```bash
+AUTH=http://127.0.0.1:9099/identitytoolkit.googleapis.com/v1
+SESSION=$(curl -s -H 'Content-Type: application/json' -d '{"phoneNumber":"+919000000011","recaptchaToken":"x"}' \
+  "$AUTH/accounts:sendVerificationCode?key=demo" | jq -r .sessionInfo)
+CODE=$(curl -s http://127.0.0.1:9099/emulator/v1/projects/demo-meridianstay/verificationCodes | jq -r '.verificationCodes[-1].code')
+TOKEN=$(curl -s -H 'Content-Type: application/json' -d "{\"sessionInfo\":\"$SESSION\",\"code\":\"$CODE\"}" \
+  "$AUTH/accounts:signInWithPhoneNumber?key=demo" | jq -r .idToken)
+
+curl -c cookies.txt -H 'Content-Type: application/json' -d "{\"idToken\":\"$TOKEN\",\"portal\":\"guest\"}" http://localhost:8787/api/auth/session
 curl -b cookies.txt http://localhost:8787/api/bookings
 ```
-
-Demo accounts only exist where demo data was loaded (development, or `SEED_DEMO_DATA=true`).

@@ -17,6 +17,7 @@ const columns: { heading: string; links: FooterLink[] }[] = [
     heading: 'Hosting',
     links: [
       { label: 'List your property', to: appLink('host', '/new'), external: true },
+      { label: 'Host login', to: appLink('host', '/login'), external: true },
       { label: 'Host protection cover', to: '/host-protection' },
       { label: 'Explore hosting resources', to: '/hosting-resources' },
       { label: 'Community guidelines', to: '/community-guidelines' },

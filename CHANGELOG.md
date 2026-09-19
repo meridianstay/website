@@ -2,6 +2,39 @@
 
 Every change to Meridian Stay is recorded here, newest first. Each entry says what changed for the people using the platform, then the notable technical changes.
 
+## 0.5.0 — 2026-09-19
+
+The platform now runs entirely on **Firebase**, as the client requested. PostgreSQL has been removed.
+
+### Sign-in
+- Sign in with **Google** or a **phone OTP**; there are no passwords. First sign-in creates the account, and phone users are asked their name.
+- **Three separate login pages:** guests at `/login` (on the website), hosts at `/host/login` (linked from the website as "Host login"), and the control center at `/admin/login`, which isn't linked from the website, is hidden from search engines and only accepts admin accounts.
+- Each app sends signed-out visitors to its own login page and back to where they were afterwards.
+- Logging out signs you out on every device. Suspending a user also disables their Firebase account.
+
+### Photos
+- Hosts **upload photos** in the listing wizard (cover and up to 12 more), with pasting a link still possible. Guests and hosts can upload a **profile photo**. Photos are stored in Firebase Storage.
+
+### Control center
+- New **Settings** page: Firebase connection status (Firestore, Authentication, Storage), turn Google and phone sign-in on or off for guests and hosts, and set the largest photo size. The Firebase key is never shown.
+- The **Database** screen now browses Firestore collections, with type and range checks on every edit.
+- The website's account menu no longer links to the control center.
+
+### Account
+- The change-password form is gone (there are no passwords); the profile now has a photo upload and a contact phone.
+
+### Backend
+- Repositories rewritten for **Cloud Firestore** through the Firebase Admin SDK; services, routes and the API itself are unchanged for the apps. See [docs/database.md](docs/database.md) for the data model.
+- Double bookings are still impossible: each booked or blocked night is claimed in a Firestore transaction. A new test races three guests for the same nights; exactly one wins.
+- Local development and tests use the **Firebase emulators** (`npm run emulators`); tests get their own separate emulators.
+- 32 automated tests, rewritten for Firebase.
+- Security rules in `firebase/` block all direct browser access to Firestore and Storage.
+- Vercel build installs `firebase-admin` next to the API function. The Firebase web config for the client's project (`meridianstay-bcfd0`) is in `.env.production`; the service key goes in Vercel as `FIREBASE_SERVICE_ACCOUNT`.
+- Demo data recreated in Firebase, with test phone numbers for every demo account (code `123456`).
+
+### Docs
+- Rewritten [database](docs/database.md), [deployment](docs/deployment.md) and [API](docs/api.md) guides and README for Firebase.
+
 ## 0.4.0 — 2026-09-19
 
 ### Control center
@@ -85,9 +118,7 @@ The platform now works end to end: guests can search and book, hosts can list an
 ## Not yet built
 
 - **Real payments.** Connect a provider (for example Razorpay for UPI, cards and net banking) at checkout, with refunds on cancellation.
-- **Emails and SMS**: booking confirmations, cancellation notices, password reset.
-- **Photo upload.** Hosts currently paste photo links. Proposed: Firebase Storage.
-- **Firebase sign-in** (Google, phone OTP, email verification, password reset), managed from an admin Settings page. Proposed, waiting for the client's decision.
+- **Emails and SMS**: booking confirmations and cancellation notices (Firebase only sends the sign-in codes).
 - **Messaging** between guests and hosts.
 - **Currency and prices** for a local market (currently USD; one setting switches it) and taxes such as GST on invoices.
 - **Host payouts** and payout details.

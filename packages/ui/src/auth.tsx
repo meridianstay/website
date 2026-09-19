@@ -1,6 +1,6 @@
 import { createContext, useCallback, useContext, useEffect, useState, type ReactNode } from 'react'
 import type { Me, UserRole } from '@meridian/shared'
-import { api, appLink, loginUrl } from '@meridian/shared/client'
+import { api, appLink, currentLocation, loginUrl } from '@meridian/shared/client'
 import { LogoMark } from './Logo'
 import { BrandLoader } from './Loader'
 
@@ -47,18 +47,21 @@ export function useAuth(): AuthState {
   return ctx
 }
 
-/** Shows children only to signed-in users (optionally with one of `roles`); sends everyone else to log in. */
-export function RequireAuth({ children, roles }: { children: ReactNode; roles?: UserRole[] }) {
+/**
+ * Shows children only to signed-in users (optionally with one of `roles`); sends everyone else to log in.
+ * `loginHref` is the app's own login page (defaults to the website's guest login).
+ */
+export function RequireAuth({ children, roles, loginHref }: { children: ReactNode; roles?: UserRole[]; loginHref?: string }) {
   const { user, loading } = useAuth()
 
   useEffect(() => {
-    if (!loading && !user) window.location.assign(loginUrl())
-  }, [loading, user])
+    if (!loading && !user) window.location.assign(loginHref ? `${loginHref}?next=${encodeURIComponent(currentLocation())}` : loginUrl())
+  }, [loading, user, loginHref])
 
   if (loading || !user) return <BrandLoader fullPage />
   if (roles && !roles.includes(user.role)) {
     return (
-      <FullPageMessage icon="lock" title="Access restricted" body={`This area is only for ${roles.join(' or ')} accounts. You’re signed in as ${user.email}.`}>
+      <FullPageMessage icon="lock" title="Access restricted" body={`This area is only for ${roles.join(' or ')} accounts. You’re signed in as ${user.email ?? user.phone ?? user.name}.`}>
         <a href={appLink('website', '/')} className="inline-block bg-slate-900 text-white text-xs font-bold py-3 px-6 rounded-2xl">Go to Meridian Stay</a>
       </FullPageMessage>
     )

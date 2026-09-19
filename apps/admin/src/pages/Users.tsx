@@ -32,7 +32,7 @@ export function Users() {
     <>
       <PageHeader title="Users" description="Change roles and suspend accounts. Suspended users are signed out everywhere and can’t log in." />
       <Panel>
-        <Toolbar placeholder="Search name or email" onSearch={setQ}>
+        <Toolbar placeholder="Search name, email or phone" onSearch={setQ}>
           {roles.map((r) => <Chip key={r} active={role === r} onClick={() => setRole(r)}>{r === 'all' ? 'Everyone' : `${r[0].toUpperCase()}${r.slice(1)}s`}</Chip>)}
         </Toolbar>
         {error && <div className="mb-4"><ErrorNote message={error} /></div>}
@@ -47,7 +47,7 @@ export function Users() {
                   const self = u.id === me?.id
                   return (
                     <tr key={u.id} className={u.suspended ? 'bg-rose-50/40' : ''}>
-                      <td className="p-3"><span className="font-semibold text-slate-900">{u.name}</span>{self && <span className="text-slate-400"> (you)</span>}<br /><span className="text-slate-400">{u.email}{u.phone ? ` · ${u.phone}` : ''}</span></td>
+                      <td className="p-3"><span className="font-semibold text-slate-900">{u.name}</span>{self && <span className="text-slate-400"> (you)</span>}<br /><span className="text-slate-400">{[u.email, u.phone].filter(Boolean).join(' · ')}</span></td>
                       <td className="p-3">
                         <label className="sr-only" htmlFor={`role-${u.id}`}>Role for {u.name}</label>
                         <select id={`role-${u.id}`} value={u.role} disabled={self} onChange={(e) => update(u.id, { role: e.target.value as UserRole })} className="bg-slate-50 border border-slate-200 rounded-lg px-2 py-1 font-semibold disabled:opacity-50">

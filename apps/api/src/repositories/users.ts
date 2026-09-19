@@ -1,91 +1,84 @@
 import type { Me, UserRole } from '@meridian/shared'
-import { pool, query, queryOne, type Queryable } from '../db/pool'
+import { C, all, col, firestore, nextId, nowISO } from '../store/db'
 
-// Table: users
+// Collection: users/{firebaseUid}. Each user also has a short numeric `id` used across the platform.
 
-export interface UserRow {
+export interface UserDoc {
   id: number
+  uid: string
   name: string
-  email: string
+  email: string | null
   phone: string | null
   role: UserRole
-  avatar_url: string | null
-  created_at: Date
-  suspended_at: Date | null
+  avatarUrl: string | null
+  createdAt: string
+  suspendedAt: string | null
+  /** Session cookies issued before this moment are rejected (log-out and suspension). */
+  sessionsRevokedAt: string | null
 }
 
-export const toMe = (r: UserRow): Me => ({
-  id: r.id, name: r.name, email: r.email, phone: r.phone, role: r.role, avatar: r.avatar_url, createdAt: r.created_at.toISOString(),
+export const toMe = (u: UserDoc): Me => ({
+  id: u.id, name: u.name, email: u.email, phone: u.phone, role: u.role, avatar: u.avatarUrl, createdAt: u.createdAt,
 })
 
 export type AdminUser = Me & { suspended: boolean; listings: number; bookings: number }
 
+const ref = (uid: string) => col(C.users).doc(uid)
+
 export const usersRepo = {
-  async findById(id: number, db: Queryable = pool) {
-    const row = await queryOne<UserRow>('SELECT * FROM users WHERE id = $1', [id], db)
-    return row ? toMe(row) : null
+  async findByUid(uid: string) {
+    const snap = await ref(uid).get()
+    return snap.exists ? (snap.data() as UserDoc) : null
   },
 
-  /** Includes the password hash and suspension, for signing in. */
-  findForLogin(email: string) {
-    return queryOne<UserRow & { password_hash: string }>('SELECT * FROM users WHERE email = $1', [email])
+  async findById(id: number) {
+    const snap = await col(C.users).where('id', '==', id).limit(1).get()
+    return snap.empty ? null : (snap.docs[0].data() as UserDoc)
   },
 
-  async emailExists(email: string) {
-    return !!(await queryOne('SELECT 1 FROM users WHERE email = $1', [email]))
+  /** First sign-in creates the account as a guest; later sign-ins fill in missing details. */
+  async upsertFromSignIn(profile: { uid: string; name: string | null; email: string | null; phone: string | null; avatarUrl: string | null }) {
+    return firestore.runTransaction(async (tx) => {
+      const snap = await tx.get(ref(profile.uid))
+      if (snap.exists) {
+        const u = snap.data() as UserDoc
+        const patch: Partial<UserDoc> = {}
+        if (!u.email && profile.email) patch.email = profile.email
+        if (!u.phone && profile.phone) patch.phone = profile.phone
+        if (!u.avatarUrl && profile.avatarUrl) patch.avatarUrl = profile.avatarUrl
+        if (!u.name && profile.name) patch.name = profile.name
+        if (Object.keys(patch).length) tx.update(ref(profile.uid), patch)
+        return { ...u, ...patch }
+      }
+      const user: UserDoc = {
+        id: await nextId('users', tx), uid: profile.uid, name: profile.name ?? '', email: profile.email, phone: profile.phone,
+        role: 'guest', avatarUrl: profile.avatarUrl, createdAt: nowISO(), suspendedAt: null, sessionsRevokedAt: null,
+      }
+      tx.set(ref(profile.uid), user)
+      return user
+    })
   },
 
-  async create(input: { name: string; email: string; passwordHash: string }) {
-    const row = await queryOne<UserRow>(
-      'INSERT INTO users (name, email, password_hash) VALUES ($1, $2, $3) RETURNING *',
-      [input.name, input.email, input.passwordHash],
-    )
-    return toMe(row!)
-  },
-
-  async updateProfile(id: number, input: { name: string; phone: string | null }) {
-    const row = await queryOne<UserRow>('UPDATE users SET name = $1, phone = $2 WHERE id = $3 RETURNING *', [input.name, input.phone, id])
-    return toMe(row!)
-  },
-
-  passwordHash(id: number) {
-    return queryOne<{ password_hash: string }>('SELECT password_hash FROM users WHERE id = $1', [id]).then((r) => r?.password_hash ?? null)
-  },
-
-  setPasswordHash(id: number, hash: string) {
-    return query('UPDATE users SET password_hash = $1 WHERE id = $2', [hash, id])
-  },
-
-  /** Saves the phone from a booking if the user hasn't set one yet. */
-  setPhoneIfEmpty(id: number, phone: string, db: Queryable = pool) {
-    return query('UPDATE users SET phone = $1 WHERE id = $2 AND phone IS NULL', [phone, id], db)
-  },
-
-  /** A guest's first listing makes them a host. Admins keep their role. */
-  promoteGuestToHost(id: number, db: Queryable = pool) {
-    return query(`UPDATE users SET role = 'host' WHERE id = $1 AND role = 'guest'`, [id], db)
+  async update(uid: string, patch: Partial<UserDoc>) {
+    await ref(uid).update(patch)
+    return (await this.findByUid(uid))!
   },
 
   async list(filters: { q?: string | null; role?: UserRole | null }): Promise<AdminUser[]> {
-    const rows = await query<UserRow & { listings: number; bookings: number }>(
-      `SELECT u.*, (SELECT count(*) FROM properties p WHERE p.host_id = u.id)::int AS listings,
-         (SELECT count(*) FROM bookings b WHERE b.guest_id = u.id)::int AS bookings
-       FROM users u WHERE ($1::text IS NULL OR u.name ILIKE $1 OR u.email::text ILIKE $1)
-         AND ($2::user_role IS NULL OR u.role = $2)
-       ORDER BY u.created_at DESC LIMIT 500`,
-      [filters.q ? `%${filters.q}%` : null, filters.role ?? null],
-    )
-    return rows.map((r) => ({ ...toMe(r), suspended: !!r.suspended_at, listings: r.listings, bookings: r.bookings }))
-  },
-
-  /** Changes role and/or suspension. Returns false if the user doesn't exist. */
-  async updateAccess(id: number, change: { role?: UserRole; suspended?: boolean }, db: Queryable = pool) {
-    const row = await queryOne(
-      `UPDATE users SET role = COALESCE($2::user_role, role),
-         suspended_at = CASE WHEN $3::boolean IS NULL THEN suspended_at WHEN $3 THEN COALESCE(suspended_at, now()) ELSE NULL END
-       WHERE id = $1 RETURNING id`,
-      [id, change.role ?? null, change.suspended ?? null], db,
-    )
-    return !!row
+    const [users, properties, bookings] = await Promise.all([
+      all<UserDoc>(col(C.users)),
+      all<{ hostId: number }>(col(C.properties).select('hostId')),
+      all<{ guestId: number }>(col(C.bookings).select('guestId')),
+    ])
+    const q = filters.q?.toLowerCase()
+    return users
+      .filter((u) => (!filters.role || u.role === filters.role) && (!q || [u.name, u.email, u.phone].some((v) => v?.toLowerCase().includes(q))))
+      .sort((a, b) => b.createdAt.localeCompare(a.createdAt))
+      .slice(0, 500)
+      .map((u) => ({
+        ...toMe(u), suspended: !!u.suspendedAt,
+        listings: properties.filter((p) => p.hostId === u.id).length,
+        bookings: bookings.filter((b) => b.guestId === u.id).length,
+      }))
   },
 }

@@ -18,6 +18,7 @@
     "@meridian/tsconfig": "*"
   },
   "dependencies": {
-    "@meridian/shared": "*"
+    "@meridian/shared": "*",
+    "firebase": "^12.19.0"
   }
 }

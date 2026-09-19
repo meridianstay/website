@@ -90,7 +90,7 @@ export function AppShell({ subtitle, nav, children }: AppShellProps) {
   )
 }
 
-type ShellUser = { name: string; email: string; avatar: string | null }
+type ShellUser = { name: string; email?: string | null; phone?: string | null; avatar: string | null }
 
 export function Avatar({ user, size = 'md' }: { user: ShellUser; size?: 'sm' | 'md' }) {
   const box = size === 'sm' ? 'w-8 h-8 text-xs' : 'w-9 h-9 text-sm'
@@ -98,7 +98,7 @@ export function Avatar({ user, size = 'md' }: { user: ShellUser; size?: 'sm' | '
     <img src={user.avatar} alt="" className={`${box} rounded-full object-cover border border-brand-yellow-400`} />
   ) : (
     <div className={`${box} rounded-full bg-brand-100 text-brand-700 font-bold flex items-center justify-center border border-brand-yellow-400`}>
-      {user.name.charAt(0).toUpperCase()}
+      {(user.name || '?').charAt(0).toUpperCase()}
     </div>
   )
 }
@@ -109,7 +109,7 @@ function UserBadge({ user }: { user: ShellUser }) {
       <Avatar user={user} />
       <div className="min-w-0">
         <p className="text-sm font-semibold text-slate-900 truncate">{user.name}</p>
-        <p className="text-xs text-slate-500 truncate">{user.email}</p>
+        <p className="text-xs text-slate-500 truncate">{user.email ?? user.phone}</p>
       </div>
     </div>
   )

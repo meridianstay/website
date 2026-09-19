@@ -1,14 +1,16 @@
 import { fileURLToPath } from 'node:url'
 import { addDays, galleryImages as g, images, quoteStay, todayISO } from '@meridian/shared'
-import { hashPassword } from '../lib/passwords'
-import { newBookingCode } from '../lib/bookingCode'
-import { pool, query, queryOne, transaction, type Queryable } from './pool'
+import { auth } from './firebase'
+import { C, col, datesOf, firestore, nightsOf } from './seedHelpers'
+import { newBookingCode } from '../services/bookings'
+import { reviewerName } from '../services/reviews'
 
 // Demo data for development and client previews. Everything is fictional.
 // Dates are relative to the day the seed runs, so there are always past and upcoming stays.
+// Every demo account signs in with a test phone number (see DEMO_PHONES) and the code DEMO_OTP.
 
-/** Password for every demo account. Development and staging only. */
-export const DEMO_PASSWORD = 'meridian123'
+/** Code for the demo test phone numbers (add them in Firebase: Authentication → Sign-in method → Phone). */
+export const DEMO_OTP = '123456'
 
 const amenities: [name: string, icon: string][] = [
   ['Wifi', 'wifi'], ['Free parking', 'square-parking'], ['Breakfast included', 'mug-hot'], ['Kitchen', 'kitchen-set'],
@@ -20,25 +22,25 @@ const amenities: [name: string, icon: string][] = [
 ]
 
 type Role = 'guest' | 'host' | 'admin'
-const users: { key: string; name: string; role: Role; avatar?: string; phone?: string; suspended?: boolean; joinedDaysAgo: number }[] = [
-  { key: 'admin', name: 'Aarav Sharma', role: 'admin', joinedDaysAgo: 400 },
-  { key: 'ops', name: 'Ishita Bose', role: 'admin', joinedDaysAgo: 210 },
-  { key: 'meera', name: 'Meera Nair', role: 'host', phone: '+91 98450 11223', joinedDaysAgo: 380 },
-  { key: 'karan', name: 'Karan Mehta', role: 'host', phone: '+91 98200 44556', joinedDaysAgo: 350 },
-  { key: 'tenzin', name: 'Tenzin Dorje', role: 'host', phone: '+91 94340 77881', joinedDaysAgo: 260 },
-  { key: 'anjali', name: 'Anjali Rao', role: 'host', phone: '+91 98220 33445', joinedDaysAgo: 190 },
-  { key: 'farhan', name: 'Farhan Qureshi', role: 'host', phone: '+91 94140 66778', joinedDaysAgo: 120 },
-  { key: 'rohit', name: 'Rohit Verma', role: 'host', phone: '+91 99170 22334', joinedDaysAgo: 75 },
-  { key: 'priya', name: 'Priya Natarajan', role: 'guest', avatar: images.avatar, phone: '+91 98765 43210', joinedDaysAgo: 300 },
-  { key: 'sid', name: 'Siddharth Kumar', role: 'guest', phone: '+91 90000 12345', joinedDaysAgo: 240 },
-  { key: 'ananya', name: 'Ananya Sen', role: 'guest', phone: '+91 98300 55667', joinedDaysAgo: 170 },
-  { key: 'rahul', name: 'Rahul Menon', role: 'guest', phone: '+91 94470 88990', joinedDaysAgo: 150 },
-  { key: 'neha', name: 'Neha Kapoor', role: 'guest', phone: '+91 98110 99887', joinedDaysAgo: 140 },
-  { key: 'maya', name: 'Maya Dsouza', role: 'guest', phone: '+91 98230 11009', joinedDaysAgo: 90 },
-  { key: 'arjun', name: 'Arjun Iyer', role: 'guest', phone: '+91 99400 77665', joinedDaysAgo: 45 },
-  { key: 'vikram', name: 'Vikram Pillai', role: 'guest', suspended: true, joinedDaysAgo: 60 },
+/** Demo people. `phone` doubles as their Firebase test sign-in number. */
+export const users: { key: string; name: string; role: Role; phone: string; avatar?: string; suspended?: boolean; joinedDaysAgo: number }[] = [
+  { key: 'admin', name: 'Aarav Sharma', role: 'admin', phone: '+919000000001', joinedDaysAgo: 400 },
+  { key: 'ops', name: 'Ishita Bose', role: 'admin', phone: '+919000000002', joinedDaysAgo: 210 },
+  { key: 'meera', name: 'Meera Nair', role: 'host', phone: '+919000000003', joinedDaysAgo: 380 },
+  { key: 'karan', name: 'Karan Mehta', role: 'host', phone: '+919000000004', joinedDaysAgo: 350 },
+  { key: 'tenzin', name: 'Tenzin Dorje', role: 'host', phone: '+919000000005', joinedDaysAgo: 260 },
+  { key: 'anjali', name: 'Anjali Rao', role: 'host', phone: '+919000000006', joinedDaysAgo: 190 },
+  { key: 'farhan', name: 'Farhan Qureshi', role: 'host', phone: '+919000000007', joinedDaysAgo: 120 },
+  { key: 'rohit', name: 'Rohit Verma', role: 'host', phone: '+919000000008', joinedDaysAgo: 75 },
+  { key: 'priya', name: 'Priya Natarajan', role: 'guest', phone: '+919000000011', avatar: images.avatar, joinedDaysAgo: 300 },
+  { key: 'sid', name: 'Siddharth Kumar', role: 'guest', phone: '+919000000012', joinedDaysAgo: 240 },
+  { key: 'ananya', name: 'Ananya Sen', role: 'guest', phone: '+919000000013', joinedDaysAgo: 170 },
+  { key: 'rahul', name: 'Rahul Menon', role: 'guest', phone: '+919000000014', joinedDaysAgo: 150 },
+  { key: 'neha', name: 'Neha Kapoor', role: 'guest', phone: '+919000000015', joinedDaysAgo: 140 },
+  { key: 'maya', name: 'Maya Dsouza', role: 'guest', phone: '+919000000016', joinedDaysAgo: 90 },
+  { key: 'arjun', name: 'Arjun Iyer', role: 'guest', phone: '+919000000017', joinedDaysAgo: 45 },
+  { key: 'vikram', name: 'Vikram Pillai', role: 'guest', phone: '+919000000018', suspended: true, joinedDaysAgo: 60 },
 ]
-const email = (key: string) => `${key}@meridianstay.test`
 
 interface SeedProperty {
   slug: string; host: string; title: string; type: string; city: string; region: string; country?: string
@@ -183,6 +185,7 @@ const properties: SeedProperty[] = [
   },
 ]
 
+
 interface SeedBooking {
   property: string; guest: string; start: number; nights: number; guests: number
   status?: 'Confirmed' | 'Cancelled'; method?: 'upi' | 'card' | 'netbanking'; requests?: string
@@ -194,7 +197,7 @@ const bookings: SeedBooking[] = [
   { property: 'green-valley-organic-farmstay', guest: 'priya', start: 12, nights: 5, guests: 2, requests: 'We’ll arrive around 4 pm. Vegetarian meals please.' },
   { property: 'whispering-pines-forest-cottage', guest: 'priya', start: 60, nights: 4, guests: 3 },
   { property: 'assagao-coconut-grove-villa', guest: 'priya', start: 100, nights: 4, guests: 4, method: 'card' },
-  { property: 'sunny-citrus-farm-estate', guest: 'priya', start: -40, nights: 2, guests: 2 }, // completed, not yet reviewed
+  { property: 'sunny-citrus-farm-estate', guest: 'priya', start: -40, nights: 2, guests: 2 },
   { property: 'alleppey-backwater-houseboat', guest: 'priya', start: -95, nights: 3, guests: 2, review: [5, 'Floating through the backwaters for three days was the best trip we’ve taken. Superb food on board.'] },
   { property: 'emerald-luxury-pool-villa', guest: 'priya', start: 30, nights: 2, guests: 4, status: 'Cancelled' },
   { property: 'golden-sunset-hillside-resort', guest: 'sid', start: 20, nights: 3, guests: 2, method: 'card' },
@@ -224,159 +227,154 @@ const messages: [name: string, email: string, topic: string, message: string, st
   ['Kiran Joshi', 'kiran.j@example.com', 'Trust & safety', 'A listing I viewed used photos I think belong to another property.', 'closed', 20],
 ]
 
-async function insertBooking(db: Queryable, propertyId: number, price: number, guestId: number, b: SeedBooking, today: string) {
-  const checkIn = addDays(today, b.start)
-  const checkOut = addDays(checkIn, b.nights)
-  const q = quoteStay(price, checkIn, checkOut, b.guests)
-  const row = await queryOne<{ id: number }>(
-    `INSERT INTO bookings (code, property_id, guest_id, check_in, check_out, nights, guests, currency, price_per_night_minor,
-       base_amount_minor, extra_guest_amount_minor, service_fee_minor, total_minor, status, payment_method, payment_status,
-       contact_phone, special_requests, created_at, cancelled_at)
-     VALUES ($1,$2,$3,$4,$5,$6,$7,'USD',$8,$9,$10,$11,$12,$13::booking_status,$14,'test',$15,$16,
-       ($4::date - interval '21 days'), CASE WHEN $13::booking_status = 'Cancelled' THEN ($4::date - interval '7 days') END)
-     RETURNING id`,
-    [newBookingCode(), propertyId, guestId, checkIn, checkOut, q.nights, b.guests, q.pricePerNight * 100, q.baseAmount * 100,
-      q.extraGuestAmount * 100, q.serviceFee * 100, q.total * 100, b.status ?? 'Confirmed', b.method ?? 'upi',
-      users.find((u) => u.key === b.guest)?.phone ?? '+91 90000 00000', b.requests ?? null],
-    db,
-  )
-  return { id: row!.id, checkOut }
-}
 
-/** Inserts demo data into an empty database. Returns false if users already exist. */
+const daysAgo = (n: number) => new Date(Date.now() - n * 86_400_000).toISOString()
+
+/** Loads the demo data into an empty project. Returns false if there are already users. */
 export async function seed(log = console.log): Promise<boolean> {
-  const existing = await queryOne<{ n: number }>('SELECT count(*)::int AS n FROM users')
-  if (existing && existing.n > 0) return false
+  if (!(await col(C.users).limit(1).get()).empty) return false
   const today = todayISO()
+  const w = firestore.bulkWriter()
 
-  await transaction(async (db) => {
-    const amenityIds = new Map<string, number>()
-    for (const [name, icon] of amenities) {
-      const row = await queryOne<{ id: number }>(
-        'INSERT INTO amenities (name, icon) VALUES ($1, $2) ON CONFLICT (name) DO UPDATE SET icon = EXCLUDED.icon RETURNING id', [name, icon], db)
-      amenityIds.set(name, row!.id)
+  amenities.forEach(([name, icon], order) => w.set(col(C.amenities).doc(name), { name, icon, order }))
+
+  // People: a Firebase sign-in (by phone) plus a users document keyed by the same id.
+  const ids = new Map<string, { id: number; uid: string; name: string; phone: string }>()
+  for (const [i, u] of users.entries()) {
+    const uid = `demo-${u.key}`
+    await auth.createUser({ uid, phoneNumber: u.phone, displayName: u.name, disabled: !!u.suspended }).catch(() => {})
+    const id = i + 1
+    ids.set(u.key, { id, uid, name: u.name, phone: u.phone })
+    w.set(col(C.users).doc(uid), {
+      id, uid, name: u.name, email: null, phone: u.phone, role: u.role, avatarUrl: u.avatar ?? null, createdAt: daysAgo(u.joinedDaysAgo),
+      suspendedAt: u.suspended ? daysAgo(10) : null, sessionsRevokedAt: null,
+    })
+  }
+
+  // Listings, with their earlier reviews (counts and averages include them).
+  const props = new Map<string, { id: number; price: number; seed: SeedProperty; rating: number; count: number }>()
+  let reviewId = 0
+  for (const [i, p] of properties.entries()) {
+    const id = i + 1
+    props.set(p.slug, { id, price: p.price, seed: p, rating: p.rating, count: p.reviewCount })
+    for (const [author, rating, comment, ago] of p.reviews) {
+      reviewId++
+      w.set(col(C.reviews).doc(String(reviewId)), { id: reviewId, propertyId: id, userId: null, bookingCode: null, authorName: author, rating, comment, createdAt: daysAgo(ago), hiddenAt: null })
     }
-
-    const passwordHash = hashPassword(DEMO_PASSWORD)
-    const userIds = new Map<string, number>()
-    for (const u of users) {
-      const row = await queryOne<{ id: number }>(
-        `INSERT INTO users (name, email, role, avatar_url, phone, password_hash, created_at, suspended_at)
-         VALUES ($1, $2, $3, $4, $5, $6, now() - make_interval(days => $7), CASE WHEN $8 THEN now() - interval '10 days' END) RETURNING id`,
-        [u.name, email(u.key), u.role, u.avatar ?? null, u.phone ?? null, passwordHash, u.joinedDaysAgo, !!u.suspended], db,
-      )
-      userIds.set(u.key, row!.id)
-    }
-
-    const props = new Map<string, { id: number; price: number }>()
-    for (const p of properties) {
-      const row = await queryOne<{ id: number }>(
-        `INSERT INTO properties (slug, host_id, title, type, description, city, region, country, latitude, longitude,
-           price_per_night_minor, bedrooms, bathrooms, max_guests, status, rejection_reason, cover_image_url, rating_avg,
-           review_count, featured_rank, approved_at)
-         VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13,$14,$15::listing_status,$16,$17,$18,$19,$20,
-           CASE WHEN $15::listing_status = 'Approved' THEN now() - interval '30 days' END)
-         RETURNING id`,
-        [p.slug, userIds.get(p.host), p.title, p.type, p.description, p.city, p.region, p.country ?? 'India', p.lat, p.lng,
-          p.price * 100, p.beds, p.baths, p.maxGuests, p.status, p.rejectionReason ?? null, p.cover, p.rating, p.reviewCount,
-          p.featured ?? null], db,
-      )
-      const id = row!.id
-      props.set(p.slug, { id, price: p.price })
-      for (const [i, url] of p.photos.entries()) {
-        await query('INSERT INTO property_photos (property_id, url, position) VALUES ($1, $2, $3)', [id, url, i], db)
-      }
-      for (const name of p.amenities) {
-        await query('INSERT INTO property_amenities (property_id, amenity_id) VALUES ($1, $2)', [id, amenityIds.get(name)], db)
-      }
-      // Earlier reviews (rating_avg / review_count above already include them).
-      for (const [author, rating, comment, daysAgo] of p.reviews) {
-        await query(
-          `INSERT INTO reviews (property_id, author_name, rating, comment, created_at) VALUES ($1, $2, $3, $4, now() - make_interval(days => $5))`,
-          [id, author, rating, comment, daysAgo], db)
-      }
-    }
-
-    // A spam review that an admin has already hidden, to show moderation.
-    await query(
-      `INSERT INTO reviews (property_id, author_name, rating, comment, created_at, hidden_at)
-       VALUES ($1, 'Unknown', 1, 'Don’t book here!!! Message me on WhatsApp for cheaper rooms nearby.', now() - interval '12 days', now() - interval '11 days')`,
-      [props.get('assagao-coconut-grove-villa')!.id], db)
-
-    for (const b of bookings) {
-      const p = props.get(b.property)!
-      const guestId = userIds.get(b.guest)!
-      const { id, checkOut } = await insertBooking(db, p.id, p.price, guestId, b, today)
-      if (b.review) {
-        const u = users.find((x) => x.key === b.guest)!
-        const [first, ...rest] = u.name.split(' ')
-        await query(
-          `INSERT INTO reviews (property_id, user_id, booking_id, author_name, rating, comment, created_at)
-           VALUES ($1, $2, $3, $4, $5, $6, $7::date + interval '2 days')`,
-          [p.id, guestId, id, `${first} ${rest[rest.length - 1][0]}.`, b.review[0], b.review[1], checkOut], db)
-        await query(
-          `UPDATE properties SET rating_avg = round((rating_avg * review_count + $2) / (review_count + 1), 2), review_count = review_count + 1 WHERE id = $1`,
-          [p.id, b.review[0]], db)
-      }
-    }
-
-    const block = (slug: string, start: number, nights: number, note: string) =>
-      query('INSERT INTO availability_blocks (property_id, start_date, end_date, note) VALUES ($1, $2, $3, $4)',
-        [props.get(slug)!.id, addDays(today, start), addDays(today, start + nights), note], db)
-    await block('whispering-pines-forest-cottage', 25, 3, 'Chimney maintenance')
-    await block('himalayan-pine-view-resort', 40, 4, 'Staff holiday')
-    await block('assagao-coconut-grove-villa', 20, 5, 'Family visiting')
-
-    const wishlists: Record<string, string[]> = {
-      priya: ['green-valley-organic-farmstay', 'whispering-pines-forest-cottage', 'bamboo-zen-treehouse-cottage', 'himalayan-pine-view-resort', 'jaipur-heritage-haveli-room'],
-      sid: ['emerald-luxury-pool-villa', 'gokarna-cliffside-resort'],
-      ananya: ['alleppey-backwater-houseboat', 'naggar-apple-orchard-farmstay'],
-      neha: ['bamboo-zen-treehouse-cottage'],
-    }
-    for (const [who, slugs] of Object.entries(wishlists)) {
-      for (const slug of slugs) {
-        await query('INSERT INTO wishlist_items (user_id, property_id) VALUES ($1, $2)', [userIds.get(who), props.get(slug)!.id], db)
-      }
-    }
-
-    for (const [name, mail, topic, message, status, daysAgo] of messages) {
-      await query(
-        `INSERT INTO contact_messages (name, email, topic, message, status, created_at) VALUES ($1, $2, $3, $4, $5, now() - make_interval(days => $6))`,
-        [name, mail, topic, message, status, daysAgo], db)
-    }
-
-    // Recent control-center history.
-    const audit: [admin: string, action: string, type: string, target: string, details: object, daysAgo: number][] = [
-      ['admin', 'listing.approve', 'property', String(props.get('gokarna-cliffside-resort')!.id), {}, 30],
-      ['ops', 'listing.approve', 'property', String(props.get('rishikesh-riverside-homestay-room')!.id), {}, 28],
-      ['admin', 'listing.feature', 'property', String(props.get('bamboo-zen-treehouse-cottage')!.id), { rank: 6 }, 27],
-      ['ops', 'listing.reject', 'property', String(props.get('thar-desert-glamping-camp')!.id),
-        { reason: properties.find((p) => p.slug === 'thar-desert-glamping-camp')!.rejectionReason }, 14],
-      ['admin', 'review.hide', 'review', 'spam', {}, 11],
-      ['admin', 'user.suspend', 'user', String(userIds.get('vikram')), {}, 10],
-      ['ops', 'message.status', 'message', 'closed', { status: 'closed' }, 5],
-    ]
-    for (const [admin, action, type, target, details, daysAgo] of audit) {
-      await query(
-        `INSERT INTO admin_audit_log (admin_id, action, target_type, target_id, details, created_at) VALUES ($1, $2, $3, $4, $5, now() - make_interval(days => $6))`,
-        [userIds.get(admin), action, type, target, JSON.stringify(details), daysAgo], db)
-    }
-
-    // A visible announcement so the preview shows the banner.
-    await query(
-      `INSERT INTO site_settings (key, value) VALUES ('announcement', $1)
-       ON CONFLICT (key) DO UPDATE SET value = EXCLUDED.value`,
-      [JSON.stringify({ enabled: true, text: 'Preview mode: explore freely. Bookings are confirmed without taking payment.', linkLabel: 'How it works', linkUrl: '/how-it-works' })], db)
+  }
+  // A spam review an admin already hid, to show moderation.
+  reviewId++
+  w.set(col(C.reviews).doc(String(reviewId)), {
+    id: reviewId, propertyId: props.get('assagao-coconut-grove-villa')!.id, userId: null, bookingCode: null, authorName: 'Unknown', rating: 1,
+    comment: 'Don’t book here!!! Message me on WhatsApp for cheaper rooms nearby.', createdAt: daysAgo(12), hiddenAt: daysAgo(11),
   })
 
-  log(`Seeded demo data: ${users.length} users, ${properties.length} listings, ${bookings.length} bookings. Password for every demo account: "${DEMO_PASSWORD}".`)
+  // Bookings, each claiming its nights while confirmed.
+  for (const [i, b] of bookings.entries()) {
+    const p = props.get(b.property)!
+    const guest = ids.get(b.guest)!
+    const host = ids.get(p.seed.host)!
+    const checkIn = addDays(today, b.start)
+    const checkOut = addDays(checkIn, b.nights)
+    const q = quoteStay(p.price, checkIn, checkOut, b.guests)
+    const code = newBookingCode()
+    const status = b.status ?? 'Confirmed'
+    w.set(col(C.bookings).doc(code), {
+      id: i + 1, code, propertyId: p.id, hostId: host.id, guestId: guest.id,
+      property: { slug: p.seed.slug, title: p.seed.title, type: p.seed.type, location: `${p.seed.city}, ${p.seed.region}`, image: p.seed.cover },
+      guest: { name: guest.name, email: null, phone: guest.phone },
+      checkIn, checkOut, nights: q.nights, guests: b.guests, currency: 'USD', pricePerNightMinor: p.price * 100,
+      baseMinor: q.baseAmount * 100, extraGuestMinor: q.extraGuestAmount * 100, serviceFeeMinor: q.serviceFee * 100, totalMinor: q.total * 100,
+      status, paymentMethod: b.method ?? 'upi', paymentStatus: 'test', paymentReference: null, contactPhone: guest.phone,
+      specialRequests: b.requests ?? null, createdAt: new Date(Date.parse(checkIn) - 21 * 86_400_000).toISOString(),
+      cancelledAt: status === 'Cancelled' ? new Date(Date.parse(checkIn) - 7 * 86_400_000).toISOString() : null, reviewed: !!b.review,
+    })
+    if (status === 'Confirmed') for (const d of datesOf(checkIn, checkOut)) w.set(nightsOf(p.id).doc(d), { kind: 'booking', ref: code })
+    if (b.review) {
+      reviewId++
+      w.set(col(C.reviews).doc(String(reviewId)), {
+        id: reviewId, propertyId: p.id, userId: guest.id, bookingCode: code, authorName: reviewerName(guest.name), rating: b.review[0],
+        comment: b.review[1], createdAt: new Date(Date.parse(checkOut) + 2 * 86_400_000).toISOString(), hiddenAt: null,
+      })
+      p.rating = Math.round(((p.rating * p.count + b.review[0]) / (p.count + 1)) * 100) / 100
+      p.count++
+    }
+  }
+
+  for (const p of props.values()) {
+    const s = p.seed
+    w.set(col(C.properties).doc(String(p.id)), {
+      id: p.id, slug: s.slug, hostId: ids.get(s.host)!.id, title: s.title, type: s.type, description: s.description, city: s.city, region: s.region,
+      country: s.country ?? 'India', lat: s.lat, lng: s.lng, currency: 'USD', pricePerNightMinor: s.price * 100, bedrooms: s.beds, bathrooms: s.baths,
+      maxGuests: s.maxGuests, status: s.status, rejectionReason: s.rejectionReason ?? null, coverImageUrl: s.cover, photos: s.photos,
+      amenities: s.amenities, ratingAvg: p.rating, reviewCount: p.count, featuredRank: s.featured ?? null,
+      approvedAt: s.status === 'Approved' ? daysAgo(30) : null, createdAt: daysAgo(60 - p.id), updatedAt: daysAgo(30),
+    })
+  }
+
+  // Host blocks, claiming their nights.
+  const blocks: [slug: string, start: number, nights: number, note: string][] = [
+    ['whispering-pines-forest-cottage', 25, 3, 'Chimney maintenance'],
+    ['himalayan-pine-view-resort', 40, 4, 'Staff holiday'],
+    ['assagao-coconut-grove-villa', 20, 5, 'Family visiting'],
+  ]
+  for (const [i, [slug, start, nights, note]] of blocks.entries()) {
+    const propertyId = props.get(slug)!.id
+    const checkIn = addDays(today, start)
+    const checkOut = addDays(checkIn, nights)
+    w.set(col(C.blocks).doc(String(i + 1)), { id: i + 1, propertyId, checkIn, checkOut, note, createdAt: daysAgo(5) })
+    for (const d of datesOf(checkIn, checkOut)) w.set(nightsOf(propertyId).doc(d), { kind: 'block', ref: String(i + 1) })
+  }
+
+  const wishlists: Record<string, string[]> = {
+    priya: ['green-valley-organic-farmstay', 'whispering-pines-forest-cottage', 'bamboo-zen-treehouse-cottage', 'himalayan-pine-view-resort', 'jaipur-heritage-haveli-room'],
+    sid: ['emerald-luxury-pool-villa', 'gokarna-cliffside-resort'],
+    ananya: ['alleppey-backwater-houseboat', 'naggar-apple-orchard-farmstay'],
+    neha: ['bamboo-zen-treehouse-cottage'],
+  }
+  for (const [who, slugs] of Object.entries(wishlists)) {
+    for (const [i, slug] of slugs.entries()) {
+      const userId = ids.get(who)!.id
+      const propertyId = props.get(slug)!.id
+      w.set(col(C.wishlists).doc(`${userId}_${propertyId}`), { userId, propertyId, createdAt: daysAgo(20 - i) })
+    }
+  }
+
+  for (const [i, [name, email, topic, message, status, ago]] of messages.entries()) {
+    w.set(col(C.messages).doc(String(i + 1)), { id: i + 1, name, email, topic, message, status, createdAt: daysAgo(ago) })
+  }
+
+  const admin = (key: string) => ({ adminId: ids.get(key)!.id, adminName: ids.get(key)!.name })
+  const audit: [who: string, action: string, type: string, target: string, details: object, ago: number][] = [
+    ['admin', 'listing.approve', 'property', String(props.get('gokarna-cliffside-resort')!.id), {}, 30],
+    ['ops', 'listing.approve', 'property', String(props.get('rishikesh-riverside-homestay-room')!.id), {}, 28],
+    ['admin', 'listing.feature', 'property', String(props.get('bamboo-zen-treehouse-cottage')!.id), { rank: 6 }, 27],
+    ['ops', 'listing.reject', 'property', String(props.get('thar-desert-glamping-camp')!.id), { reason: props.get('thar-desert-glamping-camp')!.seed.rejectionReason }, 14],
+    ['admin', 'review.hide', 'review', String(reviewId), {}, 11],
+    ['admin', 'user.suspend', 'user', String(ids.get('vikram')!.id), {}, 10],
+    ['ops', 'message.status', 'message', '5', { status: 'closed' }, 5],
+  ]
+  for (const [who, action, targetType, targetId, details, ago] of audit) {
+    w.set(col(C.audit).doc(), { ...admin(who), action, targetType, targetId, details, createdAt: daysAgo(ago) })
+  }
+
+  const counters = { users: users.length, properties: properties.length, reviews: reviewId, bookings: bookings.length, blocks: blocks.length, messages: messages.length }
+  for (const [name, value] of Object.entries(counters)) w.set(col(C.counters).doc(name), { value })
+
+  // A visible announcement so the preview shows the banner.
+  w.set(col(C.settings).doc('announcement'), {
+    value: { enabled: true, text: 'Preview mode: explore freely. Bookings are confirmed without taking payment.', linkLabel: 'How it works', linkUrl: '/how-it-works' },
+    updatedAt: new Date().toISOString(), updatedBy: null,
+  })
+
+  await w.close()
+  log(`Seeded demo data: ${users.length} users, ${properties.length} listings, ${bookings.length} bookings. Demo sign-in code: ${DEMO_OTP}.`)
   return true
 }
 
-// `npm run db:seed`
+// `npm run seed -w @meridian/api`
 if (process.argv[1] === fileURLToPath(import.meta.url)) {
   seed()
-    .then((seeded) => { if (!seeded) console.log('Database already has users; nothing seeded.') })
+    .then((seeded) => { if (!seeded) console.log('The project already has users; nothing seeded.') })
     .catch((err) => { console.error(err.message); process.exitCode = 1 })
-    .finally(() => pool.end())
 }

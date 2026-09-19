@@ -1,0 +1,6 @@
+{
+  "projects": {
+    "default": "demo-meridianstay",
+    "production": "meridianstay-bcfd0"
+  }
+}

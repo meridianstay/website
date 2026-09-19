@@ -1,10 +1,15 @@
 import type { Amenity } from '@meridian/shared'
-import { query } from '../db/pool'
+import { C, all, col } from '../store/db'
 
-// Table: amenities
+// Collection: amenities/{name}
 
 export const amenitiesRepo = {
-  list() {
-    return query<Amenity>('SELECT name, icon FROM amenities ORDER BY id')
+  async list(): Promise<Amenity[]> {
+    const rows = await all<Amenity & { order: number }>(col(C.amenities))
+    return rows.sort((a, b) => a.order - b.order).map(({ name, icon }) => ({ name, icon }))
+  },
+
+  async iconMap() {
+    return new Map((await this.list()).map((a) => [a.name, a.icon]))
   },
 }

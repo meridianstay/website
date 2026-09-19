@@ -1,6 +1,6 @@
 import { lazy, Suspense, useEffect, useState, type ReactNode } from 'react'
 import { Link, useNavigate, useParams } from 'react-router'
-import { ErrorNote, PageHeader, Spinner } from '@meridian/ui'
+import { ErrorNote, PageHeader, PhotoUpload, Spinner } from '@meridian/ui'
 import { formatPrice, quoteStay, addDays, todayISO, type Amenity, type PropertyType } from '@meridian/shared'
 import { ApiError, hostApi, type ListingInput } from '@meridian/shared/client'
 
@@ -187,17 +187,45 @@ export function ListingEditor() {
         )}
 
         {step === 3 && (
-          <div className="space-y-4">
-            <Field label="Cover photo link" id="cover" error={fields.coverImage} hint="Paste a link to a hosted photo (https://…). Direct photo upload is coming soon.">
-              <input id="cover" type="url" className={inputClass} value={draft.coverImage} onChange={(e) => update('coverImage', e.target.value)} placeholder="https://images.unsplash.com/..." />
-            </Field>
-            {isUrl(draft.coverImage) && <img src={draft.coverImage} alt="Cover preview" className="h-48 w-full object-cover rounded-2xl border border-slate-200" />}
-            <Field label="More photos (optional, one link per line)" id="photos" error={fields.photos}>
-              <textarea id="photos" rows={3} className={inputClass} value={draft.photoText} onChange={(e) => update('photoText', e.target.value)} />
-            </Field>
-            {photos.length > 0 && (
-              <div className="flex gap-2 overflow-x-auto">{photos.filter(isUrl).map((src) => <img key={src} src={src} alt="" className="h-16 w-24 object-cover rounded-lg shrink-0" />)}</div>
-            )}
+          <div className="space-y-5">
+            <div>
+              <p className="block text-xs font-bold uppercase text-slate-500 mb-2">Cover photo</p>
+              {isUrl(draft.coverImage) ? (
+                <div className="relative">
+                  <img src={draft.coverImage} alt="Cover preview" className="h-48 w-full object-cover rounded-2xl border border-slate-200 animate-fade-in" />
+                  <button type="button" onClick={() => update('coverImage', '')} className="absolute top-3 right-3 bg-white/90 text-slate-800 text-xs font-bold px-3 py-1.5 rounded-lg shadow">Replace</button>
+                </div>
+              ) : (
+                <div className="border-2 border-dashed border-slate-200 rounded-2xl p-6 text-center space-y-3">
+                  <PhotoUpload purpose="listing" label="Upload cover photo" onUploaded={(url) => update('coverImage', url)} />
+                  <details className="text-xs text-slate-500">
+                    <summary className="cursor-pointer">or paste a photo link</summary>
+                    <input aria-label="Cover photo link" type="url" className={`${inputClass} mt-2`} value={draft.coverImage} onChange={(e) => update('coverImage', e.target.value)} placeholder="https://…" />
+                  </details>
+                </div>
+              )}
+              {fields.coverImage && <p className="text-xs text-rose-600 font-semibold mt-1">{fields.coverImage}</p>}
+            </div>
+
+            <div>
+              <p className="block text-xs font-bold uppercase text-slate-500 mb-2">More photos ({photos.length}/12)</p>
+              <div className="grid grid-cols-3 sm:grid-cols-4 gap-2">
+                {photos.map((src, i) => (
+                  <div key={src + i} className="relative group">
+                    <img src={src} alt="" className="h-20 w-full object-cover rounded-xl animate-fade-in" />
+                    <button type="button" aria-label="Remove photo" onClick={() => update('photoText', photos.filter((_, j) => j !== i).join('\n'))}
+                      className="absolute top-1 right-1 w-6 h-6 rounded-full bg-white/90 text-rose-600 text-xs shadow opacity-80 group-hover:opacity-100">
+                      <i className="fa-solid fa-xmark" aria-hidden="true"></i>
+                    </button>
+                  </div>
+                ))}
+              </div>
+              {photos.length < 12 && (
+                <PhotoUpload className="mt-3" purpose="listing" label="Add photo" onUploaded={(url) => update('photoText', [...photos, url].join('\n'))} />
+              )}
+              {fields.photos && <p className="text-xs text-rose-600 font-semibold mt-1">{fields.photos}</p>}
+            </div>
+
             <Field label="Description" id="description" error={fields.description} hint={`At least 20 characters. Leave a blank line between paragraphs. (${draft.description.trim().length})`}>
               <textarea id="description" rows={6} maxLength={4000} className={inputClass} value={draft.description} onChange={(e) => update('description', e.target.value)} />
             </Field>

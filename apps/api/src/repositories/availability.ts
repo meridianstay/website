@@ -1,41 +1,44 @@
-import type { DateRange } from '@meridian/shared'
-import { pool, query, queryOne, type Queryable } from '../db/pool'
+import { C, all, col, firestore, nextId, nightsOf, nowISO } from '../store/db'
+import { datesIn } from './properties'
 
-// Table: availability_blocks (nights a host has closed), plus the combined "unavailable" view.
+// Collection: availabilityBlocks/{id} — nights a host has closed. Each also claims its night documents.
+
+export interface BlockDoc { id: number; propertyId: number; checkIn: string; checkOut: string; note: string | null; createdAt: string }
+
+export class BlockConflictError extends Error {
+  constructor(public reason: 'booked' | 'blocked') {
+    super(reason)
+  }
+}
 
 export const availabilityRepo = {
   async upcomingBlocks(propertyId: number, today: string) {
-    const rows = await query<{ id: number; start_date: string; end_date: string; note: string | null }>(
-      'SELECT id, start_date, end_date, note FROM availability_blocks WHERE property_id = $1 AND end_date > $2 ORDER BY start_date',
-      [propertyId, today],
-    )
-    return rows.map((b) => ({ id: b.id, checkIn: b.start_date, checkOut: b.end_date, note: b.note }))
+    const rows = await all<BlockDoc>(col(C.blocks).where('propertyId', '==', propertyId))
+    return rows.filter((b) => b.checkOut > today).sort((a, b) => a.checkIn.localeCompare(b.checkIn))
+      .map(({ id, checkIn, checkOut, note }) => ({ id, checkIn, checkOut, note }))
   },
 
-  /** Every future range a guest can't book: confirmed bookings and host blocks. */
-  async unavailableRanges(propertyId: number, today: string): Promise<DateRange[]> {
-    const rows = await query<{ check_in: string; check_out: string }>(
-      `SELECT check_in, check_out FROM bookings WHERE property_id = $1 AND status = 'Confirmed' AND check_out > $2
-       UNION ALL
-       SELECT start_date, end_date FROM availability_blocks WHERE property_id = $1 AND end_date > $2
-       ORDER BY 1`,
-      [propertyId, today],
-    )
-    return rows.map((r) => ({ checkIn: r.check_in, checkOut: r.check_out }))
+  /** Claims the nights for a block; throws BlockConflictError if any is booked or already blocked. */
+  async addBlock(propertyId: number, checkIn: string, checkOut: string, note: string | null) {
+    await firestore.runTransaction(async (tx) => {
+      const nightRefs = datesIn(checkIn, checkOut).map((d) => nightsOf(propertyId).doc(d))
+      const existing = await tx.getAll(...nightRefs)
+      const taken = existing.filter((n) => n.exists).map((n) => n.data()!.kind as string)
+      if (taken.includes('booking')) throw new BlockConflictError('booked')
+      if (taken.length) throw new BlockConflictError('blocked')
+      const id = await nextId('blocks', tx)
+      tx.set(col(C.blocks).doc(String(id)), { id, propertyId, checkIn, checkOut, note, createdAt: nowISO() } satisfies BlockDoc)
+      for (const n of nightRefs) tx.create(n, { kind: 'block', ref: String(id) })
+    })
   },
 
-  async overlapsBlock(propertyId: number, checkIn: string, checkOut: string, db: Queryable = pool) {
-    return !!(await queryOne(
-      'SELECT 1 FROM availability_blocks WHERE property_id = $1 AND daterange(start_date, end_date) && daterange($2::date, $3::date)',
-      [propertyId, checkIn, checkOut], db,
-    ))
-  },
-
-  insertBlock(propertyId: number, checkIn: string, checkOut: string, note: string | null, db: Queryable) {
-    return query('INSERT INTO availability_blocks (property_id, start_date, end_date, note) VALUES ($1, $2, $3, $4)', [propertyId, checkIn, checkOut, note], db)
-  },
-
-  deleteBlock(blockId: number, propertyId: number) {
-    return query('DELETE FROM availability_blocks WHERE id = $1 AND property_id = $2', [blockId, propertyId])
+  async removeBlock(blockId: number, propertyId: number) {
+    await firestore.runTransaction(async (tx) => {
+      const ref = col(C.blocks).doc(String(blockId))
+      const b = (await tx.get(ref)).data() as BlockDoc | undefined
+      if (!b || b.propertyId !== propertyId) return
+      tx.delete(ref)
+      for (const d of datesIn(b.checkIn, b.checkOut)) tx.delete(nightsOf(propertyId).doc(d))
+    })
   },
 }

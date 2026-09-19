@@ -32,9 +32,22 @@ export interface AnnouncementSettings {
   linkUrl: string
 }
 
+/** Which Firebase sign-in methods the website and host login offer. The admin login always allows both. */
+export interface SignInSettings {
+  google: boolean
+  phone: boolean
+}
+
+export interface UploadSettings {
+  /** Largest photo a host or guest can upload, in MB (at most 4). */
+  maxMb: number
+}
+
 export interface SiteSettings {
   homepage: HomepageSettings
   announcement: AnnouncementSettings
+  signIn: SignInSettings
+  uploads: UploadSettings
 }
 
 export const defaultSiteSettings: SiteSettings = {
@@ -52,6 +65,8 @@ export const defaultSiteSettings: SiteSettings = {
     linkLabel: 'Learn more',
     linkUrl: '/help',
   },
+  signIn: { google: true, phone: true },
+  uploads: { maxMb: 4 },
 }
 
 type DefaultPage = Omit<ContentPage, 'slug' | 'draft'> & { draft?: boolean }
@@ -115,7 +130,7 @@ const pages: Record<string, DefaultPage> = {
     title: 'Help Center',
     intro: 'Answers to the most common questions. Can’t find yours? Contact us.',
     sections: [
-      { heading: 'How do I book a stay?', body: ['Search for a destination, open a stay, choose your dates and guests, then select Reserve. You’ll need an account to confirm.'] },
+      { heading: 'How do I book a stay?', body: ['Search for a destination, open a stay, choose your dates and guests, then select Reserve. You’ll sign in with Google or your phone number to confirm.'] },
       { heading: 'How is the price worked out?', body: ['The nightly price covers two guests. Each extra guest adds 15% to the nightly total, and a flat cleaning and service fee of $45 is added per booking.'] },
       { heading: 'How do I cancel?', body: ['Go to Trips in your account and choose Cancel booking. You can cancel until the day before check-in. See the cancellation policy for details.'] },
       { heading: 'Is my payment taken?', body: ['Not yet. Meridian Stay is in testing, so bookings are confirmed without taking payment.'] },
@@ -137,7 +152,7 @@ const pages: Record<string, DefaultPage> = {
     sections: [
       { heading: 'Reviewed listings', body: ['Every new listing, and every edit to a live listing, is checked by our team before guests can book it.'] },
       { heading: 'Verified reviews', body: ['Only guests who completed a stay can leave a review.'] },
-      { heading: 'Your account', body: ['Passwords are stored as secure hashes and sessions can be ended by logging out. Never share your password.'] },
+      { heading: 'Your account', body: ['You sign in with Google or a one-time code sent to your phone, so there’s no password to steal. Never share a sign-in code with anyone, including people claiming to be from Meridian Stay.'] },
       { heading: 'Report a problem', body: ['Use the contact form and choose “Trust & safety”. For emergencies, contact local services first.'] },
     ],
   },
@@ -157,7 +172,7 @@ const pages: Record<string, DefaultPage> = {
     intro: 'The rules for using Meridian Stay.',
     draft: true,
     sections: [
-      { heading: 'Accounts', body: ['You must give accurate information and keep your password safe. You’re responsible for activity on your account.'] },
+      { heading: 'Accounts', body: ['You must give accurate information and keep access to your Google account or phone number secure. You’re responsible for activity on your account.'] },
       { heading: 'Bookings', body: ['A booking is an agreement between the guest and the host. Meridian Stay provides the platform and support.'] },
       { heading: 'Listings', body: ['Hosts must have the right to rent their property and must describe it accurately. We may remove listings that break these terms.'] },
       { heading: 'Testing period', body: ['During testing, no payments are processed and bookings may be cleared.'] },

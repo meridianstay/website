@@ -1,12 +1,11 @@
-// The data layer: every SQL query in the API lives in these repositories, one per table (or area).
-export { usersRepo, toMe, type AdminUser } from './users'
-export { sessionsRepo } from './sessions'
-export { propertiesRepo, toPropertySummary, type HostListing, type AdminListing } from './properties'
+// The data layer: every Firestore read and write in the API lives in these repositories.
+export { usersRepo, toMe, type UserDoc, type AdminUser } from './users'
+export { propertiesRepo, toPropertySummary, datesIn, type PropertyDoc, type HostListing, type AdminListing } from './properties'
 export { amenitiesRepo } from './amenities'
-export { bookingsRepo, type BookingWithGuest } from './bookings'
-export { reviewsRepo, type AdminReview } from './reviews'
+export { bookingsRepo, toBooking, NightsTakenError, type BookingDoc, type BookingWithGuest } from './bookings'
+export { availabilityRepo, BlockConflictError } from './availability'
+export { reviewsRepo, type ReviewDoc, type AdminReview } from './reviews'
 export { wishlistRepo } from './wishlist'
-export { availabilityRepo } from './availability'
 export { contentRepo } from './content'
 export { messagesRepo, type MessageStatus } from './messages'
 export { auditLogRepo } from './auditLog'

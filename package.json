@@ -15,10 +15,12 @@
     "dev:host": "npm run dev -w @meridian/host",
     "dev:account": "npm run dev -w @meridian/account",
     "dev:api": "npm run dev -w @meridian/api",
-    "test": "npm run test -w @meridian/api"
+    "test": "npm run test -w @meridian/api",
+    "emulators": "firebase emulators:start --project demo-meridianstay"
   },
   "devDependencies": {
     "esbuild": "^0.28.2",
+    "firebase-tools": "^13.35.1",
     "turbo": "^2.11.2"
   }
 }

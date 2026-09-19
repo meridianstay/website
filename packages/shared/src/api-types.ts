@@ -5,7 +5,8 @@ import type { ListingStatus, PropertyType, UserRole } from './types'
 export interface Me {
   id: number
   name: string
-  email: string
+  /** Set for Google sign-ins; phone sign-ins may have no email. */
+  email: string | null
   phone: string | null
   role: UserRole
   avatar: string | null
@@ -236,4 +237,18 @@ export interface DbBrowseResult {
   pageSize: number
   sort: string
   dir: 'asc' | 'desc'
+}
+
+// ─── Firebase ────────────────────────────────────────────────────────────────
+
+/** Which login page a sign-in comes from. The admin portal only accepts admin accounts. */
+export type SignInPortal = 'guest' | 'host' | 'admin'
+
+export interface ServiceCheck { ok: boolean; message: string }
+
+export interface IntegrationStatus {
+  mode: 'emulator' | 'live' | 'unconfigured'
+  projectId: string
+  storageBucket: string
+  services: { firestore: ServiceCheck; auth: ServiceCheck; storage: ServiceCheck }
 }

@@ -1,25 +1,18 @@
-import { query } from '../db/pool'
-import { toPropertySummary, type PropertyRow } from './properties'
+import { C, all, col, nowISO } from '../store/db'
+import { toPropertySummary, type PropertyDoc } from './properties'
 
-// Table: wishlist_items
+// Collection: wishlists/{userId}_{propertyId}
+
+const ref = (userId: number, propertyId: number) => col(C.wishlists).doc(`${userId}_${propertyId}`)
 
 export const wishlistRepo = {
   async list(userId: number) {
-    const rows = await query<PropertyRow>(
-      `SELECT p.id, p.slug, p.title, p.type, p.description, p.city, p.region, p.latitude, p.longitude, p.price_per_night_minor,
-         p.bedrooms, p.bathrooms, p.max_guests, p.cover_image_url, p.rating_avg, p.review_count
-       FROM wishlist_items w JOIN properties p ON p.id = w.property_id
-       WHERE w.user_id = $1 AND p.status = 'Approved' ORDER BY w.created_at DESC`,
-      [userId],
-    )
-    return rows.map(toPropertySummary)
+    const items = await all<{ propertyId: number; createdAt: string }>(col(C.wishlists).where('userId', '==', userId))
+    items.sort((a, b) => b.createdAt.localeCompare(a.createdAt))
+    const docs = await Promise.all(items.map((i) => col(C.properties).doc(String(i.propertyId)).get()))
+    return docs.map((d) => d.data() as PropertyDoc | undefined).filter((p): p is PropertyDoc => p?.status === 'Approved').map(toPropertySummary)
   },
 
-  add(userId: number, propertyId: number) {
-    return query('INSERT INTO wishlist_items (user_id, property_id) VALUES ($1, $2) ON CONFLICT DO NOTHING', [userId, propertyId])
-  },
-
-  remove(userId: number, propertyId: number) {
-    return query('DELETE FROM wishlist_items WHERE user_id = $1 AND property_id = $2', [userId, propertyId])
-  },
+  add: (userId: number, propertyId: number) => ref(userId, propertyId).set({ userId, propertyId, createdAt: nowISO() }),
+  remove: (userId: number, propertyId: number) => ref(userId, propertyId).delete(),
 }

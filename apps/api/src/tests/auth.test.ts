@@ -1,56 +1,60 @@
-import { after, beforeEach, describe, test } from 'node:test'
+import { beforeEach, describe, test } from 'node:test'
 import assert from 'node:assert/strict'
-import { pool } from '../db/pool'
 import { authService } from '../services/auth'
 import { adminService } from '../services/admin'
-import { appError, createUser, resetDatabase } from './helpers'
+import { contentService } from '../services/content'
+import { usersRepo } from '../repositories'
+import { appError, createUser, phoneIdToken, resetDatabase } from './helpers'
 
-describe('accounts and sessions', () => {
+describe('Firebase sign-in and sessions', () => {
   beforeEach(resetDatabase)
-  after(() => pool.end())
 
-  test('signs up as a guest and rejects duplicate emails in any case', async () => {
-    const user = await authService.signup('Asha K', 'asha@example.test', 'longpassword')
+  test('first sign-in creates a guest account', async () => {
+    const { user, cookie } = await authService.signIn(await phoneIdToken('+919100000001'), 'guest')
     assert.equal(user.role, 'guest')
-    const dup = await appError(() => authService.signup('Asha', 'ASHA@example.test', 'longpassword'))
-    assert.equal(dup.status, 409)
+    assert.equal(user.phone, '+919100000001')
+    assert.equal((await authService.userForCookie(cookie))?.me.id, user.id)
   })
 
-  test('validates sign-up fields', async () => {
-    const err = await appError(() => authService.signup('', 'not-an-email', 'short'))
-    assert.deepEqual(Object.keys(err.fields).sort(), ['email', 'name', 'password'])
+  test('the same person keeps the same account on later sign-ins', async () => {
+    const first = await authService.signIn(await phoneIdToken('+919100000002'), 'guest')
+    const again = await authService.signIn(await phoneIdToken('+919100000002'), 'host')
+    assert.equal(again.user.id, first.user.id)
   })
 
-  test('logs in with the right password only', async () => {
-    const user = await createUser('guest', 'correct-horse')
-    assert.equal((await authService.login(user.email, 'correct-horse')).id, user.id)
-    assert.equal((await appError(() => authService.login(user.email, 'wrong'))).status, 401)
-    assert.equal((await appError(() => authService.login('nobody@example.test', 'x'))).status, 401)
+  test('the admin portal only accepts admins', async () => {
+    const token = await phoneIdToken('+919100000003')
+    assert.equal((await appError(() => authService.signIn(token, 'admin'))).status, 403)
+    const { uid } = (await authService.userForCookie((await authService.signIn(await phoneIdToken('+919100000003'), 'guest')).cookie))!
+    await usersRepo.update(uid, { role: 'admin' })
+    assert.equal((await authService.signIn(await phoneIdToken('+919100000003'), 'admin')).user.role, 'admin')
   })
 
-  test('sessions resolve to the user until they log out', async () => {
-    const user = await createUser()
-    const { token } = await authService.startSession(user.id)
-    assert.equal((await authService.userForToken(token))?.id, user.id)
-    await authService.endSession(token)
-    assert.equal(await authService.userForToken(token), null)
+  test('rejects forged tokens', async () => {
+    assert.equal((await appError(() => authService.signIn('not-a-token', 'guest'))).status, 401)
   })
 
-  test('suspension signs a user out everywhere and blocks log-in', async () => {
+  test('a turned-off sign-in method blocks guests and hosts, but never admins', async () => {
     const admin = await createUser('admin')
-    const user = await createUser('guest', 'password123')
-    const { token } = await authService.startSession(user.id)
-    await adminService.updateUser(admin.id, user.id, { suspended: true })
-
-    assert.equal(await authService.userForToken(token), null)
-    assert.equal((await appError(() => authService.login(user.email, 'password123'))).status, 403)
-    assert.equal((await appError(() => adminService.updateUser(admin.id, admin.id, { suspended: true }))).status, 400)
+    await contentService.saveSetting(admin.me, 'signIn', { google: true, phone: false })
+    assert.equal((await appError(async () => authService.signIn(await phoneIdToken('+919100000004'), 'guest'))).status, 403)
+    assert.ok((await appError(() => contentService.saveSetting(admin.me, 'signIn', { google: false, phone: false }))).fields.google)
   })
 
-  test('changes the password only with the current one', async () => {
-    const user = await createUser('guest', 'old-password')
-    assert.ok((await appError(() => authService.changePassword(user.id, 'wrong', 'new-password'))).fields.currentPassword)
-    await authService.changePassword(user.id, 'old-password', 'new-password')
-    assert.equal((await authService.login(user.email, 'new-password')).id, user.id)
+  test('logging out ends every session', async () => {
+    const { cookie } = await authService.signIn(await phoneIdToken('+919100000005'), 'guest')
+    const signedIn = (await authService.userForCookie(cookie))!
+    await new Promise((r) => setTimeout(r, 1100)) // session times have one-second precision
+    await authService.signOutEverywhere(signedIn.uid)
+    assert.equal(await authService.userForCookie(cookie), null)
+  })
+
+  test('suspension signs a user out and blocks sign-in', async () => {
+    const admin = await createUser('admin')
+    const { user, cookie } = await authService.signIn(await phoneIdToken('+919100000006'), 'guest')
+    await new Promise((r) => setTimeout(r, 1100))
+    await adminService.updateUser(admin.me, user.id, { suspended: true })
+    assert.equal(await authService.userForCookie(cookie), null)
+    assert.equal((await appError(() => adminService.updateUser(admin.me, admin.me.id, { suspended: true }))).status, 400)
   })
 })

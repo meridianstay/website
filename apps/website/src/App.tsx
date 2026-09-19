@@ -1,4 +1,4 @@
-import { Route, Routes } from 'react-router'
+import { Navigate, Route, Routes, useLocation } from 'react-router'
 import { RequireAuth, useHideSplash } from '@meridian/ui'
 import { Layout } from './components/Layout'
 import { Home } from './pages/Home'
@@ -22,8 +22,8 @@ export default function App() {
         <Route path="stays/:slug" element={<Property />} />
         <Route path="book/:slug" element={<RequireAuth><Checkout /></RequireAuth>} />
         <Route path="booking/:code" element={<RequireAuth><BookingConfirmed /></RequireAuth>} />
-        <Route path="login" element={<Auth mode="login" />} />
-        <Route path="signup" element={<Auth mode="signup" />} />
+        <Route path="login" element={<Auth />} />
+        <Route path="signup" element={<SignupRedirect />} />
         <Route path="contact" element={<Contact />} />
         <Route path="sitemap" element={<Sitemap />} />
         {/* Information pages are managed in the admin control center */}
@@ -32,4 +32,10 @@ export default function App() {
       </Route>
     </Routes>
   )
+}
+
+/** Sign-up and log-in are one flow now; keep old links working. */
+function SignupRedirect() {
+  const { search } = useLocation()
+  return <Navigate to={`/login${search}`} replace />
 }

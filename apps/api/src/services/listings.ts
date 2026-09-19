@@ -1,13 +1,12 @@
-import { isISODate, todayISO, type Me, type PropertyType } from '@meridian/shared'
-import type { ListingInput } from '@meridian/shared'
-import { transaction } from '../db/pool'
-import { availabilityRepo, bookingsRepo, propertiesRepo, usersRepo } from '../repositories'
+import { daysBetween, isISODate, todayISO, type ListingInput, type Me, type PropertyType } from '@meridian/shared'
+import { availabilityRepo, BlockConflictError, bookingsRepo, propertiesRepo, usersRepo } from '../repositories'
 import { AppError, notFound } from '../http/errors'
-import { checkLength, collect, isPgError, PG_EXCLUSION_VIOLATION, str } from '../http/validate'
+import { checkLength, collect, str } from '../http/validate'
 
 // Host listing rules: validation, review on every change, availability blocks.
 
 export const PROPERTY_TYPES: PropertyType[] = ['Farmstay', 'Room', 'Resort', 'Cottage', 'Villa']
+const MAX_BLOCK_NIGHTS = 120
 
 const slugify = (s: string) => s.toLowerCase().normalize('NFKD').replace(/[^a-z0-9]+/g, '-').replace(/^-+|-+$/g, '').slice(0, 60) || 'stay'
 const isUrl = (s: string) => /^https?:\/\/\S+$/.test(s)
@@ -35,8 +34,8 @@ export function parseListing(body: Record<string, unknown>): ListingInput {
     maxGuests: whole(input.maxGuests, 1, 50) ? null : 'Enter how many guests can stay.',
     location: Number.isFinite(input.lat) && Number.isFinite(input.lng) && Math.abs(input.lat) <= 90 && Math.abs(input.lng) <= 180
       ? null : 'Drop a pin on the map to set the location.',
-    coverImage: isUrl(input.coverImage) ? null : 'Add a cover photo link starting with https://',
-    photos: input.photos.every(isUrl) ? null : 'Every photo link must start with https://',
+    coverImage: isUrl(input.coverImage) ? null : 'Add a cover photo.',
+    photos: input.photos.every(isUrl) ? null : 'Every photo must be an uploaded photo or a link starting with https://',
   })
   return input
 }
@@ -49,50 +48,43 @@ async function requireOwn(host: Me, id: number) {
 
 export const listingService = {
   /** New listings wait for review. A guest's first listing makes them a host. */
-  create(host: Me, input: ListingInput) {
-    return transaction(async (db) => {
-      const slug = await propertiesRepo.uniqueSlug(slugify(input.title), db)
-      const id = await propertiesRepo.insert(host.id, slug, input, db)
-      await propertiesRepo.replacePhotos(id, input.photos, db)
-      await propertiesRepo.replaceAmenities(id, input.amenities, db)
-      await usersRepo.promoteGuestToHost(host.id, db)
-      return id
-    })
+  async create(host: Me, uid: string, input: ListingInput) {
+    const id = await propertiesRepo.insert(host.id, await propertiesRepo.uniqueSlug(slugify(input.title)), input)
+    if (host.role === 'guest') await usersRepo.update(uid, { role: 'host' })
+    return id
   },
 
   /** Any edit sends the listing back for review, so changes can't skip moderation. */
   async update(host: Me, id: number, input: ListingInput) {
-    const ok = await transaction(async (db) => {
-      if (!(await propertiesRepo.update(id, host.id, input, db))) return false
-      await propertiesRepo.replacePhotos(id, input.photos, db)
-      await propertiesRepo.replaceAmenities(id, input.amenities, db)
-      return true
-    })
-    if (!ok) throw notFound('listing')
+    await requireOwn(host, id)
+    await propertiesRepo.update(id, input)
   },
 
   async getForEditing(host: Me, id: number) {
-    const listing = await propertiesRepo.findForEditing(id, host.id)
-    if (!listing) throw notFound('listing')
-    return listing
+    return propertiesRepo.toEditor(await requireOwn(host, id))
   },
 
   async pause(host: Me, id: number) {
-    if (!(await propertiesRepo.pause(id, host.id))) throw new AppError(400, 'Only live or pending listings can be paused.')
+    const p = await requireOwn(host, id)
+    if (p.status !== 'Approved' && p.status !== 'Pending') throw new AppError(400, 'Only live or pending listings can be paused.')
+    await propertiesRepo.setFields(id, { status: 'Draft', featuredRank: null })
   },
 
   async relist(host: Me, id: number) {
-    if (!(await propertiesRepo.relist(id, host.id))) throw new AppError(400, 'Only paused or rejected listings can be sent for review.')
+    const p = await requireOwn(host, id)
+    if (p.status !== 'Draft' && p.status !== 'Rejected') throw new AppError(400, 'Only paused or rejected listings can be sent for review.')
+    await propertiesRepo.setFields(id, { status: 'Pending', rejectionReason: null })
   },
 
   async calendar(host: Me, id: number) {
     const listing = await requireOwn(host, id)
     const today = todayISO()
-    const [blocks, bookings] = await Promise.all([
-      availabilityRepo.upcomingBlocks(listing.id, today),
-      bookingsRepo.upcomingForProperty(listing.id, today),
-    ])
-    return { blocks, bookings: bookings.map((b) => ({ code: b.code, checkIn: b.check_in, checkOut: b.check_out, guestName: b.guest_name })) }
+    const [blocks, bookings] = await Promise.all([availabilityRepo.upcomingBlocks(listing.id, today), bookingsRepo.forProperty(listing.id)])
+    return {
+      blocks,
+      bookings: bookings.filter((b) => b.status === 'Confirmed' && b.checkOut > today).sort((a, b) => a.checkIn.localeCompare(b.checkIn))
+        .map((b) => ({ code: b.code, checkIn: b.checkIn, checkOut: b.checkOut, guestName: b.guest.name })),
+    }
   },
 
   /** Hosts can close nights, but not nights guests have already booked. */
@@ -101,24 +93,24 @@ export const listingService = {
     const { checkIn, checkOut } = input
     collect({
       checkIn: isISODate(checkIn) && checkIn >= todayISO() ? null : 'Choose a start date from today onwards.',
-      checkOut: isISODate(checkOut) && checkOut > checkIn ? null : 'The end date must be after the start date.',
+      checkOut: isISODate(checkOut) && checkOut > checkIn
+        ? daysBetween(checkIn, checkOut) > MAX_BLOCK_NIGHTS ? `Block at most ${MAX_BLOCK_NIGHTS} nights at a time.` : null
+        : 'The end date must be after the start date.',
     })
     try {
-      await transaction(async (db) => {
-        await propertiesRepo.lock(listing.id, db)
-        if (await bookingsRepo.overlapsConfirmed(listing.id, checkIn, checkOut, db)) {
-          throw new AppError(409, 'Guests have already booked some of those nights. Block other dates, or contact the guest.')
-        }
-        await availabilityRepo.insertBlock(listing.id, checkIn, checkOut, input.note.slice(0, 200) || null, db)
-      })
+      await availabilityRepo.addBlock(listing.id, checkIn, checkOut, input.note.slice(0, 200) || null)
     } catch (err) {
-      if (isPgError(err, PG_EXCLUSION_VIOLATION)) throw new AppError(409, 'Those dates overlap a block you’ve already added.')
+      if (err instanceof BlockConflictError) {
+        throw new AppError(409, err.reason === 'booked'
+          ? 'Guests have already booked some of those nights. Block other dates, or contact the guest.'
+          : 'Those dates overlap a block you’ve already added.')
+      }
       throw err
     }
   },
 
   async removeBlock(host: Me, id: number, blockId: number) {
     const listing = await requireOwn(host, id)
-    await availabilityRepo.deleteBlock(blockId, listing.id)
+    await availabilityRepo.removeBlock(blockId, listing.id)
   },
 }

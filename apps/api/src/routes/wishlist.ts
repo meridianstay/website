@@ -11,7 +11,7 @@ wishlistRoutes.get('/wishlist', async (c) => c.json({ properties: await wishlist
 
 wishlistRoutes.put('/wishlist/:propertyId', async (c) => {
   const propertyId = Number(c.req.param('propertyId'))
-  if (!(await propertiesRepo.isLive(propertyId))) throw notFound('stay')
+  if ((await propertiesRepo.get(propertyId))?.status !== 'Approved') throw notFound('stay')
   await wishlistRepo.add(currentUser(c).id, propertyId)
   return c.body(null, 204)
 })

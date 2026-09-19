@@ -1,37 +1,38 @@
-import { addDays, quoteStay, todayISO, type Me, type UserRole } from '@meridian/shared'
-import type { ListingInput } from '@meridian/shared'
-import { pool, query, queryOne, transaction } from '../db/pool'
-import { migrate } from '../db/migrate'
-import { contentRepo, bookingsRepo, usersRepo } from '../repositories'
-import { hashPassword } from '../lib/passwords'
-import { newBookingCode } from '../lib/bookingCode'
+import { addDays, quoteStay, todayISO, type ListingInput, type Me, type UserRole } from '@meridian/shared'
+import { col, nextId, nowISO, C } from '../store/db'
+import { projectId } from '../store/firebase'
+import { bookingsRepo, contentRepo, propertiesRepo, toMe, usersRepo, type UserDoc } from '../repositories'
 import { listingService } from '../services/listings'
+import { newBookingCode } from '../services/bookings'
 import { AppError } from '../http/errors'
 
-// Tests run against a throwaway database. Refuse anything that doesn't look like one.
-if (!/_test(\?|$)/.test(process.env.DATABASE_URL ?? '')) {
-  throw new Error('Tests need DATABASE_URL pointing at a database whose name ends in _test (run `npm test`).')
+// Tests run against their own Firebase emulators (see firebase.test.json and `npm test`).
+if (!projectId.endsWith('-test') || !process.env.FIRESTORE_EMULATOR_HOST) {
+  throw new Error('Run tests with `npm test`, which starts separate test emulators. Refusing to touch another project.')
 }
 
 export const today = todayISO()
 export const day = (offset: number) => addDays(today, offset)
 
-/** Empties the test database and rebuilds the schema from the migrations. */
+/** Wipes the test emulators and adds the default site content. */
 export async function resetDatabase() {
-  await pool.query('DROP SCHEMA public CASCADE; CREATE SCHEMA public;')
-  await migrate(() => {})
+  await fetch(`http://${process.env.FIRESTORE_EMULATOR_HOST}/emulator/v1/projects/${projectId}/databases/(default)/documents`, { method: 'DELETE' })
+  await fetch(`http://${process.env.FIREBASE_AUTH_EMULATOR_HOST}/emulator/v1/projects/${projectId}/accounts`, { method: 'DELETE' })
   await contentRepo.ensureDefaults()
-  await query(`INSERT INTO amenities (name, icon) VALUES ('Wifi', 'wifi'), ('Garden', 'seedling')`)
+  await col(C.amenities).doc('Wifi').set({ name: 'Wifi', icon: 'wifi', order: 0 })
+  await col(C.amenities).doc('Garden').set({ name: 'Garden', icon: 'seedling', order: 1 })
 }
 
-let userCount = 0
-export async function createUser(role: UserRole = 'guest', password = 'password123'): Promise<Me> {
-  userCount++
-  const row = await queryOne<{ id: number }>(
-    'INSERT INTO users (name, email, role, password_hash) VALUES ($1, $2, $3, $4) RETURNING id',
-    [`Test User${userCount}`, `user${userCount}@example.test`, role, hashPassword(password)],
-  )
-  return (await usersRepo.findById(row!.id))!
+export interface TestUser { me: Me; uid: string; doc: UserDoc }
+
+export async function createUser(role: UserRole = 'guest'): Promise<TestUser> {
+  const id = await nextId('users')
+  const doc: UserDoc = {
+    id, uid: `test-${id}`, name: `Test User${id}`, email: `user${id}@example.test`, phone: null, role, avatarUrl: null,
+    createdAt: nowISO(), suspendedAt: null, sessionsRevokedAt: null,
+  }
+  await col(C.users).doc(doc.uid).set(doc)
+  return { me: toMe(doc), uid: doc.uid, doc }
 }
 
 export const listingInput = (overrides: Partial<ListingInput> = {}): ListingInput => ({
@@ -41,24 +42,35 @@ export const listingInput = (overrides: Partial<ListingInput> = {}): ListingInpu
 })
 
 /** A live listing owned by `host`. */
-export async function createLiveListing(host: Me, overrides: Partial<ListingInput> = {}) {
-  const id = await listingService.create(host, listingInput(overrides))
-  await query(`UPDATE properties SET status = 'Approved' WHERE id = $1`, [id])
+export async function createLiveListing(host: TestUser, overrides: Partial<ListingInput> = {}) {
+  const id = await listingService.create(host.me, host.uid, listingInput(overrides))
+  await propertiesRepo.setFields(id, { status: 'Approved' })
   return id
 }
 
-/** Inserts a booking directly (e.g. one in the past, which the booking service would refuse). */
-export async function insertBooking(propertyId: number, guestId: number, checkIn: string, checkOut: string, price = 100) {
+/** Writes a booking directly (e.g. one in the past, which the booking service would refuse). */
+export async function insertBooking(propertyId: number, guest: TestUser, checkIn: string, checkOut: string) {
+  const property = (await propertiesRepo.get(propertyId))!
+  const q = quoteStay(property.pricePerNightMinor / 100, checkIn, checkOut, 2)
   const code = newBookingCode()
-  const q = quoteStay(price, checkIn, checkOut, 2)
-  await transaction((db) =>
-    bookingsRepo.insert({
-      code, propertyId, guestId, checkIn, checkOut, nights: q.nights, guests: 2, currency: 'USD', pricePerNightMinor: price * 100,
-      baseMinor: q.baseAmount * 100, extraGuestMinor: 0, serviceFeeMinor: q.serviceFee * 100, totalMinor: q.total * 100,
-      paymentMethod: 'upi', contactPhone: '+91 90000 00000', specialRequests: null,
-    }, db),
-  )
+  await bookingsRepo.create({
+    code, propertyId, guestId: guest.me.id, checkIn, checkOut, nights: q.nights, guests: 2, currency: 'USD',
+    pricePerNightMinor: property.pricePerNightMinor, baseMinor: q.baseAmount * 100, extraGuestMinor: 0, serviceFeeMinor: q.serviceFee * 100,
+    totalMinor: q.total * 100, paymentMethod: 'upi', contactPhone: '+91 90000 00000', specialRequests: null,
+  }, property, (await usersRepo.findByUid(guest.uid))!)
   return code
+}
+
+/** Signs in a phone number through the Auth emulator's OTP flow and returns a Firebase ID token. */
+export async function phoneIdToken(phoneNumber: string) {
+  const base = `http://${process.env.FIREBASE_AUTH_EMULATOR_HOST}`
+  const post = async (path: string, body: object) =>
+    (await (await fetch(`${base}/identitytoolkit.googleapis.com/v1/${path}?key=test`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(body) })).json()) as Record<string, string>
+  const { sessionInfo } = await post('accounts:sendVerificationCode', { phoneNumber, recaptchaToken: 'test' })
+  const codes = (await (await fetch(`${base}/emulator/v1/projects/${projectId}/verificationCodes`)).json()) as { verificationCodes: { sessionInfo: string; code: string }[] }
+  const code = codes.verificationCodes.find((c) => c.sessionInfo === sessionInfo)!.code
+  const { idToken } = await post('accounts:signInWithPhoneNumber', { sessionInfo, code })
+  return idToken as string
 }
 
 /** Runs fn and returns the AppError it throws (fails if it doesn't throw one). */

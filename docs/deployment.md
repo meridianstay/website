@@ -1,79 +1,97 @@
 # Deploying Meridian Stay
 
-The platform deploys as **one Vercel project** from this repository, with a **hosted PostgreSQL database**.
+The platform deploys as **one Vercel project** from this repository, backed by **one Firebase project**.
 
 | Part | Where it runs |
 | --- | --- |
-| Website, account, host portal, admin | Vercel static hosting at `/`, `/account`, `/host`, `/admin` |
-| API | A Vercel serverless function at `/api` |
-| Database | Hosted PostgreSQL (recommended: Neon, connected through Vercel) |
+| Website, account, host portal, control center | Vercel static hosting at `/`, `/account`, `/host`, `/admin` |
+| API | A Vercel serverless function at `/api` (Firebase Admin SDK) |
+| Data, sign-in, photos | Firebase: Firestore, Authentication, Storage (project `meridianstay-bcfd0`) |
 
-`vercel.json` tells Vercel to run `scripts/build-vercel.mjs`, which builds all four apps, bundles the API into one function and writes the routing rules ([Build Output API](https://vercel.com/docs/build-output-api)).
+`vercel.json` runs `scripts/build-vercel.mjs`, which builds the four apps, bundles the API with `firebase-admin` installed next to it, and writes the routing rules ([Build Output API](https://vercel.com/docs/build-output-api)).
 
-## Why the database is hosted separately
+## 1. Firebase project setup (once)
 
-Vercel runs code; it doesn't store a database for you. The API connects to a PostgreSQL server over the internet using the `DATABASE_URL` setting. Nothing is uploaded from your computer: on its first request the API creates every table (from `apps/api/db/migrations`) and, if you ask it to, loads the demo data.
+In the [Firebase console](https://console.firebase.google.com):
 
-## First-time setup
+1. **Blaze plan.** Upgrade to pay-as-you-go. Firebase requires it for Storage and for SMS sign-in; a free monthly allowance still applies. Set a **budget alert** in Google Cloud Billing.
+2. **Firestore.** Build → Firestore Database → Create database, **production mode**, location **`asia-south1` (Mumbai)**. The location can't be changed later.
+3. **Storage.** Build → Storage → Get started, same location.
+4. **Authentication.** Build → Authentication → Sign-in method → enable **Google** and **Phone**. Under Settings → **Authorized domains**, add `website-seven-sable-30.vercel.app` and your final domain.
+5. **Security rules.** Deploy the rules in [`firebase/`](../firebase), which block all direct browser access (everything goes through the API):
 
-### 1. Create the database (recommended: Neon through Vercel)
+   ```bash
+   GOOGLE_APPLICATION_CREDENTIALS=/path/to/service-account.json npx firebase deploy --only firestore:rules,storage --project production
+   ```
 
-1. Open your project on [vercel.com](https://vercel.com) → **Storage** → **Create Database** → **Neon** (Serverless Postgres).
-2. Pick the free plan and a region close to your users (for India, Singapore `ap-southeast-1`).
-3. Connect it to this project for **Production** and **Preview**. Vercel adds `DATABASE_URL` to the project's environment variables automatically.
+   Or paste the contents of `firebase/firestore.rules` and `firebase/storage.rules` into the Rules tabs in the console.
 
-Any other PostgreSQL 14+ host works too (Supabase, Railway, Render, AWS RDS). Copy its connection string into a `DATABASE_URL` environment variable yourself. Use the **pooled** connection string when the provider offers one.
+### Demo accounts
 
-### 2. Set environment variables
+For client previews, add these under **Authentication → Sign-in method → Phone → Phone numbers for testing**, each with the code **`123456`**. Test numbers never send SMS and cost nothing.
 
-In **Settings → Environment Variables**:
-
-| Variable | Value | Why |
+| Number | Account | Role |
 | --- | --- | --- |
-| `DATABASE_URL` | Set by Neon, or your provider's connection string | Where the data lives |
-| `SEED_DEMO_DATA` | `true` for a test/demo deployment, leave unset for real launch | Loads demo listings and accounts into an empty database, and shows the demo logins on the login page |
+| `+91 90000 00001` | Aarav Sharma | Admin |
+| `+91 90000 00002` | Ishita Bose | Admin |
+| `+91 90000 00003` | Meera Nair | Host (live and pending listings) |
+| `+91 90000 00004` | Karan Mehta | Host |
+| `+91 90000 00005` | Tenzin Dorje | Host |
+| `+91 90000 00006` | Anjali Rao | Host |
+| `+91 90000 00007` | Farhan Qureshi | Host (a rejected listing) |
+| `+91 90000 00008` | Rohit Verma | Host (a paused listing) |
+| `+91 90000 00011` | Priya Natarajan | Guest (trips in every state) |
+| `+91 90000 00012`–`00017` | Siddharth, Ananya, Rahul, Neha, Maya, Arjun | Guests |
+| `+91 90000 00018` | Vikram Pillai | Suspended guest (can't sign in) |
 
-### 3. Check the project settings
+The demo data creates these people when `SEED_DEMO_DATA=true`, linked to these numbers. Remove the test numbers before a real launch.
 
-In **Settings → General**:
+## 2. Vercel settings
 
-- **Root Directory:** empty (the repository root)
-- **Framework Preset:** Other (`vercel.json` sets this)
-- **Node.js Version:** 22.x
+**Settings → Environment Variables** (Production, and Preview if you use it):
 
-### 4. Deploy
+| Variable | Value | Secret? |
+| --- | --- | --- |
+| `FIREBASE_SERVICE_ACCOUNT` | The **entire contents** of the service-account JSON (Firebase → Project settings → Service accounts → Generate new private key) | **Yes.** Never share it in chat or email. Delete the downloaded file after pasting. |
+| `SEED_DEMO_DATA` | `true` for a client preview; remove for the real launch | No |
+| `FIREBASE_STORAGE_BUCKET` | Only if the bucket isn't `meridianstay-bcfd0.firebasestorage.app` | No |
 
-Push to `main` (or press **Redeploy**). When it finishes:
+The Firebase **web config** (API key, project id and so on) is already in [`.env.production`](../.env.production). Those values are public by design and are built into the pages.
 
-- `https://<your-domain>/` — website
-- `https://<your-domain>/account/` — guest panel
-- `https://<your-domain>/host/` — host portal
-- `https://<your-domain>/admin/` — control center
-- `https://<your-domain>/api/health` — should show `{"ok":true}`
+**Settings → General:** Root Directory empty (repository root), Framework Preset *Other*, Node.js 22.x.
 
-The first request after a deploy may take a few seconds while the API prepares the database.
+You can delete the old `DATABASE_URL` variable (from the earlier Postgres version).
+
+## 3. Deploy and check
+
+Push to `main`, or press **Redeploy**. Then:
+
+- `https://<domain>/api/health` → `{"ok":true}`
+- `https://<domain>/` → the website, with stays
+- `https://<domain>/login` → guest login (Google or phone)
+- `https://<domain>/host/login` → host login
+- `https://<domain>/admin/login` → control-center login (not linked from the website)
+- **Admin → Settings** shows *Live Firebase project* with Firestore, Authentication and Storage all connected.
+
+Without `FIREBASE_SERVICE_ACCOUNT`, the API answers every request with "isn’t connected to Firebase yet".
+
+## Security notes
+
+- The **admin login** isn't linked anywhere on the website and is hidden from search engines, but its real protection is that the API checks the admin role on every request. To make it harder to find, you can move the control center to an unlisted path or subdomain (below).
+- Only admins can grant the admin role (Admin → Users). Nobody can change their own role or suspend themselves.
+- The service-account key lives only in Vercel. The admin panel shows the connection status but never the key.
+- Optional hardening: in Google Cloud Console → APIs & Services → Credentials, restrict the browser API key to your domains (HTTP referrers).
 
 ## Before a real launch
 
-- Remove `SEED_DEMO_DATA`, and start from a fresh database, or delete the demo accounts (all `@meridianstay.test`).
-- Connect a payment provider; bookings currently confirm in test mode without taking payment.
-- Have a lawyer review the pages marked "draft" (terms, privacy, cancellation policy, host protection). They can be edited in **Admin → Website content**.
-- Add your own domain in Vercel (**Settings → Domains**).
+- Remove `SEED_DEMO_DATA` and the demo test phone numbers, and start from a clean project (or delete the demo users, whose ids start with `demo-`).
+- Connect a payment provider; bookings currently confirm in test mode.
+- Have the pages marked "draft" (terms, privacy, cancellation, host protection) reviewed; edit them in Admin → Website content.
+- Add your own domain in Vercel, and to Firebase Authentication's authorized domains.
 
 ## Moving an app to a subdomain
 
-Each panel can move to its own subdomain, e.g. `admin.meridianstay.com`, when needed:
-
-1. Create another Vercel project from the same repository with **Root Directory** `apps/admin`, build command `npm run build`, output `dist`, and environment variable `VITE_BASE_PATH=/`.
-2. In every project, set the app addresses so links between apps point to the right place: `VITE_WEBSITE_URL`, `VITE_ADMIN_URL`, `VITE_HOST_URL`, `VITE_ACCOUNT_URL` (full `https://` addresses).
-3. Set `COOKIE_DOMAIN=.meridianstay.com` on the API so one login works across subdomains.
-4. Route `/api` on the new subdomain to the main project (a rewrite in that project's `vercel.json`), so the login cookie stays first-party.
-
-## Running migrations by hand
-
-Migrations run automatically, but you can apply them yourself against any database:
-
-```bash
-DATABASE_URL="postgres://…" npm run db:migrate -w @meridian/api
-DATABASE_URL="postgres://…" npm run db:seed -w @meridian/api   # demo data, empty databases only
-```
+1. Create another Vercel project from the same repository with **Root Directory** `apps/admin` (for example), build command `npm run build`, output `dist`, and `VITE_BASE_PATH=/`.
+2. In every project set the app addresses so links between apps work: `VITE_WEBSITE_URL`, `VITE_ADMIN_URL`, `VITE_HOST_URL`, `VITE_ACCOUNT_URL` (full `https://` addresses).
+3. Set `COOKIE_DOMAIN=.yourdomain.com` on the API so one login works across subdomains, and add each subdomain to Firebase's authorized domains.
+4. Route `/api` on the new subdomain to the main project (a rewrite in that project's `vercel.json`).

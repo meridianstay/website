@@ -8,7 +8,7 @@ const labels: Record<string, string> = {
   'booking.cancel': 'Cancelled booking', 'user.role': 'Changed role', 'user.suspend': 'Suspended user', 'user.restore': 'Restored user',
   'review.hide': 'Hid review', 'review.restore': 'Restored review', 'message.status': 'Updated message',
   'settings.update': 'Edited website settings', 'page.save': 'Saved page', 'page.delete': 'Deleted page',
-  'db.update': 'Edited a database row', 'db.insert': 'Added a database row', 'db.delete': 'Deleted a database row',
+  'db.update': 'Edited a database record', 'db.insert': 'Added a database record', 'db.delete': 'Deleted a database record',
 }
 
 export function Activity() {

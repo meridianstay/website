@@ -1,29 +1,27 @@
 import { daysBetween, isISODate, MAX_NIGHTS, quoteStay, todayISO, type BookingDetail, type Me, type PaymentMethod } from '@meridian/shared'
-import { transaction } from '../db/pool'
-import { availabilityRepo, bookingsRepo, propertiesRepo, usersRepo } from '../repositories'
-import { newBookingCode } from '../lib/bookingCode'
+import { randomInt } from 'node:crypto'
+import { bookingsRepo, NightsTakenError, propertiesRepo, toBooking, usersRepo } from '../repositories'
 import { AppError, notFound } from '../http/errors'
-import { checkPhone, collect, isPgError, PG_EXCLUSION_VIOLATION } from '../http/validate'
+import { checkPhone, collect } from '../http/validate'
 
 // Booking rules: valid dates, capacity, availability and server-side pricing.
 
 export const PAYMENT_METHODS: PaymentMethod[] = ['upi', 'card', 'netbanking']
 
+// No 0/O or 1/I so codes are easy to read out over the phone.
+const ALPHABET = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789'
+export const newBookingCode = () => `MS-${Array.from({ length: 6 }, () => ALPHABET[randomInt(ALPHABET.length)]).join('')}`
+
 export interface BookingRequest {
-  propertyId: number
-  checkIn: string
-  checkOut: string
-  guests: number
-  paymentMethod: string
-  contactPhone: string
-  specialRequests: string
+  propertyId: number; checkIn: string; checkOut: string; guests: number
+  paymentMethod: string; contactPhone: string; specialRequests: string
 }
 
 const datesTaken = () =>
   new AppError(409, 'Some of those nights were just booked. Please choose different dates.', { checkIn: 'Those dates are no longer available.' })
 
 export const bookingService = {
-  async create(guest: Me, req: BookingRequest): Promise<BookingDetail> {
+  async create(guest: Me, uid: string, req: BookingRequest): Promise<BookingDetail> {
     const today = todayISO()
     const { checkIn, checkOut, guests, contactPhone, specialRequests } = req
     const datesValid = isISODate(checkIn) && isISODate(checkOut)
@@ -37,52 +35,54 @@ export const bookingService = {
       specialRequests: specialRequests.length > 500 ? 'Keep special requests under 500 characters.' : null,
     })
 
-    const property = await propertiesRepo.findBookable(req.propertyId)
-    if (!property) throw new AppError(404, 'This stay isn’t available for booking.')
-    if (property.host_id === guest.id) throw new AppError(400, 'You can’t book your own listing.')
-    if (guests > property.max_guests) collect({ guests: `This stay fits up to ${property.max_guests} guests.` })
+    const property = await propertiesRepo.get(req.propertyId)
+    if (!property || property.status !== 'Approved') throw new AppError(404, 'This stay isn’t available for booking.')
+    if (property.hostId === guest.id) throw new AppError(400, 'You can’t book your own listing.')
+    if (guests > property.maxGuests) collect({ guests: `This stay fits up to ${property.maxGuests} guests.` })
 
     // The browser shows a preview; the price charged is always recalculated here.
-    const q = quoteStay(property.price_per_night_minor / 100, checkIn, checkOut, guests)
+    const q = quoteStay(property.pricePerNightMinor / 100, checkIn, checkOut, guests)
     const code = newBookingCode()
+    const guestDoc = (await usersRepo.findByUid(uid))!
     try {
-      await transaction(async (db) => {
-        await propertiesRepo.lock(property.id, db)
-        if (await availabilityRepo.overlapsBlock(property.id, checkIn, checkOut, db)) throw datesTaken()
-        // The bookings_no_overlap constraint rejects overlapping confirmed bookings (see catch below).
-        await bookingsRepo.insert({
-          code, propertyId: property.id, guestId: guest.id, checkIn, checkOut, nights: q.nights, guests, currency: property.currency,
-          pricePerNightMinor: property.price_per_night_minor, baseMinor: Math.round(q.baseAmount * 100),
-          extraGuestMinor: Math.round(q.extraGuestAmount * 100), serviceFeeMinor: Math.round(q.serviceFee * 100),
-          totalMinor: Math.round(q.total * 100), paymentMethod: req.paymentMethod as PaymentMethod, contactPhone,
-          specialRequests: specialRequests || null,
-        }, db)
-        await usersRepo.setPhoneIfEmpty(guest.id, contactPhone, db)
-      })
+      await bookingsRepo.create({
+        code, propertyId: property.id, guestId: guest.id, checkIn, checkOut, nights: q.nights, guests, currency: property.currency,
+        pricePerNightMinor: property.pricePerNightMinor, baseMinor: Math.round(q.baseAmount * 100),
+        extraGuestMinor: Math.round(q.extraGuestAmount * 100), serviceFeeMinor: Math.round(q.serviceFee * 100),
+        totalMinor: Math.round(q.total * 100), paymentMethod: req.paymentMethod as PaymentMethod, contactPhone,
+        specialRequests: specialRequests || null,
+      }, property, guestDoc)
     } catch (err) {
-      if (isPgError(err, PG_EXCLUSION_VIOLATION)) throw datesTaken()
+      if (err instanceof NightsTakenError) throw datesTaken()
       throw err
     }
-    return (await bookingsRepo.findByCode(code, today))!.booking
+    return toBooking((await bookingsRepo.find(code))!, today)
   },
 
   /** A booking the user may see: their own, one at their listing, or any for admins. */
   async get(user: Me, code: string) {
-    const found = await bookingsRepo.findByCode(code, todayISO())
-    const allowed = found && (found.guestId === user.id || found.hostId === user.id || user.role === 'admin')
-    if (!allowed) throw notFound('booking')
-    return found.booking
+    const b = await bookingsRepo.find(code)
+    if (!b || !(b.guestId === user.id || b.hostId === user.id || user.role === 'admin')) throw notFound('booking')
+    return toBooking(b, todayISO())
   },
 
-  listForGuest(guest: Me) {
-    return bookingsRepo.listForGuest(guest.id, todayISO())
-  },
+  listForGuest: (guest: Me) => bookingsRepo.listForGuest(guest.id, todayISO()),
 
+  /** Guests can cancel their own confirmed bookings until the day before check-in. */
   async cancelByGuest(guest: Me, code: string) {
     const today = todayISO()
-    if (!(await bookingsRepo.cancelByGuest(code, guest.id, today))) {
+    if (!(await bookingsRepo.cancel(code, (b) => b.guestId === guest.id && b.checkIn > today))) {
       throw new AppError(400, 'This booking can’t be cancelled. Stays can be cancelled until the day before check-in.')
     }
-    return (await bookingsRepo.findByCode(code, today))!.booking
+    return toBooking((await bookingsRepo.find(code))!, today)
+  },
+
+  /** The guest's latest finished, unreviewed stay at a listing, if any. */
+  async reviewableCode(propertyId: number, guestId: number) {
+    const today = todayISO()
+    const rows = (await bookingsRepo.forProperty(propertyId))
+      .filter((b) => b.guestId === guestId && b.status === 'Confirmed' && b.checkOut <= today && !b.reviewed)
+      .sort((a, b) => b.checkOut.localeCompare(a.checkOut))
+    return rows[0]?.code ?? null
   },
 }
