@@ -8,7 +8,7 @@ The platform deploys as **one Vercel project** from this repository, backed by *
 | API | A Vercel serverless function at `/api` (Firebase Admin SDK) |
 | Data, sign-in, photos | Firebase: Firestore, Authentication, Storage (project `meridianstay-bcfd0`) |
 
-`vercel.json` runs `scripts/build-vercel.mjs`, which builds the four apps, bundles the API with `firebase-admin` installed next to it, and writes the routing rules ([Build Output API](https://vercel.com/docs/build-output-api)).
+`vercel.json` runs `scripts/build-vercel.mjs`, which builds the four apps, bundles the API (including `firebase-admin`) into a single function file, and writes the routing rules ([Build Output API](https://vercel.com/docs/build-output-api)).
 
 ## 1. Firebase project setup (once)
 

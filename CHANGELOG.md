@@ -29,7 +29,7 @@ The platform now runs entirely on **Firebase**, as the client requested. Postgre
 - Local development and tests use the **Firebase emulators** (`npm run emulators`); tests get their own separate emulators.
 - 32 automated tests, rewritten for Firebase.
 - Security rules in `firebase/` block all direct browser access to Firestore and Storage.
-- Vercel build installs `firebase-admin` next to the API function. The Firebase web config for the client's project (`meridianstay-bcfd0`) is in `.env.production`; the service key goes in Vercel as `FIREBASE_SERVICE_ACCOUNT`.
+- The Vercel build bundles the API, including `firebase-admin`, into one function file. The Firebase web config for the client's project (`meridianstay-bcfd0`) is in `.env.production`; the service key goes in Vercel as `FIREBASE_SERVICE_ACCOUNT`.
 - Demo data recreated in Firebase, with test phone numbers for every demo account (code `123456`).
 
 ### Docs
@@ -37,7 +37,7 @@ The platform now runs entirely on **Firebase**, as the client requested. Postgre
 
 ### Fixes
 - The Vercel API function now reports configuration problems (missing, malformed or incomplete `FIREBASE_SERVICE_ACCOUNT`, unreachable Firebase) as a readable message instead of crashing. Errors never include any part of the key.
-- Fixed the API crashing on Vercel after the Firebase move: the function folder was marked as ES modules, which broke Vercel's launcher.
+- Fixed the API crashing on Vercel after the Firebase move: `firebase-admin` is now bundled into the function file instead of installed beside it.
 
 ## 0.4.0 — 2026-09-19
 

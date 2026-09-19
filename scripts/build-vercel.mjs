@@ -32,16 +32,12 @@ await build({
   platform: 'node',
   target: 'node22',
   format: 'esm',
-  // firebase-admin loads data files at runtime, so it's installed next to the bundle instead of inlined.
-  external: ['firebase-admin', 'firebase-admin/*'],
+  // Everything, including firebase-admin, is bundled into one file (the shape Vercel runs most reliably).
+  external: [],
   // Some bundled CommonJS dependencies call require(); give ESM a working one.
   banner: { js: "import { createRequire as __cr } from 'node:module'; const require = __cr(import.meta.url);" },
   logLevel: 'info',
 })
-// No "type": "module" here: Vercel's launcher in this folder is CommonJS; index.mjs is ESM by its extension.
-const adminVersion = JSON.parse(readFileSync('node_modules/firebase-admin/package.json', 'utf8')).version
-writeFileSync(`${fn}/package.json`, JSON.stringify({ private: true, dependencies: { 'firebase-admin': adminVersion } }, null, 2))
-run(`npm install --omit=dev --no-audit --no-fund --prefix ${fn}`)
 writeFileSync(`${fn}/.vc-config.json`, JSON.stringify({ runtime: 'nodejs22.x', handler: 'index.mjs', launcherType: 'Nodejs', shouldAddHelpers: false, maxDuration: 30 }, null, 2))
 
 // Hashed assets can be cached forever; HTML must always be fresh.
