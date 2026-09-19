@@ -1,4 +1,4 @@
-import { addDays, defaultDayUse, defaultHouseRules, type Amenity, type HouseRules, type Management, type DateRange, type ListingInput, type ListingStatus, type PropertySummary, type PropertyType, type SearchQuery } from '@meridian/shared'
+import { addDays, defaultDayUse, defaultHouseRules, distanceKm, parsePropertyCode, placeSlug, type Destination, type Amenity, type HouseRules, type Management, type DateRange, type ListingInput, type ListingStatus, type PropertySummary, type PropertyType, type SearchQuery } from '@meridian/shared'
 import type { Transaction } from 'firebase-admin/firestore'
 import { C, all, col, daysOf, firestore, nextId, nightsOf, nowISO } from '../store/db'
 import { busyPeriods, type DaySlot, type NightLock } from './schedule'
@@ -101,8 +101,10 @@ export const propertiesRepo = {
   async search(f: Filters): Promise<PropertySummary[]> {
     let rows = await readProps(col(C.properties).where('status', '==', 'Approved'))
     const where = f.where?.toLowerCase()
+    // "MS007" finds the listing with that code.
+    const codeId = f.where ? parsePropertyCode(f.where) : null
     rows = rows.filter((p) =>
-      (!where || `${p.title} ${p.city}, ${p.region}, ${p.country}`.toLowerCase().includes(where)) &&
+      (codeId !== null ? p.id === codeId : !where || `${p.title} ${p.city}, ${p.region}, ${p.country}`.toLowerCase().includes(where)) &&
       (!f.type || p.type === f.type) &&
       (!f.guests || p.maxGuests >= f.guests) &&
       (f.minPrice == null || p.pricePerNightMinor >= f.minPrice * 100) &&
@@ -113,8 +115,36 @@ export const propertiesRepo = {
       const free = await Promise.all(rows.map((p) => this.isFree(p.id, f.checkIn!, f.checkOut!)))
       rows = rows.filter((_, i) => free[i])
     }
-    rows.sort(f.featured ? (a, b) => a.featuredRank! - b.featuredRank! || a.id - b.id : SORTS[f.sort ?? 'recommended'] ?? SORTS.recommended)
+    const near = f.lat !== undefined && f.lng !== undefined ? { lat: f.lat, lng: f.lng } : null
+    rows.sort(f.featured ? (a, b) => a.featuredRank! - b.featuredRank! || a.id - b.id
+      : f.sort === 'nearest' && near ? (a, b) => distanceKm(near, a) - distanceKm(near, b)
+      : SORTS[f.sort ?? 'recommended'] ?? SORTS.recommended)
     return rows.slice(0, f.limit).map(toPropertySummary)
+  },
+
+  /** Towns and states with live stays, most stays first. */
+  async destinations(): Promise<Destination[]> {
+    const rows = (await readProps(col(C.properties).where('status', '==', 'Approved'))).sort((a, b) => b.ratingAvg - a.ratingAvg)
+    const groups = new Map<string, { d: Destination; pts: PropertyDoc[] }>()
+    const add = (key: string, make: () => Destination, p: PropertyDoc) => {
+      const g = groups.get(key) ?? { d: make(), pts: [] }
+      g.pts.push(p)
+      groups.set(key, g)
+    }
+    for (const p of rows) {
+      add(`city:${p.city}|${p.region}`, () => ({ slug: placeSlug(p.city), name: p.city, kind: 'city', region: p.region, stays: 0, image: p.coverImageUrl, lat: 0, lng: 0, types: [] }), p)
+      add(`state:${p.region}`, () => ({ slug: placeSlug(p.region), name: p.region, kind: 'state', region: null, stays: 0, image: p.coverImageUrl, lat: 0, lng: 0, types: [] }), p)
+    }
+    const out = [...groups.values()].map(({ d, pts }) => ({
+      ...d, stays: pts.length, types: [...new Set(pts.map((p) => p.type))],
+      lat: Math.round((pts.reduce((n, p) => n + p.lat, 0) / pts.length) * 100) / 100,
+      lng: Math.round((pts.reduce((n, p) => n + p.lng, 0) / pts.length) * 100) / 100,
+    }))
+    // A city and its state can share a slug (e.g. Goa); keep the state then.
+    const seen = new Set<string>()
+    return out.sort((a, b) => Number(a.kind === 'city') - Number(b.kind === 'city') || b.stays - a.stays || a.name.localeCompare(b.name))
+      .filter((d) => !seen.has(d.slug) && seen.add(d.slug))
+      .sort((a, b) => b.stays - a.stays || a.name.localeCompare(b.name))
   },
 
   async locations() {

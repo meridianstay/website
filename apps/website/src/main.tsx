@@ -9,6 +9,7 @@ import './index.css'
 import App from './App'
 import { WishlistProvider } from './lib/wishlist'
 import { SiteProvider } from './lib/site'
+import { PlaceProvider } from './lib/place'
 import { initInstall } from './lib/install'
 
 initInstall()
@@ -19,7 +20,9 @@ createRoot(document.getElementById('root')!).render(
       <AuthProvider>
         <SiteProvider>
           <WishlistProvider>
-            <App />
+            <PlaceProvider>
+              <App />
+            </PlaceProvider>
           </WishlistProvider>
         </SiteProvider>
       </AuthProvider>

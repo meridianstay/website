@@ -35,7 +35,7 @@ export interface CategoryCard {
 }
 
 /** How a "Stays" section chooses its listings. */
-export type StayRule = 'featured' | 'top_rated' | 'newest' | 'instant' | 'request' | 'price_low' | 'price_high' | 'type' | 'location' | 'budget'
+export type StayRule = 'featured' | 'top_rated' | 'newest' | 'instant' | 'request' | 'price_low' | 'price_high' | 'type' | 'location' | 'budget' | 'nearby' | 'dayuse'
 
 export const STAY_RULES: { value: StayRule; label: string; explain: string; needs?: 'type' | 'location' | 'budget' }[] = [
   { value: 'featured', label: 'Featured by our team', explain: 'Stays you mark with “Feature” on the Listings page, in the order you set there. If none are featured, the newest live stays show instead.' },
@@ -47,6 +47,8 @@ export const STAY_RULES: { value: StayRule; label: string; explain: string; need
   { value: 'price_high', label: 'Luxury (highest price first)', explain: 'Live stays sorted from the highest nightly price.' },
   { value: 'type', label: 'One property type', explain: 'Only the property type you choose, highest rated first.', needs: 'type' },
   { value: 'location', label: 'In a destination', explain: 'Only stays in the town or state you choose, highest rated first.', needs: 'location' },
+  { value: 'nearby', label: 'Near the visitor', explain: 'Stays closest to the destination the visitor picked, or to them if they tap “Near me”. Until they pick one, the highest-rated stays show. Write {place} in the title to show the name, e.g. “Weekend stays near {place}”.' },
+  { value: 'dayuse', label: 'Day out (day use)', explain: 'Only properties that offer day use for picnics, pool days and parties, highest rated first.' },
   { value: 'budget', label: 'Under a price', explain: 'Only stays up to the nightly price you set, lowest price first.', needs: 'budget' },
 ]
 
@@ -139,6 +141,8 @@ export function defaultHomeLayout(legacy?: HomepageSettings): HomeLayout {
     blocks: [
       newBlock('categories', 'categories'),
       { ...featured, title: legacy?.featuredTitle ?? 'Featured Meridian Stays', subtitle: legacy?.featuredSubtitle ?? 'Most loved by families and nature seekers this month' },
+      { ...newBlock('stays', 'nearby'), rule: 'nearby', title: 'Weekend getaways near {place}', subtitle: 'Pick your city, or tap Near me, and we’ll show what’s closest', limit: 6 },
+      { ...newBlock('stays', 'dayouts'), rule: 'dayuse', title: 'Day outs & pool parties', subtitle: 'Book a farm or villa by the hour for picnics and celebrations', limit: 3 },
       { ...newBlock('stays', 'instant'), rule: 'instant', title: 'Book instantly', subtitle: 'Managed by Meridian: confirmed the moment you book', limit: 3 },
       {
         ...newBlock('banner', 'host'), badge: 'Meridian Hosts', title: 'Got a farmstay, cottage, or resort?', tone: 'green',

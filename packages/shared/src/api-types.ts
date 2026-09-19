@@ -146,7 +146,10 @@ export interface SearchQuery {
   guests?: number
   minPrice?: number
   maxPrice?: number
-  sort?: 'recommended' | 'price_asc' | 'price_desc' | 'rating' | 'newest'
+  sort?: 'recommended' | 'price_asc' | 'price_desc' | 'rating' | 'newest' | 'nearest'
+  /** A point to measure distance from (needed for sort=nearest). */
+  lat?: number
+  lng?: number
   /** managed: instant book only; self: request to book only. */
   management?: Management
   limit?: number

@@ -9,6 +9,7 @@ import { BookingConfirmed } from './pages/BookingConfirmed'
 import { Auth } from './pages/Auth'
 import { Contact } from './pages/Contact'
 import { About } from './pages/About'
+import { Destination } from './pages/Destination'
 import { InfoPage } from './pages/InfoPage'
 import { Sitemap } from './pages/Sitemap'
 import { NotFound } from './pages/NotFound'
@@ -26,6 +27,8 @@ export default function App() {
         <Route path="login" element={<Auth />} />
         <Route path="signup" element={<SignupRedirect />} />
         <Route path="about" element={<About />} />
+        <Route path="destinations/:slug" element={<Destination />} />
+        <Route path="destinations/:slug/:type" element={<Destination />} />
         <Route path="contact" element={<Contact />} />
         <Route path="sitemap" element={<Sitemap />} />
         {/* Information pages are managed in the admin control center */}

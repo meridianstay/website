@@ -66,6 +66,8 @@ Every error returns a JSON body with a message that is safe to show to users. Va
 | Method | Path | Access | Returns |
 | --- | --- | --- | --- |
 | GET | `/api/properties` | Public | `{ properties: PropertySummary[] }`, live listings only |
+| GET | `/api/destinations` | Public | `{ destinations: [{ slug, name, kind: "city" \| "state", region, stays, image, lat, lng, types }] }`, most stays first |
+| GET | `/sitemap.xml`, `/robots.txt` | Public | For search engines (served by the API) |
 | GET | `/api/properties/:slug/day` | Public | `?date=YYYY-MM-DD` → `{ date, opensAt, closesAt, busy: [{ start, end, reason }] }` for day use |
 | GET | `/api/properties/:slug` | Public | `{ property: PropertyDetail }`. Hosts and admins can also preview their listings that aren’t live yet. |
 | GET | `/api/locations` | Public | `{ locations: ["Coorg, Karnataka", …] }` for search suggestions |
@@ -75,12 +77,13 @@ Every error returns a JSON body with a message that is safe to show to users. Va
 
 | Parameter | Meaning |
 | --- | --- |
-| `where` | Text matched against title, city, region and country |
+| `where` | A property code (e.g. `MS007`) finds that stay; otherwise Text matched against title, city, region and country |
 | `type` | `Farmstay`, `Room`, `Resort`, `Cottage` or `Villa` |
 | `checkIn`, `checkOut` | Only stays free for the whole range (no bookings or host blocks) |
 | `guests` | Stays that fit at least this many guests |
 | `minPrice`, `maxPrice` | Nightly price range |
-| `sort` | `recommended` (default), `price_asc`, `price_desc`, `rating`, `newest` |
+| `sort` | `recommended` (default), `price_asc`, `price_desc`, `rating`, `newest`, `nearest` (with `lat` and `lng`) |
+| `lat`, `lng` | A point to measure distance from |
 | `management` | `managed` (instant book only) or `self` (request to book only) |
 | `featured` | `true`: only stays featured on the homepage, in featured order |
 | `limit` | Up to 100 (default 50) |

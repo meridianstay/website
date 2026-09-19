@@ -2,6 +2,21 @@
 
 Every change to Meridian Stay is recorded here, newest first. Each entry says what changed for the people using the platform, then the notable technical changes.
 
+## 0.11.0 — 2026-09-20
+
+### Location and discovery
+- **Destination picker** in the header ("Select city") and the mobile search sheet: search a town or state, **Near me** (uses the phone's location), **popular destinations** with photos, and every destination A–Z. The choice is remembered on the device.
+- **Distances** on every stay card once a destination or location is chosen ("92 km", "Under 1 km"), and a **Nearest first** sort in search (plus **Newest**).
+- **Destination pages** such as `/destinations/coorg` and `/destinations/goa/villas`: a photo header, "Villas in Goa"-style headings, type filters, the stays, and nearby places with distances. Each has its own page title and search-engine description.
+- **Popular searches** in the footer ("Farmstays in Coorg", "Stays in Karnataka"…), built from live listings.
+- **Property codes** (e.g. MS007) on stay pages; searching for a code finds that stay.
+- Homepage rules **Near the visitor** (with `{place}` in the title, e.g. "Weekend getaways near Coorg", plus a "Choose your city" button) and **Day out**. Both are added to the default homepage.
+- **Sitemap and robots file** at `/sitemap.xml` and `/robots.txt`, listing every live stay, destination page and information page, for Google.
+
+### Backend
+- `GET /api/destinations`; `GET /api/properties` accepts `sort=nearest` with `lat`/`lng`, `sort=newest`, and property codes in `where`.
+- 73 automated tests (3 new).
+
 ## 0.10.0 — 2026-09-20
 
 Inspired by what works on the local competitor (FarmhouseHub), in Meridian's own look.

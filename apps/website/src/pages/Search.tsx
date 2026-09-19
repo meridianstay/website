@@ -5,6 +5,7 @@ import { api } from '@meridian/shared/client'
 import { EmptyState, ErrorNote } from '@meridian/ui'
 import { PropertyCard, PropertyCardSkeleton } from '../components/PropertyCard'
 import { PROPERTY_TYPES, SORT_OPTIONS, guestLabel, readSearch, searchUrl } from '../lib/search'
+import { usePlace } from '../lib/place'
 import { useDocumentTitle } from '../lib/useDocumentTitle'
 
 const PropertyMap = lazy(() => import('../components/PropertyMap'))
@@ -13,6 +14,7 @@ export function Search() {
   const [params] = useSearchParams()
   const navigate = useNavigate()
   const state = readSearch(params)
+  const { place } = usePlace()
   const [results, setResults] = useState<PropertySummary[] | null>(null)
   const [error, setError] = useState<string | null>(null)
   const [showMap, setShowMap] = useState(false)
@@ -88,8 +90,12 @@ export function Search() {
           </form>
           <label className="text-[10px] font-bold uppercase text-slate-500">
             Sort by
-            <select value={state.sort ?? 'recommended'} onChange={(e) => update({ sort: e.target.value as typeof state.sort })} className="block mt-1 bg-slate-50 border border-slate-200 rounded-xl px-3 py-2 text-sm font-semibold text-slate-800 focus:outline-none focus:border-brand-500">
-              {SORT_OPTIONS.map((o) => <option key={o.value} value={o.value}>{o.label}</option>)}
+            <select value={state.sort ?? 'recommended'} onChange={(e) => {
+              const sort = e.target.value as typeof state.sort
+              // "Nearest first" measures from the visitor's chosen place.
+              update(sort === 'nearest' && place && state.lat === undefined ? { sort, lat: place.lat, lng: place.lng } : { sort })
+            }} className="block mt-1 bg-slate-50 border border-slate-200 rounded-xl px-3 py-2 text-sm font-semibold text-slate-800 focus:outline-none focus:border-brand-500">
+              {SORT_OPTIONS.filter((o) => o.value !== 'nearest' || place || state.lat !== undefined).map((o) => <option key={o.value} value={o.value}>{o.label}</option>)}
             </select>
           </label>
           <div className="flex-1" />

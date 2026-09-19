@@ -1,4 +1,5 @@
 import { useEffect, useState } from 'react'
+import { usePlace } from '../lib/place'
 import { defaultHomeLayout, type HomeLayout, type PropertySummary } from '@meridian/shared'
 import { api } from '@meridian/shared/client'
 import { ErrorNote } from '@meridian/ui'
@@ -11,6 +12,18 @@ export function Home() {
   useDocumentTitle(null)
   const [data, setData] = useState<{ layout: HomeLayout; stays: Record<string, PropertySummary[]> } | null>(null)
   const [error, setError] = useState<string | null>(null)
+
+  const { place } = usePlace()
+  const [nearby, setNearby] = useState<Record<string, PropertySummary[]>>({})
+
+  // "Near the visitor" rows: re-fetch nearest-first once we know where they are.
+  useEffect(() => {
+    if (!data || !place) return setNearby({})
+    const blocks = data.layout.blocks.filter((b) => b.type === 'stays' && b.rule === 'nearby')
+    Promise.all(blocks.map((b) => api.searchProperties({ sort: 'nearest', lat: place.lat, lng: place.lng, limit: b.limit }).then((r) => [b.id, r.properties] as const)))
+      .then((rows) => setNearby(Object.fromEntries(rows)))
+      .catch(() => {})
+  }, [data, place])
 
   const load = () => {
     setError(null)
@@ -26,7 +39,8 @@ export function Home() {
       <Hero key={data ? 'live' : 'loading'} hero={layout.hero} />
       {error && <div className="max-w-[1180px] mx-auto px-5 pt-10"><ErrorNote message={error} onRetry={load} /></div>}
       {layout.blocks.filter((b) => b.enabled).map((b) => (
-        <HomeSection key={b.id} block={b} stays={data ? data.stays[b.id] ?? [] : null} />
+        <HomeSection key={b.id} block={{ ...b, title: b.title.replace('{place}', place ? (place.name === 'you' ? 'you' : place.name) : 'you') }}
+          stays={data ? nearby[b.id] ?? data.stays[b.id] ?? [] : null} />
       ))}
     </>
   )

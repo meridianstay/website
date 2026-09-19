@@ -8,6 +8,7 @@ import type { AnnouncementSettings, ContentPage, HomepageSettings, PublicSite, S
 import type { CommissionRates, Management } from '../pricing'
 import type { AboutPage, AboutStats } from '../about'
 import type { HomeBlock, HomeLayout } from '../homepage'
+import type { Destination } from '../places'
 import { request } from './http'
 
 const qs = (params: object) => {
@@ -41,6 +42,7 @@ export const api = {
   page: (slug: string) => request<{ page: ContentPage }>(`/pages/${encodeURIComponent(slug)}`),
 
   locations: () => request<{ locations: string[] }>('/locations'),
+  destinations: () => request<{ destinations: Destination[] }>('/destinations'),
   searchProperties: (query: SearchQuery) => request<{ properties: PropertySummary[] }>(`/properties${qs(query)}`),
   property: (slug: string) => request<{ property: PropertyDetail }>(`/properties/${encodeURIComponent(slug)}`),
   /** Busy hours on a date, for booking day use. */

@@ -55,6 +55,7 @@ writeFileSync(`${out}/config.json`, JSON.stringify({
   version: 3,
   routes: [
     { src: '^/api(?:/.*)?$', dest: '/api' },
+    { src: '^/(sitemap\\.xml|robots\\.txt)$', dest: '/api' },
     { src: '^/(?:admin/|host/|account/)?assets/.+$', headers: immutable, continue: true },
     { src: '^/(admin|host|account)$', status: 308, headers: { Location: '/$1/' } },
     { handle: 'filesystem' },

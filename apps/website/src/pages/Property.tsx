@@ -1,6 +1,6 @@
 import { lazy, Suspense, useCallback, useEffect, useState } from 'react'
 import { Link, useParams, useSearchParams } from 'react-router'
-import { fallbackImage, formatDate, formatPrice, formatTime, HOUSE_RULES, type PropertyDetail } from '@meridian/shared'
+import { fallbackImage, formatDate, formatPrice, formatTime, HOUSE_RULES, propertyCode, type PropertyDetail } from '@meridian/shared'
 import { ApiError, api } from '@meridian/shared/client'
 import { Avatar, ErrorNote, Spinner } from '@meridian/ui'
 import { BookingBox } from '../components/BookingBox'
@@ -67,6 +67,7 @@ export function Property() {
       <div className="flex flex-col sm:flex-row sm:items-end justify-between gap-3 mb-5">
         <div>
           <span className="inline-block text-[11px] font-bold uppercase text-brand-700 bg-brand-50 px-3 py-1 rounded-full mb-2">{property.type}</span>
+          <span className="inline-block ml-2 text-[11px] font-mono font-bold text-slate-500 bg-slate-100 px-2.5 py-1 rounded-full mb-2" title="Quote this code to our team, or search for it">{propertyCode(property.id)}</span>
           <h1 className="text-2xl sm:text-3xl font-extrabold text-slate-900 tracking-tight">{property.title}</h1>
           <p className="flex flex-wrap items-center gap-x-3 text-sm font-semibold text-slate-600 mt-2">
             {property.reviewCount > 0 ? (

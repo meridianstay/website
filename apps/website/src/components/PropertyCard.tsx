@@ -1,6 +1,7 @@
 import { Link } from 'react-router'
 import { fallbackImage, formatPrice, type PropertySummary } from '@meridian/shared'
 import { useWishlist } from '../lib/wishlist'
+import { usePlace } from '../lib/place'
 
 interface Props {
   property: PropertySummary
@@ -13,6 +14,7 @@ interface Props {
 
 export function PropertyCard({ property, linkSearch = '', onHover, index = 0 }: Props) {
   const { has, toggle } = useWishlist()
+  const { place, distanceTo } = usePlace()
   const saved = has(property.id)
   const href = `/stays/${property.slug}${linkSearch}`
 
@@ -35,6 +37,11 @@ export function PropertyCard({ property, linkSearch = '', onHover, index = 0 }: 
           <span className="w-2 h-2 rounded-full bg-brand-500"></span>
           <span>{property.type}</span>
         </div>
+        {place && (
+          <div className="absolute bottom-4 right-4 bg-white/90 backdrop-blur-md px-2.5 py-1 rounded-full text-[11px] font-bold text-slate-800 shadow-sm">
+            <i className="fa-solid fa-route text-brand-600 mr-1" aria-hidden="true"></i>{distanceTo(property)}{place.name !== 'you' ? '' : ' away'}
+          </div>
+        )}
         <div className="absolute bottom-4 left-4 bg-slate-900/70 backdrop-blur-md text-white px-3 py-1 rounded-full text-[11px] font-semibold flex items-center space-x-1">
           <i className="fa-solid fa-star text-brand-yellow-400 text-[10px]" aria-hidden="true"></i>
           {property.reviewCount > 0 ? (

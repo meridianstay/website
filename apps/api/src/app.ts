@@ -10,6 +10,7 @@ import { contactRoutes } from './routes/contact'
 import { hostRoutes } from './routes/host'
 import { adminRoutes } from './routes/admin'
 import { siteRoutes } from './routes/site'
+import { seoRoutes } from './routes/seo'
 
 /**
  * The HTTP API, mounted at /api. Used by the local server and the Vercel function.
@@ -37,6 +38,7 @@ app.route('/', contactRoutes)
 app.route('/', hostRoutes)
 app.route('/', adminRoutes)
 app.route('/', siteRoutes)
+app.route('/', seoRoutes)
 
 app.notFound((c) => c.json({ error: 'Not found.' }, 404))
 app.onError((err, c) => {

@@ -47,7 +47,13 @@ function StaysRow({ block, stays }: { block: HomeBlock; stays: PropertySummary[]
   return (
     <section className="max-w-[1180px] mx-auto px-5 py-12">
       <SectionHeading block={block} action={
-        <Link to={exploreUrl(block)} className="shrink-0 bg-slate-100 hover:bg-slate-200 text-slate-800 text-xs font-bold py-2.5 px-5 rounded-full transition">Explore all</Link>
+        block.rule === 'nearby' ? (
+          <button type="button" onClick={() => window.dispatchEvent(new Event('ms:pick-place'))} className="shrink-0 bg-brand-50 hover:bg-brand-100 text-brand-700 text-xs font-bold py-2.5 px-5 rounded-full transition">
+            <i className="fa-solid fa-location-dot mr-1.5" aria-hidden="true"></i>Choose your city
+          </button>
+        ) : (
+          <Link to={exploreUrl(block)} className="shrink-0 bg-slate-100 hover:bg-slate-200 text-slate-800 text-xs font-bold py-2.5 px-5 rounded-full transition">Explore all</Link>
+        )
       } />
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-8">
         {stays

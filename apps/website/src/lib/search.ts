@@ -22,9 +22,11 @@ export const SORT_OPTIONS: { value: NonNullable<SearchQuery['sort']>; label: str
   { value: 'price_asc', label: 'Price: low to high' },
   { value: 'price_desc', label: 'Price: high to low' },
   { value: 'rating', label: 'Top rated' },
+  { value: 'newest', label: 'Newest' },
+  { value: 'nearest', label: 'Nearest first' },
 ]
 
-export function readSearch(params: URLSearchParams): SearchState & Pick<SearchQuery, 'type' | 'minPrice' | 'maxPrice' | 'sort'> {
+export function readSearch(params: URLSearchParams): SearchState & Pick<SearchQuery, 'type' | 'minPrice' | 'maxPrice' | 'sort' | 'lat' | 'lng'> {
   const today = todayISO()
   const checkIn = params.get('checkIn') ?? ''
   const checkOut = params.get('checkOut') ?? ''
@@ -36,6 +38,10 @@ export function readSearch(params: URLSearchParams): SearchState & Pick<SearchQu
     return params.get(key) && Number.isFinite(v) && v >= 0 ? v : undefined
   }
   const sort = params.get('sort') as SearchQuery['sort'] | null
+  const coord = (key: string, max: number) => {
+    const v = Number(params.get(key))
+    return params.get(key) && Number.isFinite(v) && Math.abs(v) <= max ? v : undefined
+  }
   return {
     where: params.get('where') ?? '',
     checkIn: validDates ? checkIn : '',
@@ -45,10 +51,12 @@ export function readSearch(params: URLSearchParams): SearchState & Pick<SearchQu
     minPrice: num('minPrice'),
     maxPrice: num('maxPrice'),
     sort: SORT_OPTIONS.some((s) => s.value === sort) ? sort! : undefined,
+    lat: coord('lat', 90),
+    lng: coord('lng', 180),
   }
 }
 
-export function searchUrl(state: Partial<SearchState> & Partial<Pick<SearchQuery, 'type' | 'minPrice' | 'maxPrice' | 'sort'>>): string {
+export function searchUrl(state: Partial<SearchState> & Partial<Pick<SearchQuery, 'type' | 'minPrice' | 'maxPrice' | 'sort' | 'lat' | 'lng'>>): string {
   const params = new URLSearchParams()
   for (const [key, value] of Object.entries(state)) {
     if (value !== undefined && value !== '' && value !== 0) params.set(key, String(value))

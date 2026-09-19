@@ -42,5 +42,7 @@ export default async function handler(req: IncomingMessage, res: ServerResponse)
     console.error('Firebase setup failed', err)
     return unavailable(res, `Couldn’t reach Firebase: ${describe(err)}`)
   }
+  // /sitemap.xml and /robots.txt are routed to this function; the API serves them under /api.
+  if (req.url === '/sitemap.xml' || req.url === '/robots.txt') req.url = `/api${req.url}`
   return api.listener(req, res)
 }

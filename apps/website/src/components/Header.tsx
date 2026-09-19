@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 import { Link, useLocation, useSearchParams } from 'react-router'
 import { Logo } from '@meridian/ui'
 import { formatDate } from '@meridian/shared'
@@ -6,12 +6,22 @@ import { appLink } from '@meridian/shared/client'
 import { guestLabel, readSearch } from '../lib/search'
 import { AccountMenu } from './AccountMenu'
 import { InstallAppButton } from './InstallApp'
+import { DestinationPicker } from './DestinationPicker'
+import { usePlace } from '../lib/place'
 import { Modal } from './Modal'
 import { SearchForm } from './SearchForm'
 
 export function Header() {
   const [searchOpen, setSearchOpen] = useState(false)
   const [regionOpen, setRegionOpen] = useState(false)
+  const [placeOpen, setPlaceOpen] = useState(false)
+  const { place } = usePlace()
+  // Other parts of the page (e.g. the homepage's "near you" row) can open the picker.
+  useEffect(() => {
+    const open = () => setPlaceOpen(true)
+    window.addEventListener('ms:pick-place', open)
+    return () => window.removeEventListener('ms:pick-place', open)
+  }, [])
   const [params] = useSearchParams()
   const { pathname } = useLocation()
   const current = pathname === '/search' ? readSearch(params) : null
@@ -46,6 +56,11 @@ export function Header() {
           <button type="button" onClick={() => setSearchOpen(true)} aria-label="Search stays" className="md:hidden w-10 h-10 rounded-full bg-brand-500 text-white flex items-center justify-center">
             <i className="fa-solid fa-magnifying-glass text-sm" aria-hidden="true"></i>
           </button>
+          <button type="button" onClick={() => setPlaceOpen(true)} aria-label={place ? `Destination: ${place.name === 'you' ? 'near you' : place.name}. Change` : 'Choose a destination'}
+            className="hidden md:flex items-center gap-2 whitespace-nowrap text-[13px] font-semibold text-slate-800 hover:bg-slate-100 h-10 px-3 rounded-full transition max-w-[150px]">
+            <i className="fa-solid fa-location-dot text-brand-500" aria-hidden="true"></i>
+            <span className="hidden xl:inline truncate">{place ? (place.name === 'you' ? 'Near me' : place.name) : 'Select city'}</span>
+          </button>
           <InstallAppButton />
           <a href={appLink('host', '/new')} className="hidden sm:flex items-center space-x-2 whitespace-nowrap text-[13px] font-semibold text-slate-800 hover:bg-slate-100 py-2.5 px-4 rounded-full transition">
             <i className="fa-solid fa-house-chimney text-brand-500" aria-hidden="true"></i>
@@ -59,8 +74,19 @@ export function Header() {
       </div>
 
       <Modal open={searchOpen} onClose={() => setSearchOpen(false)} title="Find a stay" size="lg">
+        <button type="button" onClick={() => { setSearchOpen(false); setPlaceOpen(true) }}
+          className="w-full mb-5 flex items-center justify-between gap-3 bg-brand-50 border border-brand-100 rounded-2xl p-3 text-left">
+          <span className="text-sm">
+            <i className="fa-solid fa-location-dot text-brand-600 mr-2" aria-hidden="true"></i>
+            <span className="font-bold text-slate-900">{place ? (place.name === 'you' ? 'Near me' : place.name) : 'Choose a destination'}</span>
+            <span className="block text-xs text-slate-500 ml-6">Popular places, all destinations, or near me</span>
+          </span>
+          <i className="fa-solid fa-chevron-right text-xs text-slate-400" aria-hidden="true"></i>
+        </button>
         <SearchForm layout="stacked" initial={current ?? {}} onSubmitted={() => setSearchOpen(false)} />
       </Modal>
+
+      <DestinationPicker open={placeOpen} onClose={() => setPlaceOpen(false)} />
 
       <Modal open={regionOpen} onClose={() => setRegionOpen(false)} title="Language and currency">
         <div className="space-y-5 text-sm">

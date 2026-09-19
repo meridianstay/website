@@ -47,7 +47,7 @@ export function SearchForm({ initial = {}, layout = 'bar', onSubmitted }: Props)
       <form onSubmit={submit} className="space-y-5" role="search">
         <div>
           <label htmlFor="search-where" className="block text-xs font-bold uppercase text-slate-500 mb-1">Where</label>
-          <input id="search-where" list={listId} value={where} onChange={(e) => setWhere(e.target.value)} placeholder="Search destinations, e.g. Coorg" className="w-full bg-slate-50 border border-slate-200 rounded-2xl p-3 text-sm focus:outline-none focus:border-brand-500" />
+          <input id="search-where" list={listId} value={where} onChange={(e) => setWhere(e.target.value)} placeholder="Destination, stay name or code (MS007)" className="w-full bg-slate-50 border border-slate-200 rounded-2xl p-3 text-sm focus:outline-none focus:border-brand-500" />
           <datalist id={listId}>{locations.map((l) => <option key={l} value={l} />)}</datalist>
         </div>
         <div>

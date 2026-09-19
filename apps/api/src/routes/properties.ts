@@ -31,10 +31,14 @@ propertyRoutes.get('/properties', async (c) => {
     sort: q.sort as never,
     featured: q.featured === '1' || q.featured === 'true',
     management: q.management === 'managed' || q.management === 'self' ? q.management : undefined,
+    lat: Number.isFinite(Number(q.lat)) && q.lat ? Number(q.lat) : undefined,
+    lng: Number.isFinite(Number(q.lng)) && q.lng ? Number(q.lng) : undefined,
     limit: Math.min(intOrUndefined(q.limit) ?? 50, 100),
   })
   return c.json({ properties })
 })
+
+propertyRoutes.get('/destinations', async (c) => c.json({ destinations: await propertiesRepo.destinations() }))
 
 propertyRoutes.get('/properties/:slug', async (c) => {
   const user = c.get('user')
