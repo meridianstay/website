@@ -2,6 +2,30 @@
 
 Every change to Meridian Stay is recorded here, newest first. Each entry says what changed for the people using the platform, then the notable technical changes.
 
+## 0.8.0 — 2026-09-20
+
+### About us page
+- New **About us** page at `/about`, linked from the footer ("About Meridian" column) and the sitemap. Sections, each with its own headline and tagline:
+  - **Who we are** (about the company) with highlight cards
+  - **Mission** and **Vision**, side by side
+  - **Our journey** as a timeline of milestones
+  - **Meet our founder**: photo card, quote and story
+  - **Our team**
+  - **What we’re working towards** (aims and goals)
+  - **Local impact** and **Global impact**
+  - **Why travellers choose Meridian**
+  - A closing call to action (find a stay / list your property), plus a quick menu to jump between sections
+- Impact figures are **live numbers** from the platform (stays, hosts, destinations, states, nights booked, managed stays), written as `{{liveStays}}` and similar in the text, so they're always true.
+- Works on phones: the timeline becomes one column and the section menu scrolls sideways.
+
+### Control center
+- **Website content → About us page → Edit**: edit every section: headline, tagline and text, and add, remove or reorder cards, milestones, team members and impact figures, with icon names and photo links. Links, icons and lengths are checked, and every save is logged.
+- The page ships with **sample content** (including a sample founder story and photo) for previews. Replace it before launch.
+
+### Other
+- More shades of the brand colours in the shared design settings.
+- 57 automated tests (3 new for the About page).
+
 ## 0.7.0 — 2026-09-19
 
 ### Install as an app

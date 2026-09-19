@@ -6,6 +6,7 @@ import type {
 import type { ListingStatus, UserRole } from '../types'
 import type { AnnouncementSettings, ContentPage, HomepageSettings, PublicSite, SignInSettings, SiteSettings, UploadSettings } from '../content'
 import type { CommissionRates, Management } from '../pricing'
+import type { AboutPage, AboutStats } from '../about'
 import { request } from './http'
 
 const qs = (params: object) => {
@@ -32,6 +33,7 @@ export const api = {
   },
 
   site: () => request<PublicSite>('/site'),
+  about: () => request<{ page: AboutPage; stats: AboutStats }>('/about'),
   pages: () => request<{ pages: { slug: string; title: string }[] }>('/pages'),
   page: (slug: string) => request<{ page: ContentPage }>(`/pages/${encodeURIComponent(slug)}`),
 
@@ -126,6 +128,8 @@ export const adminApi = {
   testPayments: () => request<{ ok: boolean; mode: string }>('/admin/payments/test', { method: 'POST' }),
   demo: () => request<{ resetAllowed: boolean }>('/admin/demo'),
   resetDemo: () => request<void>('/admin/demo/reset', { method: 'POST' }),
+  about: () => request<{ page: AboutPage; stats: AboutStats }>('/admin/about'),
+  saveAbout: (page: AboutPage) => request<{ page: AboutPage }>('/admin/about', { method: 'PUT', json: page }),
   pages: () => request<{ pages: ContentPage[] }>('/admin/pages'),
   savePage: (page: ContentPage) => request<void>(`/admin/pages/${encodeURIComponent(page.slug)}`, { method: 'PUT', json: page }),
   deletePage: (slug: string) => request<void>(`/admin/pages/${encodeURIComponent(slug)}`, { method: 'DELETE' }),

@@ -75,6 +75,8 @@ adminRoutes.put('/admin/settings/:key', async (c) => {
   const key = c.req.param('key')
   return c.json({ [key]: await contentService.saveSetting(admin(c), key, await body(c)) })
 })
+adminRoutes.get('/admin/about', async (c) => c.json({ page: await contentRepo.about(), stats: await statsRepo.forAbout() }))
+adminRoutes.put('/admin/about', async (c) => c.json({ page: await contentService.saveAbout(admin(c), await body(c)) }))
 adminRoutes.get('/admin/pages', async (c) => c.json({ pages: await contentRepo.allPages() }))
 adminRoutes.put('/admin/pages/:slug', async (c) => (await contentService.savePage(admin(c), c.req.param('slug'), await body(c)), done()))
 adminRoutes.delete('/admin/pages/:slug', async (c) => (await contentService.deletePage(admin(c), c.req.param('slug')), done()))

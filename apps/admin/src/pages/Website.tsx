@@ -66,6 +66,13 @@ export function Website() {
         </SettingsForm>
       </div>
 
+      <div className="mb-8"><Panel title="About us page" action={<Link to="/website/about" className="bg-brand-600 hover:bg-brand-700 text-white text-xs font-bold py-2.5 px-4 rounded-xl"><i className="fa-solid fa-pen mr-1.5" aria-hidden="true"></i>Edit</Link>}>
+        <p className="text-sm text-slate-500">
+          Mission, vision, company story, journey, founder, team, goals, global and local impact, and why travellers choose Meridian, at{' '}
+          <a href={appLink('website', '/about')} target="_blank" rel="noreferrer" className="font-semibold underline">/about</a>.
+        </p>
+      </Panel></div>
+
       <Panel title="Pages" action={<Link to="/website/pages/new" className="bg-brand-600 hover:bg-brand-700 text-white text-xs font-bold py-2.5 px-4 rounded-xl"><i className="fa-solid fa-plus mr-1.5" aria-hidden="true"></i>New page</Link>}>
         <p className="text-sm text-slate-500 mb-4">Help, policies and other information pages. Footer links point to these addresses.</p>
         <ul className="divide-y divide-slate-100">

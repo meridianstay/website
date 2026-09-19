@@ -1,7 +1,7 @@
-import { defaultPages, defaultSiteSettings, type ContentPage, type SiteSettings } from '@meridian/shared'
+import { defaultPages, defaultSiteSettings, withAboutDefaults, type AboutPage, type ContentPage, type SiteSettings } from '@meridian/shared'
 import { C, all, col, nowISO } from '../store/db'
 
-// Collections: siteSettings/{key}, contentPages/{slug}
+// Collections: siteSettings/{key} (plus siteSettings/aboutPage for the About us page), contentPages/{slug}
 
 export const contentRepo = {
   /** Stored settings merged over the defaults, so new fields always have a value. */
@@ -13,6 +13,14 @@ export const contentRepo = {
   },
 
   saveSetting: (key: string, value: object, userId: number) => col(C.settings).doc(key).set({ value, updatedAt: nowISO(), updatedBy: userId }),
+
+  /** The About us page: saved content over the defaults. */
+  async about(): Promise<AboutPage> {
+    const snap = await col(C.settings).doc('aboutPage').get()
+    return withAboutDefaults(snap.exists ? (snap.data()!.value as AboutPage) : null)
+  },
+
+  saveAbout: (page: AboutPage, userId: number) => col(C.settings).doc('aboutPage').set({ value: page, updatedAt: nowISO(), updatedBy: userId }),
 
   async publishedPageTitles() {
     const pages = await all<ContentPage>(col(C.pages).where('published', '==', true))

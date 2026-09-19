@@ -1,4 +1,4 @@
-import type { AdminStats, HostStats } from '@meridian/shared'
+import type { AboutStats, AdminStats, HostStats } from '@meridian/shared'
 import { C, all, col } from '../store/db'
 import { keptMinor, withDefaults, type BookingDoc } from './bookings'
 import type { PropertyDoc } from './properties'
@@ -48,6 +48,22 @@ export const statsRepo = {
       commission: bookings.filter((b) => keptMinor(b) > 0).reduce((s, b) => s + b.commissionMinor, 0) / 100,
       new_messages: messages.filter((m) => m.status === 'new').length,
       reviews: reviews.filter((r) => !r.hiddenAt).length,
+    }
+  },
+
+  /** Live figures for the About us page. */
+  async forAbout(): Promise<AboutStats> {
+    const [live, bookings] = await Promise.all([
+      all<PropertyDoc>(col(C.properties).where('status', '==', 'Approved')),
+      all<BookingDoc>(col(C.bookings)).then((r) => r.map(withDefaults)),
+    ])
+    return {
+      liveStays: live.length,
+      hosts: new Set(live.map((p) => p.hostId)).size,
+      destinations: new Set(live.map((p) => `${p.city}|${p.region}`)).size,
+      states: new Set(live.map((p) => p.region)).size,
+      guestNights: bookings.filter((b) => keptMinor(b) > 0 || b.status === 'Confirmed').reduce((n, b) => n + b.nights, 0),
+      managedStays: live.filter((p) => p.management === 'managed').length,
     }
   },
 }

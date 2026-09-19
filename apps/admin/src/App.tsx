@@ -9,6 +9,7 @@ import { Reviews } from './pages/Reviews'
 import { Messages } from './pages/Messages'
 import { Website } from './pages/Website'
 import { PageEditor } from './pages/PageEditor'
+import { AboutEditor } from './pages/AboutEditor'
 import { Activity } from './pages/Activity'
 import { Database } from './pages/Database'
 import { DatabaseTable } from './pages/DatabaseTable'
@@ -46,6 +47,7 @@ export default function App() {
                 <Route path="reviews" element={<Reviews />} />
                 <Route path="messages" element={<Messages />} />
                 <Route path="website" element={<Website />} />
+                <Route path="website/about" element={<AboutEditor />} />
                 <Route path="website/pages/new" element={<PageEditor />} />
                 <Route path="website/pages/:slug" element={<PageEditor />} />
                 <Route path="activity" element={<Activity />} />

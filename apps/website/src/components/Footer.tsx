@@ -7,6 +7,7 @@ const columns: { heading: string; links: FooterLink[] }[] = [
   {
     heading: 'About Meridian',
     links: [
+      { label: 'About us', to: '/about' },
       { label: 'How it works', to: '/how-it-works' },
       { label: 'Newsroom & Press', to: '/newsroom' },
       { label: 'Investors', to: '/investors' },

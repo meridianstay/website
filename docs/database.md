@@ -38,7 +38,7 @@ Documents use short numeric ids (listing 7, user 12…) so links stay readable. 
 | `availabilityBlocks` | block id | Nights a host has closed: `propertyId`, `checkIn`, `checkOut`, `note` |
 | `wishlists` | `{userId}_{propertyId}` | Stays a guest has saved |
 | `amenities` | amenity name | `icon` (Font Awesome name) and display `order` |
-| `siteSettings` | `homepage`, `announcement`, `signIn`, `uploads`, `commission` | Settings edited in the control center |
+| `siteSettings` | `homepage`, `announcement`, `signIn`, `uploads`, `commission`, `aboutPage` | Settings edited in the control center. `aboutPage` holds the About us page content. |
 | `secrets` | `razorpay` | Razorpay Key ID, and the key secret and webhook secret **encrypted** with `SETTINGS_ENCRYPTION_KEY`. Not shown on the Database screen. |
 | `contentPages` | page address, e.g. `help` | Title, intro and sections of information pages; `published`, `draft` |
 | `contactMessages` | message id | Contact-form messages with status `new`, `read` or `closed` |

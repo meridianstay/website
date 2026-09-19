@@ -138,6 +138,7 @@ Booking modes: listings with `management: "managed"` book instantly (`Confirmed`
 | Method | Path | Access | Returns |
 | --- | --- | --- | --- |
 | GET | `/api/site` | Public | `{ homepage: {…}, announcement: { enabled, text, linkLabel, linkUrl }, signIn: { google, phone }, uploads: { maxMb }, commission: { managedPct, selfPct }, paymentsOnline }` |
+| GET | `/api/about` | Public | `{ page: { hero, sections: { company, mission, vision, journey, founder, team, goals, globalImpact, localImpact, whyUs } }, stats: { liveStays, hosts, destinations, states, guestNights, managedStays } }`. Each section is `{ title, tagline, body, items: [{ icon, title, meta, text, image }] }`; `{{name}}` in any text is a live figure from `stats`. |
 | GET | `/api/pages` | Public | `{ pages: [{ slug, title }] }`, published pages |
 | GET | `/api/pages/:slug` | Public | `{ page: { slug, title, intro, sections: [{ heading, body: [] }], draft } }` |
 | POST | `/api/contact` | Public | Body `{ name, email, topic, message }`. `201`. |
@@ -202,6 +203,8 @@ Every change here is recorded in the activity log.
 | --- | --- | --- | --- |
 | GET | `/api/admin/settings` | — | Same shape as `/api/site` |
 | PUT | `/api/admin/settings/:key` | Full settings for `homepage` or `announcement` | `{ [key]: savedValue }` |
+| GET | `/api/admin/about` | — | `{ page, stats }`, as `/api/about` |
+| PUT | `/api/admin/about` | The whole page | `{ page }` as saved. Keeps only the fields each section uses; checks lengths, `https://` photo links and icon names. |
 | GET | `/api/admin/pages` | — | `{ pages }`, including unpublished pages |
 | PUT | `/api/admin/pages/:slug` | `{ title, intro, sections, draft, published }` | `204`; creates or updates. Some addresses are reserved (e.g. `search`, `admin`). |
 | DELETE | `/api/admin/pages/:slug` | — | `204` |

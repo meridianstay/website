@@ -8,6 +8,7 @@ import { Checkout } from './pages/Checkout'
 import { BookingConfirmed } from './pages/BookingConfirmed'
 import { Auth } from './pages/Auth'
 import { Contact } from './pages/Contact'
+import { About } from './pages/About'
 import { InfoPage } from './pages/InfoPage'
 import { Sitemap } from './pages/Sitemap'
 import { NotFound } from './pages/NotFound'
@@ -24,6 +25,7 @@ export default function App() {
         <Route path="booking/:code" element={<RequireAuth><BookingConfirmed /></RequireAuth>} />
         <Route path="login" element={<Auth />} />
         <Route path="signup" element={<SignupRedirect />} />
+        <Route path="about" element={<About />} />
         <Route path="contact" element={<Contact />} />
         <Route path="sitemap" element={<Sitemap />} />
         {/* Information pages are managed in the admin control center */}

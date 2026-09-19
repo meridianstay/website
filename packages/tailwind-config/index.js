@@ -11,10 +11,17 @@ export default {
         brand: {
           50: '#f4fbf7',
           100: '#e1f5ec',
+          200: '#a7f3d0',
+          300: '#6ee7b7',
+          400: '#34d399',
           500: '#10b981', // Emerald green primary
           600: '#059669',
           700: '#047857',
+          800: '#065f46',
+          900: '#064e3b',
           yellow: {
+            50: '#fefce8',
+            300: '#fde047',
             400: '#facc15',
             500: '#eab308', // Warm solar yellow accent
             600: '#ca8a04',

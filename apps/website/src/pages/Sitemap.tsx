@@ -36,6 +36,7 @@ export function Sitemap() {
           <h2 className="font-bold text-slate-900 mb-3">Information</h2>
           <ul className={col}>
             {pages.map((p) => <li key={p.slug}><Link to={`/${p.slug}`} className={link}>{p.title}</Link></li>)}
+            <li><Link to="/about" className={link}>About us</Link></li>
             <li><Link to="/contact" className={link}>Contact us</Link></li>
           </ul>
         </section>
