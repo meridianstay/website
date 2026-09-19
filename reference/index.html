@@ -1,0 +1,1441 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Meridian Stay - Farmstays, Rooms, Resorts, Cottages & Villas</title>
+    <!-- Tailwind CSS CDN -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        brand: {
+                            50: '#f4fbf7',
+                            100: '#e1f5ec',
+                            500: '#10b981', // Emerald green primary
+                            600: '#059669',
+                            700: '#047857',
+                            yellow: {
+                                400: '#facc15',
+                                500: '#eab308', // Warm solar yellow accent
+                                600: '#ca8a04',
+                            }
+                        }
+                    },
+                    fontFamily: {
+                        sans: ['Inter', 'sans-serif']
+                    }
+                }
+            }
+        }
+    </script>
+    <!-- FontAwesome icons -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <!-- Google Fonts -->
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+    <style>
+        body { font-family: 'Inter', sans-serif; }
+        ::-webkit-scrollbar { width: 8px; height: 8px; }
+        ::-webkit-scrollbar-track { background: #f1f5f9; }
+        ::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 4px; }
+        ::-webkit-scrollbar-thumb:hover { background: #94a3b8; }
+        .hide-scrollbar::-webkit-scrollbar { display: none; }
+        .hide-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
+    </style>
+</head>
+<body class="bg-slate-50 text-slate-800 antialiased min-h-screen flex flex-col selection:bg-brand-500 selection:text-white" x-data="meridianApp()">
+
+    <header class="sticky top-0 z-50 bg-white/95 backdrop-blur-md border-b border-slate-200 transition-all">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-20 flex items-center justify-between">
+            <!-- Brand Logo -->
+            <div class="flex items-center space-x-3 cursor-pointer" @click="navigate('home')">
+                <div class="w-11 h-11 rounded-2xl bg-gradient-to-tr from-brand-600 to-brand-yellow-500 flex items-center justify-center text-white shadow-md shadow-brand-500/20">
+                    <i class="fa-solid fa-seedling text-xl"></i>
+                </div>
+                <div>
+                    <span class="text-xl font-extrabold tracking-tight bg-gradient-to-r from-brand-700 to-brand-600 bg-clip-text text-transparent">Meridian</span>
+                    <span class="text-xl font-bold text-brand-yellow-600 tracking-tight">Stay</span>
+                    <span class="block text-[10px] uppercase tracking-widest text-slate-400 font-semibold">Nature & Luxury</span>
+                </div>
+            </div>
+
+            <!-- Center Search Bar Trigger -->
+            <div class="hidden md:flex items-center bg-white border border-slate-200 rounded-full py-2 px-4 shadow-sm hover:shadow-md transition cursor-pointer space-x-4 divide-x divide-slate-200" @click="openDateModal()">
+                <div class="px-3 text-sm font-semibold text-slate-700" x-text="searchLocation || 'Anywhere'"></div>
+                <div class="px-3 text-sm font-semibold text-slate-700" x-text="formattedDateRange"></div>
+                <div class="pl-3 flex items-center space-x-3 text-slate-500">
+                    <span class="text-sm font-normal text-slate-400" x-text="guestCount + ' guests'"></span>
+                    <div class="w-8 h-8 rounded-full bg-brand-500 text-white flex items-center justify-center hover:bg-brand-600 transition">
+                        <i class="fa-solid fa-magnifying-glass text-xs"></i>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Right Actions & Panel Switches -->
+            <div class="flex items-center space-x-3">
+                <!-- List your property trigger (replaces owner panel header button) -->
+                <button @click="openHostModal()" class="hidden sm:flex items-center space-x-2 text-xs font-bold text-slate-700 hover:bg-slate-100 py-2.5 px-4 rounded-full transition border border-slate-200">
+                    <i class="fa-solid fa-house-chimney-medical text-brand-500"></i>
+                    <span>List your property</span>
+                </button>
+
+                <!-- Admin Panel Header Button (Strictly restricted to Admin role) -->
+                <template x-if="currentUser && currentUser.role === 'admin'">
+                    <button @click="navigate('admin-dashboard')" class="hidden lg:flex items-center space-x-2 text-xs font-bold text-slate-700 hover:bg-slate-100 py-2.5 px-4 rounded-full transition border border-slate-200">
+                        <i class="fa-solid fa-shield-halved text-brand-yellow-600"></i>
+                        <span>Admin Panel</span>
+                    </button>
+                </template>
+
+                <!-- User Profile Dropdown Menu -->
+                <div class="relative" x-data="{ open: false }">
+                    <button @click="open = !open" class="flex items-center space-x-3 border border-slate-200 bg-white hover:shadow-md py-1.5 px-3 rounded-full transition focus:outline-none">
+                        <i class="fa-solid fa-bars text-slate-600 text-sm"></i>
+                        <div class="w-8 h-8 rounded-full bg-brand-100 overflow-hidden flex items-center justify-center text-brand-700 font-bold text-xs border border-brand-yellow-400">
+                            <span x-text="currentUser ? currentUser.name.charAt(0) : 'U'"></span>
+                        </div>
+                    </button>
+
+                    <div x-show="open" @click.outside="open = false" x-transition class="absolute right-0 mt-3 w-64 bg-white rounded-2xl shadow-xl border border-slate-100 py-2 z-50 text-sm">
+                        <template x-if="currentUser">
+                            <div class="px-4 py-3 border-b border-slate-100">
+                                <p class="font-semibold text-slate-900" x-text="currentUser.name"></p>
+                                <p class="text-xs text-slate-500 truncate" x-text="currentUser.email"></p>
+                                <span class="inline-block mt-1 px-2 py-0.5 rounded text-[10px] font-bold uppercase" :class="currentUser.role === 'admin' ? 'bg-amber-100 text-amber-800' : (currentUser.role === 'owner' ? 'bg-brand-100 text-brand-800' : 'bg-slate-100 text-slate-700')" x-text="currentUser.role"></span>
+                            </div>
+                        </template>
+                        <template x-if="!currentUser">
+                            <div class="px-4 py-3 border-b border-slate-100">
+                                <p class="font-semibold text-slate-900">Welcome to Meridian</p>
+                                <p class="text-xs text-slate-500">Log in to unlock wishlist & bookings</p>
+                            </div>
+                        </template>
+
+                        <a href="#" @click.prevent="navigate('home'); open=false" class="block px-4 py-2.5 text-slate-700 hover:bg-slate-50 font-medium">Home</a>
+                        <a href="#" @click.prevent="navigate('explore'); open=false" class="block px-4 py-2.5 text-slate-700 hover:bg-slate-50 font-medium">Find Properties & Rooms</a>
+                        <a href="#" @click.prevent="openHostModal(); open=false" class="block px-4 py-2.5 text-brand-600 hover:bg-brand-50 font-semibold sm:hidden"><i class="fa-solid fa-house-chimney-medical mr-2"></i> List your property</a>
+                        
+                        <template x-if="currentUser">
+                            <div>
+                                <a href="#" @click.prevent="navigate('user-account'); open=false" class="block px-4 py-2.5 text-slate-700 hover:bg-slate-50 font-medium"><i class="fa-solid fa-user-gear mr-2 text-brand-500"></i> My Account & Wishlist</a>
+                                
+                                <template x-if="currentUser.role === 'owner' || currentUser.role === 'admin'">
+                                    <a href="#" @click.prevent="navigate('host-dashboard'); open=false" class="block px-4 py-2.5 text-slate-700 hover:bg-slate-50 font-medium text-brand-600"><i class="fa-solid fa-house-chimney mr-2"></i> Owner Dashboard</a>
+                                </template>
+
+                                <template x-if="currentUser.role === 'admin'">
+                                    <a href="#" @click.prevent="navigate('admin-dashboard'); open=false" class="block px-4 py-2.5 text-slate-700 hover:bg-slate-50 font-medium text-brand-yellow-600"><i class="fa-solid fa-gauge-high mr-2"></i> Admin Panel</a>
+                                </template>
+
+                                <div class="border-t border-slate-100 my-1"></div>
+                                <a href="#" @click.prevent="logoutUser(); open=false" class="block px-4 py-2.5 text-rose-600 hover:bg-rose-50 font-medium">Log out</a>
+                            </div>
+                        </template>
+                        <template x-if="!currentUser">
+                            <div>
+                                <div class="border-t border-slate-100 my-1"></div>
+                                <a href="#" @click.prevent="authModalOpen = true; authMode = 'login'; open=false" class="block px-4 py-2.5 text-brand-700 hover:bg-brand-50 font-bold">Log in / Sign up</a>
+                            </div>
+                        </template>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </header>
+
+    <div x-show="toast.visible" x-transition class="fixed bottom-6 right-6 z-50 bg-slate-900 text-white px-5 py-3 rounded-2xl shadow-2xl flex items-center space-x-3 border border-slate-700">
+        <div class="w-7 h-7 rounded-full bg-brand-500 flex items-center justify-center text-white">
+            <i class="fa-solid fa-check text-xs"></i>
+        </div>
+        <span class="text-sm font-medium" x-text="toast.message"></span>
+    </div>
+
+    <div x-show="showDateModal" class="fixed inset-0 z-50 bg-slate-950/70 backdrop-blur-sm flex items-center justify-center p-4" x-transition.opacity>
+        <div @click.outside="showDateModal = false" class="bg-white rounded-3xl max-w-lg w-full p-8 shadow-2xl border border-slate-100 space-y-6 relative">
+            <button @click="showDateModal = false" class="absolute top-4 right-4 text-slate-400 hover:text-slate-700"><i class="fa-solid fa-xmark text-lg"></i></button>
+            <div class="text-center">
+                <span class="bg-brand-yellow-500 text-slate-900 text-xs font-bold uppercase px-3 py-1 rounded-full">Select Stay Dates & Guests</span>
+                <h3 class="text-2xl font-bold text-slate-900 mt-2">Plan Your Trip</h3>
+            </div>
+            
+            <div class="space-y-4">
+                <div>
+                    <label class="block text-xs font-bold uppercase text-slate-500 mb-1">Destination / Location</label>
+                    <input type="text" x-model="searchLocation" placeholder="e.g. Coorg, Ooty, Wayanad, Lonavala" class="w-full bg-slate-50 border border-slate-200 rounded-2xl p-3 text-xs font-semibold focus:outline-none focus:border-brand-500">
+                </div>
+
+                <div class="grid grid-cols-2 gap-4">
+                    <div class="bg-slate-50 border border-slate-200 p-3 rounded-2xl">
+                        <label class="block text-[10px] font-bold uppercase text-slate-400 mb-1">Check-in Date</label>
+                        <input type="date" x-model="checkInDate" class="text-xs font-bold text-slate-800 bg-transparent focus:outline-none w-full">
+                    </div>
+                    <div class="bg-slate-50 border border-slate-200 p-3 rounded-2xl">
+                        <label class="block text-[10px] font-bold uppercase text-slate-400 mb-1">Check-out Date</label>
+                        <input type="date" x-model="checkOutDate" class="text-xs font-bold text-slate-800 bg-transparent focus:outline-none w-full">
+                    </div>
+                </div>
+
+                <div class="bg-slate-50 border border-slate-200 p-4 rounded-2xl flex items-center justify-between">
+                    <div>
+                        <span class="block text-xs font-bold uppercase text-slate-500">Guests</span>
+                        <span class="text-xs text-slate-400">Total travelers (affects pricing)</span>
+                    </div>
+                    <div class="flex items-center space-x-3">
+                        <button @click="guestCount = Math.max(1, guestCount - 1)" class="w-8 h-8 rounded-full bg-white border border-slate-200 flex items-center justify-center font-bold text-slate-700 hover:bg-slate-100">-</button>
+                        <span class="font-bold text-sm w-6 text-center" x-text="guestCount"></span>
+                        <button @click="guestCount++" class="w-8 h-8 rounded-full bg-white border border-slate-200 flex items-center justify-center font-bold text-slate-700 hover:bg-slate-100">+</button>
+                    </div>
+                </div>
+
+                <div class="bg-brand-50 border border-brand-100 p-4 rounded-2xl flex items-center justify-between text-xs font-semibold text-brand-800">
+                    <span class="flex items-center"><i class="fa-solid fa-moon mr-2 text-brand-600"></i> Calculated Stay Duration:</span>
+                    <span class="font-extrabold text-sm" x-text="calculatedNights + ' Nights'"></span>
+                </div>
+
+                <button @click="applySearchAndDates()" class="w-full bg-brand-600 hover:bg-brand-700 text-white font-bold py-4 rounded-2xl shadow-lg shadow-brand-500/20 text-xs transition">
+                    Apply & Explore Stays
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <div x-show="hostModalOpen" class="fixed inset-0 z-50 bg-slate-950/70 backdrop-blur-sm flex items-center justify-center p-4" x-transition.opacity>
+        <div @click.outside="hostModalOpen = false" class="bg-white rounded-3xl max-w-xl w-full p-8 relative shadow-2xl border border-slate-100 space-y-6 max-h-[90vh] overflow-y-auto">
+            <button @click="hostModalOpen = false" class="absolute top-4 right-4 text-slate-400 hover:text-slate-700"><i class="fa-solid fa-xmark text-lg"></i></button>
+            <div>
+                <span class="bg-brand-yellow-500 text-slate-900 text-xs font-bold uppercase px-3 py-1 rounded-full">Meridian Host Portal</span>
+                <h2 class="text-2xl font-extrabold text-slate-900 mt-2" x-text="editingPropertyId ? 'Edit Your Listing' : 'List Your Property or Room'"></h2>
+                <p class="text-xs text-slate-500 mt-1">Share your farmstay, room, resort, cottage, or villa with travelers worldwide.</p>
+            </div>
+            <div class="space-y-4">
+                <div>
+                    <label class="block text-xs font-bold uppercase text-slate-500 mb-1">Property / Room Title</label>
+                    <input type="text" x-model="hostForm.title" placeholder="e.g. Whispering Pines Woodland Cottage" class="w-full bg-slate-50 border border-slate-200 rounded-2xl p-3 text-xs focus:outline-none focus:border-brand-500">
+                </div>
+                <div class="grid grid-cols-2 gap-4">
+                    <div>
+                        <label class="block text-xs font-bold uppercase text-slate-500 mb-1">Category / Type</label>
+                        <select x-model="hostForm.type" class="w-full bg-slate-50 border border-slate-200 rounded-2xl p-3 text-xs focus:outline-none">
+                            <option value="Room">Room (Private / Suite)</option>
+                            <option value="Farmstay">Farmstay</option>
+                            <option value="Resort">Resort</option>
+                            <option value="Cottage">Cottage</option>
+                            <option value="Villa">Villa</option>
+                        </select>
+                    </div>
+                    <div>
+                        <label class="block text-xs font-bold uppercase text-slate-500 mb-1">Location</label>
+                        <input type="text" x-model="hostForm.location" placeholder="e.g. Coorg, Karnataka" class="w-full bg-slate-50 border border-slate-200 rounded-2xl p-3 text-xs focus:outline-none">
+                    </div>
+                </div>
+                <div class="grid grid-cols-3 gap-4">
+                    <div>
+                        <label class="block text-xs font-bold uppercase text-slate-500 mb-1">Price / Night ($)</label>
+                        <input type="number" x-model="hostForm.price" class="w-full bg-slate-50 border border-slate-200 rounded-2xl p-3 text-xs focus:outline-none">
+                    </div>
+                    <div>
+                        <label class="block text-xs font-bold uppercase text-slate-500 mb-1">Beds / Rooms</label>
+                        <input type="number" x-model="hostForm.beds" class="w-full bg-slate-50 border border-slate-200 rounded-2xl p-3 text-xs focus:outline-none">
+                    </div>
+                    <div>
+                        <label class="block text-xs font-bold uppercase text-slate-500 mb-1">Bathrooms</label>
+                        <input type="number" x-model="hostForm.baths" class="w-full bg-slate-50 border border-slate-200 rounded-2xl p-3 text-xs focus:outline-none">
+                    </div>
+                </div>
+                <div>
+                    <label class="block text-xs font-bold uppercase text-slate-500 mb-1">Photo Image URL</label>
+                    <input type="url" x-model="hostForm.image" placeholder="https://images.unsplash.com/..." class="w-full bg-slate-50 border border-slate-200 rounded-2xl p-3 text-xs focus:outline-none">
+                </div>
+                <div>
+                    <label class="block text-xs font-bold uppercase text-slate-500 mb-1">Description</label>
+                    <textarea x-model="hostForm.description" rows="3" placeholder="Describe the scenic views, hospitality, amenities..." class="w-full bg-slate-50 border border-slate-200 rounded-2xl p-3 text-xs focus:outline-none"></textarea>
+                </div>
+                <button @click="saveHostProperty()" class="w-full bg-brand-600 hover:bg-brand-700 text-white font-bold py-3.5 rounded-2xl text-xs shadow-lg shadow-brand-500/25 transition">
+                    Save & Submit Listing for Review
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <main class="flex-grow">
+
+        <!-- ================= 1. WELCOME LANDING PAGE ================= -->
+        <div x-show="currentView === 'home'" x-transition>
+            <!-- Hero Section -->
+            <section class="relative bg-slate-900 text-white overflow-hidden py-24 lg:py-32">
+                <div class="absolute inset-0 z-0 opacity-40">
+                    <img src="https://images.unsplash.com/photo-1512917774080-9991f1c4c750?auto=format&fit=crop&q=80&w=1920" alt="Luxury Villa" class="w-full h-full object-cover">
+                </div>
+                <div class="absolute inset-0 bg-gradient-to-t from-slate-950 via-slate-900/40 to-transparent z-0"></div>
+
+                <div class="relative z-10 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
+                    <span class="inline-flex items-center space-x-2 bg-brand-yellow-500/20 border border-brand-yellow-400/40 text-brand-yellow-400 px-4 py-1.5 rounded-full text-xs font-bold uppercase tracking-wider mb-6">
+                        <i class="fa-solid fa-crown mr-1.5"></i> Curated Eco-Stays, Private Rooms & Luxury Escapes
+                    </span>
+                    <h1 class="text-4xl sm:text-6xl lg:text-7xl font-extrabold tracking-tight max-w-4xl mx-auto leading-tight mb-6">
+                        Find your peaceful sanctuary in <span class="bg-gradient-to-r from-brand-yellow-400 to-brand-500 bg-clip-text text-transparent">Nature</span>
+                    </h1>
+                    <p class="text-lg sm:text-xl text-slate-300 max-w-2xl mx-auto mb-10 font-light">
+                        Discover handpicked farmstays, secluded rooms, cozy forest cottages, scenic resorts, and luxury pool villas for your next getaway.
+                    </p>
+
+                    <!-- Quick Search Trigger Bar -->
+                    <div @click="openDateModal()" class="max-w-4xl mx-auto bg-white p-4 sm:p-3 rounded-3xl shadow-2xl text-slate-800 grid grid-cols-1 sm:grid-cols-4 gap-3 items-center border border-slate-100 cursor-pointer hover:border-brand-500 transition">
+                        <div class="text-left px-4 py-2 rounded-2xl">
+                            <label class="block text-xs font-bold uppercase text-slate-500">Where</label>
+                            <span class="w-full font-semibold text-slate-800 text-sm block mt-0.5" x-text="searchLocation || 'Search destinations'"></span>
+                        </div>
+                        <div class="text-left px-4 py-2 rounded-2xl border-t sm:border-t-0 sm:border-l border-slate-100">
+                            <label class="block text-xs font-bold uppercase text-slate-500">Check in / out</label>
+                            <span class="text-sm font-semibold text-slate-800 block mt-0.5" x-text="formattedDateRange"></span>
+                        </div>
+                        <div class="text-left px-4 py-2 rounded-2xl border-t sm:border-t-0 sm:border-l border-slate-100">
+                            <label class="block text-xs font-bold uppercase text-slate-500">Who</label>
+                            <span class="text-sm font-semibold text-slate-800 block mt-0.5" x-text="guestCount + ' guests'"></span>
+                        </div>
+                        <div>
+                            <button class="w-full bg-gradient-to-r from-brand-600 to-brand-500 text-white font-bold py-4 px-6 rounded-2xl shadow-lg shadow-brand-500/30 flex items-center justify-center space-x-2">
+                                <i class="fa-solid fa-magnifying-glass"></i>
+                                <span>Search Stays</span>
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+            <!-- Categories Grid -->
+            <section class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
+                <div class="flex items-center justify-between mb-8">
+                    <h2 class="text-2xl font-bold text-slate-900 tracking-tight">Explore Property & Room Types</h2>
+                    <button @click="navigate('explore')" class="text-sm font-semibold text-brand-600 hover:text-brand-700 flex items-center space-x-1">
+                        <span>View all properties</span>
+                        <i class="fa-solid fa-arrow-right text-xs"></i>
+                    </button>
+                </div>
+
+                <div class="grid grid-cols-2 sm:grid-cols-5 gap-4">
+                    <div @click="selectedCategory = 'Farmstay'; navigate('explore')" class="group relative rounded-3xl overflow-hidden shadow-md cursor-pointer h-60 border border-slate-200 transition transform hover:-translate-y-1 hover:shadow-xl">
+                        <img src="https://images.unsplash.com/photo-1500382017468-9049fed747ef?auto=format&fit=crop&q=80&w=600" alt="Farmstay" class="w-full h-full object-cover group-hover:scale-105 transition duration-500">
+                        <div class="absolute inset-0 bg-gradient-to-t from-slate-950/80 via-slate-950/20 to-transparent"></div>
+                        <div class="absolute bottom-5 left-5 right-5 text-white">
+                            <span class="inline-block px-2.5 py-0.5 bg-brand-500 text-[10px] font-bold uppercase rounded-full mb-1">Organic Vibe</span>
+                            <h3 class="text-lg font-bold">Farmstays</h3>
+                            <p class="text-[11px] text-slate-300 font-light mt-0.5">Live close to nature & orchards</p>
+                        </div>
+                    </div>
+                    <div @click="selectedCategory = 'Room'; navigate('explore')" class="group relative rounded-3xl overflow-hidden shadow-md cursor-pointer h-60 border border-slate-200 transition transform hover:-translate-y-1 hover:shadow-xl">
+                        <img src="https://images.unsplash.com/photo-1590490360182-c33d57733427?auto=format&fit=crop&q=80&w=600" alt="Rooms" class="w-full h-full object-cover group-hover:scale-105 transition duration-500">
+                        <div class="absolute inset-0 bg-gradient-to-t from-slate-950/80 via-slate-950/20 to-transparent"></div>
+                        <div class="absolute bottom-5 left-5 right-5 text-white">
+                            <span class="inline-block px-2.5 py-0.5 bg-brand-yellow-500 text-slate-900 text-[10px] font-bold uppercase rounded-full mb-1">Comfort</span>
+                            <h3 class="text-lg font-bold">Private Rooms</h3>
+                            <p class="text-[11px] text-slate-300 font-light mt-0.5">Cozy suites & guest rooms</p>
+                        </div>
+                    </div>
+                    <div @click="selectedCategory = 'Resort'; navigate('explore')" class="group relative rounded-3xl overflow-hidden shadow-md cursor-pointer h-60 border border-slate-200 transition transform hover:-translate-y-1 hover:shadow-xl">
+                        <img src="https://images.unsplash.com/photo-1582719508461-905c673771fd?auto=format&fit=crop&q=80&w=600" alt="Resort" class="w-full h-full object-cover group-hover:scale-105 transition duration-500">
+                        <div class="absolute inset-0 bg-gradient-to-t from-slate-950/80 via-slate-950/20 to-transparent"></div>
+                        <div class="absolute bottom-5 left-5 right-5 text-white">
+                            <span class="inline-block px-2.5 py-0.5 bg-brand-yellow-500 text-slate-900 text-[10px] font-bold uppercase rounded-full mb-1">Luxury</span>
+                            <h3 class="text-lg font-bold">Resorts</h3>
+                            <p class="text-[11px] text-slate-300 font-light mt-0.5">World-class amenities & pools</p>
+                        </div>
+                    </div>
+                    <div @click="selectedCategory = 'Cottage'; navigate('explore')" class="group relative rounded-3xl overflow-hidden shadow-md cursor-pointer h-60 border border-slate-200 transition transform hover:-translate-y-1 hover:shadow-xl">
+                        <img src="https://images.unsplash.com/photo-1448375240586-882707db888b?auto=format&fit=crop&q=80&w=600" alt="Cottage" class="w-full h-full object-cover group-hover:scale-105 transition duration-500">
+                        <div class="absolute inset-0 bg-gradient-to-t from-slate-950/80 via-slate-950/20 to-transparent"></div>
+                        <div class="absolute bottom-5 left-5 right-5 text-white">
+                            <span class="inline-block px-2.5 py-0.5 bg-brand-500 text-[10px] font-bold uppercase rounded-full mb-1">Cozy</span>
+                            <h3 class="text-lg font-bold">Cottages</h3>
+                            <p class="text-[11px] text-slate-300 font-light mt-0.5">Woodland wooden homes</p>
+                        </div>
+                    </div>
+                    <div @click="selectedCategory = 'Villa'; navigate('explore')" class="group relative rounded-3xl overflow-hidden shadow-md cursor-pointer h-60 border border-slate-200 transition transform hover:-translate-y-1 hover:shadow-xl col-span-2 sm:col-span-1">
+                        <img src="https://images.unsplash.com/photo-1613490493576-7fde63acd811?auto=format&fit=crop&q=80&w=600" alt="Villa" class="w-full h-full object-cover group-hover:scale-105 transition duration-500">
+                        <div class="absolute inset-0 bg-gradient-to-t from-slate-950/80 via-slate-950/20 to-transparent"></div>
+                        <div class="absolute bottom-5 left-5 right-5 text-white">
+                            <span class="inline-block px-2.5 py-0.5 bg-brand-yellow-500 text-slate-900 text-[10px] font-bold uppercase rounded-full mb-1">Exclusive</span>
+                            <h3 class="text-lg font-bold">Villas</h3>
+                            <p class="text-[11px] text-slate-300 font-light mt-0.5">Private lawns & pools</p>
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+            <!-- Featured Properties Section -->
+            <section class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
+                <div class="flex items-center justify-between mb-8">
+                    <div>
+                        <h2 class="text-2xl font-bold text-slate-900 tracking-tight">Featured Meridian Stays & Rooms</h2>
+                        <p class="text-sm text-slate-500">Approved and most loved stays by travelers</p>
+                    </div>
+                    <button @click="navigate('explore')" class="bg-slate-100 hover:bg-slate-200 text-slate-800 text-sm font-bold py-2.5 px-5 rounded-full transition">
+                        Explore All
+                    </button>
+                </div>
+
+                <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-8">
+                    <template x-for="property in properties.filter(p => p.status === 'Approved').slice(0, 6)" :key="property.id">
+                        <div class="bg-white rounded-3xl overflow-hidden border border-slate-200 hover:shadow-xl transition duration-300 flex flex-col group cursor-pointer" @click="openPropertyDetails(property)">
+                            <div class="relative h-64 overflow-hidden">
+                                <img :src="property.image" :alt="property.title" class="w-full h-full object-cover group-hover:scale-105 transition duration-500" onerror="this.src='https://placehold.co/600x400/10b981/ffffff?text=Meridian+Stay'">
+                                <div class="absolute top-4 left-4 bg-white/90 backdrop-blur-md px-3 py-1 rounded-full text-xs font-bold text-slate-800 shadow-sm flex items-center space-x-1">
+                                    <span class="w-2 h-2 rounded-full bg-brand-500"></span>
+                                    <span x-text="property.type"></span>
+                                </div>
+                                <button @click.stop="toggleWishlist(property)" class="absolute top-4 right-4 w-9 h-9 rounded-full bg-white/80 backdrop-blur-md flex items-center justify-center text-slate-700 hover:bg-white shadow transition">
+                                    <i class="fa-solid fa-heart" :class="isWishlisted(property.id) ? 'text-rose-500' : 'text-slate-400'"></i>
+                                </button>
+                                <div class="absolute bottom-4 left-4 bg-slate-900/70 backdrop-blur-md text-white px-3 py-1 rounded-full text-xs font-semibold flex items-center space-x-1">
+                                    <i class="fa-solid fa-star text-brand-yellow-400 text-[11px]"></i>
+                                    <span x-text="property.rating"></span>
+                                    <span class="text-slate-300 font-normal" x-text="'(' + property.reviews.length + ')'"></span>
+                                </div>
+                            </div>
+                            <div class="p-6 flex flex-col flex-grow justify-between">
+                                <div>
+                                    <div class="flex items-center justify-between text-xs text-slate-500 font-medium mb-1">
+                                        <span x-text="property.location"></span>
+                                        <span class="text-brand-600 font-semibold" x-text="property.beds + ' Beds'"></span>
+                                    </div>
+                                    <h3 class="text-lg font-bold text-slate-900 group-hover:text-brand-600 transition" x-text="property.title"></h3>
+                                    <p class="text-xs text-slate-500 line-clamp-2 mt-1" x-text="property.description"></p>
+                                </div>
+                                <div class="mt-6 pt-4 border-t border-slate-100 flex items-center justify-between">
+                                    <div>
+                                        <span class="text-xl font-extrabold text-slate-900" x-text="'$' + property.price"></span>
+                                        <span class="text-xs text-slate-500"> / night</span>
+                                    </div>
+                                    <button @click.stop="openPropertyDetails(property)" class="bg-brand-50 hover:bg-brand-100 text-brand-700 text-xs font-bold py-2.5 px-4 rounded-xl transition">
+                                        View Details
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+                    </template>
+                </div>
+            </section>
+        </div>
+
+        <!-- ================= 2. FIND NEW PROPERTY VIEW ================= -->
+        <div x-show="currentView === 'explore'" x-transition>
+            <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+                <div class="bg-white rounded-3xl p-6 shadow-sm border border-slate-200 mb-8">
+                    <div class="flex flex-col lg:flex-row items-center justify-between gap-4">
+                        <div class="flex items-center space-x-3 overflow-x-auto w-full lg:w-auto pb-2 lg:pb-0 hide-scrollbar">
+                            <button @click="selectedCategory = 'All'" :class="selectedCategory === 'All' ? 'bg-slate-900 text-white shadow-md' : 'bg-slate-100 text-slate-700 hover:bg-slate-200'" class="px-5 py-2.5 rounded-full text-xs font-bold transition whitespace-nowrap">All Stays</button>
+                            <button @click="selectedCategory = 'Farmstay'" :class="selectedCategory === 'Farmstay' ? 'bg-brand-600 text-white shadow-md' : 'bg-slate-100 text-slate-700 hover:bg-slate-200'" class="px-5 py-2.5 rounded-full text-xs font-bold transition whitespace-nowrap"><i class="fa-solid fa-seedling mr-1.5"></i> Farmstays</button>
+                            <button @click="selectedCategory = 'Room'" :class="selectedCategory === 'Room' ? 'bg-brand-600 text-white shadow-md' : 'bg-slate-100 text-slate-700 hover:bg-slate-200'" class="px-5 py-2.5 rounded-full text-xs font-bold transition whitespace-nowrap"><i class="fa-solid fa-door-open mr-1.5"></i> Rooms</button>
+                            <button @click="selectedCategory = 'Resort'" :class="selectedCategory === 'Resort' ? 'bg-brand-600 text-white shadow-md' : 'bg-slate-100 text-slate-700 hover:bg-slate-200'" class="px-5 py-2.5 rounded-full text-xs font-bold transition whitespace-nowrap"><i class="fa-solid fa-umbrella-beach mr-1.5"></i> Resorts</button>
+                            <button @click="selectedCategory = 'Cottage'" :class="selectedCategory === 'Cottage' ? 'bg-brand-600 text-white shadow-md' : 'bg-slate-100 text-slate-700 hover:bg-slate-200'" class="px-5 py-2.5 rounded-full text-xs font-bold transition whitespace-nowrap"><i class="fa-solid fa-house-chimney mr-1.5"></i> Cottages</button>
+                            <button @click="selectedCategory = 'Villa'" :class="selectedCategory === 'Villa' ? 'bg-brand-600 text-white shadow-md' : 'bg-slate-100 text-slate-700 hover:bg-slate-200'" class="px-5 py-2.5 rounded-full text-xs font-bold transition whitespace-nowrap"><i class="fa-solid fa-hotel mr-1.5"></i> Villas</button>
+                        </div>
+                        <div class="flex items-center space-x-3 w-full lg:w-auto justify-end">
+                            <button @click="openDateModal()" class="bg-brand-50 hover:bg-brand-100 text-brand-700 text-xs font-bold py-2.5 px-4 rounded-2xl transition border border-brand-200 flex items-center space-x-2">
+                                <i class="fa-solid fa-calendar-days text-brand-600"></i>
+                                <span x-text="formattedDateRange"></span>
+                            </button>
+                            <button @click="viewMode = viewMode === 'grid' ? 'map' : 'grid'" class="bg-slate-100 hover:bg-slate-200 text-slate-800 text-xs font-bold py-2.5 px-4 rounded-2xl transition flex items-center space-x-2">
+                                <i :class="viewMode === 'grid' ? 'fa-solid fa-map' : 'fa-solid fa-grip'"></i>
+                                <span x-text="viewMode === 'grid' ? 'Show Map' : 'Show Grid'"></span>
+                            </button>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Grid View -->
+                <div x-show="viewMode === 'grid'">
+                    <div class="flex items-center justify-between mb-6">
+                        <p class="text-sm font-semibold text-slate-600"><span x-text="filteredProperties.length"></span> approved listings found for <span class="font-bold text-slate-900" x-text="calculatedNights + ' nights'"></span></p>
+                    </div>
+
+                    <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-8">
+                        <template x-for="property in filteredProperties" :key="property.id">
+                            <div class="bg-white rounded-3xl overflow-hidden border border-slate-200 hover:shadow-xl transition duration-300 flex flex-col group cursor-pointer" @click="openPropertyDetails(property)">
+                                <div class="relative h-64 overflow-hidden">
+                                    <img :src="property.image" :alt="property.title" class="w-full h-full object-cover group-hover:scale-105 transition duration-500" onerror="this.src='https://placehold.co/600x400/10b981/ffffff?text=Stay'">
+                                    <div class="absolute top-4 left-4 bg-white/90 backdrop-blur-md px-3 py-1 rounded-full text-xs font-bold text-slate-800 shadow-sm flex items-center space-x-1">
+                                        <span class="w-2 h-2 rounded-full bg-brand-500"></span>
+                                        <span x-text="property.type"></span>
+                                    </div>
+                                    <button @click.stop="toggleWishlist(property)" class="absolute top-4 right-4 w-9 h-9 rounded-full bg-white/80 backdrop-blur-md flex items-center justify-center text-slate-700 hover:bg-white shadow transition">
+                                        <i class="fa-solid fa-heart" :class="isWishlisted(property.id) ? 'text-rose-500' : 'text-slate-400'"></i>
+                                    </button>
+                                    <div class="absolute bottom-4 left-4 bg-slate-900/70 backdrop-blur-md text-white px-3 py-1 rounded-full text-xs font-semibold flex items-center space-x-1">
+                                        <i class="fa-solid fa-star text-brand-yellow-400 text-[11px]"></i>
+                                        <span x-text="property.rating"></span>
+                                        <span class="text-slate-300 font-normal" x-text="'(' + property.reviews.length + ')'"></span>
+                                    </div>
+                                </div>
+                                <div class="p-6 flex flex-col flex-grow justify-between">
+                                    <div>
+                                        <div class="flex items-center justify-between text-xs text-slate-500 font-medium mb-1">
+                                            <span x-text="property.location"></span>
+                                            <span class="text-brand-600 font-semibold" x-text="property.beds + ' Beds'"></span>
+                                        </div>
+                                        <h3 class="text-lg font-bold text-slate-900 group-hover:text-brand-600 transition" x-text="property.title"></h3>
+                                        <p class="text-xs text-slate-500 line-clamp-2 mt-1" x-text="property.description"></p>
+                                    </div>
+                                    <div class="mt-6 pt-4 border-t border-slate-100 flex items-center justify-between">
+                                        <div>
+                                            <span class="text-xl font-extrabold text-slate-900" x-text="'$' + property.price"></span>
+                                            <span class="text-xs text-slate-500"> / night</span>
+                                        </div>
+                                        <button @click.stop="openPropertyDetails(property)" class="bg-brand-600 hover:bg-brand-700 text-white text-xs font-bold py-2.5 px-4 rounded-xl shadow-md transition">
+                                            Book Now
+                                        </button>
+                                    </div>
+                                </div>
+                            </div>
+                        </template>
+                    </div>
+                </div>
+
+                <!-- Map View simulation -->
+                <div x-show="viewMode === 'map'" class="bg-white rounded-3xl border border-slate-200 overflow-hidden shadow-sm h-[600px] flex flex-col lg:flex-row relative">
+                    <div class="w-full lg:w-1/2 p-6 overflow-y-auto h-full space-y-4">
+                        <h3 class="text-lg font-bold text-slate-900">Map Locations</h3>
+                        <template x-for="property in filteredProperties" :key="property.id">
+                            <div @click="openPropertyDetails(property)" class="flex items-center space-x-4 p-3 rounded-2xl border border-slate-100 hover:border-brand-500 hover:bg-brand-50/50 transition cursor-pointer">
+                                <img :src="property.image" class="w-20 h-20 rounded-xl object-cover" onerror="this.src='https://placehold.co/100x100/10b981/ffffff?text=Stay'">
+                                <div class="flex-grow">
+                                    <span class="text-[10px] font-bold uppercase text-brand-600 bg-brand-100 px-2 py-0.5 rounded-full" x-text="property.type"></span>
+                                    <h4 class="font-bold text-slate-900 text-sm mt-1" x-text="property.title"></h4>
+                                    <p class="text-xs text-slate-500" x-text="property.location"></p>
+                                    <div class="flex items-center justify-between mt-2">
+                                        <span class="text-sm font-extrabold text-slate-900" x-text="'$' + property.price + ' / night'"></span>
+                                        <span class="text-xs font-bold text-brand-600">View &rarr;</span>
+                                    </div>
+                                </div>
+                            </div>
+                        </template>
+                    </div>
+                    <div class="w-full lg:w-1/2 bg-slate-100 relative flex items-center justify-center overflow-hidden">
+                        <div class="absolute inset-0 opacity-85">
+                            <img src="https://images.unsplash.com/photo-1524661135-423995f22d0b?auto=format&fit=crop&q=80&w=1200" alt="Map" class="w-full h-full object-cover">
+                        </div>
+                        <template x-for="(property, index) in filteredProperties" :key="'pin-' + property.id">
+                            <div @click="openPropertyDetails(property)" class="absolute cursor-pointer transform -translate-x-1/2 -translate-y-1/2 bg-slate-900 hover:bg-brand-600 text-white text-xs font-bold px-3 py-1.5 rounded-full shadow-2xl border-2 border-white transition flex items-center space-x-1" :style="'top: ' + (30 + (index * 15) % 50) + '%; left: ' + (25 + (index * 20) % 60) + '%;'">
+                                <i class="fa-solid fa-location-dot text-brand-yellow-400"></i>
+                                <span x-text="'$' + property.price"></span>
+                            </div>
+                        </template>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- ================= 3. PROPERTY DETAILS & DYNAMIC PRICE CALCULATOR MODAL ================= -->
+        <div x-show="activeProperty" class="fixed inset-0 z-50 overflow-y-auto bg-slate-950/70 backdrop-blur-sm flex items-center justify-center p-4 sm:p-6" x-transition.opacity>
+            <div @click.outside="activeProperty = null" class="bg-white rounded-3xl max-w-4xl w-full max-h-[90vh] overflow-y-auto shadow-2xl border border-slate-100 relative">
+                <button @click="activeProperty = null" class="absolute top-4 right-4 z-10 w-10 h-10 rounded-full bg-white/90 shadow-md hover:bg-slate-100 flex items-center justify-center text-slate-700 transition">
+                    <i class="fa-solid fa-xmark text-lg"></i>
+                </button>
+
+                <template x-if="activeProperty">
+                    <div class="p-6 sm:p-10 space-y-8">
+                        <div>
+                            <div class="flex items-center space-x-2 text-xs font-bold uppercase text-brand-600 bg-brand-50 px-3 py-1 rounded-full w-max mb-2">
+                                <span x-text="activeProperty.type"></span>
+                            </div>
+                            <h2 class="text-2xl sm:text-3xl font-extrabold text-slate-900" x-text="activeProperty.title"></h2>
+                            <div class="flex items-center space-x-4 text-xs font-semibold text-slate-600 mt-2">
+                                <span class="flex items-center"><i class="fa-solid fa-star text-brand-yellow-400 mr-1"></i> <span x-text="activeProperty.rating"></span> (<span x-text="activeProperty.reviews.length"></span> reviews)</span>
+                                <span>•</span>
+                                <span class="flex items-center"><i class="fa-solid fa-location-dot text-slate-400 mr-1"></i> <span x-text="activeProperty.location"></span></span>
+                            </div>
+                        </div>
+
+                        <!-- Gallery -->
+                        <div class="grid grid-cols-1 sm:grid-cols-3 gap-4 h-80 rounded-2xl overflow-hidden">
+                            <div class="sm:col-span-2 h-full">
+                                <img :src="activeProperty.image" class="w-full h-full object-cover" onerror="this.src='https://placehold.co/800x600/10b981/ffffff?text=Stay'">
+                            </div>
+                            <div class="hidden sm:flex flex-col space-y-4 h-full">
+                                <img src="https://images.unsplash.com/photo-1540555700478-4be289fbecef?auto=format&fit=crop&q=80&w=400" class="w-full h-1/2 object-cover rounded-xl">
+                                <img src="https://images.unsplash.com/photo-1512917774080-9991f1c4c750?auto=format&fit=crop&q=80&w=400" class="w-full h-1/2 object-cover rounded-xl">
+                            </div>
+                        </div>
+
+                        <!-- Body & Booking Box with Dynamic Pricing Calculation -->
+                        <div class="grid grid-cols-1 lg:grid-cols-3 gap-8">
+                            <div class="lg:col-span-2 space-y-6">
+                                <div class="border-b border-slate-100 pb-6">
+                                    <h3 class="text-lg font-bold text-slate-900 mb-2">Hosted by Certified Meridian Host</h3>
+                                    <p class="text-xs text-slate-500" x-text="activeProperty.beds + ' Bedrooms / Rooms • ' + activeProperty.baths + ' Bathrooms'"></p>
+                                </div>
+                                <div>
+                                    <h3 class="text-lg font-bold text-slate-900 mb-2">About this space</h3>
+                                    <p class="text-sm text-slate-600 leading-relaxed font-light" x-text="activeProperty.description"></p>
+                                </div>
+
+                                <!-- Review Section -->
+                                <div class="border-t border-slate-100 pt-6 space-y-4">
+                                    <h3 class="text-lg font-bold text-slate-900">Guest Reviews</h3>
+                                    <div class="space-y-3">
+                                        <template x-for="review in activeProperty.reviews" :key="review.id">
+                                            <div class="bg-slate-50 p-4 rounded-2xl border border-slate-100">
+                                                <div class="flex items-center justify-between mb-1">
+                                                    <span class="font-bold text-xs text-slate-900" x-text="review.author"></span>
+                                                    <div class="flex items-center text-brand-yellow-500 text-xs">
+                                                        <i class="fa-solid fa-star"></i>
+                                                        <span class="ml-1 font-bold text-slate-700" x-text="review.rating"></span>
+                                                    </div>
+                                                </div>
+                                                <p class="text-xs text-slate-600" x-text="review.comment"></p>
+                                            </div>
+                                        </template>
+                                    </div>
+
+                                    <!-- Add Review Form -->
+                                    <div class="pt-4" x-data="{ comment: '', rating: 5 }">
+                                        <h4 class="text-xs font-bold text-slate-700 uppercase mb-2">Leave a Review</h4>
+                                        <div class="flex items-center space-x-2 mb-2">
+                                            <select x-model="rating" class="bg-slate-50 border border-slate-200 rounded-xl px-2 py-1 text-xs">
+                                                <option value="5">5 Stars</option>
+                                                <option value="4">4 Stars</option>
+                                                <option value="3">3 Stars</option>
+                                            </select>
+                                        </div>
+                                        <textarea x-model="comment" rows="2" placeholder="Write your review here..." class="w-full bg-slate-50 border border-slate-200 rounded-2xl p-3 text-xs focus:outline-none mb-2"></textarea>
+                                        <button @click="addReview(activeProperty, comment, rating); comment=''" class="bg-slate-900 text-white text-xs font-bold py-2 px-4 rounded-xl">Submit Review</button>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <!-- Live Booking Card Calculator with Night & Guest Scaling -->
+                            <div class="bg-slate-50 border border-slate-200 rounded-3xl p-6 h-max shadow-sm space-y-4">
+                                <div class="flex items-baseline justify-between">
+                                    <div>
+                                        <span class="text-2xl font-extrabold text-slate-900" x-text="'$' + activeProperty.price"></span>
+                                        <span class="text-xs text-slate-500"> / night</span>
+                                    </div>
+                                    <div class="flex items-center space-x-1 text-xs font-semibold text-slate-700">
+                                        <i class="fa-solid fa-star text-brand-yellow-400"></i>
+                                        <span x-text="activeProperty.rating"></span>
+                                    </div>
+                                </div>
+
+                                <!-- Dynamic Date & Guest Pickers -->
+                                <div class="bg-white border border-slate-200 p-3 rounded-2xl space-y-3">
+                                    <div class="grid grid-cols-2 gap-2">
+                                        <div>
+                                            <label class="block text-[10px] font-bold uppercase text-slate-400">Check-in</label>
+                                            <input type="date" x-model="checkInDate" class="text-xs font-semibold text-slate-800 bg-transparent focus:outline-none w-full">
+                                        </div>
+                                        <div>
+                                            <label class="block text-[10px] font-bold uppercase text-slate-400">Check-out</label>
+                                            <input type="date" x-model="checkOutDate" class="text-xs font-semibold text-slate-800 bg-transparent focus:outline-none w-full">
+                                        </div>
+                                    </div>
+                                    <div class="border-t border-slate-100 pt-2 flex items-center justify-between text-xs text-slate-600">
+                                        <span>Guests</span>
+                                        <div class="flex items-center space-x-2">
+                                            <button @click="guestCount = Math.max(1, guestCount - 1)" class="w-6 h-6 rounded-full bg-slate-100 font-bold">-</button>
+                                            <span class="font-bold w-4 text-center" x-text="guestCount"></span>
+                                            <button @click="guestCount++" class="w-6 h-6 rounded-full bg-slate-100 font-bold">+</button>
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <!-- Accurate Price Breakdown calculation -->
+                                <div class="space-y-2 text-xs text-slate-600 border-b border-slate-200 pb-4">
+                                    <div class="flex justify-between">
+                                        <span x-text="'$' + activeProperty.price + ' x ' + calculatedNights + ' nights (' + guestCount + ' guests)'"></span>
+                                        <span x-text="'$' + calculateSubtotal(activeProperty)"></span>
+                                    </div>
+                                    <div class="flex justify-between">
+                                        <span>Cleaning & Service fee</span>
+                                        <span>$45</span>
+                                    </div>
+                                    <div class="flex justify-between font-extrabold text-sm text-slate-900 pt-3 border-t border-slate-200">
+                                        <span>Total</span>
+                                        <span x-text="'$' + calculateTotal(activeProperty)"></span>
+                                    </div>
+                                </div>
+
+                                <button @click="proceedToCheckout(activeProperty)" class="w-full bg-gradient-to-r from-brand-600 to-brand-500 hover:from-brand-700 hover:to-brand-600 text-white font-bold py-4 rounded-2xl shadow-lg shadow-brand-500/20 text-xs transition">
+                                    Reserve & Pay Now
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                </template>
+            </div>
+        </div>
+
+        <!-- ================= 4. USER AUTHENTICATION & ACCOUNT PANEL ================= -->
+        <div x-show="authModalOpen" class="fixed inset-0 z-50 bg-slate-950/70 backdrop-blur-sm flex items-center justify-center p-4" x-transition.opacity>
+            <div @click.outside="authModalOpen = false" class="bg-white rounded-3xl max-w-md w-full p-8 relative shadow-2xl border border-slate-100">
+                <button @click="authModalOpen = false" class="absolute top-4 right-4 text-slate-400 hover:text-slate-700"><i class="fa-solid fa-xmark text-lg"></i></button>
+                <div class="text-center mb-6">
+                    <div class="w-12 h-12 bg-brand-100 text-brand-600 rounded-2xl flex items-center justify-center mx-auto text-xl mb-2">
+                        <i class="fa-solid fa-user"></i>
+                    </div>
+                    <h2 class="text-2xl font-bold text-slate-900" x-text="authMode === 'login' ? 'Welcome Back' : 'Create Account'"></h2>
+                    <p class="text-xs text-slate-500">Access your wishlists, bookings & listings</p>
+                </div>
+                <div class="space-y-4">
+                    <template x-if="authMode === 'signup'">
+                        <div class="space-y-4">
+                            <div>
+                                <label class="block text-xs font-bold uppercase text-slate-500 mb-1">Full Name</label>
+                                <input type="text" x-model="authForm.name" placeholder="John Doe" class="w-full bg-slate-50 border border-slate-200 rounded-2xl p-3 text-xs focus:outline-none focus:border-brand-500">
+                            </div>
+                            <div>
+                                <label class="block text-xs font-bold uppercase text-slate-500 mb-1">Account Role</label>
+                                <select x-model="authForm.role" class="w-full bg-slate-50 border border-slate-200 rounded-2xl p-3 text-xs focus:outline-none">
+                                    <option value="guest">Traveler / Guest</option>
+                                    <option value="owner">Property Owner / Host</option>
+                                    <option value="admin">Platform Administrator</option>
+                                </select>
+                            </div>
+                        </div>
+                    </template>
+                    <div>
+                        <label class="block text-xs font-bold uppercase text-slate-500 mb-1">Email Address</label>
+                        <input type="email" x-model="authForm.email" placeholder="john@example.com" class="w-full bg-slate-50 border border-slate-200 rounded-2xl p-3 text-xs focus:outline-none focus:border-brand-500">
+                    </div>
+                    <div>
+                        <label class="block text-xs font-bold uppercase text-slate-500 mb-1">Password</label>
+                        <input type="password" x-model="authForm.password" placeholder="••••••••" class="w-full bg-slate-50 border border-slate-200 rounded-2xl p-3 text-xs focus:outline-none focus:border-brand-500">
+                    </div>
+                    <button @click="handleAuth()" class="w-full bg-brand-600 hover:bg-brand-700 text-white font-bold py-3.5 rounded-2xl text-xs shadow-lg shadow-brand-500/20 transition" x-text="authMode === 'login' ? 'Log In' : 'Sign Up'"></button>
+                    <div class="text-center pt-2">
+                        <button @click="authMode = authMode === 'login' ? 'signup' : 'login'" class="text-xs text-brand-600 font-bold hover:underline" x-text="authMode === 'login' ? 'Need an account? Sign up' : 'Already have an account? Log in'"></button>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- User Account Panel -->
+        <div x-show="currentView === 'user-account'" x-transition>
+            <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
+                <div class="bg-white rounded-3xl p-8 shadow-sm border border-slate-200 mb-8 flex items-center justify-between">
+                    <div class="flex items-center space-x-4">
+                        <div class="w-16 h-16 rounded-2xl bg-brand-600 text-white text-2xl font-bold flex items-center justify-center">
+                            <span x-text="currentUser ? currentUser.name.charAt(0) : 'U'"></span>
+                        </div>
+                        <div>
+                            <h1 class="text-2xl font-extrabold text-slate-900" x-text="currentUser ? currentUser.name : 'Guest User'"></h1>
+                            <p class="text-xs text-slate-500" x-text="currentUser ? currentUser.email : 'guest@meridian.com'"></p>
+                            <span class="inline-block mt-2 px-2.5 py-0.5 rounded-full text-[10px] font-bold uppercase bg-brand-100 text-brand-800" x-text="'Role: ' + (currentUser ? currentUser.role : 'guest')"></span>
+                        </div>
+                    </div>
+                    <button @click="logoutUser(); navigate('home')" class="bg-rose-50 hover:bg-rose-100 text-rose-700 text-xs font-bold py-2.5 px-5 rounded-xl transition">Log out</button>
+                </div>
+
+                <div class="grid grid-cols-1 lg:grid-cols-2 gap-8">
+                    <!-- Wishlist -->
+                    <div class="bg-white rounded-3xl p-8 shadow-sm border border-slate-200 space-y-6">
+                        <h2 class="text-xl font-bold text-slate-900 flex items-center"><i class="fa-solid fa-heart text-rose-500 mr-2"></i> My Wishlisted Stays</h2>
+                        <template x-if="wishlist.length === 0">
+                            <p class="text-xs text-slate-400 italic">No properties wishlisted yet.</p>
+                        </template>
+                        <div class="space-y-4">
+                            <template x-for="propId in wishlist" :key="propId">
+                                <div class="flex items-center justify-between p-4 rounded-2xl border border-slate-100 bg-slate-50" x-data="{ prop: properties.find(p => p.id === propId) }">
+                                    <template x-if="prop">
+                                        <div class="flex items-center space-x-4 cursor-pointer" @click="openPropertyDetails(prop)">
+                                            <img :src="prop.image" class="w-16 h-16 rounded-xl object-cover">
+                                            <div>
+                                                <h4 class="font-bold text-sm text-slate-900" x-text="prop.title"></h4>
+                                                <p class="text-xs text-slate-500" x-text="prop.location + ' • $' + prop.price + '/night'"></p>
+                                            </div>
+                                        </div>
+                                    </template>
+                                    <button @click="toggleWishlist({id: propId})" class="text-rose-500 hover:text-rose-700 text-xs font-bold p-2"><i class="fa-solid fa-trash"></i></button>
+                                </div>
+                            </template>
+                        </div>
+                    </div>
+
+                    <!-- Bookings -->
+                    <div class="bg-white rounded-3xl p-8 shadow-sm border border-slate-200 space-y-6">
+                        <h2 class="text-xl font-bold text-slate-900 flex items-center"><i class="fa-solid fa-calendar-check text-brand-600 mr-2"></i> My Recent Bookings</h2>
+                        <template x-if="myBookings.length === 0">
+                            <p class="text-xs text-slate-400 italic">No bookings recorded yet.</p>
+                        </template>
+                        <div class="space-y-4">
+                            <template x-for="booking in myBookings" :key="booking.id">
+                                <div class="p-4 rounded-2xl border border-slate-100 bg-slate-50 space-y-2">
+                                    <div class="flex justify-between items-center">
+                                        <span class="font-bold text-sm text-slate-900" x-text="booking.propertyTitle"></span>
+                                        <span class="bg-brand-100 text-brand-700 text-[10px] font-bold px-2 py-0.5 rounded-full" x-text="booking.status"></span>
+                                    </div>
+                                    <p class="text-xs text-slate-500" x-text="'Dates: ' + booking.dates + ' • Guests: ' + booking.guests + ' • Total: $' + booking.total"></p>
+                                </div>
+                            </template>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- ================= 5. OWNER / HOST PANEL ================= -->
+        <div x-show="currentView === 'host-dashboard'" x-transition>
+            <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12 space-y-8">
+                <div class="bg-gradient-to-r from-brand-700 to-brand-600 text-white rounded-3xl p-8 shadow-xl flex flex-col sm:flex-row items-center justify-between">
+                    <div>
+                        <span class="bg-brand-yellow-500 text-slate-900 text-xs font-extrabold uppercase px-3 py-1 rounded-full mb-3 inline-block">Owner / Host Dashboard</span>
+                        <h1 class="text-3xl font-extrabold">Manage Your Rooms & Properties</h1>
+                        <p class="text-brand-50 text-xs mt-1 font-light">List new rooms, farmstays, resorts, cottages or villas and track performance.</p>
+                    </div>
+                    <button @click="openHostModal()" class="mt-4 sm:mt-0 bg-brand-yellow-500 hover:bg-brand-yellow-400 text-slate-900 font-bold py-3.5 px-6 rounded-2xl text-xs shadow-lg transition">
+                        <i class="fa-solid fa-plus mr-1"></i> List New Property / Room
+                    </button>
+                </div>
+
+                <div class="grid grid-cols-1 sm:grid-cols-3 gap-6">
+                    <div class="bg-white p-6 rounded-3xl border border-slate-200 shadow-sm">
+                        <p class="text-xs uppercase font-bold text-slate-400">Total Earnings</p>
+                        <h3 class="text-2xl font-extrabold text-slate-900 mt-2">$4,850</h3>
+                        <span class="text-xs text-brand-600 font-semibold">+14% this month</span>
+                    </div>
+                    <div class="bg-white p-6 rounded-3xl border border-slate-200 shadow-sm">
+                        <p class="text-xs uppercase font-bold text-slate-400">Active Listings</p>
+                        <h3 class="text-2xl font-extrabold text-slate-900 mt-2" x-text="properties.length"></h3>
+                        <span class="text-xs text-brand-600 font-semibold">All synced</span>
+                    </div>
+                    <div class="bg-white p-6 rounded-3xl border border-slate-200 shadow-sm">
+                        <p class="text-xs uppercase font-bold text-slate-400">Total Guest Reviews</p>
+                        <h3 class="text-2xl font-extrabold text-slate-900 mt-2">4.92 ★</h3>
+                        <span class="text-xs text-brand-600 font-semibold">Superhost status</span>
+                    </div>
+                </div>
+
+                <div class="bg-white rounded-3xl p-8 border border-slate-200 shadow-sm space-y-6">
+                    <h2 class="text-xl font-bold text-slate-900">Your Listed Properties & Rooms</h2>
+                    <div class="overflow-x-auto">
+                        <table class="w-full text-left text-xs text-slate-600">
+                            <thead class="bg-slate-50 uppercase font-bold text-slate-400 border-b border-slate-200">
+                                <tr>
+                                    <th class="p-3">Title</th>
+                                    <th class="p-3">Category</th>
+                                    <th class="p-3">Location</th>
+                                    <th class="p-3">Price / Night</th>
+                                    <th class="p-3">Status</th>
+                                    <th class="p-3 text-right">Actions</th>
+                                </tr>
+                            </thead>
+                            <tbody class="divide-y divide-slate-100">
+                                <template x-for="prop in properties" :key="prop.id">
+                                    <tr>
+                                        <td class="p-3 flex items-center space-x-3">
+                                            <img :src="prop.image" class="w-12 h-12 rounded-xl object-cover">
+                                            <span class="font-bold text-slate-900" x-text="prop.title"></span>
+                                        </td>
+                                        <td class="p-3 font-semibold" x-text="prop.type"></td>
+                                        <td class="p-3" x-text="prop.location"></td>
+                                        <td class="p-3 font-bold text-slate-900" x-text="'$' + prop.price"></td>
+                                        <td class="p-3">
+                                            <span class="px-2.5 py-1 rounded-full text-[10px] font-bold" :class="prop.status === 'Approved' ? 'bg-brand-100 text-brand-700' : 'bg-amber-100 text-amber-700'" x-text="prop.status"></span>
+                                        </td>
+                                        <td class="p-3 text-right space-x-2">
+                                            <button @click="editProperty(prop)" class="text-brand-600 hover:underline font-bold">Edit</button>
+                                            <button @click="deleteProperty(prop.id)" class="text-rose-600 hover:underline font-bold">Delete</button>
+                                        </td>
+                                    </tr>
+                                </template>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- ================= 6. ADMIN PANEL (STRICTLY RESTRICTED TO ADMIN ROLE) ================= -->
+        <div x-show="currentView === 'admin-dashboard'" x-transition>
+            <template x-if="currentUser && currentUser.role === 'admin'">
+                <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12 space-y-8">
+                    <div class="bg-gradient-to-r from-slate-900 to-slate-800 text-white rounded-3xl p-8 shadow-xl flex flex-col sm:flex-row items-center justify-between">
+                        <div>
+                            <span class="bg-brand-yellow-500 text-slate-900 text-xs font-extrabold uppercase px-3 py-1 rounded-full mb-3 inline-block">Platform Administrator Panel</span>
+                            <h1 class="text-3xl font-extrabold">Meridian Stay Control Center</h1>
+                            <p class="text-slate-400 text-xs mt-1 font-light">Approve rooms and property listings, monitor users, and inspect analytics.</p>
+                        </div>
+                    </div>
+
+                    <div class="grid grid-cols-1 sm:grid-cols-4 gap-6">
+                        <div class="bg-white p-6 rounded-3xl border border-slate-200 shadow-sm">
+                            <p class="text-xs uppercase font-bold text-slate-400">Total Listings</p>
+                            <h3 class="text-2xl font-extrabold text-slate-900 mt-2" x-text="properties.length"></h3>
+                        </div>
+                        <div class="bg-white p-6 rounded-3xl border border-slate-200 shadow-sm">
+                            <p class="text-xs uppercase font-bold text-slate-400">Pending Approvals</p>
+                            <h3 class="text-2xl font-extrabold text-amber-600 mt-2" x-text="properties.filter(p => p.status === 'Pending').length"></h3>
+                        </div>
+                        <div class="bg-white p-6 rounded-3xl border border-slate-200 shadow-sm">
+                            <p class="text-xs uppercase font-bold text-slate-400">Registered Users</p>
+                            <h3 class="text-2xl font-extrabold text-slate-900 mt-2">1,248</h3>
+                        </div>
+                        <div class="bg-white p-6 rounded-3xl border border-slate-200 shadow-sm">
+                            <p class="text-xs uppercase font-bold text-slate-400">Platform GMV</p>
+                            <h3 class="text-2xl font-extrabold text-brand-600 mt-2">$84,390</h3>
+                        </div>
+                    </div>
+
+                    <div class="bg-white rounded-3xl p-8 border border-slate-200 shadow-sm space-y-6">
+                        <h2 class="text-xl font-bold text-slate-900">Listings & Rooms Moderation</h2>
+                        <div class="overflow-x-auto">
+                            <table class="w-full text-left text-xs text-slate-600">
+                                <thead class="bg-slate-50 uppercase font-bold text-slate-400 border-b border-slate-200">
+                                    <tr>
+                                        <th class="p-3">Title</th>
+                                        <th class="p-3">Category</th>
+                                        <th class="p-3">Location</th>
+                                        <th class="p-3">Price</th>
+                                        <th class="p-3">Status</th>
+                                        <th class="p-3 text-right">Admin Actions</th>
+                                    </tr>
+                                </thead>
+                                <tbody class="divide-y divide-slate-100">
+                                    <template x-for="prop in properties" :key="prop.id">
+                                        <tr>
+                                            <td class="p-3 flex items-center space-x-3">
+                                                <img :src="prop.image" class="w-12 h-12 rounded-xl object-cover">
+                                                <span class="font-bold text-slate-900" x-text="prop.title"></span>
+                                            </td>
+                                            <td class="p-3 font-semibold" x-text="prop.type"></td>
+                                            <td class="p-3" x-text="prop.location"></td>
+                                            <td class="p-3 font-bold text-slate-900" x-text="'$' + prop.price"></td>
+                                            <td class="p-3">
+                                                <span class="px-2.5 py-1 rounded-full text-[10px] font-bold" :class="prop.status === 'Approved' ? 'bg-brand-100 text-brand-700' : 'bg-amber-100 text-amber-700'" x-text="prop.status"></span>
+                                            </td>
+                                            <td class="p-3 text-right space-x-2">
+                                                <template x-if="prop.status === 'Pending'">
+                                                    <button @click="approveProperty(prop.id)" class="bg-brand-600 text-white px-3 py-1.5 rounded-xl font-bold">Approve</button>
+                                                </template>
+                                                <button @click="editProperty(prop)" class="text-slate-700 hover:underline font-bold">Edit</button>
+                                                <button @click="deleteProperty(prop.id)" class="text-rose-600 hover:underline font-bold">Delete</button>
+                                            </td>
+                                        </tr>
+                                    </template>
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+            </template>
+            <template x-if="!currentUser || currentUser.role !== 'admin'">
+                <div class="max-w-md mx-auto my-24 text-center bg-white p-8 rounded-3xl border border-slate-200 shadow-sm space-y-4">
+                    <div class="w-16 h-16 rounded-full bg-rose-100 text-rose-600 flex items-center justify-center mx-auto text-2xl">
+                        <i class="fa-solid fa-lock"></i>
+                    </div>
+                    <h2 class="text-2xl font-extrabold text-slate-900">Access Restricted</h2>
+                    <p class="text-xs text-slate-500">The Admin Panel is strictly restricted to platform administrators. Property owners and guests do not have permission to view this panel.</p>
+                    <button @click="navigate('home')" class="bg-slate-900 text-white text-xs font-bold py-3 px-6 rounded-2xl">Return to Home</button>
+                </div>
+            </template>
+        </div>
+
+        <!-- ================= 7. CHECKOUT PAGE WITH DYNAMIC TOTALS & PAYMENT ================= -->
+        <div x-show="currentView === 'checkout'" x-transition>
+            <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
+                <button @click="navigate('explore')" class="text-xs font-bold text-slate-600 hover:text-slate-900 mb-6 flex items-center space-x-2">
+                    <i class="fa-solid fa-arrow-left"></i>
+                    <span>Back to Explore</span>
+                </button>
+
+                <h1 class="text-3xl font-extrabold text-slate-900 mb-8">Confirm and pay</h1>
+
+                <div class="grid grid-cols-1 lg:grid-cols-3 gap-12">
+                    <div class="lg:col-span-2 space-y-8">
+                        <div class="bg-white rounded-3xl p-6 border border-slate-200 shadow-sm space-y-4">
+                            <h3 class="text-lg font-bold text-slate-900">Your trip details</h3>
+                            <div class="grid grid-cols-3 gap-4 bg-slate-50 p-4 rounded-2xl border border-slate-100">
+                                <div>
+                                    <span class="block text-[10px] uppercase font-bold text-slate-400">Check-in / Out</span>
+                                    <span class="text-xs font-bold text-slate-900" x-text="checkInDate + ' to ' + checkOutDate"></span>
+                                </div>
+                                <div>
+                                    <span class="block text-[10px] uppercase font-bold text-slate-400">Duration</span>
+                                    <span class="text-xs font-bold text-brand-600" x-text="calculatedNights + ' Nights'"></span>
+                                </div>
+                                <div>
+                                    <span class="block text-[10px] uppercase font-bold text-slate-400">Guests</span>
+                                    <span class="text-xs font-bold text-slate-900" x-text="guestCount + ' Guests'"></span>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="bg-white rounded-3xl p-6 border border-slate-200 shadow-sm space-y-6">
+                            <h3 class="text-lg font-bold text-slate-900">Choose Payment Method</h3>
+                            <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                                <label class="border-2 rounded-2xl p-4 flex items-center space-x-3 cursor-pointer" :class="paymentMethod === 'card' ? 'border-brand-500 bg-brand-50/50' : 'border-slate-200'">
+                                    <input type="radio" name="pay" value="card" x-model="paymentMethod" class="accent-brand-500">
+                                    <span class="text-xs font-bold text-slate-900">Credit / Debit Card</span>
+                                </label>
+                                <label class="border-2 rounded-2xl p-4 flex items-center space-x-3 cursor-pointer" :class="paymentMethod === 'upi' ? 'border-brand-500 bg-brand-50/50' : 'border-slate-200'">
+                                    <input type="radio" name="pay" value="upi" x-model="paymentMethod" class="accent-brand-500">
+                                    <span class="text-xs font-bold text-slate-900">Instant UPI / NetBanking</span>
+                                </label>
+                            </div>
+                            <div x-show="paymentMethod === 'card'" class="space-y-4 pt-2">
+                                <input type="text" placeholder="Card Number (4532 •••• •••• 8932)" class="w-full bg-slate-50 border border-slate-200 rounded-2xl p-4 text-xs focus:outline-none">
+                                <div class="grid grid-cols-2 gap-4">
+                                    <input type="text" placeholder="MM/YY" class="w-full bg-slate-50 border border-slate-200 rounded-2xl p-4 text-xs focus:outline-none">
+                                    <input type="password" placeholder="CVV" class="w-full bg-slate-50 border border-slate-200 rounded-2xl p-4 text-xs focus:outline-none">
+                                </div>
+                            </div>
+                        </div>
+
+                        <button @click="completeBooking()" class="w-full bg-gradient-to-r from-brand-600 to-brand-500 hover:from-brand-700 hover:to-brand-600 text-white font-bold py-4 rounded-2xl shadow-xl shadow-brand-500/20 text-sm transition">
+                            Confirm & Complete Booking
+                        </button>
+                    </div>
+
+                    <!-- Right Price Breakdown Sidebar with Real Calculated Total -->
+                    <div class="bg-white rounded-3xl p-6 border border-slate-200 shadow-sm h-max space-y-6">
+                        <template x-if="checkoutProperty">
+                            <div>
+                                <div class="flex items-center space-x-4 pb-6 border-b border-slate-100">
+                                    <img :src="checkoutProperty.image" class="w-20 h-20 rounded-2xl object-cover">
+                                    <div>
+                                        <span class="text-[10px] font-bold uppercase text-brand-600" x-text="checkoutProperty.type"></span>
+                                        <h4 class="font-bold text-slate-900 text-sm mt-0.5" x-text="checkoutProperty.title"></h4>
+                                        <p class="text-xs text-slate-500 mt-1" x-text="checkoutProperty.location"></p>
+                                    </div>
+                                </div>
+                                <div class="py-6 border-b border-slate-100 space-y-3 text-xs text-slate-600">
+                                    <div class="flex justify-between">
+                                        <span x-text="'$' + checkoutProperty.price + ' x ' + calculatedNights + ' nights (' + guestCount + ' guests)'"></span>
+                                        <span x-text="'$' + calculateSubtotal(checkoutProperty)"></span>
+                                    </div>
+                                    <div class="flex justify-between">
+                                        <span>Cleaning & service fee</span>
+                                        <span>$45</span>
+                                    </div>
+                                </div>
+                                <div class="pt-6 flex justify-between font-extrabold text-base text-slate-900">
+                                    <span>Total (USD)</span>
+                                    <span x-text="'$' + calculateTotal(checkoutProperty)"></span>
+                                </div>
+                            </div>
+                        </template>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Booking Success Confirmation Modal -->
+        <div x-show="showConfirmationModal" class="fixed inset-0 z-50 bg-slate-950/70 backdrop-blur-sm flex items-center justify-center p-4" x-transition.opacity>
+            <div class="bg-white rounded-3xl max-w-md w-full p-8 text-center space-y-6 shadow-2xl border border-slate-100">
+                <div class="w-20 h-20 bg-brand-100 text-brand-600 rounded-full flex items-center justify-center mx-auto text-3xl shadow-inner">
+                    <i class="fa-solid fa-check"></i>
+                </div>
+                <div>
+                    <span class="bg-brand-yellow-500 text-slate-900 text-[10px] font-extrabold uppercase px-3 py-1 rounded-full">Booking Confirmed</span>
+                    <h2 class="text-2xl font-extrabold text-slate-900 mt-3">You're going to Nature!</h2>
+                    <p class="text-xs text-slate-500 mt-2" x-text="'Your stay is booked from ' + checkInDate + ' to ' + checkOutDate"></p>
+                </div>
+                <button @click="showConfirmationModal = false; navigate('home')" class="w-full bg-slate-900 hover:bg-slate-800 text-white font-bold py-3.5 rounded-2xl text-xs transition">
+                    Back to Home
+                </button>
+            </div>
+        </div>
+
+    </main>
+
+    <footer class="bg-white border-t border-slate-200 mt-auto py-12">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-8 text-xs text-slate-600">
+            <div>
+                <div class="flex items-center space-x-2 mb-4">
+                    <div class="w-8 h-8 rounded-xl bg-brand-600 flex items-center justify-center text-white font-bold">
+                        <i class="fa-solid fa-seedling"></i>
+                    </div>
+                    <span class="text-base font-extrabold text-slate-900">Meridian Stay</span>
+                </div>
+                <p class="text-slate-500 font-light">Your premium ecosystem for farmstays, private rooms, boutique resorts, woodland cottages, and luxury villas.</p>
+            </div>
+            <div>
+                <h4 class="font-bold text-slate-900 uppercase tracking-wider mb-4">About Meridian</h4>
+                <ul class="space-y-2.5 font-light">
+                    <li><a href="#" class="hover:text-brand-600 transition">How it works</a></li>
+                    <li><a href="#" class="hover:text-brand-600 transition">Eco-Sustainability</a></li>
+                </ul>
+            </div>
+            <div>
+                <h4 class="font-bold text-slate-900 uppercase tracking-wider mb-4">Hosting</h4>
+                <ul class="space-y-2.5 font-light">
+                    <li><a href="#" @click.prevent="openHostModal()" class="hover:text-brand-600 transition">List your property</a></li>
+                    <li><a href="#" @click.prevent="openHostDashboard()" class="hover:text-brand-600 transition">Owner Dashboard</a></li>
+                </ul>
+            </div>
+            <div>
+                <h4 class="font-bold text-slate-900 uppercase tracking-wider mb-4">Admin</h4>
+                <ul class="space-y-2.5 font-light">
+                    <li><a href="#" @click.prevent="openAdminDashboard()" class="hover:text-brand-600 transition">Admin Control Panel</a></li>
+                </ul>
+            </div>
+        </div>
+    </footer>
+
+    <script defer src="https://cdn.jsdelivr.net/npm/alpinejs@3.x.x/dist/cdn.min.js"></script>
+    <script>
+        function meridianApp() {
+            const today = new Date();
+            const d1 = new Date(today); d1.setDate(today.getDate() + 3);
+            const d2 = new Date(today); d2.setDate(today.getDate() + 8);
+            const formatDateStr = (d) => d.toISOString().split('T')[0];
+
+            // Load saved data from localStorage or fallback to defaults
+            const savedProperties = localStorage.getItem('meridian_properties');
+            const defaultProperties = [
+                {
+                    id: 1,
+                    title: 'Green Valley Organic Farmstay',
+                    type: 'Farmstay',
+                    location: 'Coorg, Karnataka',
+                    price: 145,
+                    rating: 4.92,
+                    beds: 3,
+                    baths: 2,
+                    status: 'Approved',
+                    image: 'https://images.unsplash.com/photo-1500382017468-9049fed747ef?auto=format&fit=crop&q=80&w=800',
+                    description: 'Wake up to the aroma of coffee blossoms and fresh organic breakfasts.',
+                    reviews: [
+                        { id: 1, author: 'Priya N.', rating: 5, comment: 'Absolute heaven! The organic food was incredible.' }
+                    ]
+                },
+                {
+                    id: 5,
+                    title: 'Sunrise Garden View Private Room',
+                    type: 'Room',
+                    location: 'Ooty, Tamil Nadu',
+                    price: 80,
+                    rating: 4.91,
+                    beds: 1,
+                    baths: 1,
+                    status: 'Approved',
+                    image: 'https://images.unsplash.com/photo-1590490360182-c33d57733427?auto=format&fit=crop&q=80&w=800',
+                    description: 'A cozy private room with ensuite bathroom and gorgeous hillside garden views.',
+                    reviews: [
+                        { id: 10, author: 'Siddharth K.', rating: 5, comment: 'Very clean, peaceful and great hospitality!' }
+                    ]
+                },
+                {
+                    id: 2,
+                    title: 'Golden Sunset Hillside Resort',
+                    type: 'Resort',
+                    location: 'Wayanad, Kerala',
+                    price: 240,
+                    rating: 4.88,
+                    beds: 4,
+                    baths: 4,
+                    status: 'Approved',
+                    image: 'https://images.unsplash.com/photo-1582719508461-905c673771fd?auto=format&fit=crop&q=80&w=800',
+                    description: 'A luxurious mountain resort with infinity pool overlooking misty green valleys.',
+                    reviews: [
+                        { id: 2, author: 'Rahul M.', rating: 5, comment: 'World-class infinity pool and views.' }
+                    ]
+                },
+                {
+                    id: 3,
+                    title: 'Whispering Pines Forest Cottage',
+                    type: 'Cottage',
+                    location: 'Manali, Himachal',
+                    price: 120,
+                    rating: 4.95,
+                    beds: 2,
+                    baths: 1,
+                    status: 'Approved',
+                    image: 'https://images.unsplash.com/photo-1448375240586-882707db888b?auto=format&fit=crop&q=80&w=800',
+                    description: 'A rustic wooden cabin nestled inside pine forests with fireplace.',
+                    reviews: []
+                },
+                {
+                    id: 4,
+                    title: 'Emerald Luxury Pool Villa',
+                    type: 'Villa',
+                    location: 'Lonavala, Maharashtra',
+                    price: 320,
+                    rating: 4.97,
+                    beds: 5,
+                    baths: 5,
+                    status: 'Pending',
+                    image: 'https://images.unsplash.com/photo-1613490493576-7fde63acd811?auto=format&fit=crop&q=80&w=800',
+                    description: 'An architectural masterpiece featuring private plunge pool and manicured lawns.',
+                    reviews: []
+                }
+            ];
+
+            const savedUser = localStorage.getItem('meridian_user');
+            const defaultUser = { name: 'Aarav Sharma', email: 'aarav@meridian.com', role: 'admin' };
+
+            const savedWishlist = localStorage.getItem('meridian_wishlist');
+            const defaultWishlist = [1, 5];
+
+            const savedBookings = localStorage.getItem('meridian_bookings');
+            const defaultBookings = [
+                { id: 101, propertyTitle: 'Green Valley Organic Farmstay', dates: 'Oct 1 - Oct 6', guests: 2, total: 770, status: 'Confirmed' }
+            ];
+
+            return {
+                currentView: 'home',
+                viewMode: 'grid',
+                selectedCategory: 'All',
+                searchLocation: '',
+                checkInDate: formatDateStr(d1),
+                checkOutDate: formatDateStr(d2),
+                guestCount: 2,
+                showDateModal: false,
+                activeProperty: null,
+                checkoutProperty: null,
+                paymentMethod: 'card',
+                showConfirmationModal: false,
+                toast: { visible: false, message: '' },
+
+                currentUser: savedUser ? JSON.parse(savedUser) : defaultUser,
+                authModalOpen: false,
+                authMode: 'login',
+                authForm: { name: '', email: '', password: '', role: 'guest' },
+
+                wishlist: savedWishlist ? JSON.parse(savedWishlist) : defaultWishlist,
+                myBookings: savedBookings ? JSON.parse(savedBookings) : defaultBookings,
+
+                hostModalOpen: false,
+                editingPropertyId: null,
+                hostForm: {
+                    title: '',
+                    type: 'Room',
+                    location: '',
+                    price: 85,
+                    beds: 1,
+                    baths: 1,
+                    image: 'https://images.unsplash.com/photo-1590490360182-c33d57733427?auto=format&fit=crop&q=80&w=800',
+                    description: ''
+                },
+
+                properties: savedProperties ? JSON.parse(savedProperties) : defaultProperties,
+
+                persistData() {
+                    localStorage.setItem('meridian_properties', JSON.stringify(this.properties));
+                    localStorage.setItem('meridian_user', JSON.stringify(this.currentUser));
+                    localStorage.setItem('meridian_wishlist', JSON.stringify(this.wishlist));
+                    localStorage.setItem('meridian_bookings', JSON.stringify(this.myBookings));
+                },
+
+                get calculatedNights() {
+                    if (!this.checkInDate || !this.checkOutDate) return 1;
+                    const d1 = new Date(this.checkInDate);
+                    const d2 = new Date(this.checkOutDate);
+                    const diffTime = d2 - d1;
+                    const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+                    return diffDays > 0 ? diffDays : 1;
+                },
+
+                calculateSubtotal(property) {
+                    const base = property.price * this.calculatedNights;
+                    // Add slight guest multiplier if more than 2 guests
+                    const guestMultiplier = this.guestCount > 2 ? 1 + ((this.guestCount - 2) * 0.15) : 1;
+                    return Math.round(base * guestMultiplier);
+                },
+
+                calculateTotal(property) {
+                    return this.calculateSubtotal(property) + 45;
+                },
+
+                get formattedDateRange() {
+                    try {
+                        const d1 = new Date(this.checkInDate);
+                        const d2 = new Date(this.checkOutDate);
+                        const opt = { month: 'short', day: 'numeric' };
+                        return `${d1.toLocaleDateString('en-US', opt)} - ${d2.toLocaleDateString('en-US', opt)}`;
+                    } catch(e) {
+                        return 'Select dates';
+                    }
+                },
+
+                get filteredProperties() {
+                    let result = this.properties.filter(p => p.status === 'Approved');
+                    if (this.selectedCategory !== 'All') {
+                        result = result.filter(p => p.type === this.selectedCategory);
+                    }
+                    if (this.searchLocation.trim() !== '') {
+                        const q = this.searchLocation.toLowerCase();
+                        result = result.filter(p => p.title.toLowerCase().includes(q) || p.location.toLowerCase().includes(q));
+                    }
+                    return result;
+                },
+
+                navigate(view) {
+                    this.currentView = view;
+                    window.scrollTo({ top: 0, behavior: 'smooth' });
+                },
+
+                openDateModal() {
+                    this.showDateModal = true;
+                },
+
+                applySearchAndDates() {
+                    this.showDateModal = false;
+                    this.navigate('explore');
+                    this.showToast(`Dates updated: ${this.calculatedNights} nights selected`);
+                },
+
+                openHostModal() {
+                    if(!this.currentUser) {
+                        this.authModalOpen = true;
+                        return;
+                    }
+                    this.editingPropertyId = null;
+                    this.hostForm = {
+                        title: '',
+                        type: 'Room',
+                        location: '',
+                        price: 85,
+                        beds: 1,
+                        baths: 1,
+                        image: 'https://images.unsplash.com/photo-1590490360182-c33d57733427?auto=format&fit=crop&q=80&w=800',
+                        description: ''
+                    };
+                    this.hostModalOpen = true;
+                },
+
+                openHostDashboard() {
+                    if(!this.currentUser) {
+                        this.authModalOpen = true;
+                        return;
+                    }
+                    this.navigate('host-dashboard');
+                },
+
+                openAdminDashboard() {
+                    if(!this.currentUser || this.currentUser.role !== 'admin') {
+                        this.showToast('Access Denied: Admin authorization required');
+                        return;
+                    }
+                    this.navigate('admin-dashboard');
+                },
+
+                isWishlisted(propId) {
+                    return this.wishlist.includes(propId);
+                },
+
+                toggleWishlist(property) {
+                    if(!this.currentUser) {
+                        this.authModalOpen = true;
+                        return;
+                    }
+                    const idx = this.wishlist.indexOf(property.id);
+                    if(idx > -1) {
+                        this.wishlist.splice(idx, 1);
+                        this.showToast('Removed from wishlist');
+                    } else {
+                        this.wishlist.push(property.id);
+                        this.showToast('Added to wishlist');
+                    }
+                    this.persistData();
+                },
+
+                openPropertyDetails(property) {
+                    this.activeProperty = property;
+                },
+
+                proceedToCheckout(property) {
+                    if(!this.currentUser) {
+                        this.authModalOpen = true;
+                        return;
+                    }
+                    this.checkoutProperty = property;
+                    this.activeProperty = null;
+                    this.navigate('checkout');
+                },
+
+                completeBooking() {
+                    const totalAmt = this.calculateTotal(this.checkoutProperty);
+                    this.myBookings.unshift({
+                        id: Date.now(),
+                        propertyTitle: this.checkoutProperty.title,
+                        dates: this.formattedDateRange,
+                        guests: this.guestCount,
+                        total: totalAmt,
+                        status: 'Confirmed'
+                    });
+                    this.persistData();
+                    this.showConfirmationModal = true;
+                },
+
+                addReview(property, comment, rating) {
+                    if(!comment) return;
+                    property.reviews.push({
+                        id: Date.now(),
+                        author: this.currentUser ? this.currentUser.name : 'Guest',
+                        rating: parseInt(rating),
+                        comment: comment
+                    });
+                    this.persistData();
+                    this.showToast('Review submitted successfully!');
+                },
+
+                saveHostProperty() {
+                    if(this.editingPropertyId) {
+                        const p = this.properties.find(item => item.id === this.editingPropertyId);
+                        if(p) Object.assign(p, this.hostForm);
+                        this.showToast('Listing updated successfully!');
+                    } else {
+                        this.properties.unshift({
+                            ...this.hostForm,
+                            id: Date.now(),
+                            rating: 5.0,
+                            status: this.currentUser && this.currentUser.role === 'admin' ? 'Approved' : 'Pending',
+                            reviews: []
+                        });
+                        this.showToast('New stay/room listed successfully!');
+                    }
+                    this.persistData();
+                    this.hostModalOpen = false;
+                    this.editingPropertyId = null;
+                },
+
+                editProperty(prop) {
+                    this.editingPropertyId = prop.id;
+                    this.hostForm = { ...prop };
+                    this.hostModalOpen = true;
+                },
+
+                deleteProperty(id) {
+                    this.properties = this.properties.filter(p => p.id !== id);
+                    this.persistData();
+                    this.showToast('Listing deleted');
+                },
+
+                approveProperty(id) {
+                    const p = this.properties.find(item => item.id === id);
+                    if(p) {
+                        p.status = 'Approved';
+                        this.persistData();
+                        this.showToast('Listing approved successfully!');
+                    }
+                },
+
+                handleAuth() {
+                    this.currentUser = {
+                        name: this.authForm.name || 'Aarav Sharma',
+                        email: this.authForm.email || 'aarav@meridian.com',
+                        role: this.authForm.role || 'guest'
+                    };
+                    this.persistData();
+                    this.authModalOpen = false;
+                    this.showToast('Logged in successfully as ' + this.currentUser.role);
+                },
+
+                logoutUser() {
+                    this.currentUser = null;
+                    localStorage.removeItem('meridian_user');
+                    this.showToast('Logged out');
+                },
+
+                showToast(message) {
+                    this.toast.message = message;
+                    this.toast.visible = true;
+                    setTimeout(() => { this.toast.visible = false; }, 3000);
+                }
+            }
+        }
+    </script>
+</body>
+</html>
