@@ -35,6 +35,9 @@ The platform now runs entirely on **Firebase**, as the client requested. Postgre
 ### Docs
 - Rewritten [database](docs/database.md), [deployment](docs/deployment.md) and [API](docs/api.md) guides and README for Firebase.
 
+### Fixes
+- The Vercel API function now reports configuration problems (missing, malformed or incomplete `FIREBASE_SERVICE_ACCOUNT`, unreachable Firebase) as a readable message instead of crashing. Errors never include any part of the key.
+
 ## 0.4.0 — 2026-09-19
 
 ### Control center
