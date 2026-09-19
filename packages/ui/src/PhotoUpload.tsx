@@ -1,8 +1,8 @@
-import { useRef, useState } from 'react'
+import { useId, useRef, useState } from 'react'
 import { api } from '@meridian/shared/client'
 
 interface Props {
-  purpose: 'listing' | 'avatar'
+  purpose: 'listing' | 'avatar' | 'content'
   /** Called with the uploaded photo's link. */
   onUploaded: (url: string) => void
   label?: string
@@ -13,6 +13,8 @@ interface Props {
 /** A button that uploads a photo to Firebase Storage through the API. */
 export function PhotoUpload({ purpose, onUploaded, label = 'Upload photo', maxMb = 4, className = '' }: Props) {
   const input = useRef<HTMLInputElement>(null)
+  // Unique per button, so several upload buttons on one page each open their own file picker.
+  const id = useId()
   const [busy, setBusy] = useState(false)
   const [error, setError] = useState<string | null>(null)
 
@@ -34,9 +36,9 @@ export function PhotoUpload({ purpose, onUploaded, label = 'Upload photo', maxMb
 
   return (
     <div className={className}>
-      <input ref={input} type="file" accept="image/jpeg,image/png,image/webp" className="sr-only" id={`upload-${purpose}-${label}`}
+      <input ref={input} type="file" accept="image/jpeg,image/png,image/webp" className="sr-only" id={id}
         onChange={(e) => pick(e.target.files?.[0])} disabled={busy} />
-      <label htmlFor={`upload-${purpose}-${label}`}
+      <label htmlFor={id}
         className={`inline-flex items-center gap-2 cursor-pointer text-xs font-bold py-2.5 px-4 rounded-xl border-2 border-dashed transition ${busy ? 'border-slate-200 text-slate-400' : 'border-brand-300 text-brand-700 hover:bg-brand-50'}`}>
         <i className={`fa-solid ${busy ? 'fa-spinner fa-spin' : 'fa-cloud-arrow-up'}`} aria-hidden="true"></i>
         {busy ? 'Uploading…' : label}

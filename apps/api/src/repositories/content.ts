@@ -1,4 +1,4 @@
-import { defaultPages, defaultSiteSettings, withAboutDefaults, type AboutPage, type ContentPage, type SiteSettings } from '@meridian/shared'
+import { defaultPages, defaultSiteSettings, withAboutDefaults, withHomeDefaults, type AboutPage, type ContentPage, type HomeLayout, type SiteSettings } from '@meridian/shared'
 import { C, all, col, nowISO } from '../store/db'
 
 // Collections: siteSettings/{key} (plus siteSettings/aboutPage for the About us page), contentPages/{slug}
@@ -13,6 +13,14 @@ export const contentRepo = {
   },
 
   saveSetting: (key: string, value: object, userId: number) => col(C.settings).doc(key).set({ value, updatedAt: nowISO(), updatedBy: userId }),
+
+  /** The homepage layout. Until it's first saved, it's built from the older homepage texts. */
+  async home(): Promise<HomeLayout> {
+    const [snap, settings] = await Promise.all([col(C.settings).doc('homeLayout').get(), this.settings()])
+    return withHomeDefaults(snap.exists ? (snap.data()!.value as HomeLayout) : null, settings.homepage)
+  },
+
+  saveHome: (layout: HomeLayout, userId: number) => col(C.settings).doc('homeLayout').set({ value: layout, updatedAt: nowISO(), updatedBy: userId }),
 
   /** The About us page: saved content over the defaults. */
   async about(): Promise<AboutPage> {

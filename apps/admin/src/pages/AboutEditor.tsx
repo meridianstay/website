@@ -1,6 +1,6 @@
 import { useEffect, useId, useState } from 'react'
 import { Link } from 'react-router'
-import { ErrorNote, PageHeader, Panel, Spinner } from '@meridian/ui'
+import { ErrorNote, ImageField, PageHeader, Panel, Spinner } from '@meridian/ui'
 import { ABOUT_TOKENS, aboutSchema, fillStats, type AboutItem, type AboutPage, type AboutSection, type AboutStats } from '@meridian/shared'
 import { ApiError, adminApi, appLink } from '@meridian/shared/client'
 
@@ -68,7 +68,7 @@ export function AboutEditor() {
             </div>
             <div className="mt-3 space-y-3">
               <Field label="Tagline" multiline value={page.hero.tagline} onChange={(v) => touch({ ...page, hero: { ...page.hero, tagline: v } })} error={fieldError('hero.tagline')} />
-              <Field label="Background photo link" value={page.hero.image} onChange={(v) => touch({ ...page, hero: { ...page.hero, image: v } })} error={fieldError('hero.image')} placeholder="https://…" />
+              <ImageField label="Background photo" value={page.hero.image} onChange={(v) => touch({ ...page, hero: { ...page.hero, image: v } })} error={fieldError('hero.image')} />
             </div>
           </Panel>
 
@@ -117,10 +117,14 @@ export function AboutEditor() {
                             </div>
                             <div className="grid sm:grid-cols-2 gap-2">
                               {(Object.entries(def.fields!) as [keyof AboutItem, string][]).map(([f, label]) => (
-                                <div key={f} className={f === 'text' ? 'sm:col-span-2' : ''}>
-                                  <Field label={label} small multiline={f === 'text'} value={it[f]} onChange={(v) => setItem(i, { [f]: v })}
-                                    placeholder={f === 'icon' ? 'e.g. leaf, star, handshake' : f === 'image' ? 'https://…' : undefined}
-                                    error={fieldError(at(`items.${i}.${f}`))} />
+                                <div key={f} className={f === 'text' || f === 'image' ? 'sm:col-span-2' : ''}>
+                                  {f === 'image' ? (
+                                    <ImageField label={label.replace(' link', '')} small shape={def.key === 'founder' ? 'round' : 'square'} value={it.image} onChange={(v) => setItem(i, { image: v })} error={fieldError(at(`items.${i}.image`))} />
+                                  ) : (
+                                    <Field label={label} small multiline={f === 'text'} value={it[f]} onChange={(v) => setItem(i, { [f]: v })}
+                                      placeholder={f === 'icon' ? 'e.g. leaf, star, handshake' : undefined}
+                                      error={fieldError(at(`items.${i}.${f}`))} />
+                                  )}
                                 </div>
                               ))}
                             </div>

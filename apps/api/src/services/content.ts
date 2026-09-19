@@ -1,7 +1,7 @@
 import { ABOUT_LIMITS, aboutSchema, withAboutDefaults, type AboutItem, type AboutPage, type ContentPage, type Me, type PageSection, type SiteSettings } from '@meridian/shared'
 import { auditLogRepo, contentRepo } from '../repositories'
 import { AppError, notFound } from '../http/errors'
-import { checkLength, collect, str } from '../http/validate'
+import { checkLength, collect, isImageUrl, str } from '../http/validate'
 
 // Admin-editable settings (homepage, announcement, sign-in methods, uploads, commission) and information pages.
 
@@ -51,7 +51,7 @@ export const contentService = {
     }
     const link = (v: unknown, where: string) => {
       const t = str(v)
-      if (t && !/^https:\/\/\S+$/.test(t)) fields[where] = 'Use an image link starting with https://'
+      if (t && !isImageUrl(t)) fields[where] = 'Upload a photo, or use an image link starting with https://'
       return t
     }
     const page: AboutPage = {

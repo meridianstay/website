@@ -2,6 +2,26 @@
 
 Every change to Meridian Stay is recorded here, newest first. Each entry says what changed for the people using the platform, then the notable technical changes.
 
+## 0.9.0 — 2026-09-20
+
+### Homepage builder
+- **Website content → Homepage → Edit homepage** in the control center now controls the whole homepage.
+- **Hero: Static or Slider.** Each slide has a badge, headline, coloured word, text, background photo and an optional button. Choose how long each slide shows (4–15 s) and whether the search box appears. The slider pauses while visitors hover over it and has arrows and dots; for visitors who turn off animations it doesn't move on its own.
+- **Sections:** add, reorder, hide or delete sections below the hero:
+  - **Stays**, with a plain-language **“Which stays to show?”** dropdown: Featured by our team, Highest rated, Newest, Instant book (managed by Meridian), Hosted by local families (requests), Best value, Luxury, One property type, In a destination, or Under a price. Each choice explains itself, and a **“Shows right now”** preview lists the stays it picks. Sections with no matching stays hide themselves on the website.
+  - **Property types**: picture cards, each with its own type, label, tag, text and photo.
+  - **Banner**: badge, title, text, photo, button, and a green, dark or light colour.
+- The server runs each section's rule, so the website and the editor always agree. The existing hero and featured texts carry over. Two extra slides (Kerala, Himalaya) and a "Book instantly" section are added as samples.
+- New search options behind this: sort by newest, and filter by instant book / request to book.
+
+### Photo uploads in editors
+- Photos in the About page and homepage editors are now chosen with a **photo picker**: preview, **Upload photo**, Replace or Remove, with "Paste a link instead" as a fallback. Website photos are stored in Firebase Storage under `site/` (admins only).
+- Fixed: several upload buttons on one page all opened the first one's file picker.
+
+### Other
+- The host banner no longer claims "thousands of successful hosts".
+- 61 automated tests (4 new for the homepage).
+
 ## 0.8.0 — 2026-09-20
 
 ### About us page

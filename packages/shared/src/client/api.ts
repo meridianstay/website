@@ -7,6 +7,7 @@ import type { ListingStatus, UserRole } from '../types'
 import type { AnnouncementSettings, ContentPage, HomepageSettings, PublicSite, SignInSettings, SiteSettings, UploadSettings } from '../content'
 import type { CommissionRates, Management } from '../pricing'
 import type { AboutPage, AboutStats } from '../about'
+import type { HomeBlock, HomeLayout } from '../homepage'
 import { request } from './http'
 
 const qs = (params: object) => {
@@ -25,7 +26,7 @@ export const api = {
   logout: () => request<void>('/auth/logout', { method: 'POST' }),
   updateMe: (data: { name: string; phone: string }) => request<{ user: Me }>('/me', { method: 'PATCH', json: data }),
   /** Uploads a photo to Firebase Storage and returns its link. */
-  upload: (file: File, purpose: 'listing' | 'avatar') => {
+  upload: (file: File, purpose: 'listing' | 'avatar' | 'content') => {
     const form = new FormData()
     form.append('file', file)
     form.append('purpose', purpose)
@@ -33,6 +34,8 @@ export const api = {
   },
 
   site: () => request<PublicSite>('/site'),
+  /** The homepage layout and the stays for each switched-on "Stays" section. */
+  home: () => request<{ layout: HomeLayout; stays: Record<string, PropertySummary[]> }>('/home'),
   about: () => request<{ page: AboutPage; stats: AboutStats }>('/about'),
   pages: () => request<{ pages: { slug: string; title: string }[] }>('/pages'),
   page: (slug: string) => request<{ page: ContentPage }>(`/pages/${encodeURIComponent(slug)}`),
@@ -128,6 +131,9 @@ export const adminApi = {
   testPayments: () => request<{ ok: boolean; mode: string }>('/admin/payments/test', { method: 'POST' }),
   demo: () => request<{ resetAllowed: boolean }>('/admin/demo'),
   resetDemo: () => request<void>('/admin/demo/reset', { method: 'POST' }),
+  homepage: () => request<{ layout: HomeLayout }>('/admin/homepage'),
+  saveHomeLayout: (layout: HomeLayout) => request<{ layout: HomeLayout }>('/admin/homepage', { method: 'PUT', json: layout }),
+  previewStays: (block: HomeBlock) => request<{ properties: PropertySummary[] }>('/admin/homepage/preview', { method: 'POST', json: block }),
   about: () => request<{ page: AboutPage; stats: AboutStats }>('/admin/about'),
   saveAbout: (page: AboutPage) => request<{ page: AboutPage }>('/admin/about', { method: 'PUT', json: page }),
   pages: () => request<{ pages: ContentPage[] }>('/admin/pages'),

@@ -121,7 +121,9 @@ export interface SearchQuery {
   guests?: number
   minPrice?: number
   maxPrice?: number
-  sort?: 'recommended' | 'price_asc' | 'price_desc' | 'rating'
+  sort?: 'recommended' | 'price_asc' | 'price_desc' | 'rating' | 'newest'
+  /** managed: instant book only; self: request to book only. */
+  management?: Management
   limit?: number
   /** Only listings the admin has featured on the homepage, in featured order. */
   featured?: boolean

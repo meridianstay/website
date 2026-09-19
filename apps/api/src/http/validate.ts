@@ -1,4 +1,5 @@
 import { AppError } from './errors'
+import { emulated } from '../store/firebase'
 
 // Small input validators. Each check returns an error message or null.
 
@@ -26,3 +27,6 @@ export const checkPhone = (v: string) => (/^\+?[\d\s-]{8,20}$/.test(v) ? null : 
 /** Postgres error code for an exclusion-constraint violation (overlapping date ranges). */
 export const PG_EXCLUSION_VIOLATION = '23P01'
 export const isPgError = (err: unknown, code: string) => (err as { code?: string })?.code === code
+
+/** A photo link: https, or the local Storage emulator's http links during development. */
+export const isImageUrl = (v: string) => /^https:\/\/\S+$/.test(v) || (emulated && /^http:\/\/(127\.0\.0\.1|localhost)(:\d+)?\/\S+$/.test(v))

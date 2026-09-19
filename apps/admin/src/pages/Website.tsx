@@ -1,13 +1,12 @@
 import { useEffect, useState, type ReactNode } from 'react'
 import { Link } from 'react-router'
 import { ErrorNote, PageHeader, Panel, Spinner } from '@meridian/ui'
-import { formatDate, type AnnouncementSettings, type ContentPage, type HomepageSettings } from '@meridian/shared'
+import { formatDate, type AnnouncementSettings, type ContentPage } from '@meridian/shared'
 import { ApiError, adminApi, appLink } from '@meridian/shared/client'
 
 const input = 'w-full bg-slate-50 border border-slate-200 rounded-2xl p-3 text-sm focus:outline-none focus:border-brand-500'
 
 export function Website() {
-  const [homepage, setHomepage] = useState<HomepageSettings | null>(null)
   const [announcement, setAnnouncement] = useState<AnnouncementSettings | null>(null)
   const [pages, setPages] = useState<ContentPage[] | null>(null)
   const [error, setError] = useState<string | null>(null)
@@ -15,7 +14,6 @@ export function Website() {
   useEffect(() => {
     Promise.all([adminApi.settings(), adminApi.pages()])
       .then(([s, p]) => {
-        setHomepage(s.homepage)
         setAnnouncement(s.announcement)
         setPages(p.pages)
       })
@@ -23,7 +21,7 @@ export function Website() {
   }, [])
 
   if (error) return <ErrorNote message={error} />
-  if (!homepage || !announcement || !pages) return <Spinner />
+  if (!announcement || !pages) return <Spinner />
 
   return (
     <>
@@ -33,19 +31,11 @@ export function Website() {
         action={<a href={appLink('website', '/')} target="_blank" rel="noreferrer" className="bg-slate-100 hover:bg-slate-200 text-slate-800 text-xs font-bold py-3 px-5 rounded-2xl"><i className="fa-solid fa-arrow-up-right-from-square mr-2" aria-hidden="true"></i>Open website</a>}
       />
       <div className="grid grid-cols-1 xl:grid-cols-2 gap-8 mb-8">
-        <SettingsForm title="Homepage" save={() => adminApi.saveHomepage(homepage)}>
-          <Text label="Badge above the headline" value={homepage.heroBadge} onChange={(v) => setHomepage({ ...homepage, heroBadge: v })} />
-          <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
-            <div className="sm:col-span-2"><Text label="Headline" value={homepage.heroTitle} onChange={(v) => setHomepage({ ...homepage, heroTitle: v })} /></div>
-            <Text label="Highlighted word" value={homepage.heroHighlight} onChange={(v) => setHomepage({ ...homepage, heroHighlight: v })} />
-          </div>
-          <Text label="Text under the headline" value={homepage.heroSubtitle} multiline onChange={(v) => setHomepage({ ...homepage, heroSubtitle: v })} />
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-            <Text label="Featured section title" value={homepage.featuredTitle} onChange={(v) => setHomepage({ ...homepage, featuredTitle: v })} />
-            <Text label="Featured section subtitle" value={homepage.featuredSubtitle} onChange={(v) => setHomepage({ ...homepage, featuredSubtitle: v })} />
-          </div>
-          <p className="text-xs text-slate-500">Choose which stays appear under the featured section in <Link to="/listings" className="underline font-semibold">Listings</Link>.</p>
-        </SettingsForm>
+        <Panel title="Homepage" action={<Link to="/website/homepage" className="bg-brand-600 hover:bg-brand-700 text-white text-xs font-bold py-2.5 px-4 rounded-xl"><i className="fa-solid fa-pen mr-1.5" aria-hidden="true"></i>Edit homepage</Link>}>
+          <p className="text-sm text-slate-500">
+            The hero (a static banner or a slider) and every section below it: property types, rows of stays chosen by simple rules (featured, highest rated, instant book, a destination, a budget…) and banners. Add, reorder, hide or remove sections.
+          </p>
+        </Panel>
 
         <SettingsForm title="Announcement banner" save={() => adminApi.saveAnnouncement(announcement)}>
           <label className="flex items-center space-x-3 text-sm font-semibold text-slate-800">

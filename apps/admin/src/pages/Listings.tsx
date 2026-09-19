@@ -34,7 +34,7 @@ export function Listings() {
 
   return (
     <>
-      <PageHeader title="Listings" description="Approve new and edited listings, reject with a reason the host can see, and choose which stays are featured on the homepage (the first six featured stays appear there, in rank order). Managed properties are run by Meridian: guests book instantly and the managed commission applies. Self-managed hosts approve each request." />
+      <PageHeader title="Listings" description="Approve new and edited listings, reject with a reason the host can see, and choose which stays are featured (homepage sections set to “Featured by our team” show them in rank order). Managed properties are run by Meridian: guests book instantly and the managed commission applies. Self-managed hosts approve each request." />
       <Panel>
         <Toolbar placeholder="Search title, city or host" onSearch={setQ}>
           {filters.map((f) => <Chip key={f} active={filter === f} onClick={() => setFilter(f)}>{filterLabel[f]}</Chip>)}

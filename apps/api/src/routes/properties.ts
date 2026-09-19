@@ -30,6 +30,7 @@ propertyRoutes.get('/properties', async (c) => {
     checkOut: checkIn && isISODate(q.checkOut) && q.checkOut > checkIn ? q.checkOut : undefined,
     sort: q.sort as never,
     featured: q.featured === '1' || q.featured === 'true',
+    management: q.management === 'managed' || q.management === 'self' ? q.management : undefined,
     limit: Math.min(intOrUndefined(q.limit) ?? 50, 100),
   })
   return c.json({ properties })

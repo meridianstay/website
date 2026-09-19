@@ -4,6 +4,8 @@ import { auditLogRepo, contentRepo, messagesRepo, reviewsRepo, statsRepo, usersR
 import { integrationsService } from '../services/integrations'
 import { bookingService } from '../services/bookings'
 import { paymentsService } from '../services/payments'
+import { homepageService, staysFor } from '../services/homepage'
+import { newBlock, type HomeBlock } from '@meridian/shared'
 import { demoResetAllowed, resetDemo } from '../store/resetDemo'
 import { adminService } from '../services/admin'
 import { contentService } from '../services/content'
@@ -74,6 +76,14 @@ adminRoutes.get('/admin/settings', async (c) => c.json(await contentRepo.setting
 adminRoutes.put('/admin/settings/:key', async (c) => {
   const key = c.req.param('key')
   return c.json({ [key]: await contentService.saveSetting(admin(c), key, await body(c)) })
+})
+adminRoutes.get('/admin/homepage', async (c) => c.json({ layout: await homepageService.layout() }))
+adminRoutes.put('/admin/homepage', async (c) => c.json({ layout: await homepageService.save(admin(c), await body(c)) }))
+/** Which stays a "Stays" section would show, for the editor's preview. */
+adminRoutes.post('/admin/homepage/preview', async (c) => {
+  const b = (await body(c)) as Partial<HomeBlock>
+  const properties = await staysFor({ ...newBlock('stays', 'preview'), ...b, maxPrice: b.maxPrice == null ? null : Number(b.maxPrice), limit: Number(b.limit) || 6 })
+  return c.json({ properties })
 })
 adminRoutes.get('/admin/about', async (c) => c.json({ page: await contentRepo.about(), stats: await statsRepo.forAbout() }))
 adminRoutes.put('/admin/about', async (c) => c.json({ page: await contentService.saveAbout(admin(c), await body(c)) }))

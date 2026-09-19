@@ -40,6 +40,7 @@ const SORTS: Record<string, (a: PropertyDoc, b: PropertyDoc) => number> = {
   price_asc: (a, b) => a.pricePerNightMinor - b.pricePerNightMinor || a.id - b.id,
   price_desc: (a, b) => b.pricePerNightMinor - a.pricePerNightMinor || a.id - b.id,
   rating: (a, b) => b.ratingAvg - a.ratingAvg || b.reviewCount - a.reviewCount,
+  newest: (a, b) => (b.approvedAt ?? b.createdAt).localeCompare(a.approvedAt ?? a.createdAt) || b.id - a.id,
 }
 
 type Filters = Required<Pick<SearchQuery, 'limit'>> & Omit<SearchQuery, 'limit'>
@@ -69,7 +70,8 @@ export const propertiesRepo = {
       (!f.guests || p.maxGuests >= f.guests) &&
       (f.minPrice == null || p.pricePerNightMinor >= f.minPrice * 100) &&
       (f.maxPrice == null || p.pricePerNightMinor <= f.maxPrice * 100) &&
-      (!f.featured || p.featuredRank != null))
+      (!f.featured || p.featuredRank != null) &&
+      (!f.management || (p.management ?? 'self') === f.management))
     if (f.checkIn && f.checkOut) {
       const free = await Promise.all(rows.map((p) => this.isFree(p.id, f.checkIn!, f.checkOut!)))
       rows = rows.filter((_, i) => free[i])
