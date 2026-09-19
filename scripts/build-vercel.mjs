@@ -38,8 +38,9 @@ await build({
   banner: { js: "import { createRequire as __cr } from 'node:module'; const require = __cr(import.meta.url);" },
   logLevel: 'info',
 })
+// No "type": "module" here: Vercel's launcher in this folder is CommonJS; index.mjs is ESM by its extension.
 const adminVersion = JSON.parse(readFileSync('node_modules/firebase-admin/package.json', 'utf8')).version
-writeFileSync(`${fn}/package.json`, JSON.stringify({ type: 'module', private: true, dependencies: { 'firebase-admin': adminVersion } }, null, 2))
+writeFileSync(`${fn}/package.json`, JSON.stringify({ private: true, dependencies: { 'firebase-admin': adminVersion } }, null, 2))
 run(`npm install --omit=dev --no-audit --no-fund --prefix ${fn}`)
 writeFileSync(`${fn}/.vc-config.json`, JSON.stringify({ runtime: 'nodejs22.x', handler: 'index.mjs', launcherType: 'Nodejs', shouldAddHelpers: false, maxDuration: 30 }, null, 2))
 

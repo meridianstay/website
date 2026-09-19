@@ -37,6 +37,7 @@ The platform now runs entirely on **Firebase**, as the client requested. Postgre
 
 ### Fixes
 - The Vercel API function now reports configuration problems (missing, malformed or incomplete `FIREBASE_SERVICE_ACCOUNT`, unreachable Firebase) as a readable message instead of crashing. Errors never include any part of the key.
+- Fixed the API crashing on Vercel after the Firebase move: the function folder was marked as ES modules, which broke Vercel's launcher.
 
 ## 0.4.0 — 2026-09-19
 
