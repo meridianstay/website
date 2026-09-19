@@ -1,5 +1,9 @@
-import type { Amenity, BookingDetail, Me, PaymentMethod, PropertyDetail, PropertySummary, SearchQuery } from '../api-types'
-import type { ListingStatus, PropertyType, UserRole } from '../types'
+import type {
+  AdminBooking, AdminListing, AdminReview, AdminStats, AdminUser, Amenity, AuditEntry, BookingDetail, ContactMessage,
+  DbBrowseResult, DbRow, DbTableSummary,
+  HostBooking, HostCalendar, HostListing, HostStats, ListingInput, Me, PaymentMethod, PropertyDetail, PropertySummary, SearchQuery,
+} from '../api-types'
+import type { ListingStatus, UserRole } from '../types'
 import type { AnnouncementSettings, ContentPage, HomepageSettings, SiteSettings } from '../content'
 import { request } from './http'
 
@@ -55,40 +59,6 @@ export const api = {
 
 // ─── Host portal ──────────────────────────────────────────────────────────────
 
-export interface HostListing extends PropertySummary {
-  status: ListingStatus
-  rejectionReason: string | null
-}
-
-export interface ListingInput {
-  title: string
-  type: PropertyType
-  description: string
-  city: string
-  region: string
-  country: string
-  price: number
-  beds: number
-  baths: number
-  maxGuests: number
-  lat: number
-  lng: number
-  coverImage: string
-  photos: string[]
-  amenities: string[]
-}
-
-export type HostBooking = BookingDetail & { guestName: string }
-
-export interface HostStats {
-  earnings: number
-  listings: number
-  live: number
-  rated: number
-  avgRating: number | null
-  upcoming: number
-}
-
 export const hostApi = {
   amenities: () => request<{ amenities: Amenity[] }>('/amenities'),
   listings: () => request<{ listings: HostListing[] }>('/host/listings'),
@@ -105,67 +75,7 @@ export const hostApi = {
   relist: (id: number) => request<void>(`/host/listings/${id}/relist`, { method: 'POST' }),
 }
 
-export interface HostCalendar {
-  blocks: { id: number; checkIn: string; checkOut: string; note: string | null }[]
-  bookings: { code: string; checkIn: string; checkOut: string; guestName: string }[]
-}
-
 // ─── Admin panel ──────────────────────────────────────────────────────────────
-
-export interface AdminListing extends HostListing {
-  hostName: string
-  hostEmail: string
-  createdAt: string
-  featuredRank: number | null
-}
-
-export interface AdminStats {
-  listings: number
-  live: number
-  pending: number
-  users: number
-  hosts: number
-  suspended: number
-  bookings: number
-  upcoming: number
-  gbv: number
-  fees: number
-  new_messages: number
-  reviews: number
-}
-
-export type AdminUser = Me & { suspended: boolean; listings: number; bookings: number }
-export type AdminBooking = HostBooking & { guestEmail: string }
-
-export interface AdminReview {
-  id: number
-  authorName: string
-  rating: number
-  comment: string
-  createdAt: string
-  hidden: boolean
-  property: { slug: string; title: string }
-}
-
-export interface AuditEntry {
-  id: number
-  action: string
-  targetType: string
-  targetId: string | null
-  details: Record<string, unknown>
-  adminName: string | null
-  createdAt: string
-}
-
-export interface ContactMessage {
-  id: number
-  name: string
-  email: string
-  topic: string
-  message: string
-  status: string
-  createdAt: string
-}
 
 export const adminApi = {
   stats: () => request<AdminStats>('/admin/stats'),
@@ -195,4 +105,14 @@ export const adminApi = {
   deletePage: (slug: string) => request<void>(`/admin/pages/${encodeURIComponent(slug)}`, { method: 'DELETE' }),
 
   audit: () => request<{ entries: AuditEntry[] }>('/admin/audit'),
+
+  dbTables: () => request<{ tables: DbTableSummary[] }>('/admin/db/tables'),
+  dbBrowse: (table: string, params: { page?: number; pageSize?: number; q?: string; sort?: string; dir?: 'asc' | 'desc' } = {}) =>
+    request<DbBrowseResult>(`/admin/db/tables/${encodeURIComponent(table)}${qs(params)}`),
+  dbUpdate: (table: string, key: DbRow, changes: DbRow) =>
+    request<{ row: DbRow }>(`/admin/db/tables/${encodeURIComponent(table)}/rows`, { method: 'PATCH', json: { key, changes } }),
+  dbInsert: (table: string, values: DbRow) =>
+    request<{ row: DbRow }>(`/admin/db/tables/${encodeURIComponent(table)}/rows`, { method: 'POST', json: values }),
+  dbDelete: (table: string, key: DbRow) =>
+    request<void>(`/admin/db/tables/${encodeURIComponent(table)}/rows${qs({ key: JSON.stringify(key) })}`, { method: 'DELETE' }),
 }

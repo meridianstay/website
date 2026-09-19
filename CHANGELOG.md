@@ -2,6 +2,21 @@
 
 Every change to Meridian Stay is recorded here, newest first. Each entry says what changed for the people using the platform, then the notable technical changes.
 
+## 0.4.0 — 2026-09-19
+
+### Control center
+- New **Database** screen: browse all 15 tables with live row counts, search every column, sort, page through rows, and open any row. Safe columns can be edited, some tables allow adding and deleting rows, and the database's own rules still reject invalid values. Passwords and session tokens are never shown. Every change is recorded in the activity log with the old and new values.
+
+### Backend
+- Reorganised the API into layers: **repositories** (all SQL, one file per table), **services** (business rules) and thin **routes**. Behaviour is unchanged; every earlier flow was re-tested.
+- One error type for the whole API, so every failure returns a consistent, user-friendly message.
+- Shared API types moved out of the browser-only client, so the backend and frontends use the same definitions.
+- **Automated tests**: 31 tests covering pricing, double bookings, host blocks, cancellations, reviews and ratings, sign-up, log-in, suspension, password changes, listing rules and the Database screen. Run with `npm test`.
+
+### Docs
+- New [API reference](docs/api.md) listing every endpoint with access rules, inputs and responses.
+- The [database guide](docs/database.md) now explains the backend layers, tests and ways to manage data.
+
 ## 0.3.0 — 2026-09-19
 
 The platform now works end to end: guests can search and book, hosts can list and manage properties, and admins can run the platform and edit the website, all on a real database.
@@ -71,7 +86,8 @@ The platform now works end to end: guests can search and book, hosts can list an
 
 - **Real payments.** Connect a provider (for example Razorpay for UPI, cards and net banking) at checkout, with refunds on cancellation.
 - **Emails and SMS**: booking confirmations, cancellation notices, password reset.
-- **Photo upload.** Hosts currently paste photo links.
+- **Photo upload.** Hosts currently paste photo links. Proposed: Firebase Storage.
+- **Firebase sign-in** (Google, phone OTP, email verification, password reset), managed from an admin Settings page. Proposed, waiting for the client's decision.
 - **Messaging** between guests and hosts.
 - **Currency and prices** for a local market (currently USD; one setting switches it) and taxes such as GST on invoices.
 - **Host payouts** and payout details.

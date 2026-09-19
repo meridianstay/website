@@ -1,0 +1,13 @@
+// The data layer: every SQL query in the API lives in these repositories, one per table (or area).
+export { usersRepo, toMe, type AdminUser } from './users'
+export { sessionsRepo } from './sessions'
+export { propertiesRepo, toPropertySummary, type HostListing, type AdminListing } from './properties'
+export { amenitiesRepo } from './amenities'
+export { bookingsRepo, type BookingWithGuest } from './bookings'
+export { reviewsRepo, type AdminReview } from './reviews'
+export { wishlistRepo } from './wishlist'
+export { availabilityRepo } from './availability'
+export { contentRepo } from './content'
+export { messagesRepo, type MessageStatus } from './messages'
+export { auditLogRepo } from './auditLog'
+export { statsRepo } from './stats'

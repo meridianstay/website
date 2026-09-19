@@ -14,7 +14,8 @@
     "dev:admin": "npm run dev -w @meridian/admin",
     "dev:host": "npm run dev -w @meridian/host",
     "dev:account": "npm run dev -w @meridian/account",
-    "dev:api": "npm run dev -w @meridian/api"
+    "dev:api": "npm run dev -w @meridian/api",
+    "test": "npm run test -w @meridian/api"
   },
   "devDependencies": {
     "esbuild": "^0.28.2",

@@ -9,6 +9,8 @@ import { Messages } from './pages/Messages'
 import { Website } from './pages/Website'
 import { PageEditor } from './pages/PageEditor'
 import { Activity } from './pages/Activity'
+import { Database } from './pages/Database'
+import { DatabaseTable } from './pages/DatabaseTable'
 
 const nav: NavItem[] = [
   { to: '/', label: 'Overview', icon: 'gauge-high', end: true },
@@ -19,6 +21,7 @@ const nav: NavItem[] = [
   { to: '/messages', label: 'Messages', icon: 'envelope' },
   { to: '/website', label: 'Website content', icon: 'pen-to-square' },
   { to: '/activity', label: 'Activity log', icon: 'clock-rotate-left' },
+  { to: '/database', label: 'Database', icon: 'database' },
 ]
 
 export default function App() {
@@ -37,6 +40,8 @@ export default function App() {
           <Route path="website/pages/new" element={<PageEditor />} />
           <Route path="website/pages/:slug" element={<PageEditor />} />
           <Route path="activity" element={<Activity />} />
+          <Route path="database" element={<Database />} />
+          <Route path="database/:table" element={<DatabaseTable />} />
           <Route path="*" element={<Overview />} />
         </Routes>
       </AppShell>

@@ -7,6 +7,29 @@ Meridian Stay uses **PostgreSQL** (14 or newer). The schema lives in versioned S
 | `001_initial_schema.sql` | Users, sessions, listings, photos, amenities, bookings, reviews, wishlists, contact messages |
 | `002_control_center.sql` | Suspensions, hidden reviews, featured listings, host date blocks, editable site content, admin audit log |
 
+## How the backend uses the database
+
+The API in `apps/api/src` is split into layers, and **SQL only appears in the repositories**:
+
+| Folder | Job |
+| --- | --- |
+| `routes/` | HTTP only: read the request, call a service or repository, send the reply |
+| `services/` | Business rules: booking checks, listing review, moderation, content validation |
+| `repositories/` | All SQL, one file per table or area (`users`, `properties`, `bookings`, `reviews`, …) |
+| `db/` | Connection pool, transactions, migrations, demo seed |
+| `explorer/` | Which tables the admin Database screen may show and edit |
+| `http/` | Errors, sign-in middleware, validation, rate limits |
+| `tests/` | Automated tests against a throwaway `_test` database |
+
+Repository functions take an optional database client, so a service can run several of them in one transaction (for example, locking a listing, checking blocks and inserting a booking).
+
+Run the tests with `npm test` (needs a local database called `meridianstay_test`; create it with `createdb meridianstay_test`). The test runner refuses any database whose name doesn't end in `_test`, so it can never wipe real data.
+
+## Managing data
+
+- **Admin → Database** in the control center lets admins browse every table, search, sort, and edit or delete rows where it's safe. Password hashes and session tokens are never shown. Business actions such as approving listings, suspending users, cancelling bookings or hiding reviews stay on their own pages so their rules always apply. Every change is written to the activity log with before and after values. The allowed tables and columns are listed in [`apps/api/src/explorer/registry.ts`](../apps/api/src/explorer/registry.ts).
+- **The Neon console** has its own table editor and SQL runner for anything the admin screen doesn't cover. Changes made there bypass the app's rules and aren't logged, so use it with care.
+
 ## Conventions
 
 - **Money** is stored as whole numbers in the smallest unit (cents or paise) in `*_minor` columns, with a `currency` code. The API converts to normal amounts.

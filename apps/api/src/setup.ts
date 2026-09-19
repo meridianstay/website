@@ -1,6 +1,6 @@
 import { migrate } from './db/migrate'
 import { seed } from './db/seed'
-import { ensureDefaults } from './db/defaults'
+import { contentRepo } from './repositories'
 
 let ready: Promise<void> | null = null
 
@@ -11,7 +11,7 @@ let ready: Promise<void> | null = null
 export function ensureDatabase(): Promise<void> {
   ready ??= (async () => {
     await migrate()
-    await ensureDefaults()
+    await contentRepo.ensureDefaults()
     if (process.env.NODE_ENV !== 'production' || process.env.SEED_DEMO_DATA === 'true') await seed()
   })().catch((err) => {
     ready = null

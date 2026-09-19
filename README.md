@@ -5,7 +5,8 @@ An Airbnb-style marketplace for local, nature-first stays: farmstays, private ro
 The whole platform is web-based and lives in this one repository.
 
 - **What changed and when:** [CHANGELOG.md](CHANGELOG.md)
-- **Database structure:** [docs/database.md](docs/database.md)
+- **API reference (every endpoint):** [docs/api.md](docs/api.md)
+- **Database structure and backend layers:** [docs/database.md](docs/database.md)
 - **Deploying (Vercel + Postgres):** [docs/deployment.md](docs/deployment.md)
 
 ## The four web apps
@@ -17,9 +18,9 @@ Everything is served from one domain. Each app can later move to its own subdoma
 | `/` | `apps/website` | Everyone | Search by place, dates and guests; filters, sorting and map view; stay pages with gallery, amenities, map, reviews and live pricing; checkout; booking confirmation; log in and sign up; help and policy pages; contact form |
 | `/account` | `apps/account` | Guests | Upcoming and past trips, cancel a booking, write a review, wishlist, profile, change password |
 | `/host` | `apps/host` | Property owners | Earnings dashboard, listings with approval status, a step-by-step listing wizard with map pin, calendar to block dates, pause or relist, bookings with guest contact details |
-| `/admin` | `apps/admin` | Meridian team | Stats overview, approve or reject listings, choose homepage featured stays, manage bookings, users (roles, suspend), reviews (hide/restore), contact inbox, edit homepage text, announcement banner and information pages, activity log |
+| `/admin` | `apps/admin` | Meridian team | Stats overview, approve or reject listings, choose homepage featured stays, manage bookings, users (roles, suspend), reviews (hide/restore), contact inbox, edit homepage text, announcement banner and information pages, activity log, Database screen |
 
-The API lives in `apps/api` and is served at `/api`.
+The API lives in `apps/api` and is served at `/api`. It is layered: routes (HTTP) → services (business rules) → repositories (all SQL). See [docs/api.md](docs/api.md).
 
 ## Try it with demo data
 
@@ -57,6 +58,7 @@ Open http://localhost:5173. The API creates the tables and loads the demo data o
 | `npm run dev` | Run the API and all four apps |
 | `npm run dev:website` (or `dev:admin`, `dev:host`, `dev:account`, `dev:api`) | Run one part |
 | `npm run typecheck` | Type-check every workspace |
+| `npm test` | Run the backend tests (needs a `meridianstay_test` database: `createdb meridianstay_test`) |
 | `npm run build` | Production build of the four web apps |
 | `npm run db:migrate -w @meridian/api` | Apply database migrations |
 | `npm run db:seed -w @meridian/api` | Load demo data into an empty database |
@@ -74,6 +76,10 @@ apps/
   admin/     control center           (React, Vite, React Router)
   api/       HTTP API                 (Hono on Node, PostgreSQL via node-postgres)
     db/migrations/   versioned SQL schema
+    src/routes/        HTTP endpoints
+    src/services/      business rules
+    src/repositories/  all SQL, one file per table
+    src/tests/         automated tests
 packages/
   shared/            types, pricing, dates, default site content, API client
   ui/                logo, panel layout, sign-in handling, loaders, animations

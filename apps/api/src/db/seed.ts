@@ -1,7 +1,7 @@
 import { fileURLToPath } from 'node:url'
 import { addDays, galleryImages as g, images, quoteStay, todayISO } from '@meridian/shared'
-import { hashPassword } from '../passwords'
-import { newBookingCode } from '../bookingCode'
+import { hashPassword } from '../lib/passwords'
+import { newBookingCode } from '../lib/bookingCode'
 import { pool, query, queryOne, transaction, type Queryable } from './pool'
 
 // Demo data for development and client previews. Everything is fictional.
