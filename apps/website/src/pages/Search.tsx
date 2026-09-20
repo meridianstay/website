@@ -6,6 +6,7 @@ import { EmptyState, ErrorNote } from '@meridian/ui'
 import { PropertyCard, PropertyCardSkeleton } from '../components/PropertyCard'
 import { PROPERTY_TYPES, SORT_OPTIONS, guestLabel, readSearch, searchUrl } from '../lib/search'
 import { usePlace } from '../lib/place'
+import { StayRequest } from '../components/StayRequest'
 import { useDocumentTitle } from '../lib/useDocumentTitle'
 
 const PropertyMap = lazy(() => import('../components/PropertyMap'))
@@ -118,13 +119,16 @@ export function Search() {
       {error ? (
         <ErrorNote message={error} onRetry={() => navigate(0)} />
       ) : results && results.length === 0 ? (
-        <div className="bg-white rounded-3xl border border-slate-200">
-          <EmptyState
-            icon="magnifying-glass"
-            title="No stays match your search"
-            body="Try different dates, fewer filters, or another destination."
-            action={<button type="button" onClick={() => navigate('/search')} className="bg-slate-900 text-white text-xs font-bold py-3 px-6 rounded-2xl">Clear filters</button>}
-          />
+        <div className="space-y-6">
+          <div className="bg-white rounded-3xl border border-slate-200">
+            <EmptyState
+              icon="magnifying-glass"
+              title="No stays match your search"
+              body="Try different dates, fewer filters, or another destination."
+              action={<button type="button" onClick={() => navigate('/search')} className="bg-slate-900 text-white text-xs font-bold py-3 px-6 rounded-2xl">Clear filters</button>}
+            />
+          </div>
+          <StayRequest defaultWhere={state.where} />
         </div>
       ) : (
         <div className={showMap ? 'grid grid-cols-1 lg:grid-cols-5 gap-6' : ''}>

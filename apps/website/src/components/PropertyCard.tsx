@@ -33,6 +33,9 @@ export function PropertyCard({ property, linkSearch = '', onHover, index = 0 }: 
           className="w-full h-full object-cover group-hover:scale-105 transition duration-500"
           onError={(e) => { e.currentTarget.src = fallbackImage }}
         />
+        {property.discountPct > 0 && (
+          <span className="absolute top-4 right-16 bg-rose-600 text-white px-2.5 py-1 rounded-full text-[11px] font-extrabold shadow-sm">{property.discountPct}% off</span>
+        )}
         <div className="absolute top-4 left-4 flex flex-wrap gap-1.5 max-w-[75%]">
           <span className="bg-white/90 backdrop-blur-md px-3 py-1 rounded-full text-[11px] font-bold text-slate-800 shadow-sm flex items-center space-x-1.5">
             <span className="w-2 h-2 rounded-full bg-brand-500"></span>
@@ -79,7 +82,8 @@ export function PropertyCard({ property, linkSearch = '', onHover, index = 0 }: 
           <div>
             {property.overnight ? (
               <>
-                <span className="text-xl font-extrabold text-slate-900">{formatPrice(property.price)}</span>
+                {property.discountPct > 0 && <span className="text-xs text-slate-400 line-through mr-1.5">{formatPrice(property.price)}</span>}
+                <span className="text-xl font-extrabold text-slate-900">{formatPrice(property.priceNow)}</span>
                 <span className="text-xs text-slate-500"> / night</span>
               </>
             ) : property.dayUse && (

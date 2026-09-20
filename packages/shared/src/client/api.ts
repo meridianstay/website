@@ -9,6 +9,7 @@ import type { CommissionRates, Management } from '../pricing'
 import type { AboutPage, AboutStats } from '../about'
 import type { HomeBlock, HomeLayout } from '../homepage'
 import type { Destination } from '../places'
+import type { Coupon } from '../offers'
 import { request } from './http'
 
 const qs = (params: object) => {
@@ -66,12 +67,16 @@ export const api = {
     children?: number
     infants?: number
     pets?: number
+    couponCode?: string
   }) => request<{ booking: BookingDetail; payment: PaymentRequest | null }>('/bookings', { method: 'POST', json: data }),
   /** Razorpay Checkout details again, for a checkout that wasn't finished. */
   bookingPayment: (code: string) => request<{ payment: PaymentRequest }>(`/bookings/${encodeURIComponent(code)}/payment`),
   /** Sends Razorpay Checkout's signed result so the server can verify it. */
   confirmPayment: (code: string, result: { razorpay_order_id: string; razorpay_payment_id: string; razorpay_signature: string }) =>
     request<{ booking: BookingDetail }>(`/bookings/${encodeURIComponent(code)}/pay`, { method: 'POST', json: result }),
+  /** Checks a coupon code against a booking total before booking. */
+  checkCoupon: (code: string, total: number, kind: 'stay' | 'dayuse') =>
+    request<{ code: string; discount: number; label: string; description: string }>('/bookings/coupon', { method: 'POST', json: { code, total, kind } }),
   myBookings: () => request<{ bookings: BookingDetail[] }>('/bookings'),
   booking: (code: string) => request<{ booking: BookingDetail }>(`/bookings/${encodeURIComponent(code)}`),
   cancelBooking: (code: string) => request<{ booking: BookingDetail }>(`/bookings/${encodeURIComponent(code)}/cancel`, { method: 'POST' }),
@@ -152,6 +157,11 @@ export const adminApi = {
   pages: () => request<{ pages: ContentPage[] }>('/admin/pages'),
   savePage: (page: ContentPage) => request<void>(`/admin/pages/${encodeURIComponent(page.slug)}`, { method: 'PUT', json: page }),
   deletePage: (slug: string) => request<void>(`/admin/pages/${encodeURIComponent(slug)}`, { method: 'DELETE' }),
+
+  coupons: () => request<{ coupons: Coupon[] }>('/admin/coupons'),
+  createCoupon: (coupon: Coupon) => request<{ coupon: Coupon }>('/admin/coupons', { method: 'POST', json: coupon }),
+  updateCoupon: (code: string, coupon: Coupon) => request<{ coupon: Coupon }>(`/admin/coupons/${encodeURIComponent(code)}`, { method: 'PUT', json: coupon }),
+  deleteCoupon: (code: string) => request<void>(`/admin/coupons/${encodeURIComponent(code)}`, { method: 'DELETE' }),
 
   audit: () => request<{ entries: AuditEntry[] }>('/admin/audit'),
 

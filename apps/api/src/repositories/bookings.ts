@@ -38,6 +38,8 @@ export interface BookingDoc {
   /** stay: nights checkIn → checkOut. dayuse: one day (checkIn), startTime → endTime ("HH:MM"). */
   kind: 'stay' | 'dayuse'; startTime: string | null; endTime: string | null; hours: number | null
   guestBreakdown: GuestBreakdown; securityDepositMinor: number; checkInTime: string; checkOutTime: string
+  /** Coupon used at checkout, and what it took off (already reflected in totalMinor). */
+  couponCode: string | null; discountMinor: number
   /** The property's exact address when booked; shown only once the booking is confirmed. */
   address: string
 }
@@ -62,6 +64,7 @@ export function withDefaults(raw: Partial<BookingDoc> & Pick<BookingDoc, 'code' 
     kind: b.kind ?? 'stay', startTime: b.startTime ?? null, endTime: b.endTime ?? null, hours: b.hours ?? null,
     guestBreakdown: b.guestBreakdown ?? { adults: b.guests, children: 0, infants: 0, pets: 0 }, securityDepositMinor: b.securityDepositMinor ?? 0,
     checkInTime: b.checkInTime ?? '14:00', checkOutTime: b.checkOutTime ?? '11:00', address: b.address ?? '',
+    couponCode: b.couponCode ?? null, discountMinor: b.discountMinor ?? 0,
   }
 }
 
@@ -86,6 +89,7 @@ export function toBooking(b: BookingDoc, today: string): BookingDetail {
     paymentStatus: b.paymentStatus, refunded: b.refundedMinor / 100, expiresAt: HOLDING.includes(b.status) ? b.expiresAt : null,
     instantBook: b.instantBook, kind: b.kind, startTime: b.startTime, endTime: b.endTime, hours: b.hours, guestBreakdown: b.guestBreakdown,
     securityDeposit: b.securityDepositMinor / 100, checkInTime: b.checkInTime, checkOutTime: b.checkOutTime,
+    couponCode: b.couponCode, discount: b.discountMinor / 100,
     address: (b.status === 'Confirmed' && b.address) || null,
     declineReason: b.declineReason ?? null, contactPhone: b.contactPhone, specialRequests: b.specialRequests, createdAt: b.createdAt, reviewed: b.reviewed,
   }
@@ -108,7 +112,7 @@ export type NewBooking = Pick<BookingDoc,
   'code' | 'propertyId' | 'guestId' | 'checkIn' | 'checkOut' | 'nights' | 'guests' | 'currency' | 'pricePerNightMinor' | 'baseMinor' |
   'extraGuestMinor' | 'serviceFeeMinor' | 'totalMinor' | 'commissionPct' | 'commissionMinor' | 'hostPayoutMinor' | 'paymentMethod' |
   'contactPhone' | 'specialRequests' | 'status' | 'paymentStatus' | 'expiresAt' | 'kind' | 'startTime' | 'endTime' | 'hours' |
-  'guestBreakdown' | 'securityDepositMinor' | 'checkInTime' | 'checkOutTime'>
+  'guestBreakdown' | 'securityDepositMinor' | 'checkInTime' | 'checkOutTime' | 'couponCode' | 'discountMinor'>
 
 /** Frees a booking's nights, but only those it still owns (an expired hold may have been taken over). */
 async function releaseNights(tx: Transaction, b: BookingDoc) {

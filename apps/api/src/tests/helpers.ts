@@ -40,7 +40,7 @@ export const listingInput = (overrides: Partial<ListingInput> = {}): ListingInpu
   country: 'India', price: 100, beds: 1, baths: 1, maxGuests: 2, lat: 12.4, lng: 75.7,
   coverImage: 'https://example.com/cover.jpg', photos: [], amenities: ['Wifi'], areaSqft: null, gatheringCapacity: null,
   checkInTime: '14:00', checkOutTime: '11:00', houseRules: { ...defaultHouseRules }, securityDeposit: 0, address: '12 Test Road, Coorg',
-  overnight: true, dayUse: { ...defaultDayUse }, ...overrides,
+  overnight: true, dayUse: { ...defaultDayUse }, discountPct: 0, ...overrides,
 })
 
 /** A live listing owned by `host`: self-managed (request to book) unless `management` is 'managed' (instant). */
@@ -61,7 +61,7 @@ export async function insertBooking(propertyId: number, guest: TestUser, checkIn
     totalMinor: q.total * 100, commissionPct: 30, commissionMinor: commissionMinor(q.total * 100, 30), hostPayoutMinor: q.total * 100 - commissionMinor(q.total * 100, 30),
     paymentMethod: 'upi', contactPhone: '+91 90000 00000', specialRequests: null, status: 'Confirmed', paymentStatus: 'test', expiresAt: null,
     kind: 'stay', startTime: null, endTime: null, hours: null, guestBreakdown: { adults: 2, children: 0, infants: 0, pets: 0 },
-    securityDepositMinor: 0, checkInTime: '14:00', checkOutTime: '11:00',
+    securityDepositMinor: 0, checkInTime: '14:00', checkOutTime: '11:00', couponCode: null, discountMinor: 0,
   }, property, (await usersRepo.findByUid(guest.uid))!)
   return code
 }

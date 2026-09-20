@@ -2,6 +2,20 @@
 
 Every change to Meridian Stay is recorded here, newest first. Each entry says what changed for the people using the platform, then the notable technical changes.
 
+## 0.13.0 — 2026-09-20
+
+### Offers
+- **Listing discounts:** hosts can set 0–70% off in the listing wizard. Guests see the old price crossed out, a "% off" badge, and pay the lower price for nights and day outs.
+- **Coupon codes:** a new **Coupons** page in the control center creates codes (percent or rupees off, a cap, a smallest total, dates, usage limit, stays and/or day outs, on or off). Guests type a code at checkout and see the discount before paying. Codes are checked again on the server when booking, count one use each, and give the use back if the booking is never confirmed.
+- Bookings show the coupon and what it took off, in the guest's booking page, trips, and the host and admin lists. Commission is taken on what the guest actually pays.
+
+### Leads
+- **"Can't find what you're looking for?"**: a short form (where, when, guests, budget, notes) on empty search results and destination pages. Requests arrive in **Admin → Messages** under the new "Stay request" topic.
+
+### Also
+- Demo data: four discounted listings and three sample coupons (MONSOON20, DAYOUT500, FIRSTTRIP).
+- 81 automated tests (4 new).
+
 ## 0.12.0 — 2026-09-20
 
 ### Trust

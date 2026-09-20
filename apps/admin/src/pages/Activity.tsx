@@ -4,6 +4,8 @@ import { adminApi, type AuditEntry } from '@meridian/shared/client'
 import { tableClass, th, theadClass } from '../components/Toolbar'
 
 const labels: Record<string, string> = {
+  'coupon.create': 'Created coupon', 'coupon.update': 'Updated coupon', 'coupon.delete': 'Deleted coupon',
+  'listing.assure': 'Marked as Assured', 'listing.unassure': 'Removed Assured badge',
   'listing.approve': 'Approved listing', 'listing.reject': 'Rejected listing', 'listing.feature': 'Featured listing', 'listing.unfeature': 'Removed from homepage',
   'booking.cancel': 'Cancelled booking', 'user.role': 'Changed role', 'user.suspend': 'Suspended user', 'user.restore': 'Restored user',
   'review.hide': 'Hid review', 'review.restore': 'Restored review', 'message.status': 'Updated message',

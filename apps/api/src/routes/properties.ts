@@ -1,5 +1,5 @@
 import { Hono } from 'hono'
-import { isISODate, todayISO, type PropertyType } from '@meridian/shared'
+import { discountedPrice, isISODate, todayISO, type PropertyType } from '@meridian/shared'
 import { propertiesRepo, reviewsRepo, toPropertySummary, usersRepo } from '../repositories'
 import { bookingService } from '../services/bookings'
 import { reviewService } from '../services/reviews'
@@ -62,9 +62,10 @@ propertyRoutes.get('/properties/:slug', async (c) => {
       areaSqft: p.areaSqft, gatheringCapacity: p.gatheringCapacity, checkInTime: p.checkInTime, checkOutTime: p.checkOutTime,
       houseRules: p.houseRules, securityDeposit: p.securityDepositMinor / 100,
       dayUseSettings: p.dayUse.enabled ? {
-        enabled: true, blockHours: p.dayUse.blockHours, price: p.dayUse.priceMinor / 100, extraHourPrice: p.dayUse.extraHourMinor / 100,
+        enabled: true, blockHours: p.dayUse.blockHours, price: discountedPrice(p.dayUse.priceMinor / 100, p.discountPct), extraHourPrice: p.dayUse.extraHourMinor / 100,
         opensAt: p.dayUse.opensAt, closesAt: p.dayUse.closesAt,
       } : null,
+      dayUseFullPrice: p.dayUse.enabled && p.discountPct > 0 ? p.dayUse.priceMinor / 100 : null,
       host: { name: host?.name ?? 'Host', joinedAt: host?.createdAt ?? p.createdAt, avatar: host?.avatarUrl ?? null },
     },
   })

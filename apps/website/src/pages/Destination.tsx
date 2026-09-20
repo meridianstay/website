@@ -5,6 +5,7 @@ import { api } from '@meridian/shared/client'
 import { ErrorNote, Spinner } from '@meridian/ui'
 import { PropertyCard, PropertyCardSkeleton } from '../components/PropertyCard'
 import { loadDestinations } from '../components/DestinationPicker'
+import { StayRequest } from '../components/StayRequest'
 import { PROPERTY_TYPES } from '../lib/search'
 import { useDocumentTitle, useMetaDescription } from '../lib/useDocumentTitle'
 import { NotFound } from './NotFound'
@@ -74,6 +75,8 @@ export function Destination() {
           </div>
         )}
         {stays?.length === 0 && <p className="text-sm text-slate-500">No {type ? typeLabel(type).toLowerCase() : 'stays'} here right now. <Link to={`/destinations/${place.slug}`} className="underline font-semibold">See all stays in {place.name}</Link>.</p>}
+
+        <StayRequest defaultWhere={place.name} />
 
         {nearby.length > 0 && (
           <section>

@@ -1,10 +1,10 @@
 import {
-  addDays, countedGuests, dayUseRefundMinor, formatTime, isTime, minutesOf, quoteDayUse, type GuestBreakdown,
+  addDays, countedGuests, couponDiscount, dayUseRefundMinor, discountedPrice, formatTime, isTime, minutesOf, quoteDayUse, type GuestBreakdown,
   commissionMinor, commissionPct, daysBetween, guestRefundMinor, isISODate, MAX_NIGHTS, PAYMENT_HOLD_MINUTES, quoteStay, REQUEST_HOURS,
   todayISO, type BookingDetail, type Me, type PaymentMethod, type PaymentRequest,
 } from '@meridian/shared'
 import { randomInt } from 'node:crypto'
-import { auditLogRepo, bookingsRepo, contentRepo, keptMinor, NightsTakenError, propertiesRepo, toBooking, usersRepo, type BookingDoc } from '../repositories'
+import { auditLogRepo, bookingsRepo, contentRepo, couponsRepo, keptMinor, NightsTakenError, propertiesRepo, toBooking, usersRepo, type BookingDoc } from '../repositories'
 import { nowISO } from '../store/db'
 import { AppError, notFound } from '../http/errors'
 import { checkPhone, collect, str } from '../http/validate'
@@ -25,7 +25,7 @@ export interface BookingRequest {
   propertyId: number; checkIn: string; checkOut: string; guests: number
   paymentMethod: string; contactPhone: string; specialRequests: string
   /** stay (default) or dayuse. Day use books `hours` from `startTime` on `checkIn`. */
-  kind?: string; startTime?: string; hours?: number
+  kind?: string; startTime?: string; hours?: number; couponCode?: string
   adults?: number; children?: number; infants?: number; pets?: number
 }
 
@@ -118,10 +118,11 @@ export const bookingService = {
           : !end || minutesOf(start) + hours * 60 > minutesOf(d.closesAt) ? `Day use ends by ${formatTime(d.closesAt)}.` : null,
         guests: guests > capacity ? `Up to ${capacity} people for day use.` : null,
       })
-      const q = quoteDayUse({ blockHours: d.blockHours, price: d.priceMinor / 100, extraHourPrice: d.extraHourMinor / 100 }, hours)
+      const q = quoteDayUse({ blockHours: d.blockHours, price: discountedPrice(d.priceMinor / 100, property.discountPct), extraHourPrice: d.extraHourMinor / 100 }, hours)
       slot = {
         checkOut: addDays(checkIn, 1), nights: 0, startTime: start, endTime: end, hours,
-        pricePerNightMinor: d.priceMinor, baseMinor: d.priceMinor, extraMinor: Math.round(q.extraAmount * 100), totalMinor: Math.round(q.total * 100),
+        pricePerNightMinor: Math.round(q.basePrice * 100), baseMinor: Math.round(q.basePrice * 100), extraMinor: Math.round(q.extraAmount * 100),
+        totalMinor: Math.round(q.total * 100),
         deadline: requestDeadline(checkIn, Date.now(), start),
       }
     } else {
@@ -135,15 +136,29 @@ export const bookingService = {
         guests: guests > property.maxGuests ? `This stay fits up to ${property.maxGuests} guests.` : null,
       })
       // The browser shows a preview; the price charged is always recalculated here.
-      const q = quoteStay(property.pricePerNightMinor / 100, checkIn, checkOut, guests)
+      const q = quoteStay(discountedPrice(property.pricePerNightMinor / 100, property.discountPct), checkIn, checkOut, guests)
       slot = {
-        checkOut, nights: q.nights, startTime: null, endTime: null, hours: null, pricePerNightMinor: property.pricePerNightMinor,
+        checkOut, nights: q.nights, startTime: null, endTime: null, hours: null, pricePerNightMinor: Math.round(q.pricePerNight * 100),
         baseMinor: Math.round(q.baseAmount * 100), extraMinor: Math.round(q.extraGuestAmount * 100), totalMinor: Math.round(q.total * 100),
         deadline: requestDeadline(checkIn),
       }
     }
 
-    const totalMinor = slot.totalMinor
+    // Coupons are checked again here, so a stale or edited code can't change the price.
+    let couponCode: string | null = null
+    let discountMinor = 0
+    if (req.couponCode) {
+      const coupon = await couponsRepo.find(req.couponCode)
+      const result = coupon ? couponDiscount(coupon, { total: slot.totalMinor / 100, kind, today }) : { reason: 'We don’t know that code.' }
+      if ('reason' in result) collect({ couponCode: result.reason })
+      else if (!(await couponsRepo.claim(coupon!.code))) collect({ couponCode: 'This code has just been fully used.' })
+      else {
+        couponCode = coupon!.code
+        discountMinor = Math.round(result.discount * 100)
+      }
+    }
+
+    const totalMinor = slot.totalMinor - discountMinor
     const instant = (property.management ?? 'self') === 'managed'
     const pct = commissionPct(property.management ?? 'self', (await contentRepo.settings()).commission)
     const cfg = await paymentsService.activeConfig()
@@ -160,10 +175,12 @@ export const bookingService = {
         paymentMethod: req.paymentMethod as PaymentMethod, contactPhone, specialRequests: specialRequests || null,
         status, paymentStatus: cfg ? 'created' : 'test',
         expiresAt: status === 'AwaitingPayment' ? inMinutes(PAYMENT_HOLD_MINUTES) : status === 'Requested' ? slot.deadline : null,
+        couponCode, discountMinor,
         kind, startTime: slot.startTime, endTime: slot.endTime, hours: slot.hours, guestBreakdown: party,
         securityDepositMinor: property.securityDepositMinor, checkInTime: property.checkInTime, checkOutTime: property.checkOutTime,
       }, property, guestDoc)
     } catch (err) {
+      if (couponCode) await couponsRepo.release(couponCode)
       if (err instanceof NightsTakenError) throw kind === 'dayuse'
         ? new AppError(409, err.message || 'Those hours were just booked. Please choose another time.', { startTime: err.message || 'Those hours are no longer available.' })
         : datesTaken()
@@ -179,8 +196,9 @@ export const bookingService = {
         await bookingsRepo.setFields(code, { razorpayOrderId: order.id })
         booking = { ...booking, razorpayOrderId: order.id }
       } catch (err) {
-        // Free the dates straight away if the payment can't start.
+        // Free the dates (and the coupon) straight away if the payment can't start.
         await bookingsRepo.transition(code, ['AwaitingPayment'], () => ({ status: 'Cancelled', cancelledAt: nowISO(), paymentStatus: 'failed' }))
+        if (couponCode) await couponsRepo.release(couponCode)
         throw err
       }
     }
@@ -302,6 +320,8 @@ export const bookingService = {
     })
     if (!before) throw new AppError(400, 'This booking can’t be cancelled. Stays can be cancelled until the day before check-in.')
     await refund(before, refundMinor)
+    // A coupon on a booking that was never confirmed can be used again.
+    if (before.couponCode && !before.confirmedAt) await couponsRepo.release(before.couponCode)
     return toBooking((await bookingsRepo.find(code))!, today)
   },
 
@@ -342,6 +362,7 @@ export const bookingService = {
     }))
     if (!before) throw new AppError(400, 'This request has already been answered or has expired.')
     await refund(before, before.totalMinor)
+    if (before.couponCode) await couponsRepo.release(before.couponCode)
     return toBooking((await bookingsRepo.find(code))!, todayISO())
   },
 
@@ -373,6 +394,7 @@ export const bookingService = {
       ...(cur.status === 'Requested' ? { paymentStatus: returnedStatus(cur), refundedMinor: cur.paymentStatus === 'paid' ? cur.totalMinor : 0 } : {}),
     }) : null)
     if (before?.status === 'Requested') await refund(before, before.totalMinor)
+    if (before?.couponCode) await couponsRepo.release(before.couponCode)
     return !!before
   },
 

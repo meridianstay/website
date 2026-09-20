@@ -1,4 +1,4 @@
-import { addDays, defaultDayUse, defaultHouseRules, distanceKm, parsePropertyCode, placeSlug, type Destination, type Amenity, type HouseRules, type Management, type DateRange, type ListingInput, type ListingStatus, type PropertySummary, type PropertyType, type SearchQuery } from '@meridian/shared'
+import { addDays, defaultDayUse, defaultHouseRules, discountedPrice, distanceKm, parsePropertyCode, placeSlug, type Destination, type Amenity, type HouseRules, type Management, type DateRange, type ListingInput, type ListingStatus, type PropertySummary, type PropertyType, type SearchQuery } from '@meridian/shared'
 import type { Transaction } from 'firebase-admin/firestore'
 import { C, all, col, daysOf, firestore, nextId, nightsOf, nowISO } from '../store/db'
 import { busyPeriods, type DaySlot, type NightLock } from './schedule'
@@ -22,6 +22,8 @@ export interface PropertyDoc {
   overnight: boolean
   /** "Meridian Assured": inspected and verified by the team. Set by admins. */
   assured: boolean
+  /** Host discount in percent (0–70), applied to nightly and day-use prices. */
+  discountPct: number
   dayUse: { enabled: boolean; blockHours: number; priceMinor: number; extraHourMinor: number; opensAt: string; closesAt: string }
   approvedAt: string | null; createdAt: string; updatedAt: string
 }
@@ -33,7 +35,7 @@ export function withPropDefaults(p: PropertyDoc): PropertyDoc {
     management: p.management ?? 'self', areaSqft: p.areaSqft ?? null, gatheringCapacity: p.gatheringCapacity ?? null,
     checkInTime: p.checkInTime ?? '14:00', checkOutTime: p.checkOutTime ?? '11:00',
     houseRules: { ...defaultHouseRules, ...p.houseRules }, securityDepositMinor: p.securityDepositMinor ?? 0, address: p.address ?? '',
-    overnight: p.overnight ?? true, assured: p.assured ?? false,
+    overnight: p.overnight ?? true, assured: p.assured ?? false, discountPct: p.discountPct ?? 0,
     dayUse: p.dayUse ?? { enabled: false, blockHours: defaultDayUse.blockHours, priceMinor: defaultDayUse.price * 100, extraHourMinor: defaultDayUse.extraHourPrice * 100, opensAt: defaultDayUse.opensAt, closesAt: defaultDayUse.closesAt },
   }
 }
@@ -49,8 +51,10 @@ export const toPropertySummary = (p: PropertyDoc): PropertySummary => ({
   rating: p.ratingAvg, reviewCount: p.reviewCount, beds: p.bedrooms, baths: p.bathrooms, maxGuests: p.maxGuests,
   image: p.coverImageUrl, description: p.description, lat: approx(p.lat), lng: approx(p.lng), management: p.management ?? 'self',
   overnight: p.overnight ?? true,
-  dayUse: p.dayUse?.enabled ? { price: p.dayUse.priceMinor / 100, blockHours: p.dayUse.blockHours } : null,
+  dayUse: p.dayUse?.enabled ? { price: discountedPrice(p.dayUse.priceMinor / 100, p.discountPct ?? 0), blockHours: p.dayUse.blockHours } : null,
   assured: p.assured ?? false,
+  discountPct: p.discountPct ?? 0,
+  priceNow: discountedPrice(p.pricePerNightMinor / 100, p.discountPct ?? 0),
   isNew: !!p.approvedAt && Date.now() - Date.parse(p.approvedAt) < 30 * 86_400_000,
 })
 
@@ -61,7 +65,7 @@ const ref = (id: number) => col(C.properties).doc(String(id))
 
 /** The newer listing fields, converted for storage (rupees → paise). */
 const detailFields = (input: ListingInput) => ({
-  areaSqft: input.areaSqft, gatheringCapacity: input.gatheringCapacity, checkInTime: input.checkInTime, checkOutTime: input.checkOutTime,
+  discountPct: input.discountPct, areaSqft: input.areaSqft, gatheringCapacity: input.gatheringCapacity, checkInTime: input.checkInTime, checkOutTime: input.checkOutTime,
   houseRules: input.houseRules, securityDepositMinor: Math.round(input.securityDeposit * 100), address: input.address, overnight: input.overnight,
   dayUse: {
     enabled: input.dayUse.enabled, blockHours: input.dayUse.blockHours, priceMinor: Math.round(input.dayUse.price * 100),
@@ -111,8 +115,8 @@ export const propertiesRepo = {
       (codeId !== null ? p.id === codeId : !where || `${p.title} ${p.city}, ${p.region}, ${p.country}`.toLowerCase().includes(where)) &&
       (!f.type || p.type === f.type) &&
       (!f.guests || p.maxGuests >= f.guests) &&
-      (f.minPrice == null || p.pricePerNightMinor >= f.minPrice * 100) &&
-      (f.maxPrice == null || p.pricePerNightMinor <= f.maxPrice * 100) &&
+      (f.minPrice == null || discountedPrice(p.pricePerNightMinor, p.discountPct ?? 0) >= f.minPrice * 100) &&
+      (f.maxPrice == null || discountedPrice(p.pricePerNightMinor, p.discountPct ?? 0) <= f.maxPrice * 100) &&
       (!f.featured || p.featuredRank != null) &&
       (!f.management || (p.management ?? 'self') === f.management))
     if (f.checkIn && f.checkOut) {
@@ -229,7 +233,7 @@ export const propertiesRepo = {
       id: p.id, slug: p.slug, status: p.status, rejectionReason: p.rejectionReason, title: p.title, type: p.type,
       description: p.description, city: p.city, region: p.region, country: p.country, price: p.pricePerNightMinor / 100,
       beds: p.bedrooms, baths: p.bathrooms, maxGuests: p.maxGuests, lat: p.lat, lng: p.lng, coverImage: p.coverImageUrl,
-      photos: p.photos, amenities: p.amenities, management: p.management ?? 'self',
+      photos: p.photos, amenities: p.amenities, management: p.management ?? 'self', discountPct: p.discountPct ?? 0,
       areaSqft: p.areaSqft, gatheringCapacity: p.gatheringCapacity, checkInTime: p.checkInTime, checkOutTime: p.checkOutTime,
       houseRules: p.houseRules, securityDeposit: p.securityDepositMinor / 100, address: p.address, overnight: p.overnight,
       dayUse: { enabled: p.dayUse.enabled, blockHours: p.dayUse.blockHours, price: p.dayUse.priceMinor / 100, extraHourPrice: p.dayUse.extraHourMinor / 100, opensAt: p.dayUse.opensAt, closesAt: p.dayUse.closesAt },

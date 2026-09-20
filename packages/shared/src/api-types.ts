@@ -39,6 +39,9 @@ export interface PropertySummary {
   dayUse: { price: number; blockHours: number } | null
   /** Inspected and verified by the Meridian team. */
   assured: boolean
+  /** Host discount in percent; `price` is before it, `priceNow` after. */
+  discountPct: number
+  priceNow: number
   /** Went live in the last 30 days. */
   isNew: boolean
 }
@@ -80,7 +83,10 @@ export interface PropertyDetail extends PropertySummary {
   checkOutTime: string
   houseRules: HouseRules
   securityDeposit: number
+  /** Day-use settings with the discount already applied to `price`. */
   dayUseSettings: DayUseSettings | null
+  /** The day-use price before the discount, when discounted. */
+  dayUseFullPrice: number | null
   gallery: string[]
   amenities: Amenity[]
   host: { name: string; joinedAt: string; avatar: string | null }
@@ -131,6 +137,9 @@ export interface BookingDetail {
   endTime: string | null
   hours: number | null
   guestBreakdown: GuestBreakdown
+  /** Coupon used, and what it took off. */
+  couponCode: string | null
+  discount: number
   /** Refundable deposit to pay at check-in (₹). */
   securityDeposit: number
   checkInTime: string
@@ -203,6 +212,8 @@ export interface ListingInput {
   coverImage: string
   photos: string[]
   amenities: string[]
+  /** Discount on this listing, in percent (0–70). */
+  discountPct: number
   /** Built-up area in square feet, if the host gives it. */
   areaSqft: number | null
   /** Most people allowed for a day event or party (can exceed overnight guests). */

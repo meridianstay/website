@@ -1,7 +1,7 @@
 import { lazy, Suspense, useEffect, useState, type ReactNode } from 'react'
 import { Link, useNavigate, useParams } from 'react-router'
 import { ErrorNote, PageHeader, PhotoUpload, Spinner } from '@meridian/ui'
-import { commissionMinor, commissionPct, defaultCommission, defaultDayUse, defaultHouseRules, formatPrice, formatTime, HOUSE_RULES, quoteDayUse, quoteStay, addDays, todayISO, type Amenity, type DayUseSettings, type HouseRules, type Management, type PropertyType } from '@meridian/shared'
+import { commissionMinor, commissionPct, defaultCommission, defaultDayUse, defaultHouseRules, discountedPrice, formatPrice, formatTime, HOUSE_RULES, quoteDayUse, quoteStay, addDays, todayISO, type Amenity, type DayUseSettings, type HouseRules, type Management, type PropertyType } from '@meridian/shared'
 import { ApiError, api, hostApi, type ListingInput } from '@meridian/shared/client'
 
 const LocationPicker = lazy(() => import('../components/LocationPicker'))
@@ -21,7 +21,7 @@ const fieldStep: Record<string, number> = {
   type: 0, title: 1, city: 1, region: 1, location: 1, address: 1, beds: 2, baths: 2, maxGuests: 2, areaSqft: 2, gatheringCapacity: 2,
   coverImage: 3, photos: 3, description: 3,
   checkInTime: 4, checkOutTime: 4, securityDeposit: 4, houseRulesNotes: 4, quietAfter: 4,
-  price: 5, overnight: 5, dayUsePrice: 5, dayUseExtra: 5, dayUseBlock: 5, dayUseHours: 5,
+  price: 5, overnight: 5, discountPct: 5, dayUsePrice: 5, dayUseExtra: 5, dayUseBlock: 5, dayUseHours: 5,
 }
 
 type Draft = Omit<ListingInput, 'type' | 'lat' | 'lng'> & { type: PropertyType | null; lat: number | null; lng: number | null; photoText: string }
@@ -30,7 +30,7 @@ const emptyDraft: Draft = {
   type: null, title: '', description: '', city: '', region: '', country: 'India', price: 3000, beds: 1, baths: 1, maxGuests: 2,
   lat: null, lng: null, coverImage: '', photos: [], photoText: '', amenities: [],
   areaSqft: null, gatheringCapacity: null, checkInTime: '14:00', checkOutTime: '11:00', houseRules: { ...defaultHouseRules },
-  securityDeposit: 0, address: '', overnight: true, dayUse: { ...defaultDayUse },
+  securityDeposit: 0, address: '', overnight: true, dayUse: { ...defaultDayUse }, discountPct: 0,
 }
 
 const inputClass = 'w-full bg-slate-50 border border-slate-200 rounded-2xl p-3 text-sm focus:outline-none focus:border-brand-500'
@@ -354,6 +354,21 @@ export function ListingEditor() {
                 </>
               )}
             </section>
+            <section className={`rounded-2xl border-2 p-4 space-y-3 ${draft.discountPct > 0 ? 'border-rose-300' : 'border-slate-200'}`}>
+              <p className="font-bold text-slate-900"><i className="fa-solid fa-tag text-rose-500 mr-2" aria-hidden="true"></i>Discount (optional)</p>
+              <p className="text-xs text-slate-500">Guests see the old price crossed out and a “% off” badge on your listing. It applies to nightly and day-use prices.</p>
+              <div className="flex items-center gap-3">
+                <input id="discountPct" type="number" min={0} max={70} step={5} className={`${inputClass} w-28`} value={draft.discountPct} onChange={(e) => update('discountPct', Number(e.target.value))} />
+                <label htmlFor="discountPct" className="text-sm text-slate-600">% off</label>
+                {draft.discountPct > 0 && (
+                  <span className="text-sm text-slate-600">
+                    {draft.overnight && <>Nightly: <span className="line-through text-slate-400">{formatPrice(draft.price)}</span> <span className="font-bold text-slate-900">{formatPrice(discountedPrice(draft.price, draft.discountPct))}</span></>}
+                    {draft.dayUse.enabled && <> · Day use: <span className="line-through text-slate-400">{formatPrice(draft.dayUse.price)}</span> <span className="font-bold text-slate-900">{formatPrice(discountedPrice(draft.dayUse.price, draft.discountPct))}</span></>}
+                  </span>
+                )}
+              </div>
+              {fields.discountPct && <p className="text-xs text-rose-600 font-semibold">{fields.discountPct}</p>}
+            </section>
             <p className="text-xs text-slate-500">
               {management === 'managed'
                 ? 'This property is managed by Meridian Stay: guests book instantly, and we handle upkeep and guest care.'
@@ -375,6 +390,7 @@ export function ListingEditor() {
               <Row label="Times" value={`Check-in ${formatTime(draft.checkInTime)} · check-out ${formatTime(draft.checkOutTime)}`} />
               <Row label="House rules" value={HOUSE_RULES.map((r) => (draft.houseRules[r.key] ? r.yes : r.no)).join(' · ')} />
               <Row label="Security deposit" value={draft.securityDeposit ? formatPrice(draft.securityDeposit) : 'None'} />
+              <Row label="Discount" value={draft.discountPct ? `${draft.discountPct}% off` : 'None'} />
               <Row label="Photos" value={`${1 + photos.length}`} />
               <Row label="Amenities" value={draft.amenities.join(', ') || 'None'} />
             </dl>

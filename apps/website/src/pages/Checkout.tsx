@@ -30,6 +30,10 @@ export function Checkout() {
   const [fieldErrors, setFieldErrors] = useState<Record<string, string>>({})
   const [submitError, setSubmitError] = useState<string | null>(null)
   const [submitting, setSubmitting] = useState<null | 'booking' | 'paying' | 'verifying'>(null)
+  const [coupon, setCoupon] = useState<{ code: string; discount: number; label: string } | null>(null)
+  const [couponInput, setCouponInput] = useState('')
+  const [couponError, setCouponError] = useState<string | null>(null)
+  const [checkingCoupon, setCheckingCoupon] = useState(false)
   const { paymentsOnline } = useSite()
   useDocumentTitle('Book your stay')
 
@@ -63,7 +67,7 @@ export function Checkout() {
         const q = quoteDayUse(day!, choice.hours)
         return { nights: 0, pricePerNight: q.basePrice, baseAmount: q.basePrice, extraGuests: 0, extraGuestAmount: q.extraAmount, serviceFee: 0, total: q.total, kind: 'dayuse' as const, hours: choice.hours }
       })()
-    : quoteStay(property.price, checkIn, checkOut, guests)
+    : quoteStay(property.priceNow, checkIn, checkOut, guests)
   const endTime = isDay ? `${String(Math.floor((minutesOf(choice.startTime) + choice.hours * 60) / 60)).padStart(2, '0')}:${String((minutesOf(choice.startTime) + choice.hours * 60) % 60).padStart(2, '0')}` : ''
   const changeLink = `${backToStay}?${bookingQuery(choice)}`
   const instant = property.management === 'managed'
@@ -81,6 +85,7 @@ export function Checkout() {
     let code: string | null = null
     try {
       const { booking, payment } = await api.createBooking({
+        couponCode: coupon?.code,
         propertyId: property.id, checkIn, checkOut: isDay ? '' : checkOut, guests, paymentMethod: form.method, contactPhone: form.phone.trim(), specialRequests: form.requests.trim(),
         kind: choice.kind, startTime: isDay ? choice.startTime : undefined, hours: isDay ? choice.hours : undefined, ...party,
       })
@@ -102,6 +107,19 @@ export function Checkout() {
       setFieldErrors(e.fields ?? {})
       setSubmitError(e.message)
       setSubmitting(null)
+    }
+  }
+
+  const applyCoupon = async () => {
+    setCheckingCoupon(true)
+    setCouponError(null)
+    try {
+      const r = await api.checkCoupon(couponInput.trim(), quote.total, choice.kind)
+      setCoupon({ code: r.code, discount: r.discount, label: r.label })
+    } catch (e) {
+      setCouponError((e as Error).message)
+    } finally {
+      setCheckingCoupon(false)
     }
   }
 
@@ -209,7 +227,7 @@ export function Checkout() {
             {submitting === 'booking' ? (instant ? 'Holding your dates…' : 'Sending request…')
               : submitting === 'paying' ? 'Waiting for payment…'
               : submitting === 'verifying' ? 'Confirming payment…'
-              : instant ? (paymentsOnline ? `Pay ${formatPrice(quote.total)} and book` : 'Confirm booking')
+              : instant ? (paymentsOnline ? `Pay ${formatPrice(quote.total - (coupon?.discount ?? 0))} and book` : 'Confirm booking')
               : 'Request to book'}
           </button>
         </div>
@@ -224,7 +242,28 @@ export function Checkout() {
                 <p className="text-xs text-slate-500 mt-0.5">{property.location}</p>
               </div>
             </div>
-            <PriceBreakdown quote={quote} />
+            <PriceBreakdown quote={quote} discount={coupon ? { label: `Coupon ${coupon.code}`, amount: coupon.discount } : undefined} />
+
+            <div className="pt-4 border-t border-slate-100">
+              {coupon ? (
+                <p className="text-sm text-brand-700 font-semibold flex items-center justify-between gap-2">
+                  <span><i className="fa-solid fa-ticket mr-2" aria-hidden="true"></i>{coupon.code} · {coupon.label}</span>
+                  <button type="button" onClick={() => { setCoupon(null); setCouponInput('') }} className="text-xs text-slate-500 underline">Remove</button>
+                </p>
+              ) : (
+                <div className="flex gap-2">
+                  <label className="flex-1">
+                    <span className="sr-only">Coupon code</span>
+                    <input value={couponInput} onChange={(e) => { setCouponInput(e.target.value.toUpperCase()); setCouponError(null) }} placeholder="Coupon code"
+                      className="w-full bg-slate-50 border border-slate-200 rounded-xl p-2.5 text-sm font-mono uppercase focus:outline-none focus:border-brand-500" />
+                  </label>
+                  <button type="button" disabled={!couponInput.trim() || checkingCoupon} onClick={applyCoupon}
+                    className="bg-slate-900 disabled:bg-slate-300 text-white text-xs font-bold px-4 rounded-xl">{checkingCoupon ? 'Checking…' : 'Apply'}</button>
+                </div>
+              )}
+              {couponError && <p role="alert" className="text-xs text-rose-600 font-semibold mt-1.5">{couponError}</p>}
+            </div>
+
             <BookingModeNote instant={instant} />
             <p className="text-xs text-slate-400">Prices in Indian rupees, with no booking fees. Free cancellation up to 48 hours before check-in.</p>
           </div>

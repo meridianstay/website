@@ -5,6 +5,7 @@ import { integrationsService } from '../services/integrations'
 import { bookingService } from '../services/bookings'
 import { paymentsService } from '../services/payments'
 import { homepageService, staysFor } from '../services/homepage'
+import { couponService } from '../services/coupons'
 import { newBlock, type HomeBlock } from '@meridian/shared'
 import { demoResetAllowed, resetDemo } from '../store/resetDemo'
 import { adminService } from '../services/admin'
@@ -50,6 +51,12 @@ adminRoutes.get('/admin/bookings', async (c) => {
 })
 adminRoutes.post('/admin/bookings/:code/cancel', async (c) => (await bookingService.cancelByAdmin(admin(c), c.req.param('code')), done()))
 adminRoutes.post('/admin/bookings/:code/refund', async (c) => (await bookingService.retryRefund(admin(c), c.req.param('code')), done()))
+
+// ─── Coupons ─────────────────────────────────────────────────────────────────
+adminRoutes.get('/admin/coupons', async (c) => c.json({ coupons: await couponService.list() }))
+adminRoutes.post('/admin/coupons', async (c) => c.json({ coupon: await couponService.save(admin(c), await body(c)) }, 201))
+adminRoutes.put('/admin/coupons/:code', async (c) => c.json({ coupon: await couponService.save(admin(c), await body(c), c.req.param('code')) }))
+adminRoutes.delete('/admin/coupons/:code', async (c) => (await couponService.remove(admin(c), c.req.param('code')), done()))
 
 // ─── Users ───────────────────────────────────────────────────────────────────
 adminRoutes.get('/admin/users', async (c) =>

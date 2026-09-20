@@ -85,7 +85,7 @@ function StayForm({ property, initial, party, guests }: { property: PropertyDeta
   const [error, setError] = useState<string | null>(null)
   const counted = party.adults + party.children
   const ready = !!(dates.checkIn && dates.checkOut)
-  const quote = ready ? quoteStay(property.price, dates.checkIn, dates.checkOut, counted) : null
+  const quote = ready ? quoteStay(property.priceNow, dates.checkIn, dates.checkOut, counted) : null
 
   const reserve = () => {
     if (!ready) {
@@ -99,7 +99,10 @@ function StayForm({ property, initial, party, guests }: { property: PropertyDeta
   return (
     <>
       <div className="flex items-baseline justify-between">
-        <p><span className="text-2xl font-extrabold text-slate-900">{formatPrice(property.price)}</span><span className="text-sm text-slate-500"> / night</span></p>
+        <p>
+          {property.discountPct > 0 && <span className="text-sm text-slate-400 line-through mr-2">{formatPrice(property.price)}</span>}
+          <span className="text-2xl font-extrabold text-slate-900">{formatPrice(property.priceNow)}</span><span className="text-sm text-slate-500"> / night</span>
+        </p>
         {property.reviewCount > 0 && (
           <p className="text-xs font-semibold text-slate-700"><i className="fa-solid fa-star text-brand-yellow-400 mr-1" aria-hidden="true"></i>{property.rating.toFixed(2)} · {property.reviewCount} reviews</p>
         )}
@@ -177,7 +180,10 @@ function DayOutForm({ property, party, guests }: { property: PropertyDetail; par
   return (
     <>
       <div className="flex items-baseline justify-between">
-        <p><span className="text-2xl font-extrabold text-slate-900">{formatPrice(d.price)}</span><span className="text-sm text-slate-500"> for {d.blockHours} hours</span></p>
+        <p>
+          {property.dayUseFullPrice && <span className="text-sm text-slate-400 line-through mr-2">{formatPrice(property.dayUseFullPrice)}</span>}
+          <span className="text-2xl font-extrabold text-slate-900">{formatPrice(d.price)}</span><span className="text-sm text-slate-500"> for {d.blockHours} hours</span>
+        </p>
         {d.extraHourPrice > 0 && <p className="text-xs font-semibold text-slate-600">+{formatPrice(d.extraHourPrice)}/extra hour</p>}
       </div>
       <p className="text-xs text-slate-500 -mt-2">Picnics, pool days and parties between {formatTime(d.opensAt)} and {formatTime(d.closesAt)}{property.gatheringCapacity ? `, up to ${property.gatheringCapacity} people` : ''}.</p>

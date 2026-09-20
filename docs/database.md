@@ -44,6 +44,7 @@ Documents use short numeric ids (listing 7, user 12…) so links stay readable. 
 | `contentPages` | page address, e.g. `help` | Title, intro and sections of information pages; `published`, `draft` |
 | `contactMessages` | message id | Contact-form messages with status `new`, `read` or `closed` |
 | `auditLog` | automatic | Every admin action: who, what, which record, details |
+| `coupons` | the code (uppercase) | Discount codes: kind, value, cap, smallest total, dates, usage limit and count |
 | `counters` | sequence name | The last number used for each kind of record |
 
 ### How double bookings are prevented

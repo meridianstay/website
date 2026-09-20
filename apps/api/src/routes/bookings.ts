@@ -1,5 +1,6 @@
 import { Hono } from 'hono'
 import { bookingService, parsePaymentConfirmation } from '../services/bookings'
+import { couponService } from '../services/coupons'
 import { body, currentUid, currentUser, requireUser, type AppEnv } from '../http/auth'
 import { AppError } from '../http/errors'
 import { str } from '../http/validate'
@@ -17,8 +18,15 @@ bookingRoutes.post('/bookings', async (c) => {
     kind: str(b.kind) || 'stay', startTime: str(b.startTime) || undefined, hours: b.hours === undefined ? undefined : Number(b.hours),
     adults: b.adults === undefined ? undefined : Number(b.adults), children: b.children === undefined ? undefined : Number(b.children),
     infants: b.infants === undefined ? undefined : Number(b.infants), pets: b.pets === undefined ? undefined : Number(b.pets),
+    couponCode: str(b.couponCode) || undefined,
   })
   return c.json(result, 201)
+})
+
+/** Checks a coupon code before booking. */
+bookingRoutes.post('/bookings/coupon', async (c) => {
+  const b = await body(c)
+  return c.json(await couponService.check(str(b.code), Number(b.total), b.kind === 'dayuse' ? 'dayuse' : 'stay'))
 })
 
 bookingRoutes.get('/bookings', async (c) => c.json({ bookings: await bookingService.listForGuest(currentUser(c)) }))

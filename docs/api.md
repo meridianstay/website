@@ -109,6 +109,7 @@ Every error returns a JSON body with a message that is safe to show to users. Va
 | Method | Path | Access | Body | Returns |
 | --- | --- | --- | --- | --- |
 | POST | `/api/bookings` | User | `{ propertyId, checkIn, checkOut, guests, paymentMethod: "upi" \| "card" \| "netbanking", contactPhone, specialRequests?, adults?, children?, infants?, pets? }`. For a day out: `kind: "dayuse"`, `checkIn` (the date), `startTime: "HH:MM"`, `hours` (no `checkOut`). | `201 { booking, payment }`. Price is calculated by the server. `payment` is `null` in test mode, otherwise the details for Razorpay Checkout (below). `409` if the dates were just booked, requested or blocked. |
+| POST | `/api/bookings/coupon` | User | `{ code, total, kind }` → `{ code, discount, label, description }`, or `400` with the reason |
 | GET | `/api/bookings` | User | — | `{ bookings }`, your bookings, newest check-in first (abandoned checkouts are left out) |
 | GET | `/api/bookings/:code` | User | — | `{ booking }`, if you are the guest, the host or an admin |
 | GET | `/api/bookings/:code/payment` | User | — | `{ payment }` again for your unfinished checkout, while the dates are still held |
@@ -196,6 +197,10 @@ Every change here is recorded in the activity log.
 | GET | `/api/admin/bookings` | `?q=` (code, guest, email or stay), `&status=` | `{ bookings }` with commission, payout, payment status and `refundPending` |
 | POST | `/api/admin/bookings/:code/cancel` | — | `204`; any booking, request or checkout that hasn't ended, refunded in full |
 | POST | `/api/admin/bookings/:code/refund` | — | `204`; retries a refund Razorpay refused |
+| GET | `/api/admin/coupons` | — | `{ coupons }` |
+| POST | `/api/admin/coupons` | A coupon | `201 { coupon }` |
+| PUT | `/api/admin/coupons/:code` | A coupon | `{ coupon }` |
+| DELETE | `/api/admin/coupons/:code` | — | `204` |
 | GET | `/api/admin/users` | `?q=&role=guest\|host\|admin` | `{ users }` with `suspended`, `listings`, `bookings` |
 | PATCH | `/api/admin/users/:id` | `{ role?, suspended? }` | `204`. Suspending signs the user out everywhere. You can't change yourself. |
 | GET | `/api/admin/reviews` | `?q=` | `{ reviews }` with `hidden` |

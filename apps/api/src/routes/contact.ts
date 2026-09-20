@@ -4,7 +4,7 @@ import { body, type AppEnv } from '../http/auth'
 import { rateLimit } from '../http/rateLimit'
 import { checkEmail, checkLength, collect, str } from '../http/validate'
 
-export const CONTACT_TOPICS = ['Booking help', 'Hosting', 'Payments & refunds', 'Trust & safety', 'Press', 'Partnerships & investors', 'Other']
+export const CONTACT_TOPICS = ['Booking help', 'Stay request', 'Hosting', 'Payments & refunds', 'Trust & safety', 'Press', 'Partnerships & investors', 'Other']
 
 export const contactRoutes = new Hono<AppEnv>()
 

@@ -238,6 +238,11 @@ const messages: [name: string, email: string, topic: string, message: string, st
 
 
 // Property details (demo): area, capacities, rules, deposit, a sample address, and day use on a few properties.
+/** Demo discounts, shown as a crossed-out price and a “% off” badge. */
+const DISCOUNTS: Record<string, number> = {
+  'thar-desert-glamping-camp': 20, 'naggar-apple-orchard-farmstay': 15, 'gokarna-cliffside-resort': 10, 'rishikesh-riverside-homestay-room': 25,
+}
+
 const DAY_USE: Record<string, { price: number; extra: number; block: number }> = {
   'green-valley-organic-farmstay': { price: 4500, extra: 600, block: 6 },
   'emerald-luxury-pool-villa': { price: 12000, extra: 1800, block: 6 },
@@ -261,6 +266,7 @@ function details(s: SeedProperty) {
     overnight: true,
     // Demo: Meridian-managed stays and the best-reviewed ones are "Assured".
     assured: !!s.managed || s.rating >= 4.9,
+    discountPct: DISCOUNTS[s.slug] ?? 0,
     dayUse: d
       ? { enabled: true, blockHours: d.block, priceMinor: d.price * 100, extraHourMinor: d.extra * 100, opensAt: '08:00', closesAt: '22:00' }
       : { enabled: false, blockHours: 6, priceMinor: 300000, extraHourMinor: 40000, opensAt: '08:00', closesAt: '22:00' },
@@ -456,6 +462,19 @@ export async function seed(log = console.log, force = false): Promise<boolean> {
 
   const counters = { users: Math.max(users.length, highestUserId), properties: properties.length, reviews: reviewId, bookings: bookings.length + dayOuts.length, blocks: blocks.length, messages: messages.length }
   for (const [name, value] of Object.entries(counters)) w.set(col(C.counters).doc(name), { value })
+
+  // Demo coupons for the checkout box.
+  const coupons: [code: string, kind: 'percent' | 'flat', value: number, extra: object][] = [
+    ['MONSOON20', 'percent', 20, { maxDiscount: 3000, description: 'Monsoon campaign', minTotal: 5000 }],
+    ['DAYOUT500', 'flat', 500, { applies: 'dayuse', description: 'Day-out promo', minTotal: 3000 }],
+    ['FIRSTTRIP', 'percent', 10, { maxDiscount: 1500, description: 'First booking', usageLimit: 100 }],
+  ]
+  for (const [code, kind, value, extra] of coupons) {
+    w.set(col(C.coupons).doc(code), {
+      code, kind, value, maxDiscount: 0, minTotal: 0, applies: 'all', startsAt: '', endsAt: '', usageLimit: 0, usedCount: 0,
+      enabled: true, description: '', createdAt: daysAgo(10), ...extra,
+    })
+  }
 
   // A visible announcement so the preview shows the banner.
   w.set(col(C.settings).doc('announcement'), {

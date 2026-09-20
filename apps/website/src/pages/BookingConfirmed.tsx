@@ -107,7 +107,7 @@ export function BookingConfirmed() {
               <p className="text-sm font-semibold text-slate-800 mt-1">{bookingWhen(booking)} · {booking.guests} {booking.guests === 1 ? 'guest' : 'guests'}</p>
             </div>
           </div>
-          <PriceBreakdown quote={booking} />
+          <PriceBreakdown quote={booking} net discount={booking.discount > 0 ? { label: `Coupon ${booking.couponCode ?? ''}`.trim(), amount: booking.discount } : undefined} />
           <p className="text-xs text-slate-500 bg-slate-50 rounded-xl p-3">{d.note}</p>
           {(booking.status === 'Confirmed' || booking.status === 'Completed') && (
             <dl className="grid sm:grid-cols-2 gap-3 text-sm">
