@@ -3,6 +3,10 @@ const tones: Record<string, string> = {
   Confirmed: 'bg-brand-100 text-brand-700',
   Completed: 'bg-slate-100 text-slate-700',
   Pending: 'bg-amber-100 text-amber-700',
+  PendingReview: 'bg-amber-100 text-amber-700',
+  Scheduled: 'bg-sky-100 text-sky-700',
+  Running: 'bg-brand-100 text-brand-700',
+  Finished: 'bg-slate-100 text-slate-700',
   Requested: 'bg-amber-100 text-amber-700',
   AwaitingPayment: 'bg-amber-100 text-amber-700',
   Draft: 'bg-slate-100 text-slate-600',
@@ -12,7 +16,7 @@ const tones: Record<string, string> = {
   Cancelled: 'bg-rose-100 text-rose-700',
 }
 
-const labels: Record<string, string> = { AwaitingPayment: 'Awaiting payment', Requested: 'Awaiting host' }
+const labels: Record<string, string> = { AwaitingPayment: 'Awaiting payment', Requested: 'Awaiting host', PendingReview: 'In review' }
 
 export function StatusBadge({ status }: { status: string }) {
   return (

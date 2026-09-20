@@ -1,7 +1,8 @@
 import { Hono } from 'hono'
-import { discountedPrice, isISODate, todayISO, type PropertyType } from '@meridian/shared'
+import { AD_PLACEMENTS, discountedPrice, isISODate, todayISO, type AdPlacement, type PropertyType } from '@meridian/shared'
 import { propertiesRepo, reviewsRepo, toPropertySummary, usersRepo } from '../repositories'
 import { bookingService } from '../services/bookings'
+import { promotionService } from '../services/promotions'
 import { reviewService } from '../services/reviews'
 import { PROPERTY_TYPES } from '../services/listings'
 import { body, currentUser, requireUser, type AppEnv } from '../http/auth'
@@ -36,6 +37,20 @@ propertyRoutes.get('/properties', async (c) => {
     limit: Math.min(intOrUndefined(q.limit) ?? 50, 100),
   })
   return c.json({ properties })
+})
+
+/** Promoted listings for a placement, e.g. /api/promoted?placement=search&where=Kerala. */
+propertyRoutes.get('/promoted', async (c) => {
+  const placement = c.req.query('placement')
+  if (!AD_PLACEMENTS.some((p) => p.value === placement)) throw new AppError(400, 'Unknown placement.')
+  const properties = await promotionService.promoted(placement as AdPlacement, { where: c.req.query('where'), type: c.req.query('type') })
+  return c.json({ properties })
+})
+
+/** Counts a click on a promoted listing. */
+propertyRoutes.post('/promoted/:id/click', async (c) => {
+  await promotionService.click(Number(c.req.param('id')))
+  return c.body(null, 204)
 })
 
 propertyRoutes.get('/destinations', async (c) => c.json({ destinations: await propertiesRepo.destinations() }))

@@ -291,6 +291,8 @@ export interface AdminStats {
   gbv: number
   /** Meridian's commission on confirmed bookings. */
   commission: number
+  /** Money hosts have paid for promotions. */
+  adRevenue: number
   new_messages: number
   reviews: number
 }

@@ -7,6 +7,7 @@ import { Bookings } from './pages/Bookings'
 import { Users } from './pages/Users'
 import { Reviews } from './pages/Reviews'
 import { Coupons } from './pages/Coupons'
+import { Promotions } from './pages/Promotions'
 import { Messages } from './pages/Messages'
 import { Website } from './pages/Website'
 import { PageEditor } from './pages/PageEditor'
@@ -25,6 +26,7 @@ const nav: NavItem[] = [
   { to: '/users', label: 'Users', icon: 'users' },
   { to: '/reviews', label: 'Reviews', icon: 'star' },
   { to: '/coupons', label: 'Coupons', icon: 'ticket' },
+  { to: '/promotions', label: 'Promotions', icon: 'bullhorn' },
   { to: '/messages', label: 'Messages', icon: 'envelope' },
   { to: '/website', label: 'Website content', icon: 'pen-to-square' },
   { to: '/activity', label: 'Activity log', icon: 'clock-rotate-left' },
@@ -49,6 +51,7 @@ export default function App() {
                 <Route path="users" element={<Users />} />
                 <Route path="reviews" element={<Reviews />} />
                 <Route path="coupons" element={<Coupons />} />
+                <Route path="promotions" element={<Promotions />} />
                 <Route path="messages" element={<Messages />} />
                 <Route path="website" element={<Website />} />
                 <Route path="website/about" element={<AboutEditor />} />

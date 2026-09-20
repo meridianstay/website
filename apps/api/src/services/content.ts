@@ -31,6 +31,12 @@ export const contentService = {
     if (key === 'signIn' && !value.google && !value.phone) fields.google = 'Keep at least one sign-in method on, or guests and hosts can’t log in.'
     // Vercel accepts request bodies up to 4.5 MB, so uploads are capped at 4 MB.
     if (key === 'uploads' && !(Number(value.maxMb) >= 1 && Number(value.maxMb) <= 4)) fields.maxMb = 'Choose between 1 and 4 MB.'
+    if (key === 'promotions') {
+      for (const f of ['searchPerDay', 'homePerDay', 'destinationPerDay']) {
+        if (!(Number(value[f]) >= 0 && Number(value[f]) <= 100000)) fields[f] = 'Enter a daily price in rupees (0–1,00,000).'
+      }
+      if (!(Number(value.maxDays) >= 1 && Number(value.maxDays) <= 365)) fields.maxDays = 'Choose between 1 and 365 days.'
+    }
     if (key === 'commission') {
       for (const f of ['managedPct', 'selfPct']) if (!(Number(value[f]) >= 0 && Number(value[f]) <= 60)) fields[f] = 'Choose between 0 and 60%.'
     }

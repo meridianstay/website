@@ -100,6 +100,12 @@ reference/index.html       the original single-file prototype
 - **Double bookings** are impossible: each booked or blocked night is claimed inside a Firestore transaction, so two guests can never get the same night.
 - **Reviews** can only be written by a guest whose stay has finished, once per booking.
 
+## How Meridian earns
+
+- **Commission** on every confirmed booking, taken from the host's payout (30% on properties Meridian manages, 15% on host-managed ones; set in Admin → Settings).
+- **Host promotions**: hosts pay by the day to have a listing promoted in search, on the homepage or on a destination page. Every promotion is approved by the team, is labelled "Promoted" to guests, and its income is shown in Admin → Promotions.
+- Guests pay **no booking fee**.
+
 ## Installing as a phone app
 
 The website is a **Progressive Web App**: the **Download app** button in the header adds Meridian Stay to a phone's home screen with its own icon, opening full screen. Android and desktop Chrome/Edge get a one-tap install prompt; iPhones get Safari's "Add to Home Screen" steps. The files are in `apps/website/public`: `manifest.webmanifest` (name, colours, icons, shortcuts), `icons/`, `sw.js` (offline page only, no caching of data) and `offline.html`. The install logic is `apps/website/src/lib/install.ts`.

@@ -66,6 +66,8 @@ Every error returns a JSON body with a message that is safe to show to users. Va
 | Method | Path | Access | Returns |
 | --- | --- | --- | --- |
 | GET | `/api/properties` | Public | `{ properties: PropertySummary[] }`, live listings only |
+| GET | `/api/promoted` | Public | `?placement=search\|home\|destination&where=&type=` → `{ properties }` (each with `promotionId`). Counts one view per listing returned. |
+| POST | `/api/promoted/:id/click` | Public | `204`, counts a click |
 | GET | `/api/destinations` | Public | `{ destinations: [{ slug, name, kind: "city" \| "state", region, stays, image, lat, lng, types }] }`, most stays first |
 | GET | `/sitemap.xml`, `/robots.txt` | Public | For search engines (served by the API) |
 | GET | `/api/properties/:slug/day` | Public | `?date=YYYY-MM-DD` → `{ date, opensAt, closesAt, busy: [{ start, end, reason }] }` for day use |
@@ -168,6 +170,10 @@ Every host endpoint needs a signed-in user and only acts on that user's own list
 | GET | `/api/host/listings/:id/calendar` | — | `{ blocks: [{ id, checkIn, checkOut, note }], bookings: [{ code, checkIn, checkOut, guestName, requested }] }` |
 | POST | `/api/host/listings/:id/blocks` | `{ checkIn, checkOut, note? }` | `201`. `409` if guests booked those nights or it overlaps a block. |
 | DELETE | `/api/host/listings/:id/blocks/:blockId` | — | `204` |
+| GET | `/api/host/promotions` | — | `{ campaigns, settings }` |
+| POST | `/api/host/promotions` | `{ propertyId, placement, startDate, days }` | `201 { campaign, payment }` (`payment` is null in test mode) |
+| POST | `/api/host/promotions/:id/pay` | Razorpay Checkout's result | `{ campaign }`, now waiting for review |
+| POST | `/api/host/promotions/:id/cancel` | — | `{ campaign }`; unused days are refunded |
 | GET | `/api/host/bookings` | — | `{ bookings }` for your listings, each with `guestName`, `guestEmail`, `commissionPct`, `commission` and `payout` |
 | POST | `/api/host/bookings/:code/accept` | — | `{ booking }`, now `Confirmed`; the authorised payment is captured. `400` if already answered or expired. |
 | POST | `/api/host/bookings/:code/decline` | `{ reason? }` (up to 300 characters, shown to the guest) | `{ booking }`, now `Declined`; the guest isn't charged |
@@ -197,6 +203,9 @@ Every change here is recorded in the activity log.
 | GET | `/api/admin/bookings` | `?q=` (code, guest, email or stay), `&status=` | `{ bookings }` with commission, payout, payment status and `refundPending` |
 | POST | `/api/admin/bookings/:code/cancel` | — | `204`; any booking, request or checkout that hasn't ended, refunded in full |
 | POST | `/api/admin/bookings/:code/refund` | — | `204`; retries a refund Razorpay refused |
+| GET | `/api/admin/promotions` | `?status=` | `{ campaigns }` |
+| POST | `/api/admin/promotions/:id/approve` | — | `{ campaign }` |
+| POST | `/api/admin/promotions/:id/reject` | `{ reason }` (shown to the host) | `{ campaign }`; the host is refunded |
 | GET | `/api/admin/coupons` | — | `{ coupons }` |
 | POST | `/api/admin/coupons` | A coupon | `201 { coupon }` |
 | PUT | `/api/admin/coupons/:code` | A coupon | `{ coupon }` |
@@ -226,7 +235,7 @@ Every change here is recorded in the activity log.
 | GET | `/api/admin/audit` | — | `{ entries: [{ action, targetType, targetId, details, adminName, createdAt }] }` (latest 300) |
 | GET | `/api/admin/integrations` | — | `{ mode: "live" \| "emulator" \| "unconfigured", projectId, storageBucket, services: { firestore, auth, storage } }`, each `{ ok, message }`. Never includes keys. |
 
-Settings keys for `PUT /api/admin/settings/:key`: `homepage`, `announcement`, `signIn` (`{ google, phone }`, at least one on), `uploads` (`{ maxMb: 1–4 }`) and `commission` (`{ managedPct, selfPct }`, each 0–60).
+Settings keys for `PUT /api/admin/settings/:key`: `homepage`, `announcement`, `signIn` (`{ google, phone }`, at least one on), `uploads` (`{ maxMb: 1–4 }`), `commission` (`{ managedPct, selfPct }`, each 0–60) and `promotions` (`{ enabled, searchPerDay, homePerDay, destinationPerDay, maxDays }`).
 
 ### Payments and demo data
 

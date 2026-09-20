@@ -10,6 +10,7 @@ import type { AboutPage, AboutStats } from '../about'
 import type { HomeBlock, HomeLayout } from '../homepage'
 import type { Destination } from '../places'
 import type { Coupon } from '../offers'
+import type { AdCampaign, AdPlacement, PromotionSettings } from '../promotions'
 import { request } from './http'
 
 const qs = (params: object) => {
@@ -44,6 +45,10 @@ export const api = {
 
   locations: () => request<{ locations: string[] }>('/locations'),
   destinations: () => request<{ destinations: Destination[] }>('/destinations'),
+  /** Listings hosts have paid to promote in a place on the site. */
+  promoted: (placement: AdPlacement, params: { where?: string; type?: string } = {}) =>
+    request<{ properties: (PropertySummary & { promotionId: number })[] }>(`/promoted${qs({ placement, ...params })}`),
+  promotedClick: (promotionId: number) => request<void>(`/promoted/${promotionId}/click`, { method: 'POST' }),
   searchProperties: (query: SearchQuery) => request<{ properties: PropertySummary[] }>(`/properties${qs(query)}`),
   property: (slug: string) => request<{ property: PropertyDetail }>(`/properties/${encodeURIComponent(slug)}`),
   /** Busy hours on a date, for booking day use. */
@@ -106,6 +111,12 @@ export const hostApi = {
   addBlock: (id: number, data: { checkIn: string; checkOut: string; note: string }) =>
     request<void>(`/host/listings/${id}/blocks`, { method: 'POST', json: data }),
   removeBlock: (id: number, blockId: number) => request<void>(`/host/listings/${id}/blocks/${blockId}`, { method: 'DELETE' }),
+  promotions: () => request<{ campaigns: AdCampaign[]; settings: PromotionSettings }>('/host/promotions'),
+  createPromotion: (data: { propertyId: number; placement: AdPlacement; startDate: string; days: number }) =>
+    request<{ campaign: AdCampaign; payment: PaymentRequest | null }>('/host/promotions', { method: 'POST', json: data }),
+  payPromotion: (id: number, result: { razorpay_order_id: string; razorpay_payment_id: string; razorpay_signature: string }) =>
+    request<{ campaign: AdCampaign }>(`/host/promotions/${id}/pay`, { method: 'POST', json: result }),
+  cancelPromotion: (id: number) => request<{ campaign: AdCampaign }>(`/host/promotions/${id}/cancel`, { method: 'POST' }),
   pause: (id: number) => request<void>(`/host/listings/${id}/pause`, { method: 'POST' }),
   relist: (id: number) => request<void>(`/host/listings/${id}/relist`, { method: 'POST' }),
 }
@@ -158,6 +169,10 @@ export const adminApi = {
   savePage: (page: ContentPage) => request<void>(`/admin/pages/${encodeURIComponent(page.slug)}`, { method: 'PUT', json: page }),
   deletePage: (slug: string) => request<void>(`/admin/pages/${encodeURIComponent(slug)}`, { method: 'DELETE' }),
 
+  promotions: (status?: string) => request<{ campaigns: AdCampaign[] }>(`/admin/promotions${qs({ status })}`),
+  approvePromotion: (id: number) => request<{ campaign: AdCampaign }>(`/admin/promotions/${id}/approve`, { method: 'POST' }),
+  rejectPromotion: (id: number, reason: string) => request<{ campaign: AdCampaign }>(`/admin/promotions/${id}/reject`, { method: 'POST', json: { reason } }),
+  savePromotionSettings: (value: PromotionSettings) => request<void>('/admin/settings/promotions', { method: 'PUT', json: value }),
   coupons: () => request<{ coupons: Coupon[] }>('/admin/coupons'),
   createCoupon: (coupon: Coupon) => request<{ coupon: Coupon }>('/admin/coupons', { method: 'POST', json: coupon }),
   updateCoupon: (code: string, coupon: Coupon) => request<{ coupon: Coupon }>(`/admin/coupons/${encodeURIComponent(code)}`, { method: 'PUT', json: coupon }),

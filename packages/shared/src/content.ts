@@ -1,3 +1,4 @@
+import { defaultPromotions, type PromotionSettings } from './promotions'
 // Default website content. The API copies it into the database on first start; after that
 // the admin control center edits it. Legal pages start as drafts for a lawyer to review.
 
@@ -50,6 +51,8 @@ export interface SiteSettings {
   uploads: UploadSettings
   /** Meridian's commission, in percent, by property management type. */
   commission: { managedPct: number; selfPct: number }
+  /** Paid promotions hosts can buy (daily rates in ₹). */
+  promotions: PromotionSettings
 }
 
 export const defaultSiteSettings: SiteSettings = {
@@ -70,6 +73,7 @@ export const defaultSiteSettings: SiteSettings = {
   signIn: { google: true, phone: true },
   uploads: { maxMb: 4 },
   commission: { managedPct: 30, selfPct: 15 },
+  promotions: { ...defaultPromotions },
 }
 
 type DefaultPage = Omit<ContentPage, 'slug' | 'draft'> & { draft?: boolean }

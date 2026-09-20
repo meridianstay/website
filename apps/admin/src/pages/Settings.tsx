@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react'
 import { ErrorNote, PageHeader, Panel, Spinner } from '@meridian/ui'
-import type { CommissionRates, IntegrationStatus, PaymentSettingsView, ServiceCheck, SignInSettings, UploadSettings } from '@meridian/shared'
+import type { CommissionRates, IntegrationStatus, PaymentSettingsView, PromotionSettings, ServiceCheck, SignInSettings, UploadSettings } from '@meridian/shared'
+import { AD_PLACEMENTS } from '@meridian/shared'
 import { ApiError, adminApi } from '@meridian/shared/client'
 
 const SERVICES: [key: keyof IntegrationStatus['services'], label: string, detail: string][] = [
@@ -14,6 +15,7 @@ export function Settings() {
   const [signIn, setSignIn] = useState<SignInSettings | null>(null)
   const [uploads, setUploads] = useState<UploadSettings | null>(null)
   const [commission, setCommission] = useState<CommissionRates | null>(null)
+  const [promotions, setPromotions] = useState<PromotionSettings | null>(null)
   const [demoReset, setDemoReset] = useState(false)
   const [error, setError] = useState<string | null>(null)
 
@@ -26,13 +28,14 @@ export function Settings() {
         setSignIn(settings.signIn)
         setUploads(settings.uploads)
         setCommission(settings.commission)
+        setPromotions(settings.promotions)
       })
       .catch((e) => setError(e.message))
   }
   useEffect(load, [])
 
   if (error && !status) return <ErrorNote message={error} onRetry={load} />
-  if (!status || !signIn || !uploads || !commission) return <Spinner />
+  if (!status || !signIn || !uploads || !commission || !promotions) return <Spinner />
 
   const modeLabel = { emulator: 'Local emulator (development)', live: 'Live Firebase project', unconfigured: 'Not connected' }[status.mode]
 
@@ -49,6 +52,32 @@ export function Settings() {
               <PercentField id="self-pct" label="Self-managed properties" detail="Run by the host · request to book" value={commission.selfPct} onChange={(selfPct) => setCommission({ ...commission, selfPct })} />
             </div>
             <p className="text-xs text-slate-500">Set each listing’s type on the Listings page.</p>
+          </SettingsForm>
+          <SettingsForm title="Promotions (host ads)" save={() => adminApi.savePromotionSettings(promotions)}>
+            <p className="text-sm text-slate-500">What hosts pay per day to promote a listing. Every promotion still needs your approval before it runs.</p>
+            <Toggle label="Hosts can buy promotions" detail="Turn off to pause all new promotions." checked={promotions.enabled} onChange={(enabled) => setPromotions({ ...promotions, enabled })} />
+            <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+              {AD_PLACEMENTS.map((p) => {
+                const key = p.value === 'search' ? 'searchPerDay' : p.value === 'home' ? 'homePerDay' : 'destinationPerDay'
+                return (
+                  <div key={p.value}>
+                    <label htmlFor={`rate-${p.value}`} className="block text-xs font-bold uppercase text-slate-500">{p.label}</label>
+                    <div className="flex items-center mt-1">
+                      <span className="px-3 py-2.5 bg-slate-100 border border-r-0 border-slate-200 rounded-l-xl text-sm text-slate-600">₹</span>
+                      <input id={`rate-${p.value}`} type="number" min={0} step={50} value={promotions[key]} onChange={(e) => setPromotions({ ...promotions, [key]: Number(e.target.value) })}
+                        className="w-full bg-slate-50 border border-slate-200 rounded-r-xl p-2.5 text-sm font-semibold focus:outline-none focus:border-brand-500" />
+                    </div>
+                    <p className="text-xs text-slate-400 mt-1">per day · {p.slots} slots</p>
+                  </div>
+                )
+              })}
+            </div>
+            <div>
+              <label htmlFor="max-days" className="block text-xs font-bold uppercase text-slate-500 mb-1">Longest promotion</label>
+              <select id="max-days" value={promotions.maxDays} onChange={(e) => setPromotions({ ...promotions, maxDays: Number(e.target.value) })} className="bg-slate-50 border border-slate-200 rounded-xl p-2.5 text-sm font-semibold">
+                {[7, 14, 30, 60, 90].map((d) => <option key={d} value={d}>{d} days</option>)}
+              </select>
+            </div>
           </SettingsForm>
           {demoReset && <DemoPanel />}
         </div>

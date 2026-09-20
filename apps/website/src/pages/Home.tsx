@@ -15,6 +15,7 @@ export function Home() {
 
   const { place } = usePlace()
   const [nearby, setNearby] = useState<Record<string, PropertySummary[]>>({})
+  const [promoted, setPromoted] = useState<(PropertySummary & { promotionId: number })[]>([])
 
   // "Near the visitor" rows: re-fetch nearest-first once we know where they are.
   useEffect(() => {
@@ -24,6 +25,12 @@ export function Home() {
       .then((rows) => setNearby(Object.fromEntries(rows)))
       .catch(() => {})
   }, [data, place])
+
+  // Paid placements: fetched here so each view counts once.
+  useEffect(() => {
+    if (!data?.layout.blocks.some((b) => b.enabled && b.rule === 'promoted')) return
+    api.promoted('home').then((r) => setPromoted(r.properties)).catch(() => {})
+  }, [data])
 
   const load = () => {
     setError(null)
@@ -40,7 +47,8 @@ export function Home() {
       {error && <div className="max-w-[1180px] mx-auto px-5 pt-10"><ErrorNote message={error} onRetry={load} /></div>}
       {layout.blocks.filter((b) => b.enabled).map((b) => (
         <HomeSection key={b.id} block={{ ...b, title: b.title.replace('{place}', place ? (place.name === 'you' ? 'you' : place.name) : 'you') }}
-          stays={data ? nearby[b.id] ?? data.stays[b.id] ?? [] : null} />
+          stays={data ? (b.rule === 'promoted' ? promoted : nearby[b.id] ?? data.stays[b.id] ?? []) : null}
+          promoted={b.rule === 'promoted'} />
       ))}
     </>
   )

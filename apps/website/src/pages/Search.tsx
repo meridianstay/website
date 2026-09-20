@@ -17,6 +17,7 @@ export function Search() {
   const state = readSearch(params)
   const { place } = usePlace()
   const [results, setResults] = useState<PropertySummary[] | null>(null)
+  const [promoted, setPromoted] = useState<(PropertySummary & { promotionId: number })[]>([])
   const [error, setError] = useState<string | null>(null)
   const [showMap, setShowMap] = useState(false)
   const [hovered, setHovered] = useState<number | null>(null)
@@ -24,6 +25,12 @@ export function Search() {
   const key = params.toString()
 
   useDocumentTitle(state.where ? `Stays in ${state.where}` : state.type ? `${PROPERTY_TYPES.find((t) => t.type === state.type)?.label}` : 'Search stays')
+
+  useEffect(() => {
+    setPromoted([])
+    api.promoted('search', { where: state.where || undefined, type: state.type }).then((r) => setPromoted(r.properties)).catch(() => {})
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [key])
 
   useEffect(() => {
     let live = true
@@ -134,7 +141,14 @@ export function Search() {
         <div className={showMap ? 'grid grid-cols-1 lg:grid-cols-5 gap-6' : ''}>
           <div className={`grid gap-8 ${showMap ? 'hidden lg:grid lg:col-span-3 grid-cols-1 sm:grid-cols-2' : 'grid-cols-1 sm:grid-cols-2 lg:grid-cols-3'}`}>
             {results
-              ? results.map((p, i) => <PropertyCard key={p.id} property={p} linkSearch={linkSearch} onHover={setHovered} index={i} />)
+              ? [
+                  // Promoted stays come first, labelled, and aren't repeated below.
+                  ...promoted.map((p, i) => (
+                    <PropertyCard key={`ad-${p.id}`} property={p} linkSearch={linkSearch} onHover={setHovered} index={i} promotionId={p.promotionId} />
+                  )),
+                  ...results.filter((r) => !promoted.some((p) => p.id === r.id))
+                    .map((p, i) => <PropertyCard key={p.id} property={p} linkSearch={linkSearch} onHover={setHovered} index={promoted.length + i} />),
+                ]
               : Array.from({ length: 6 }, (_, i) => <PropertyCardSkeleton key={i} />)}
           </div>
           {showMap && (

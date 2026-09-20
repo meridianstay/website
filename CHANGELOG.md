@@ -2,6 +2,22 @@
 
 Every change to Meridian Stay is recorded here, newest first. Each entry says what changed for the people using the platform, then the notable technical changes.
 
+## 0.14.0 — 2026-09-20
+
+### Host promotions (paid ads)
+- Hosts can **promote a listing** from a new **Promotions** page in the host portal: choose the listing, where it should appear, a start date and how many days, then pay. Prices are per day and shown before paying.
+- **Three placements:** top of search (3 slots), the "Promoted stays" row on the homepage (6 slots), and first on a destination page (2 slots). Promoted stays are always labelled **Promoted**, appear once, and rotate so everyone gets a turn.
+- **Our team approves every promotion** before it runs (control center → Promotions), with a reason if it's rejected, and the host is refunded in full. Hosts can stop a promotion any time and get the unused days back.
+- Hosts see **times shown, clicks, click rate and spend**; the control center sees the same plus total promotion income, which also appears on the Overview.
+- **Settings → Promotions** sets the daily price for each placement, the longest campaign, and can switch promotions off.
+- Payment goes through Razorpay like bookings (test mode without keys). Promotion income is separate from booking commission.
+- New homepage rule **Promoted by hosts (paid)**, added to the default homepage; the row hides itself when nobody is promoting.
+
+### Also
+- The Razorpay checkout helper is now shared by the website and host portal.
+- Demo data: three sample campaigns (running, waiting for review, finished).
+- 86 automated tests (5 new).
+
 ## 0.13.0 — 2026-09-20
 
 ### Offers

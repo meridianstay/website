@@ -463,6 +463,27 @@ export async function seed(log = console.log, force = false): Promise<boolean> {
   const counters = { users: Math.max(users.length, highestUserId), properties: properties.length, reviews: reviewId, bookings: bookings.length + dayOuts.length, blocks: blocks.length, messages: messages.length }
   for (const [name, value] of Object.entries(counters)) w.set(col(C.counters).doc(name), { value })
 
+  // Demo promotions (host ads): one running, one waiting for review, one finished.
+  const promos: [slug: string, placement: 'search' | 'home' | 'destination', startIn: number, days: number, status: string, shown: number, clicks: number][] = [
+    ['golden-sunset-hillside-resort', 'search', -2, 14, 'Running', 1840, 96],
+    ['green-valley-organic-farmstay', 'home', 2, 7, 'PendingReview', 0, 0],
+    ['gokarna-cliffside-resort', 'destination', -30, 10, 'Finished', 940, 41],
+  ]
+  const rates = { search: 499, home: 999, destination: 299 }
+  for (const [i, [slug, placement, startIn, days, status, shown, clicks]] of promos.entries()) {
+    const p = props.get(slug)!
+    const startDate = addDays(today, startIn)
+    w.set(col(C.promotions).doc(String(i + 1)), {
+      id: i + 1, hostId: ids.get(p.seed.host)!.id, propertyId: p.id,
+      property: { slug, title: p.seed.title, image: p.seed.cover, location: `${p.seed.city}, ${p.seed.region}` },
+      placement, startDate, endDate: addDays(startDate, days - 1), days, ratePerDay: rates[placement], total: rates[placement] * days,
+      status, paymentStatus: 'test', impressions: shown, clicks, createdAt: daysAgo(Math.max(1, -startIn + 1)),
+      reviewedAt: status === 'PendingReview' ? null : daysAgo(Math.max(1, -startIn)), rejectionReason: null, refunded: 0,
+      razorpayOrderId: null, razorpayPaymentId: null,
+    })
+  }
+  w.set(col(C.counters).doc('promotions'), { value: promos.length })
+
   // Demo coupons for the checkout box.
   const coupons: [code: string, kind: 'percent' | 'flat', value: number, extra: object][] = [
     ['MONSOON20', 'percent', 20, { maxDiscount: 3000, description: 'Monsoon campaign', minTotal: 5000 }],

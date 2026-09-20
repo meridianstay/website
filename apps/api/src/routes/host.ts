@@ -2,6 +2,7 @@ import { Hono } from 'hono'
 import { todayISO } from '@meridian/shared'
 import { amenitiesRepo, propertiesRepo, statsRepo } from '../repositories'
 import { bookingService } from '../services/bookings'
+import { promotionService } from '../services/promotions'
 import { listingService, parseListing } from '../services/listings'
 import { body, currentUid, currentUser, requireUser, type AppEnv } from '../http/auth'
 import { str } from '../http/validate'
@@ -24,6 +25,18 @@ hostRoutes.get('/host/bookings', async (c) => c.json({ bookings: await bookingSe
 hostRoutes.post('/host/bookings/:code/accept', async (c) => c.json({ booking: await bookingService.accept(currentUser(c), c.req.param('code')) }))
 hostRoutes.post('/host/bookings/:code/decline', async (c) =>
   c.json({ booking: await bookingService.decline(currentUser(c), c.req.param('code'), str((await body(c)).reason)) }))
+
+// ── Promotions ───────────────────────────────────────────────────────────────
+hostRoutes.get('/host/promotions', async (c) => c.json({ campaigns: await promotionService.forHost(currentUser(c)), settings: await promotionService.settings() }))
+hostRoutes.post('/host/promotions', async (c) => c.json(await promotionService.create(currentUser(c), promotionService.parse(await body(c))), 201))
+hostRoutes.post('/host/promotions/:id/pay', async (c) => {
+  const b = await body(c)
+  const campaign = await promotionService.confirmPayment(currentUser(c), id(c), {
+    orderId: str(b.razorpay_order_id), paymentId: str(b.razorpay_payment_id), signature: str(b.razorpay_signature),
+  })
+  return c.json({ campaign })
+})
+hostRoutes.post('/host/promotions/:id/cancel', async (c) => c.json({ campaign: await promotionService.cancel(currentUser(c), id(c)) }))
 
 hostRoutes.post('/host/listings', async (c) => c.json({ id: await listingService.create(currentUser(c), currentUid(c), parseListing(await body(c))) }, 201))
 

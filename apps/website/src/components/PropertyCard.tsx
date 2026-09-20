@@ -1,5 +1,6 @@
 import { Link } from 'react-router'
 import { fallbackImage, formatPrice, type PropertySummary } from '@meridian/shared'
+import { api } from '@meridian/shared/client'
 import { useWishlist } from '../lib/wishlist'
 import { usePlace } from '../lib/place'
 
@@ -10,9 +11,11 @@ interface Props {
   onHover?: (id: number | null) => void
   /** Position in a grid, used to stagger the entrance animation. */
   index?: number
+  /** Set when the host paid to promote this listing: shows the label and counts the click. */
+  promotionId?: number
 }
 
-export function PropertyCard({ property, linkSearch = '', onHover, index = 0 }: Props) {
+export function PropertyCard({ property, linkSearch = '', onHover, index = 0, promotionId }: Props) {
   const { has, toggle } = useWishlist()
   const { place, distanceTo } = usePlace()
   const saved = has(property.id)
@@ -22,6 +25,7 @@ export function PropertyCard({ property, linkSearch = '', onHover, index = 0 }: 
     <article
       className="relative bg-white rounded-2xl overflow-hidden border border-slate-200 hover:shadow-xl hover:-translate-y-1 transition duration-300 flex flex-col group animate-fade-up"
       style={{ animationDelay: `${Math.min(index, 8) * 60}ms` }}
+      onClick={() => promotionId && api.promotedClick(promotionId).catch(() => {})}
       onMouseEnter={() => onHover?.(property.id)}
       onMouseLeave={() => onHover?.(null)}
     >
@@ -47,6 +51,11 @@ export function PropertyCard({ property, linkSearch = '', onHover, index = 0 }: 
             </span>
           )}
           {property.isNew && <span className="bg-brand-yellow-500 text-slate-900 px-2.5 py-1 rounded-full text-[11px] font-extrabold shadow-sm">NEW</span>}
+          {promotionId && (
+            <span className="bg-slate-900/85 text-white px-2.5 py-1 rounded-full text-[11px] font-bold shadow-sm" title="This host paid to promote this stay">
+              <i className="fa-solid fa-bullhorn mr-1" aria-hidden="true"></i>Promoted
+            </span>
+          )}
         </div>
         {place && (
           <div className="absolute bottom-4 right-4 bg-white/90 backdrop-blur-md px-2.5 py-1 rounded-full text-[11px] font-bold text-slate-800 shadow-sm">

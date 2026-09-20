@@ -1,5 +1,6 @@
 import type { AboutStats, AdminStats, HostStats } from '@meridian/shared'
 import { C, all, col } from '../store/db'
+import { promotionsRepo } from './promotions'
 import { keptMinor, withDefaults, type BookingDoc } from './bookings'
 import type { PropertyDoc } from './properties'
 import type { UserDoc } from './users'
@@ -26,12 +27,13 @@ export const statsRepo = {
   },
 
   async forAdmin(today: string): Promise<AdminStats> {
-    const [properties, users, bookings, messages, reviews] = await Promise.all([
+    const [properties, users, bookings, messages, reviews, adRevenue] = await Promise.all([
       all<PropertyDoc>(col(C.properties)),
       all<UserDoc>(col(C.users)),
       all<BookingDoc>(col(C.bookings)).then((r) => r.map(withDefaults)),
       all<{ status: string }>(col(C.messages).select('status')),
       all<{ hiddenAt: string | null }>(col(C.reviews).select('hiddenAt')),
+      promotionsRepo.spendTotal(),
     ])
     const confirmed = bookings.filter((b) => b.status === 'Confirmed')
     return {
@@ -46,6 +48,7 @@ export const statsRepo = {
       requests: bookings.filter((b) => b.status === 'Requested').length,
       gbv: bookings.reduce((s, b) => s + keptMinor(b), 0) / 100,
       commission: bookings.filter((b) => keptMinor(b) > 0).reduce((s, b) => s + b.commissionMinor, 0) / 100,
+      adRevenue,
       new_messages: messages.filter((m) => m.status === 'new').length,
       reviews: reviews.filter((r) => !r.hiddenAt).length,
     }

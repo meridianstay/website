@@ -15,6 +15,7 @@ export const C = {
   messages: 'contactMessages',
   audit: 'auditLog',
   coupons: 'coupons',
+  promotions: 'adCampaigns',
   counters: 'counters',
   /** Encrypted integration secrets (Razorpay). Never listed in the admin Database screen. */
   secrets: 'secrets',

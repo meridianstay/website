@@ -27,13 +27,13 @@ export function Overview() {
         <StatCard label="Live listings" value={stats.live} hint={`${stats.listings} in total`} />
         <StatCard label="Waiting for review" value={stats.pending} tone="warning" />
         <StatCard label="Users" value={stats.users} hint={`${stats.hosts} hosts${stats.suspended ? ` · ${stats.suspended} suspended` : ''}`} />
-        <StatCard label="New messages" value={stats.new_messages} tone={stats.new_messages ? 'warning' : 'default'} />
+        <StatCard label="New messages" value={stats.new_messages} tone={stats.new_messages ? 'warning' : 'default'} hint={`${stats.reviews} visible reviews`} />
       </div>
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 sm:gap-6 mb-8">
         <StatCard label="Confirmed bookings" value={stats.bookings} hint={`${stats.upcoming} upcoming · ${stats.requests} awaiting hosts`} />
         <StatCard label="Gross booking value" value={formatPrice(stats.gbv)} hint="Paid by guests, after refunds" />
         <StatCard label="Commission earned" value={formatPrice(stats.commission)} tone="brand" hint="Meridian’s share of confirmed stays" />
-        <StatCard label="Visible reviews" value={stats.reviews} />
+        <StatCard label="Promotion income" value={formatPrice(stats.adRevenue)} hint="Paid by hosts for ads" />
       </div>
 
       <div className="grid grid-cols-1 xl:grid-cols-2 gap-8">

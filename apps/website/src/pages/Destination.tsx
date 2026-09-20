@@ -17,6 +17,7 @@ export function Destination() {
   const { slug = '', type: typeSlug } = useParams()
   const [all, setAll] = useState<Place[] | null>(null)
   const [stays, setStays] = useState<PropertySummary[] | null>(null)
+  const [promoted, setPromoted] = useState<(PropertySummary & { promotionId: number })[]>([])
   const [error, setError] = useState<string | null>(null)
   const type = typeSlug ? typeFromSlug(typeSlug) : undefined
   const place = all?.find((d) => d.slug === slug) ?? null
@@ -28,6 +29,7 @@ export function Destination() {
     if (!place) return
     setStays(null)
     api.searchProperties({ where: place.name, type, limit: 60, sort: 'rating' }).then((r) => setStays(r.properties)).catch((e) => setError(e.message))
+    api.promoted('destination', { where: place.name, type }).then((r) => setPromoted(r.properties)).catch(() => {})
   }, [place, type])
 
   const heading = place ? `${type ? typeLabel(type) : 'Stays'} in ${place.name}` : null
@@ -71,7 +73,10 @@ export function Destination() {
 
         {error ? <ErrorNote message={error} /> : (
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-8">
-            {stays ? stays.map((p, i) => <PropertyCard key={p.id} property={p} index={i} />) : Array.from({ length: 3 }, (_, i) => <PropertyCardSkeleton key={i} />)}
+            {stays ? [
+              ...promoted.map((p, i) => <PropertyCard key={`ad-${p.id}`} property={p} index={i} promotionId={p.promotionId} />),
+              ...stays.filter((st) => !promoted.some((p) => p.id === st.id)).map((p, i) => <PropertyCard key={p.id} property={p} index={promoted.length + i} />),
+            ] : Array.from({ length: 3 }, (_, i) => <PropertyCardSkeleton key={i} />)}
           </div>
         )}
         {stays?.length === 0 && <p className="text-sm text-slate-500">No {type ? typeLabel(type).toLowerCase() : 'stays'} here right now. <Link to={`/destinations/${place.slug}`} className="underline font-semibold">See all stays in {place.name}</Link>.</p>}

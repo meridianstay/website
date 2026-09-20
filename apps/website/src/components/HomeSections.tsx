@@ -11,10 +11,10 @@ function SmartLink({ to, className, children }: { to: string; className: string;
   return full ? <a href={to} className={className}>{children}</a> : <Link to={to} className={className}>{children}</Link>
 }
 
-export function HomeSection({ block, stays }: { block: HomeBlock; stays: PropertySummary[] | null }) {
+export function HomeSection({ block, stays, promoted = false }: { block: HomeBlock; stays: PropertySummary[] | null; promoted?: boolean }) {
   if (block.type === 'categories') return <CategoryCards block={block} />
   if (block.type === 'banner') return <Banner block={block} />
-  return <StaysRow block={block} stays={stays} />
+  return <StaysRow block={block} stays={stays} promoted={promoted} />
 }
 
 function SectionHeading({ block, action }: { block: HomeBlock; action?: React.ReactNode }) {
@@ -42,8 +42,9 @@ function exploreUrl(b: HomeBlock) {
   }
 }
 
-function StaysRow({ block, stays }: { block: HomeBlock; stays: PropertySummary[] | null }) {
+function StaysRow({ block, stays, promoted = false }: { block: HomeBlock; stays: PropertySummary[] | null; promoted?: boolean }) {
   if (stays && stays.length === 0) return null
+  if (promoted && !stays) return null
   return (
     <section className="max-w-[1180px] mx-auto px-5 py-12">
       <SectionHeading block={block} action={
@@ -57,7 +58,7 @@ function StaysRow({ block, stays }: { block: HomeBlock; stays: PropertySummary[]
       } />
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-8">
         {stays
-          ? stays.map((p, i) => <PropertyCard key={p.id} property={p} index={i} />)
+          ? stays.map((p, i) => <PropertyCard key={p.id} property={p} index={i} promotionId={promoted ? (p as PropertySummary & { promotionId?: number }).promotionId : undefined} />)
           : Array.from({ length: Math.min(block.limit, 6) }, (_, i) => <PropertyCardSkeleton key={i} />)}
       </div>
     </section>

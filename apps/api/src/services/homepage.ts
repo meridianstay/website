@@ -25,8 +25,9 @@ export async function staysFor(block: HomeBlock): Promise<PropertySummary[]> {
     case 'type': q.type = block.propertyType || undefined; break
     case 'location': q.where = block.location || undefined; break
     case 'budget': q.maxPrice = block.maxPrice ?? undefined; q.sort = 'price_asc'; break
-    // The website re-sorts "nearby" by distance once it knows where the visitor is.
+    // The website fills these in itself: "nearby" needs the visitor's location, "promoted" counts ad views.
     case 'nearby': break
+    case 'promoted': return []
     case 'dayuse': return (await propertiesRepo.search({ ...q, limit: 100 })).filter((p) => p.dayUse).slice(0, limit)
   }
   return propertiesRepo.search(q)
