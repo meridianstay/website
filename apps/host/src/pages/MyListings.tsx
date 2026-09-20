@@ -55,6 +55,11 @@ export function MyListings() {
                     ? <><i className="fa-solid fa-bolt text-brand-600 mr-1" aria-hidden="true"></i>Managed by Meridian · instant book</>
                     : <><i className="fa-solid fa-user-check text-amber-600 mr-1" aria-hidden="true"></i>Self-managed · you approve requests</>}
                 </p>
+                {p.promoted && (
+                  <p className="text-xs font-semibold text-slate-800 bg-slate-100 rounded-lg p-2 mt-3">
+                    <i className="fa-solid fa-bullhorn text-brand-600 mr-1.5" aria-hidden="true"></i>Promoted today · <Link to="/promotions" className="underline">see results</Link>
+                  </p>
+                )}
                 {p.status === 'Pending' && <p className="text-xs text-amber-700 bg-amber-50 rounded-lg p-2 mt-3">Waiting for review by the Meridian team.</p>}
                 {p.status === 'Draft' && <p className="text-xs text-slate-600 bg-slate-100 rounded-lg p-2 mt-3">Paused. Guests can’t find or book this listing.</p>}
                 {p.status === 'Rejected' && p.rejectionReason && (

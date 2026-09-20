@@ -61,6 +61,12 @@ export const promotionsRepo = {
     return changed
   },
 
+  /** Property ids with a promotion showing today. */
+  async livePropertyIds(today: string) {
+    const rows = await all<CampaignDoc>(col(C.promotions).where('status', 'in', ['Scheduled', 'Running']))
+    return new Set(rows.filter((c) => c.startDate <= today && c.endDate >= today).map((c) => c.propertyId))
+  },
+
   countImpressions: (ids: number[]) => {
     if (!ids.length) return Promise.resolve()
     const writer = firestore.bulkWriter()

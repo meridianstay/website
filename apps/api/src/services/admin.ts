@@ -1,7 +1,7 @@
 import { todayISO, type ListingStatus, type Management, type Me, type UserRole } from '@meridian/shared'
 import { auth } from '../store/firebase'
 import { nowISO } from '../store/db'
-import { auditLogRepo, bookingsRepo, messagesRepo, propertiesRepo, usersRepo, type MessageStatus } from '../repositories'
+import { auditLogRepo, bookingsRepo, messagesRepo, promotionsRepo, propertiesRepo, usersRepo, type MessageStatus } from '../repositories'
 import { AppError, notFound } from '../http/errors'
 import { checkLength, collect } from '../http/validate'
 
@@ -36,8 +36,8 @@ export const adminService = {
   },
 
   async listListings(status: ListingStatus | null, q: string | null) {
-    const users = await usersRepo.list({})
-    return propertiesRepo.listForAdmin({ status, q }, new Map(users.map((u) => [u.id, u])))
+    const [users, promotedIds] = await Promise.all([usersRepo.list({}), promotionsRepo.livePropertyIds(todayISO())])
+    return propertiesRepo.listForAdmin({ status, q }, new Map(users.map((u) => [u.id, u])), promotedIds)
   },
 
   listBookings: (q: string | null, status: string | null) => bookingsRepo.listAll(q, status, todayISO()),

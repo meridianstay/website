@@ -14,6 +14,7 @@ Every change to Meridian Stay is recorded here, newest first. Each entry says wh
 - New homepage rule **Promoted by hosts (paid)**, added to the default homepage; the row hides itself when nobody is promoting.
 
 ### Also
+- A stay that's being promoted shows a **Promoted** label on its own page too (tap it to read what that means), next to the type and Assured badges. Hosts see "Promoted today" on the listing in My listings, and admins see it on the Listings page.
 - The Razorpay checkout helper is now shared by the website and host portal.
 - Demo data: three sample campaigns (running, waiting for review, finished).
 - 86 automated tests (5 new).

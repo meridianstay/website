@@ -1,4 +1,5 @@
 import { useCallback, useEffect, useState } from 'react'
+import { Link } from 'react-router'
 import { ErrorNote, PageHeader, Panel, Spinner, StatusBadge } from '@meridian/ui'
 import { formatPrice, type ListingStatus, type Management } from '@meridian/shared'
 import { adminApi, appLink, type AdminListing } from '@meridian/shared/client'
@@ -76,7 +77,14 @@ export function Listings() {
                         {p.assured && <i className="fa-solid fa-circle-check text-brand-600" aria-hidden="true"></i>}
                       </label>
                     </td>
-                    <td className="p-3"><StatusBadge status={p.status === 'Draft' ? 'Paused' : p.status} /></td>
+                    <td className="p-3">
+                      <StatusBadge status={p.status === 'Draft' ? 'Paused' : p.status} />
+                      {p.promoted && (
+                        <Link to="/promotions" className="block mt-1 text-[10px] font-bold uppercase text-slate-700 hover:underline" title="A paid promotion is showing today">
+                          <i className="fa-solid fa-bullhorn mr-1" aria-hidden="true"></i>Promoted
+                        </Link>
+                      )}
+                    </td>
                     <td className="p-3 whitespace-nowrap">
                       {p.featuredRank ? (
                         <span className="flex items-center gap-2">

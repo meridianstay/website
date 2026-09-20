@@ -58,7 +58,7 @@ export const toPropertySummary = (p: PropertyDoc): PropertySummary => ({
   isNew: !!p.approvedAt && Date.now() - Date.parse(p.approvedAt) < 30 * 86_400_000,
 })
 
-export interface HostListing extends PropertySummary { status: ListingStatus; rejectionReason: string | null }
+export interface HostListing extends PropertySummary { status: ListingStatus; rejectionReason: string | null; promoted: boolean }
 export interface AdminListing extends HostListing { featuredRank: number | null; hostName: string; hostEmail: string; createdAt: string }
 
 const ref = (id: number) => col(C.properties).doc(String(id))
@@ -217,10 +217,10 @@ export const propertiesRepo = {
 
   // ── Host side ──────────────────────────────────────────────────────────────
 
-  async listForHost(hostId: number): Promise<HostListing[]> {
+  async listForHost(hostId: number, promotedIds = new Set<number>()): Promise<HostListing[]> {
     const rows = await readProps(col(C.properties).where('hostId', '==', hostId))
     return rows.sort((a, b) => b.createdAt.localeCompare(a.createdAt))
-      .map((p) => ({ ...toPropertySummary(p), status: p.status, rejectionReason: p.rejectionReason }))
+      .map((p) => ({ ...toPropertySummary(p), status: p.status, rejectionReason: p.rejectionReason, promoted: promotedIds.has(p.id) }))
   },
 
   async ownedBy(id: number, hostId: number) {
@@ -283,13 +283,13 @@ export const propertiesRepo = {
 
   // ── Admin side ─────────────────────────────────────────────────────────────
 
-  async listForAdmin(filters: { status?: ListingStatus | null; q?: string | null }, hosts: Map<number, { name: string; email: string | null; phone: string | null }>): Promise<AdminListing[]> {
+  async listForAdmin(filters: { status?: ListingStatus | null; q?: string | null }, hosts: Map<number, { name: string; email: string | null; phone: string | null }>, promotedIds = new Set<number>()): Promise<AdminListing[]> {
     let rows = await readProps(filters.status ? col(C.properties).where('status', '==', filters.status) : col(C.properties))
     const q = filters.q?.toLowerCase()
     if (q) rows = rows.filter((p) => [p.title, p.city, hosts.get(p.hostId)?.name, hosts.get(p.hostId)?.email].some((v) => v?.toLowerCase().includes(q)))
     rows.sort((a, b) => Number(b.status === 'Pending') - Number(a.status === 'Pending') || b.createdAt.localeCompare(a.createdAt))
     return rows.map((p) => ({
-      ...toPropertySummary(p), status: p.status, rejectionReason: p.rejectionReason, featuredRank: p.featuredRank,
+      ...toPropertySummary(p), status: p.status, rejectionReason: p.rejectionReason, featuredRank: p.featuredRank, promoted: promotedIds.has(p.id),
       hostName: hosts.get(p.hostId)?.name ?? 'Unknown', hostEmail: hosts.get(p.hostId)?.email ?? hosts.get(p.hostId)?.phone ?? '',
       createdAt: p.createdAt,
     }))

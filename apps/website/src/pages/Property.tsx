@@ -22,6 +22,7 @@ export function Property() {
   const [photoIndex, setPhotoIndex] = useState<number | null>(null)
   const [copied, setCopied] = useState(false)
   const [assuredOpen, setAssuredOpen] = useState(false)
+  const [promotedOpen, setPromotedOpen] = useState(false)
   const { has, toggle } = useWishlist()
 
   const load = useCallback(() => {
@@ -76,6 +77,11 @@ export function Property() {
             </button>
           )}
           {property.isNew && <span className="inline-block ml-2 text-[11px] font-extrabold text-slate-900 bg-brand-yellow-500 px-2.5 py-1 rounded-full mb-2">NEW</span>}
+          {property.promoted && (
+            <button type="button" onClick={() => setPromotedOpen(true)} className="inline-block ml-2 text-[11px] font-bold text-white bg-slate-900 hover:bg-slate-700 px-2.5 py-1 rounded-full mb-2">
+              <i className="fa-solid fa-bullhorn mr-1" aria-hidden="true"></i>Promoted
+            </button>
+          )}
           <h1 className="text-2xl sm:text-3xl font-extrabold text-slate-900 tracking-tight">{property.title}</h1>
           <p className="flex flex-wrap items-center gap-x-3 text-sm font-semibold text-slate-600 mt-2">
             {property.reviewCount > 0 ? (
@@ -291,6 +297,14 @@ export function Property() {
         </a>
       </div>
       <div className="lg:hidden h-20" aria-hidden="true" />
+
+      <Modal open={promotedOpen} onClose={() => setPromotedOpen(false)} title="Promoted stay">
+        <div className="space-y-3 text-sm text-slate-600">
+          <p className="flex items-center gap-2 font-bold text-slate-900"><i className="fa-solid fa-bullhorn text-slate-700" aria-hidden="true"></i>What “Promoted” means</p>
+          <p>The host is paying Meridian Stay to show this listing more often, for example at the top of search results or on our homepage.</p>
+          <p>It doesn’t change anything else: reviews are only from guests who stayed, the price is the host’s own, and promoted stays are checked and must follow the same rules as every other listing.</p>
+        </div>
+      </Modal>
 
       <Modal open={assuredOpen} onClose={() => setAssuredOpen(false)} title="Meridian Assured">
         <div className="space-y-3 text-sm text-slate-600">

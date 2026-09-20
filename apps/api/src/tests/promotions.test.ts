@@ -80,3 +80,23 @@ describe('host promotions', () => {
     assert.equal((await appError(() => promotionService.create(host.me, { propertyId: live, placement: 'search', startDate: today, days: 3 }))).status, 400)
   })
 })
+
+describe('promoted labels', () => {
+  beforeEach(resetDatabase)
+
+  test('a running promotion marks the listing as promoted for guests and hosts', async () => {
+    const host = await createUser('host')
+    const admin = await createUser('admin')
+    const id = await createLiveListing(host)
+    const { propertiesRepo } = await import('../repositories')
+
+    const { campaign } = await promotionService.create(host.me, { propertyId: id, placement: 'search', startDate: today, days: 2 })
+    // Waiting for review: not promoted yet.
+    assert.equal((await propertiesRepo.listForHost(host.me.id, await promotionsRepo.livePropertyIds(today)))[0].promoted, false)
+
+    await promotionService.review(admin.me, campaign.id, true)
+    const liveIds = await promotionsRepo.livePropertyIds(today)
+    assert.equal(liveIds.has(id), true)
+    assert.equal((await propertiesRepo.listForHost(host.me.id, liveIds))[0].promoted, true)
+  })
+})

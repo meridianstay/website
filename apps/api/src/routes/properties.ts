@@ -3,6 +3,7 @@ import { AD_PLACEMENTS, discountedPrice, isISODate, todayISO, type AdPlacement, 
 import { propertiesRepo, reviewsRepo, toPropertySummary, usersRepo } from '../repositories'
 import { bookingService } from '../services/bookings'
 import { promotionService } from '../services/promotions'
+import { promotionsRepo } from '../repositories'
 import { reviewService } from '../services/reviews'
 import { PROPERTY_TYPES } from '../services/listings'
 import { body, currentUser, requireUser, type AppEnv } from '../http/auth'
@@ -62,7 +63,7 @@ propertyRoutes.get('/properties/:slug', async (c) => {
   const canPreview = user && (user.role === 'admin' || user.id === p?.hostId)
   if (!p || (p.status !== 'Approved' && !canPreview)) throw notFound('stay')
 
-  const [host, amenities, reviews, bookedRanges, reviewableBookingCode, ratingBreakdown, similar] = await Promise.all([
+  const [host, amenities, reviews, bookedRanges, reviewableBookingCode, ratingBreakdown, similar, promotedIds] = await Promise.all([
     usersRepo.findById(p.hostId),
     propertiesRepo.amenitiesOf(p),
     reviewsRepo.visibleForProperty(p.id),
@@ -70,10 +71,11 @@ propertyRoutes.get('/properties/:slug', async (c) => {
     user ? bookingService.reviewableCode(p.id, user.id) : null,
     reviewsRepo.breakdown(p.id),
     propertiesRepo.similar(p),
+    promotionsRepo.livePropertyIds(todayISO()),
   ])
   return c.json({
     property: {
-      ...toPropertySummary(p), gallery: p.photos, amenities, reviews, bookedRanges, reviewableBookingCode, status: p.status, ratingBreakdown, similar,
+      ...toPropertySummary(p), gallery: p.photos, amenities, reviews, bookedRanges, reviewableBookingCode, status: p.status, ratingBreakdown, similar, promoted: promotedIds.has(p.id),
       areaSqft: p.areaSqft, gatheringCapacity: p.gatheringCapacity, checkInTime: p.checkInTime, checkOutTime: p.checkOutTime,
       houseRules: p.houseRules, securityDeposit: p.securityDepositMinor / 100,
       dayUseSettings: p.dayUse.enabled ? {

@@ -170,6 +170,7 @@ Every host endpoint needs a signed-in user and only acts on that user's own list
 | GET | `/api/host/listings/:id/calendar` | — | `{ blocks: [{ id, checkIn, checkOut, note }], bookings: [{ code, checkIn, checkOut, guestName, requested }] }` |
 | POST | `/api/host/listings/:id/blocks` | `{ checkIn, checkOut, note? }` | `201`. `409` if guests booked those nights or it overlaps a block. |
 | DELETE | `/api/host/listings/:id/blocks/:blockId` | — | `204` |
+| GET | `/api/host/listings` | — | Each listing also has `promoted` (a promotion is showing today) |
 | GET | `/api/host/promotions` | — | `{ campaigns, settings }` |
 | POST | `/api/host/promotions` | `{ propertyId, placement, startDate, days }` | `201 { campaign, payment }` (`payment` is null in test mode) |
 | POST | `/api/host/promotions/:id/pay` | Razorpay Checkout's result | `{ campaign }`, now waiting for review |

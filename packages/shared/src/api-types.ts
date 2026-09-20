@@ -94,6 +94,8 @@ export interface PropertyDetail extends PropertySummary {
   bookedRanges: DateRange[]
   /** Code of the signed-in guest's finished, unreviewed stay here, if any. */
   reviewableBookingCode: string | null
+  /** The host is paying to promote this stay right now. */
+  promoted: boolean
   ratingBreakdown: RatingBreakdown
   /** Stays of the same type nearby, or other stays nearby. */
   similar: PropertySummary[]
@@ -194,6 +196,8 @@ export interface ApiErrorBody {
 export interface HostListing extends PropertySummary {
   status: ListingStatus
   rejectionReason: string | null
+  /** A promotion for this listing is showing today. */
+  promoted: boolean
 }
 
 export interface ListingInput {

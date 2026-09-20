@@ -1,6 +1,6 @@
 import { Hono } from 'hono'
 import { todayISO } from '@meridian/shared'
-import { amenitiesRepo, propertiesRepo, statsRepo } from '../repositories'
+import { amenitiesRepo, promotionsRepo, propertiesRepo, statsRepo } from '../repositories'
 import { bookingService } from '../services/bookings'
 import { promotionService } from '../services/promotions'
 import { listingService, parseListing } from '../services/listings'
@@ -19,7 +19,8 @@ hostRoutes.get('/host/stats', async (c) => {
   await bookingService.sweepSoon()
   return c.json(await statsRepo.forHost(currentUser(c).id, todayISO()))
 })
-hostRoutes.get('/host/listings', async (c) => c.json({ listings: await propertiesRepo.listForHost(currentUser(c).id) }))
+hostRoutes.get('/host/listings', async (c) =>
+  c.json({ listings: await propertiesRepo.listForHost(currentUser(c).id, await promotionsRepo.livePropertyIds(todayISO())) }))
 hostRoutes.get('/host/listings/:id', async (c) => c.json({ listing: await listingService.getForEditing(currentUser(c), id(c)) }))
 hostRoutes.get('/host/bookings', async (c) => c.json({ bookings: await bookingService.listForHost(currentUser(c)) }))
 hostRoutes.post('/host/bookings/:code/accept', async (c) => c.json({ booking: await bookingService.accept(currentUser(c), c.req.param('code')) }))
