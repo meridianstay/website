@@ -102,7 +102,7 @@ Every error returns a JSON body with a message that is safe to show to users. Va
 
 | Method | Path | Access | Body | Returns |
 | --- | --- | --- | --- | --- |
-| POST | `/api/properties/:slug/reviews` | User | `{ bookingCode, rating: 1–5, comment }` (comment 10–2000 characters) | `201`. `403` unless the booking is yours, finished and not yet reviewed. |
+| POST | `/api/properties/:slug/reviews` | User | `{ bookingCode, propertyRating: 1–5, serviceRating: 1–5, comment }` (comment 10–2000 characters; the overall rating is the average) | `201`. `403` unless the booking is yours, finished and not yet reviewed. |
 
 ## Bookings (guests)
 
@@ -185,6 +185,7 @@ Every change here is recorded in the activity log.
 | GET | `/api/admin/listings` | `?status=Pending\|Approved\|Rejected\|Draft&q=` | `{ listings }` with host and `featuredRank` |
 | POST | `/api/admin/listings/:id/approve` | — | `204` |
 | POST | `/api/admin/listings/:id/reject` | `{ reason }` (5–500 characters, shown to the host) | `204` |
+| POST | `/api/admin/listings/:id/assured` | `{ assured: boolean }` | `204`. Shows the “Meridian Assured” badge to guests. |
 | POST | `/api/admin/listings/:id/management` | `{ management: "managed" \| "self" }` | `204`. Managed: instant booking and the managed commission. |
 | POST | `/api/admin/listings/:id/feature` | `{ rank: 1–99 }` or `{ rank: null }` to remove | `204`; live listings only |
 

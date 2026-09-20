@@ -34,7 +34,7 @@ export function Listings() {
 
   return (
     <>
-      <PageHeader title="Listings" description="Approve new and edited listings, reject with a reason the host can see, and choose which stays are featured (homepage sections set to “Featured by our team” show them in rank order). Managed properties are run by Meridian: guests book instantly and the managed commission applies. Self-managed hosts approve each request." />
+      <PageHeader title="Listings" description="Approve new and edited listings, reject with a reason the host can see, and choose which stays are featured (homepage sections set to “Featured by our team” show them in rank order). Managed properties are run by Meridian: guests book instantly and the managed commission applies. Self-managed hosts approve each request. “Assured” shows a verified badge to guests, so only tick it once the property has been checked." />
       <Panel>
         <Toolbar placeholder="Search title, city or host" onSearch={setQ}>
           {filters.map((f) => <Chip key={f} active={filter === f} onClick={() => setFilter(f)}>{filterLabel[f]}</Chip>)}
@@ -44,7 +44,7 @@ export function Listings() {
           <div className="overflow-x-auto">
             <table className={tableClass}>
               <thead className={theadClass}>
-                <tr><th className={th}>Listing</th><th className={th}>Host</th><th className={th}>Price</th><th className={th}>Management</th><th className={th}>Status</th><th className={th}>Homepage</th><th className={`${th} text-right`}>Actions</th></tr>
+                <tr><th className={th}>Listing</th><th className={th}>Host</th><th className={th}>Price</th><th className={th}>Management</th><th className={th}>Assured</th><th className={th}>Status</th><th className={th}>Homepage</th><th className={`${th} text-right`}>Actions</th></tr>
               </thead>
               <tbody className="divide-y divide-slate-100">
                 {listings.map((p) => (
@@ -68,6 +68,13 @@ export function Listings() {
                         <option value="managed">Managed · instant</option>
                         <option value="self">Self-managed · requests</option>
                       </select>
+                    </td>
+                    <td className="p-3">
+                      <label className="inline-flex items-center gap-2 cursor-pointer" title="Meridian Assured: inspected and verified by our team">
+                        <input type="checkbox" className="accent-brand-600 w-4 h-4" checked={p.assured} onChange={(e) => run(() => adminApi.setAssured(p.id, e.target.checked))} />
+                        <span className="sr-only">Meridian Assured for {p.title}</span>
+                        {p.assured && <i className="fa-solid fa-circle-check text-brand-600" aria-hidden="true"></i>}
+                      </label>
                     </td>
                     <td className="p-3"><StatusBadge status={p.status === 'Draft' ? 'Paused' : p.status} /></td>
                     <td className="p-3 whitespace-nowrap">

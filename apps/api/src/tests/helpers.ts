@@ -46,7 +46,7 @@ export const listingInput = (overrides: Partial<ListingInput> = {}): ListingInpu
 /** A live listing owned by `host`: self-managed (request to book) unless `management` is 'managed' (instant). */
 export async function createLiveListing(host: TestUser, overrides: Partial<ListingInput> = {}, management: Management = 'managed') {
   const id = await listingService.create(host.me, host.uid, listingInput(overrides))
-  await propertiesRepo.setFields(id, { status: 'Approved', management })
+  await propertiesRepo.setFields(id, { status: 'Approved', management, approvedAt: nowISO() })
   return id
 }
 

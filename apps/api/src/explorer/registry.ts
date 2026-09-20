@@ -39,7 +39,7 @@ export const collections: Record<string, CollectionConfig> = {
     fields: [ro('id', 'number'), ro('slug'), ro('hostId', 'number'), ed('title'), ro('type'), ro('status'), ed('description'), ed('city'), ed('region'), ed('country'),
       ed('lat', 'number'), ed('lng', 'number'), ed('pricePerNightMinor', 'number'), ed('bedrooms', 'number'), ed('bathrooms', 'number'), ed('maxGuests', 'number'),
       ed('coverImageUrl'), ro('photos', 'json'), ro('amenities', 'json'), ed('featuredRank', 'number', { nullable: true }), ro('ratingAvg', 'number'),
-      ro('reviewCount', 'number'), ro('management'), ro('rejectionReason'), ro('createdAt'), ro('updatedAt')],
+      ro('reviewCount', 'number'), ro('management'), ro('assured', 'boolean'), ro('rejectionReason'), ro('createdAt'), ro('updatedAt')],
     note: 'Approve, reject, feature and set management on the Listings page. Prices are in paise (650000 = ₹6,500).',
   },
   bookings: {

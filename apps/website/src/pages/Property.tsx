@@ -1,9 +1,10 @@
 import { lazy, Suspense, useCallback, useEffect, useState } from 'react'
 import { Link, useParams, useSearchParams } from 'react-router'
-import { fallbackImage, formatDate, formatPrice, formatTime, HOUSE_RULES, propertyCode, type PropertyDetail } from '@meridian/shared'
+import { fallbackImage, formatDate, formatPrice, formatTime, HOUSE_RULES, propertyCode, REQUEST_HOURS, type PropertyDetail, type RatingBreakdown } from '@meridian/shared'
 import { ApiError, api } from '@meridian/shared/client'
 import { Avatar, ErrorNote, Spinner } from '@meridian/ui'
 import { BookingBox } from '../components/BookingBox'
+import { PropertyCard } from '../components/PropertyCard'
 import { Modal } from '../components/Modal'
 import { ReviewForm } from '../components/ReviewForm'
 import { useWishlist } from '../lib/wishlist'
@@ -20,6 +21,7 @@ export function Property() {
   const [error, setError] = useState<{ status: number; message: string } | null>(null)
   const [photoIndex, setPhotoIndex] = useState<number | null>(null)
   const [copied, setCopied] = useState(false)
+  const [assuredOpen, setAssuredOpen] = useState(false)
   const { has, toggle } = useWishlist()
 
   const load = useCallback(() => {
@@ -68,6 +70,12 @@ export function Property() {
         <div>
           <span className="inline-block text-[11px] font-bold uppercase text-brand-700 bg-brand-50 px-3 py-1 rounded-full mb-2">{property.type}</span>
           <span className="inline-block ml-2 text-[11px] font-mono font-bold text-slate-500 bg-slate-100 px-2.5 py-1 rounded-full mb-2" title="Quote this code to our team, or search for it">{propertyCode(property.id)}</span>
+          {property.assured && (
+            <button type="button" onClick={() => setAssuredOpen(true)} className="inline-block ml-2 text-[11px] font-bold text-white bg-brand-600 hover:bg-brand-700 px-2.5 py-1 rounded-full mb-2">
+              <i className="fa-solid fa-circle-check mr-1" aria-hidden="true"></i>Meridian Assured
+            </button>
+          )}
+          {property.isNew && <span className="inline-block ml-2 text-[11px] font-extrabold text-slate-900 bg-brand-yellow-500 px-2.5 py-1 rounded-full mb-2">NEW</span>}
           <h1 className="text-2xl sm:text-3xl font-extrabold text-slate-900 tracking-tight">{property.title}</h1>
           <p className="flex flex-wrap items-center gap-x-3 text-sm font-semibold text-slate-600 mt-2">
             {property.reviewCount > 0 ? (
@@ -213,6 +221,7 @@ export function Property() {
                 <><i className="fa-solid fa-star text-brand-yellow-400 mr-2" aria-hidden="true"></i>{property.rating.toFixed(2)} · {property.reviewCount} reviews</>
               ) : 'No reviews yet'}
             </h2>
+            {property.ratingBreakdown.count > 0 && <RatingSummary breakdown={property.ratingBreakdown} average={property.rating} />}
             {property.reviewableBookingCode && <ReviewForm slug={property.slug} bookingCode={property.reviewableBookingCode} onPosted={load} />}
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               {property.reviews.map((r) => (
@@ -222,8 +231,11 @@ export function Property() {
                       <p className="font-bold text-sm text-slate-900">{r.authorName}</p>
                       <p className="text-xs text-slate-400">{formatDate(r.createdAt.slice(0, 10), { month: 'long', year: 'numeric' })}</p>
                     </div>
-                    <p className="text-xs font-bold text-slate-700" aria-label={`${r.rating} out of 5 stars`}>
+                    <p className="text-right text-xs font-bold text-slate-700" aria-label={`${r.rating} out of 5 stars`}>
                       <i className="fa-solid fa-star text-brand-yellow-500 mr-1" aria-hidden="true"></i>{r.rating}
+                      {r.propertyRating !== null && r.serviceRating !== null && (
+                        <span className="block font-normal text-[11px] text-slate-400 mt-0.5">Property {r.propertyRating} · Service {r.serviceRating}</span>
+                      )}
                     </p>
                   </div>
                   <p className="text-sm text-slate-600">{r.comment}</p>
@@ -236,10 +248,57 @@ export function Property() {
           </section>
         </div>
 
-        <aside className="lg:sticky lg:top-28 h-max">
+        <aside id="book" className="lg:sticky lg:top-28 h-max space-y-4 scroll-mt-28">
           <BookingBox property={property} initial={{ ...search, kind: params.get('kind') === 'dayuse' ? 'dayuse' : 'stay' }} />
+          <div className="bg-brand-50 border border-brand-100 rounded-3xl p-5">
+            <p className="font-bold text-sm text-slate-900"><i className="fa-solid fa-shield-heart text-brand-600 mr-2" aria-hidden="true"></i>The Meridian Promise</p>
+            <ul className="mt-2 space-y-1.5 text-xs text-slate-600">
+              <li><i className="fa-solid fa-check text-brand-600 mr-1.5" aria-hidden="true"></i>Every listing is checked by our team before it goes live.</li>
+              <li><i className="fa-solid fa-check text-brand-600 mr-1.5" aria-hidden="true"></i>If the host cancels or the place isn’t as described, we refund you in full and help you find another stay.</li>
+              <li><i className="fa-solid fa-check text-brand-600 mr-1.5" aria-hidden="true"></i>No booking fees, and free cancellation up to 48 hours before check-in.</li>
+            </ul>
+            <Link to="/trust-safety" className="inline-block mt-3 text-xs font-bold text-brand-700 underline">How we keep you safe</Link>
+          </div>
         </aside>
       </div>
+
+      {property.similar.length > 0 && (
+        <section className="mt-16 pt-10 border-t border-slate-200">
+          <h2 className="text-lg font-bold text-slate-900 mb-1">Similar stays nearby</h2>
+          <p className="text-sm text-slate-500 mb-6">Other places guests look at alongside this one.</p>
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
+            {property.similar.map((p, i) => <PropertyCard key={p.id} property={p} index={i} />)}
+          </div>
+        </section>
+      )}
+
+      {/* Phones: a bar that stays on screen with the price and a jump to the booking box. */}
+      <div className="lg:hidden fixed bottom-0 inset-x-0 z-40 bg-white/95 backdrop-blur border-t border-slate-200 px-5 py-3 flex items-center justify-between gap-4">
+        <div className="min-w-0">
+          {property.overnight ? (
+            <p className="font-extrabold text-slate-900 truncate">{formatPrice(property.price)}<span className="text-xs font-normal text-slate-500"> / night</span></p>
+          ) : property.dayUseSettings && (
+            <p className="font-extrabold text-slate-900 truncate">{formatPrice(property.dayUseSettings.price)}<span className="text-xs font-normal text-slate-500"> for {property.dayUseSettings.blockHours}h</span></p>
+          )}
+          <p className="text-[11px] text-slate-500 truncate">
+            {property.management === 'managed' ? 'Instant book' : `Host replies in ${REQUEST_HOURS} h`}
+            {property.dayUseSettings && property.overnight ? ' · Day out available' : ''}
+          </p>
+        </div>
+        <a href="#book" onClick={(e) => { e.preventDefault(); document.getElementById('book')?.scrollIntoView({ behavior: 'smooth', block: 'center' }) }}
+          className="shrink-0 bg-gradient-to-r from-brand-600 to-brand-500 text-white font-bold py-3 px-6 rounded-2xl text-sm shadow-lg shadow-brand-500/20">
+          {property.management === 'managed' ? 'Reserve' : 'Request'}
+        </a>
+      </div>
+      <div className="lg:hidden h-20" aria-hidden="true" />
+
+      <Modal open={assuredOpen} onClose={() => setAssuredOpen(false)} title="Meridian Assured">
+        <div className="space-y-3 text-sm text-slate-600">
+          <p className="flex items-center gap-2 font-bold text-slate-900"><i className="fa-solid fa-circle-check text-brand-600" aria-hidden="true"></i>What the badge means</p>
+          <p>Our team has visited or thoroughly reviewed this property: the photos match, the amenities are real, and the host answers guests quickly.</p>
+          <p>Assured stays are re-checked whenever the listing changes, and we step in ourselves if anything goes wrong during your stay.</p>
+        </div>
+      </Modal>
 
       <Modal open={photoIndex !== null} onClose={() => setPhotoIndex(null)} title={`${property.title} · photo ${(photoIndex ?? 0) + 1} of ${photos.length}`} size="xl">
         {photoIndex !== null && (
@@ -263,6 +322,42 @@ export function Property() {
           </div>
         )}
       </Modal>
+    </div>
+  )
+}
+
+/** Overall stars, how many reviews gave each rating, and the property and service averages. */
+function RatingSummary({ breakdown, average }: { breakdown: RatingBreakdown; average: number }) {
+  const most = Math.max(1, ...breakdown.stars)
+  return (
+    <div className="grid sm:grid-cols-2 gap-6 bg-slate-50 rounded-3xl p-5">
+      <div>
+        <p className="text-3xl font-extrabold text-slate-900">{average.toFixed(2)}<span className="text-base font-bold text-slate-400"> / 5</span></p>
+        <p className="text-xs text-slate-500 mb-3">From {breakdown.count} published {breakdown.count === 1 ? 'review' : 'reviews'}</p>
+        <ul className="space-y-1">
+          {breakdown.stars.map((count, i) => {
+            const star = 5 - i
+            return (
+              <li key={star} className="flex items-center gap-2 text-xs text-slate-600">
+                <span className="w-10 shrink-0">{star} star</span>
+                <span className="flex-1 h-2 rounded-full bg-slate-200 overflow-hidden">
+                  <span className="block h-full bg-brand-500 rounded-full" style={{ width: `${(count / most) * 100}%` }} />
+                </span>
+                <span className="w-6 text-right tabular-nums">{count}</span>
+              </li>
+            )
+          })}
+        </ul>
+      </div>
+      <dl className="space-y-4 self-center">
+        {([['The property', breakdown.property, 'house-chimney'], ['The service', breakdown.service, 'headset']] as const).map(([label, value, icon]) => (
+          <div key={label} className="flex items-center justify-between gap-4">
+            <dt className="text-sm text-slate-700"><i className={`fa-solid fa-${icon} text-brand-600 mr-2`} aria-hidden="true"></i>{label}</dt>
+            <dd className="font-extrabold text-slate-900 tabular-nums">{value === null ? '—' : value.toFixed(1)}</dd>
+          </div>
+        ))}
+        <p className="text-xs text-slate-400">Guests rate the property and the host’s service separately.</p>
+      </dl>
     </div>
   )
 }

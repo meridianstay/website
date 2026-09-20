@@ -20,6 +20,8 @@ export interface PropertyDoc {
   address: string
   /** Offers overnight stays at pricePerNightMinor. */
   overnight: boolean
+  /** "Meridian Assured": inspected and verified by the team. Set by admins. */
+  assured: boolean
   dayUse: { enabled: boolean; blockHours: number; priceMinor: number; extraHourMinor: number; opensAt: string; closesAt: string }
   approvedAt: string | null; createdAt: string; updatedAt: string
 }
@@ -31,7 +33,7 @@ export function withPropDefaults(p: PropertyDoc): PropertyDoc {
     management: p.management ?? 'self', areaSqft: p.areaSqft ?? null, gatheringCapacity: p.gatheringCapacity ?? null,
     checkInTime: p.checkInTime ?? '14:00', checkOutTime: p.checkOutTime ?? '11:00',
     houseRules: { ...defaultHouseRules, ...p.houseRules }, securityDepositMinor: p.securityDepositMinor ?? 0, address: p.address ?? '',
-    overnight: p.overnight ?? true,
+    overnight: p.overnight ?? true, assured: p.assured ?? false,
     dayUse: p.dayUse ?? { enabled: false, blockHours: defaultDayUse.blockHours, priceMinor: defaultDayUse.price * 100, extraHourMinor: defaultDayUse.extraHourPrice * 100, opensAt: defaultDayUse.opensAt, closesAt: defaultDayUse.closesAt },
   }
 }
@@ -48,6 +50,8 @@ export const toPropertySummary = (p: PropertyDoc): PropertySummary => ({
   image: p.coverImageUrl, description: p.description, lat: approx(p.lat), lng: approx(p.lng), management: p.management ?? 'self',
   overnight: p.overnight ?? true,
   dayUse: p.dayUse?.enabled ? { price: p.dayUse.priceMinor / 100, blockHours: p.dayUse.blockHours } : null,
+  assured: p.assured ?? false,
+  isNew: !!p.approvedAt && Date.now() - Date.parse(p.approvedAt) < 30 * 86_400_000,
 })
 
 export interface HostListing extends PropertySummary { status: ListingStatus; rejectionReason: string | null }
@@ -181,6 +185,13 @@ export const propertiesRepo = {
       .sort((a, b) => a.checkIn.localeCompare(b.checkIn))
   },
 
+  /** Up to 4 live stays to suggest: the same type nearby first, then anything nearby. */
+  async similar(p: PropertyDoc): Promise<PropertySummary[]> {
+    const rows = (await readProps(col(C.properties).where('status', '==', 'Approved'))).filter((o) => o.id !== p.id)
+    const score = (o: PropertyDoc) => distanceKm(p, o) + (o.type === p.type ? 0 : 400)
+    return rows.sort((a, b) => score(a) - score(b)).slice(0, 4).map(toPropertySummary)
+  },
+
   /** Busy periods on a date for day use: overnight guests arriving or leaving, and other day-use bookings. */
   async dayBusy(p: PropertyDoc, date: string) {
     const [night, before, day] = await Promise.all([
@@ -244,7 +255,7 @@ export const propertiesRepo = {
         country: input.country, lat: input.lat, lng: input.lng, currency: 'INR', pricePerNightMinor: Math.round(input.price * 100),
         bedrooms: input.beds, bathrooms: input.baths, maxGuests: input.maxGuests, status: 'Pending', rejectionReason: null,
         coverImageUrl: input.coverImage, photos: input.photos, amenities: input.amenities, ratingAvg: 0, reviewCount: 0,
-        featuredRank: null, management: 'self', approvedAt: null, createdAt: now, updatedAt: now, ...detailFields(input),
+        featuredRank: null, management: 'self', assured: false, approvedAt: null, createdAt: now, updatedAt: now, ...detailFields(input),
       }
       tx.set(ref(id), doc)
       return id

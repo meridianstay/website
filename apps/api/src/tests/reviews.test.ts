@@ -51,10 +51,10 @@ describe('reviews', () => {
     assert.deepEqual(await rating(id), { avg: 4, count: 2 })
   })
 
-  test('validates rating and comment', async () => {
+  test('validates ratings and comment', async () => {
     const guest = await createUser()
     const err = await appError(() => reviewService.post(guest.me, 'any', { bookingCode: 'x', rating: 6, comment: 'short' }))
-    assert.ok(err.fields.rating)
+    assert.ok(err.fields.propertyRating)
     assert.ok(err.fields.comment)
   })
 })

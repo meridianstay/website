@@ -48,7 +48,7 @@ export const api = {
   /** Busy hours on a date, for booking day use. */
   propertyDay: (slug: string, date: string) =>
     request<{ date: string; opensAt: string; closesAt: string; busy: { start: string; end: string; reason: string }[] }>(`/properties/${encodeURIComponent(slug)}/day${qs({ date })}`),
-  addReview: (slug: string, data: { bookingCode: string; rating: number; comment: string }) =>
+  addReview: (slug: string, data: { bookingCode: string; propertyRating: number; serviceRating: number; comment: string }) =>
     request<void>(`/properties/${encodeURIComponent(slug)}/reviews`, { method: 'POST', json: data }),
 
   createBooking: (data: {
@@ -114,6 +114,7 @@ export const adminApi = {
   reject: (id: number, reason: string) => request<void>(`/admin/listings/${id}/reject`, { method: 'POST', json: { reason } }),
   feature: (id: number, rank: number | null) => request<void>(`/admin/listings/${id}/feature`, { method: 'POST', json: { rank } }),
 
+  setAssured: (id: number, assured: boolean) => request<void>(`/admin/listings/${id}/assured`, { method: 'POST', json: { assured } }),
   setManagement: (id: number, management: Management) => request<void>(`/admin/listings/${id}/management`, { method: 'POST', json: { management } }),
   bookings: (params: { q?: string; status?: string } = {}) => request<{ bookings: AdminBooking[] }>(`/admin/bookings${qs(params)}`),
   cancelBooking: (code: string) => request<void>(`/admin/bookings/${encodeURIComponent(code)}/cancel`, { method: 'POST' }),

@@ -33,9 +33,17 @@ export function PropertyCard({ property, linkSearch = '', onHover, index = 0 }: 
           className="w-full h-full object-cover group-hover:scale-105 transition duration-500"
           onError={(e) => { e.currentTarget.src = fallbackImage }}
         />
-        <div className="absolute top-4 left-4 bg-white/90 backdrop-blur-md px-3 py-1 rounded-full text-[11px] font-bold text-slate-800 shadow-sm flex items-center space-x-1.5">
-          <span className="w-2 h-2 rounded-full bg-brand-500"></span>
-          <span>{property.type}</span>
+        <div className="absolute top-4 left-4 flex flex-wrap gap-1.5 max-w-[75%]">
+          <span className="bg-white/90 backdrop-blur-md px-3 py-1 rounded-full text-[11px] font-bold text-slate-800 shadow-sm flex items-center space-x-1.5">
+            <span className="w-2 h-2 rounded-full bg-brand-500"></span>
+            <span>{property.type}</span>
+          </span>
+          {property.assured && (
+            <span className="bg-brand-600 text-white px-2.5 py-1 rounded-full text-[11px] font-bold shadow-sm" title="Meridian Assured: inspected and verified by our team">
+              <i className="fa-solid fa-circle-check mr-1" aria-hidden="true"></i>Assured
+            </span>
+          )}
+          {property.isNew && <span className="bg-brand-yellow-500 text-slate-900 px-2.5 py-1 rounded-full text-[11px] font-extrabold shadow-sm">NEW</span>}
         </div>
         {place && (
           <div className="absolute bottom-4 right-4 bg-white/90 backdrop-blur-md px-2.5 py-1 rounded-full text-[11px] font-bold text-slate-800 shadow-sm">

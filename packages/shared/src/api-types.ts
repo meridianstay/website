@@ -37,12 +37,27 @@ export interface PropertySummary {
   overnight: boolean
   /** Day-use price for the base block of hours, when offered. */
   dayUse: { price: number; blockHours: number } | null
+  /** Inspected and verified by the Meridian team. */
+  assured: boolean
+  /** Went live in the last 30 days. */
+  isNew: boolean
+}
+
+export interface RatingBreakdown {
+  count: number
+  /** Number of reviews with 5, 4, 3, 2 and 1 stars (overall, rounded). */
+  stars: [number, number, number, number, number]
+  property: number | null
+  service: number | null
 }
 
 export interface Review {
   id: number
   authorName: string
+  /** Overall: the average of the property and service ratings (older reviews have only this). */
   rating: number
+  propertyRating: number | null
+  serviceRating: number | null
   comment: string
   createdAt: string
 }
@@ -73,6 +88,9 @@ export interface PropertyDetail extends PropertySummary {
   bookedRanges: DateRange[]
   /** Code of the signed-in guest's finished, unreviewed stay here, if any. */
   reviewableBookingCode: string | null
+  ratingBreakdown: RatingBreakdown
+  /** Stays of the same type nearby, or other stays nearby. */
+  similar: PropertySummary[]
 }
 
 export type PaymentMethod = 'upi' | 'card' | 'netbanking'

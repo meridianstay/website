@@ -187,6 +187,11 @@ export function Checkout() {
             </p>
           </section>
 
+          <div className="bg-brand-50 border border-brand-100 rounded-2xl p-4 text-sm text-slate-700">
+            <p className="font-bold text-slate-900"><i className="fa-solid fa-shield-heart text-brand-600 mr-2" aria-hidden="true"></i>The Meridian Promise</p>
+            <p className="text-xs mt-1">If the host cancels or the place isn’t as described, we refund you in full and help you find another stay. No booking fees, and free cancellation up to 48 hours before check-in.</p>
+          </div>
+
           <label className="flex items-start space-x-3 text-sm text-slate-600">
             <input type="checkbox" checked={form.agreed} onChange={(e) => setForm({ ...form, agreed: e.target.checked })} className="mt-1 accent-brand-600" aria-invalid={!!fieldErrors.agreed} />
             <span>

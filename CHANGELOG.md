@@ -2,6 +2,22 @@
 
 Every change to Meridian Stay is recorded here, newest first. Each entry says what changed for the people using the platform, then the notable technical changes.
 
+## 0.12.0 — 2026-09-20
+
+### Trust
+- **Meridian Assured** badge: admins tick it on the Listings page once a property has been checked. It shows on stay cards and stay pages, where guests can tap it to read what it means.
+- **New** tag on stays that went live in the last 30 days.
+- **The Meridian Promise** on stay pages and at checkout: every listing checked before it goes live, a full refund and help finding another stay if the host cancels or the place isn't as described, no booking fees, free cancellation up to 48 hours before check-in.
+
+### Reviews
+- Guests now rate **the property** and **the host's service** separately; the overall score is their average. Reviews written earlier keep their single rating.
+- Stay pages show a **rating summary**: the average, how many guests gave each star, and the property and service averages, with both scores on each review.
+
+### Also
+- **Similar stays nearby** at the bottom of every stay page.
+- On phones, a **booking bar stays on screen** with the price and a button that jumps to the booking box.
+- 77 automated tests (4 new).
+
 ## 0.11.0 — 2026-09-20
 
 ### Location and discovery

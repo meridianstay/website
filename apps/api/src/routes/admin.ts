@@ -33,6 +33,8 @@ adminRoutes.get('/admin/listings', async (c) =>
   c.json({ listings: await adminService.listListings(oneOf<ListingStatus>(c.req.query('status'), ['Draft', 'Pending', 'Approved', 'Rejected']), q(c.req.query('q'))) }))
 adminRoutes.post('/admin/listings/:id/approve', async (c) => (await adminService.approveListing(admin(c), Number(c.req.param('id'))), done()))
 adminRoutes.post('/admin/listings/:id/reject', async (c) => (await adminService.rejectListing(admin(c), Number(c.req.param('id')), str((await body(c)).reason)), done()))
+adminRoutes.post('/admin/listings/:id/assured', async (c) =>
+  (await adminService.setAssured(admin(c), Number(c.req.param('id')), (await body(c)).assured === true), done()))
 adminRoutes.post('/admin/listings/:id/management', async (c) =>
   (await adminService.setManagement(admin(c), Number(c.req.param('id')), str((await body(c)).management)), done()))
 adminRoutes.post('/admin/listings/:id/feature', async (c) => {

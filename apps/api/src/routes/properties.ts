@@ -47,16 +47,18 @@ propertyRoutes.get('/properties/:slug', async (c) => {
   const canPreview = user && (user.role === 'admin' || user.id === p?.hostId)
   if (!p || (p.status !== 'Approved' && !canPreview)) throw notFound('stay')
 
-  const [host, amenities, reviews, bookedRanges, reviewableBookingCode] = await Promise.all([
+  const [host, amenities, reviews, bookedRanges, reviewableBookingCode, ratingBreakdown, similar] = await Promise.all([
     usersRepo.findById(p.hostId),
     propertiesRepo.amenitiesOf(p),
     reviewsRepo.visibleForProperty(p.id),
     propertiesRepo.unavailableRanges(p.id, todayISO(), p.checkInTime),
     user ? bookingService.reviewableCode(p.id, user.id) : null,
+    reviewsRepo.breakdown(p.id),
+    propertiesRepo.similar(p),
   ])
   return c.json({
     property: {
-      ...toPropertySummary(p), gallery: p.photos, amenities, reviews, bookedRanges, reviewableBookingCode, status: p.status,
+      ...toPropertySummary(p), gallery: p.photos, amenities, reviews, bookedRanges, reviewableBookingCode, status: p.status, ratingBreakdown, similar,
       areaSqft: p.areaSqft, gatheringCapacity: p.gatheringCapacity, checkInTime: p.checkInTime, checkOutTime: p.checkOutTime,
       houseRules: p.houseRules, securityDeposit: p.securityDepositMinor / 100,
       dayUseSettings: p.dayUse.enabled ? {
@@ -79,6 +81,10 @@ propertyRoutes.get('/properties/:slug/day', async (c) => {
 
 propertyRoutes.post('/properties/:slug/reviews', requireUser, async (c) => {
   const b = await body(c)
-  await reviewService.post(currentUser(c), c.req.param('slug'), { bookingCode: str(b.bookingCode), rating: Number(b.rating), comment: str(b.comment) })
+  await reviewService.post(currentUser(c), c.req.param('slug'), {
+    bookingCode: str(b.bookingCode), rating: b.rating === undefined ? undefined : Number(b.rating),
+    propertyRating: b.propertyRating === undefined ? undefined : Number(b.propertyRating), serviceRating: b.serviceRating === undefined ? undefined : Number(b.serviceRating),
+    comment: str(b.comment),
+  })
   return c.body(null, 201)
 })

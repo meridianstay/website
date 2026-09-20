@@ -1,4 +1,4 @@
-import type { Review } from '@meridian/shared'
+import type { RatingBreakdown, Review } from '@meridian/shared'
 import { C, all, col, firestore, nextId, nowISO } from '../store/db'
 import { propertiesRepo, type PropertyDoc } from './properties'
 
@@ -7,9 +7,14 @@ import { propertiesRepo, type PropertyDoc } from './properties'
 export interface ReviewDoc {
   id: number; propertyId: number; userId: number | null; bookingCode: string | null; authorName: string
   rating: number; comment: string; createdAt: string; hiddenAt: string | null
+  /** 1–5 each; null on reviews written before separate ratings. `rating` is their average. */
+  propertyRating?: number | null; serviceRating?: number | null
 }
 
-const toReview = (r: ReviewDoc): Review => ({ id: r.id, authorName: r.authorName, rating: r.rating, comment: r.comment, createdAt: r.createdAt })
+const toReview = (r: ReviewDoc): Review => ({
+  id: r.id, authorName: r.authorName, rating: r.rating, propertyRating: r.propertyRating ?? null, serviceRating: r.serviceRating ?? null,
+  comment: r.comment, createdAt: r.createdAt,
+})
 
 export interface AdminReview extends Review { hidden: boolean; property: { slug: string; title: string } }
 
@@ -19,8 +24,21 @@ export const reviewsRepo = {
     return rows.filter((r) => !r.hiddenAt).sort((a, b) => b.createdAt.localeCompare(a.createdAt)).slice(0, limit).map(toReview)
   },
 
+  /** Star counts and average property and service ratings over every visible review. */
+  async breakdown(propertyId: number): Promise<RatingBreakdown> {
+    const rows = (await all<ReviewDoc>(col(C.reviews).where('propertyId', '==', propertyId))).filter((r) => !r.hiddenAt)
+    const stars: RatingBreakdown['stars'] = [0, 0, 0, 0, 0]
+    for (const r of rows) stars[5 - Math.min(5, Math.max(1, Math.round(r.rating)))]++
+    const avg = (vals: number[]) => (vals.length ? Math.round((vals.reduce((a, b) => a + b, 0) / vals.length) * 10) / 10 : null)
+    return {
+      count: rows.length, stars,
+      property: avg(rows.map((r) => r.propertyRating).filter((v): v is number => typeof v === 'number')),
+      service: avg(rows.map((r) => r.serviceRating).filter((v): v is number => typeof v === 'number')),
+    }
+  },
+
   /** Adds a review for a booking, marks the booking reviewed and updates the rating, atomically. */
-  async addForBooking(input: { propertyId: number; userId: number; bookingCode: string; authorName: string; rating: number; comment: string }) {
+  async addForBooking(input: { propertyId: number; userId: number; bookingCode: string; authorName: string; rating: number; propertyRating: number; serviceRating: number; comment: string }) {
     await firestore.runTransaction(async (tx) => {
       const bookingRef = col(C.bookings).doc(input.bookingCode)
       const [booking, property] = await Promise.all([tx.get(bookingRef), propertiesRepo.get(input.propertyId, tx)])

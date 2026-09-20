@@ -259,6 +259,8 @@ function details(s: SeedProperty) {
     securityDepositMinor: (big ? 5000 : s.type === 'Room' ? 0 : 2000) * 100,
     address: `Sample address: ${s.title}, near the main road, ${s.city}, ${s.region} (demo)`,
     overnight: true,
+    // Demo: Meridian-managed stays and the best-reviewed ones are "Assured".
+    assured: !!s.managed || s.rating >= 4.9,
     dayUse: d
       ? { enabled: true, blockHours: d.block, priceMinor: d.price * 100, extraHourMinor: d.extra * 100, opensAt: '08:00', closesAt: '22:00' }
       : { enabled: false, blockHours: 6, priceMinor: 300000, extraHourMinor: 40000, opensAt: '08:00', closesAt: '22:00' },
@@ -304,7 +306,7 @@ export async function seed(log = console.log, force = false): Promise<boolean> {
     props.set(p.slug, { id, price: p.price, seed: p, rating: p.rating, count: p.reviewCount })
     for (const [author, rating, comment, ago] of p.reviews) {
       reviewId++
-      w.set(col(C.reviews).doc(String(reviewId)), { id: reviewId, propertyId: id, userId: null, bookingCode: null, authorName: author, rating, comment, createdAt: daysAgo(ago), hiddenAt: null })
+      w.set(col(C.reviews).doc(String(reviewId)), { id: reviewId, propertyId: id, userId: null, bookingCode: null, authorName: author, rating, propertyRating: rating, serviceRating: Math.max(1, rating - (reviewId % 3 === 0 ? 1 : 0)), comment, createdAt: daysAgo(ago), hiddenAt: null })
     }
   }
   // A spam review an admin already hid, to show moderation.
@@ -355,7 +357,7 @@ export async function seed(log = console.log, force = false): Promise<boolean> {
     if (b.review) {
       reviewId++
       w.set(col(C.reviews).doc(String(reviewId)), {
-        id: reviewId, propertyId: p.id, userId: guest.id, bookingCode: code, authorName: reviewerName(guest.name), rating: b.review[0],
+        id: reviewId, propertyId: p.id, userId: guest.id, bookingCode: code, authorName: reviewerName(guest.name), rating: b.review[0], propertyRating: b.review[0], serviceRating: b.review[0],
         comment: b.review[1], createdAt: new Date(Date.parse(checkOut) + 2 * 86_400_000).toISOString(), hiddenAt: null,
       })
       p.rating = Math.round(((p.rating * p.count + b.review[0]) / (p.count + 1)) * 100) / 100
