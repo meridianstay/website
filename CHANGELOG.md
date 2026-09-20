@@ -332,4 +332,3 @@ The platform now works end to end: guests can search and book, hosts can list an
 - **Host payouts**: sending hosts their share (e.g. Razorpay Route) and collecting their bank details. Payout amounts are already calculated.
 - **Search engine pages.** Stay pages are built in the browser; moving the website to server rendering (e.g. Next.js) would help Google and link previews.
 - **Legal review** of the pages marked "draft".
-- Automated tests.
