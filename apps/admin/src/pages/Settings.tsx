@@ -108,11 +108,17 @@ export function Settings() {
 
           <SettingsForm title="Photo uploads" save={() => adminApi.saveUploads(uploads)}>
             <label htmlFor="max-mb" className="block text-sm text-slate-600">Largest photo hosts and guests can upload</label>
-            <select id="max-mb" value={uploads.maxMb} onChange={(e) => setUploads({ maxMb: Number(e.target.value) })}
+            <select id="max-mb" value={uploads.maxMb} onChange={(e) => setUploads({ ...uploads, maxMb: Number(e.target.value) })}
               className="bg-slate-50 border border-slate-200 rounded-xl p-2.5 text-sm font-semibold">
               {[1, 2, 3, 4].map((n) => <option key={n} value={n}>{n} MB</option>)}
             </select>
             <p className="text-xs text-slate-500">Photos are stored in Firebase Storage. 4 MB is the most the hosting platform accepts per upload.</p>
+            <label htmlFor="max-video-mb" className="block text-sm text-slate-600 pt-2">Largest property video a host can upload</label>
+            <select id="max-video-mb" value={uploads.maxVideoMb} onChange={(e) => setUploads({ ...uploads, maxVideoMb: Number(e.target.value) })}
+              className="bg-slate-50 border border-slate-200 rounded-xl p-2.5 text-sm font-semibold">
+              {[25, 50, 100, 150, 250, 500].map((n) => <option key={n} value={n}>{n} MB</option>)}
+            </select>
+            <p className="text-xs text-slate-500">Videos go straight from the host’s browser to Firebase Storage, so they can be much larger than photos. Storage and data transfer are billed by Firebase.</p>
           </SettingsForm>
         </div>
       </div>

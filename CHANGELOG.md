@@ -2,6 +2,16 @@
 
 Every change to Meridian Stay is recorded here, newest first. Each entry says what changed for the people using the platform, then the notable technical changes.
 
+## 0.15.0 — 2026-09-20
+
+### Video tours
+- Hosts can add a **video tour** to a listing, in the Photos & description step: upload an MP4, WebM or MOV, or paste a **YouTube or Vimeo** link. The wizard shows the video back and lets them replace or remove it.
+- Guests see a **Watch video** button on the photo gallery and a **Video tour** section on the stay page. YouTube and Vimeo links play embedded; uploads play in the page.
+- Videos are uploaded **straight from the host's browser to Firebase Storage** using a short-lived signed link from the API, with a progress bar, so large files aren't limited by our server (hosting caps uploads at 4.5 MB). Local development posts the file through the API instead, because the storage emulator can't sign links.
+- **Settings → Photo uploads** now also sets the largest video (25–500 MB, 150 MB by default). Firebase bills storage and data transfer.
+- Demo data: two listings have sample video tours.
+- 90 automated tests (3 new).
+
 ## 0.14.0 — 2026-09-20
 
 ### Host promotions (paid ads)

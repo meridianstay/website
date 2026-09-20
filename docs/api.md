@@ -55,6 +55,7 @@ Every error returns a JSON body with a message that is safe to show to users. Va
 | POST | `/api/auth/session` | Public | `{ idToken, portal: "guest" \| "host" \| "admin" }` | `{ user }` and sets the session cookie. First sign-in creates a guest account. `401` bad token; `403` suspended, method turned off in Settings, or a non-admin on the admin portal. |
 | POST | `/api/auth/logout` | Public | — | `204`; signs the user out on every device |
 | PATCH | `/api/me` | User | `{ name, phone }` (phone optional; a contact number) | `{ user }` |
+| POST | `/api/uploads/video` | User | `{ contentType, sizeBytes }` → `{ mode: "signed", uploadUrl, headers, url, maxMb }` (upload straight to Firebase Storage with PUT) or `{ mode: "api", maxMb }` in development |
 | POST | `/api/uploads` | User | Multipart form: `file` (JPG, PNG or WebP), `purpose` = `listing` or `avatar` | `201 { url }`, a Firebase Storage link. `avatar` also sets the profile photo. Size limit set in Settings (max 4 MB). |
 
 `idToken` comes from the Firebase JS SDK after `signInWithPopup` (Google) or `signInWithPhoneNumber` + `confirm` (phone): `await firebaseUser.getIdToken()`. The admin portal always accepts both methods; guest and host portals accept only the methods switched on in Admin → Settings.
@@ -179,7 +180,7 @@ Every host endpoint needs a signed-in user and only acts on that user's own list
 | POST | `/api/host/bookings/:code/accept` | — | `{ booking }`, now `Confirmed`; the authorised payment is captured. `400` if already answered or expired. |
 | POST | `/api/host/bookings/:code/decline` | `{ reason? }` (up to 300 characters, shown to the guest) | `{ booking }`, now `Declined`; the guest isn't charged |
 
-**Listing body**: `{ title, type, description, city, region, country, price, beds, baths, maxGuests, lat, lng, coverImage, photos: [url], amenities: [name] }`. Photo links must start with `https://`; up to 12 photos.
+**Listing body**: `{ title, type, description, city, region, country, price, beds, baths, maxGuests, lat, lng, coverImage, photos: [url], videoUrl, amenities: [name] }`. `videoUrl` is an uploaded video or a YouTube/Vimeo link. Photo links must start with `https://`; up to 12 photos.
 
 ## Control center (admins only)
 

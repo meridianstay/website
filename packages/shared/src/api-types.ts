@@ -77,6 +77,8 @@ export interface DateRange {
 }
 
 export interface PropertyDetail extends PropertySummary {
+  /** A tour video, if the host added one. */
+  videoUrl: string
   areaSqft: number | null
   gatheringCapacity: number | null
   checkInTime: string
@@ -215,6 +217,8 @@ export interface ListingInput {
   lng: number
   coverImage: string
   photos: string[]
+  /** A tour video: an uploaded file, or a YouTube or Vimeo link. */
+  videoUrl: string
   amenities: string[]
   /** Discount on this listing, in percent (0–70). */
   discountPct: number

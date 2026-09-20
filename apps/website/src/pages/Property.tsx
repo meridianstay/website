@@ -1,6 +1,6 @@
 import { lazy, Suspense, useCallback, useEffect, useState } from 'react'
 import { Link, useParams, useSearchParams } from 'react-router'
-import { fallbackImage, formatDate, formatPrice, formatTime, HOUSE_RULES, propertyCode, REQUEST_HOURS, type PropertyDetail, type RatingBreakdown } from '@meridian/shared'
+import { embedUrl, fallbackImage, formatDate, formatPrice, formatTime, HOUSE_RULES, isPlayableVideo, propertyCode, REQUEST_HOURS, type PropertyDetail, type RatingBreakdown } from '@meridian/shared'
 import { ApiError, api } from '@meridian/shared/client'
 import { Avatar, ErrorNote, Spinner } from '@meridian/ui'
 import { BookingBox } from '../components/BookingBox'
@@ -20,6 +20,7 @@ export function Property() {
   const [property, setProperty] = useState<PropertyDetail | null>(null)
   const [error, setError] = useState<{ status: number; message: string } | null>(null)
   const [photoIndex, setPhotoIndex] = useState<number | null>(null)
+  const [videoOpen, setVideoOpen] = useState(false)
   const [copied, setCopied] = useState(false)
   const [assuredOpen, setAssuredOpen] = useState(false)
   const [promotedOpen, setPromotedOpen] = useState(false)
@@ -116,9 +117,16 @@ export function Property() {
             <img src={src} alt="" loading={i === 0 ? 'eager' : 'lazy'} onError={(e) => { e.currentTarget.src = fallbackImage }} className="w-full h-full object-cover hover:brightness-90 transition" />
           </button>
         ))}
-        <button type="button" onClick={() => setPhotoIndex(0)} className="absolute bottom-4 right-4 bg-white text-slate-900 text-xs font-bold px-4 py-2 rounded-xl shadow border border-slate-200">
-          <i className="fa-solid fa-grip mr-2" aria-hidden="true"></i>Show all {photos.length} photos
-        </button>
+        <div className="absolute bottom-4 right-4 flex gap-2">
+          {property.videoUrl && (
+            <button type="button" onClick={() => setVideoOpen(true)} className="bg-slate-900 text-white text-xs font-bold px-4 py-2 rounded-xl shadow">
+              <i className="fa-solid fa-play mr-2" aria-hidden="true"></i>Watch video
+            </button>
+          )}
+          <button type="button" onClick={() => setPhotoIndex(0)} className="bg-white text-slate-900 text-xs font-bold px-4 py-2 rounded-xl shadow border border-slate-200">
+            <i className="fa-solid fa-grip mr-2" aria-hidden="true"></i>Show all {photos.length} photos
+          </button>
+        </div>
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-12">
@@ -167,6 +175,14 @@ export function Property() {
                   </li>
                 ))}
               </ul>
+            </section>
+          )}
+
+          {property.videoUrl && (
+            <section className="pt-8 border-t border-slate-200">
+              <h2 className="text-lg font-bold text-slate-900 mb-1"><i className="fa-solid fa-video text-brand-600 mr-2" aria-hidden="true"></i>Video tour</h2>
+              <p className="text-sm text-slate-500 mb-4">A walk-through from the host.</p>
+              <VideoPlayer url={property.videoUrl} title={property.title} />
             </section>
           )}
 
@@ -298,6 +314,10 @@ export function Property() {
       </div>
       <div className="lg:hidden h-20" aria-hidden="true" />
 
+      <Modal open={videoOpen} onClose={() => setVideoOpen(false)} title={`${property.title} · video tour`} size="lg">
+        <VideoPlayer url={property.videoUrl} title={property.title} autoPlay />
+      </Modal>
+
       <Modal open={promotedOpen} onClose={() => setPromotedOpen(false)} title="Promoted stay">
         <div className="space-y-3 text-sm text-slate-600">
           <p className="flex items-center gap-2 font-bold text-slate-900"><i className="fa-solid fa-bullhorn text-slate-700" aria-hidden="true"></i>What “Promoted” means</p>
@@ -374,4 +394,20 @@ function RatingSummary({ breakdown, average }: { breakdown: RatingBreakdown; ave
       </dl>
     </div>
   )
+}
+
+/** Plays an uploaded video, or embeds a YouTube or Vimeo link. */
+function VideoPlayer({ url, title, autoPlay = false }: { url: string; title: string; autoPlay?: boolean }) {
+  const embed = embedUrl(url)
+  if (embed) {
+    return (
+      <iframe src={`${embed}${autoPlay ? '?autoplay=1' : ''}`} title={`${title} video tour`} loading="lazy"
+        className="w-full aspect-video rounded-2xl border border-slate-200 bg-slate-900"
+        allow="accelerometer; encrypted-media; picture-in-picture; fullscreen" allowFullScreen />
+    )
+  }
+  if (!isPlayableVideo(url)) {
+    return <a href={url} target="_blank" rel="noreferrer" className="text-sm font-bold text-brand-700 underline">Watch the video tour</a>
+  }
+  return <video src={url} controls playsInline autoPlay={autoPlay} preload="metadata" className="w-full max-h-[70vh] rounded-2xl bg-slate-900" />
 }

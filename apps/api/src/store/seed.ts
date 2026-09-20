@@ -238,6 +238,12 @@ const messages: [name: string, email: string, topic: string, message: string, st
 
 
 // Property details (demo): area, capacities, rules, deposit, a sample address, and day use on a few properties.
+/** Demo video tours (public sample clips). */
+const VIDEOS: Record<string, string> = {
+  'green-valley-organic-farmstay': 'https://storage.googleapis.com/gtv-videos-bucket/sample/ForBiggerJoyrides.mp4',
+  'emerald-luxury-pool-villa': 'https://storage.googleapis.com/gtv-videos-bucket/sample/ForBiggerBlazes.mp4',
+}
+
 /** Demo discounts, shown as a crossed-out price and a “% off” badge. */
 const DISCOUNTS: Record<string, number> = {
   'thar-desert-glamping-camp': 20, 'naggar-apple-orchard-farmstay': 15, 'gokarna-cliffside-resort': 10, 'rishikesh-riverside-homestay-room': 25,
@@ -264,6 +270,7 @@ function details(s: SeedProperty) {
     securityDepositMinor: (big ? 5000 : s.type === 'Room' ? 0 : 2000) * 100,
     address: `Sample address: ${s.title}, near the main road, ${s.city}, ${s.region} (demo)`,
     overnight: true,
+    videoUrl: VIDEOS[s.slug] ?? '',
     // Demo: Meridian-managed stays and the best-reviewed ones are "Assured".
     assured: !!s.managed || s.rating >= 4.9,
     discountPct: DISCOUNTS[s.slug] ?? 0,

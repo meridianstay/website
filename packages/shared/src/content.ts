@@ -42,6 +42,8 @@ export interface SignInSettings {
 export interface UploadSettings {
   /** Largest photo a host or guest can upload, in MB (at most 4). */
   maxMb: number
+  /** Largest property video, in MB. Videos go straight to storage, so they can be bigger than photos. */
+  maxVideoMb: number
 }
 
 export interface SiteSettings {
@@ -71,7 +73,7 @@ export const defaultSiteSettings: SiteSettings = {
     linkUrl: '/help',
   },
   signIn: { google: true, phone: true },
-  uploads: { maxMb: 4 },
+  uploads: { maxMb: 4, maxVideoMb: 150 },
   commission: { managedPct: 30, selfPct: 15 },
   promotions: { ...defaultPromotions },
 }

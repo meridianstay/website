@@ -1,7 +1,7 @@
 import { lazy, Suspense, useEffect, useState, type ReactNode } from 'react'
 import { Link, useNavigate, useParams } from 'react-router'
-import { ErrorNote, PageHeader, PhotoUpload, Spinner } from '@meridian/ui'
-import { commissionMinor, commissionPct, defaultCommission, defaultDayUse, defaultHouseRules, discountedPrice, formatPrice, formatTime, HOUSE_RULES, quoteDayUse, quoteStay, addDays, todayISO, type Amenity, type DayUseSettings, type HouseRules, type Management, type PropertyType } from '@meridian/shared'
+import { ErrorNote, PageHeader, PhotoUpload, Spinner, VideoUpload } from '@meridian/ui'
+import { commissionMinor, commissionPct, defaultCommission, defaultDayUse, defaultHouseRules, discountedPrice, embedUrl, formatPrice, formatTime, HOUSE_RULES, quoteDayUse, quoteStay, addDays, todayISO, type Amenity, type DayUseSettings, type HouseRules, type Management, type PropertyType } from '@meridian/shared'
 import { ApiError, api, hostApi, type ListingInput } from '@meridian/shared/client'
 
 const LocationPicker = lazy(() => import('../components/LocationPicker'))
@@ -19,7 +19,7 @@ const steps = ['Property type', 'Location', 'Rooms & amenities', 'Photos & descr
 // Which step each server-side field error belongs to.
 const fieldStep: Record<string, number> = {
   type: 0, title: 1, city: 1, region: 1, location: 1, address: 1, beds: 2, baths: 2, maxGuests: 2, areaSqft: 2, gatheringCapacity: 2,
-  coverImage: 3, photos: 3, description: 3,
+  coverImage: 3, photos: 3, description: 3, videoUrl: 3,
   checkInTime: 4, checkOutTime: 4, securityDeposit: 4, houseRulesNotes: 4, quietAfter: 4,
   price: 5, overnight: 5, discountPct: 5, dayUsePrice: 5, dayUseExtra: 5, dayUseBlock: 5, dayUseHours: 5,
 }
@@ -30,7 +30,7 @@ const emptyDraft: Draft = {
   type: null, title: '', description: '', city: '', region: '', country: 'India', price: 3000, beds: 1, baths: 1, maxGuests: 2,
   lat: null, lng: null, coverImage: '', photos: [], photoText: '', amenities: [],
   areaSqft: null, gatheringCapacity: null, checkInTime: '14:00', checkOutTime: '11:00', houseRules: { ...defaultHouseRules },
-  securityDeposit: 0, address: '', overnight: true, dayUse: { ...defaultDayUse }, discountPct: 0,
+  securityDeposit: 0, address: '', overnight: true, dayUse: { ...defaultDayUse }, discountPct: 0, videoUrl: '',
 }
 
 const inputClass = 'w-full bg-slate-50 border border-slate-200 rounded-2xl p-3 text-sm focus:outline-none focus:border-brand-500'
@@ -253,6 +253,31 @@ export function ListingEditor() {
               {fields.photos && <p className="text-xs text-rose-600 font-semibold mt-1">{fields.photos}</p>}
             </div>
 
+            <div>
+              <p className="block text-xs font-bold uppercase text-slate-500 mb-2">Video tour (optional)</p>
+              {draft.videoUrl ? (
+                <div className="rounded-2xl border border-slate-200 p-3 space-y-3">
+                  {embedUrl(draft.videoUrl)
+                    ? <iframe src={embedUrl(draft.videoUrl)!} title="Video preview" className="w-full aspect-video rounded-xl" allow="encrypted-media; picture-in-picture" allowFullScreen />
+                    : <video src={draft.videoUrl} controls playsInline className="w-full max-h-64 rounded-xl bg-slate-900" />}
+                  <div className="flex flex-wrap items-center gap-3 text-xs font-bold">
+                    <button type="button" onClick={() => update('videoUrl', '')} className="text-rose-600 hover:underline">Remove video</button>
+                    <span className="text-slate-400 font-normal truncate">{draft.videoUrl.slice(0, 60)}…</span>
+                  </div>
+                </div>
+              ) : (
+                <div className="border-2 border-dashed border-slate-200 rounded-2xl p-6 text-center space-y-3">
+                  <VideoUpload onUploaded={(url) => update('videoUrl', url)} label="Upload a video tour" />
+                  <p className="text-xs text-slate-500">MP4, WebM or MOV. A 30–60 second walk-through works best.</p>
+                  <details className="text-xs text-slate-500">
+                    <summary className="cursor-pointer">or paste a YouTube or Vimeo link</summary>
+                    <input aria-label="Video link" type="url" className={`${inputClass} mt-2`} value={draft.videoUrl} onChange={(e) => update('videoUrl', e.target.value.trim())} placeholder="https://youtu.be/…" />
+                  </details>
+                </div>
+              )}
+              {fields.videoUrl && <p className="text-xs text-rose-600 font-semibold mt-1">{fields.videoUrl}</p>}
+            </div>
+
             <Field label="Description" id="description" error={fields.description} hint={`At least 20 characters. Leave a blank line between paragraphs. (${draft.description.trim().length})`}>
               <textarea id="description" rows={6} maxLength={4000} className={inputClass} value={draft.description} onChange={(e) => update('description', e.target.value)} />
             </Field>
@@ -392,6 +417,7 @@ export function ListingEditor() {
               <Row label="Security deposit" value={draft.securityDeposit ? formatPrice(draft.securityDeposit) : 'None'} />
               <Row label="Discount" value={draft.discountPct ? `${draft.discountPct}% off` : 'None'} />
               <Row label="Photos" value={`${1 + photos.length}`} />
+              <Row label="Video tour" value={draft.videoUrl ? 'Added' : 'None'} />
               <Row label="Amenities" value={draft.amenities.join(', ') || 'None'} />
             </dl>
             <p className="text-sm text-slate-600 mt-4 whitespace-pre-line">{draft.description}</p>

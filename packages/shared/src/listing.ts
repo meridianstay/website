@@ -80,3 +80,17 @@ export function bookingWhen(b: { kind?: 'stay' | 'dayuse'; checkIn: string; chec
   }
   return `${formatDateRange(b.checkIn, b.checkOut)} · ${b.nights} ${b.nights === 1 ? 'night' : 'nights'}`
 }
+
+/** Video types hosts can upload, and how to spot links we can embed instead. */
+export const VIDEO_TYPES: Record<string, string> = { 'video/mp4': 'mp4', 'video/webm': 'webm', 'video/quicktime': 'mov' }
+
+/** A YouTube or Vimeo watch link turned into an embeddable one, or null for other links. */
+export function embedUrl(url: string): string | null {
+  const youtube = /(?:youtube\.com\/(?:watch\?v=|embed\/|shorts\/)|youtu\.be\/)([\w-]{6,})/.exec(url)
+  if (youtube) return `https://www.youtube-nocookie.com/embed/${youtube[1]}`
+  const vimeo = /vimeo\.com\/(?:video\/)?(\d+)/.exec(url)
+  return vimeo ? `https://player.vimeo.com/video/${vimeo[1]}` : null
+}
+
+/** True for links we can play in a <video> tag (uploads and direct .mp4 links). */
+export const isPlayableVideo = (url: string) => /\.(mp4|webm|mov)(\?|$)/i.test(url) || /firebasestorage|storage\.googleapis\.com/.test(url)

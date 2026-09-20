@@ -10,7 +10,7 @@ export interface PropertyDoc {
   id: number; slug: string; hostId: number; title: string; type: PropertyType; description: string
   city: string; region: string; country: string; lat: number; lng: number; currency: string
   pricePerNightMinor: number; bedrooms: number; bathrooms: number; maxGuests: number
-  status: ListingStatus; rejectionReason: string | null; coverImageUrl: string; photos: string[]; amenities: string[]
+  status: ListingStatus; rejectionReason: string | null; coverImageUrl: string; photos: string[]; videoUrl: string; amenities: string[]
   ratingAvg: number; reviewCount: number; featuredRank: number | null
   /** managed: run by Meridian, instant booking. self: host-managed, request to book. Set by admins. */
   management: Management
@@ -35,7 +35,7 @@ export function withPropDefaults(p: PropertyDoc): PropertyDoc {
     management: p.management ?? 'self', areaSqft: p.areaSqft ?? null, gatheringCapacity: p.gatheringCapacity ?? null,
     checkInTime: p.checkInTime ?? '14:00', checkOutTime: p.checkOutTime ?? '11:00',
     houseRules: { ...defaultHouseRules, ...p.houseRules }, securityDepositMinor: p.securityDepositMinor ?? 0, address: p.address ?? '',
-    overnight: p.overnight ?? true, assured: p.assured ?? false, discountPct: p.discountPct ?? 0,
+    overnight: p.overnight ?? true, assured: p.assured ?? false, discountPct: p.discountPct ?? 0, videoUrl: p.videoUrl ?? '',
     dayUse: p.dayUse ?? { enabled: false, blockHours: defaultDayUse.blockHours, priceMinor: defaultDayUse.price * 100, extraHourMinor: defaultDayUse.extraHourPrice * 100, opensAt: defaultDayUse.opensAt, closesAt: defaultDayUse.closesAt },
   }
 }
@@ -233,7 +233,7 @@ export const propertiesRepo = {
       id: p.id, slug: p.slug, status: p.status, rejectionReason: p.rejectionReason, title: p.title, type: p.type,
       description: p.description, city: p.city, region: p.region, country: p.country, price: p.pricePerNightMinor / 100,
       beds: p.bedrooms, baths: p.bathrooms, maxGuests: p.maxGuests, lat: p.lat, lng: p.lng, coverImage: p.coverImageUrl,
-      photos: p.photos, amenities: p.amenities, management: p.management ?? 'self', discountPct: p.discountPct ?? 0,
+      photos: p.photos, videoUrl: p.videoUrl ?? '', amenities: p.amenities, management: p.management ?? 'self', discountPct: p.discountPct ?? 0,
       areaSqft: p.areaSqft, gatheringCapacity: p.gatheringCapacity, checkInTime: p.checkInTime, checkOutTime: p.checkOutTime,
       houseRules: p.houseRules, securityDeposit: p.securityDepositMinor / 100, address: p.address, overnight: p.overnight,
       dayUse: { enabled: p.dayUse.enabled, blockHours: p.dayUse.blockHours, price: p.dayUse.priceMinor / 100, extraHourPrice: p.dayUse.extraHourMinor / 100, opensAt: p.dayUse.opensAt, closesAt: p.dayUse.closesAt },
@@ -258,7 +258,7 @@ export const propertiesRepo = {
         id, slug, hostId, title: input.title, type: input.type, description: input.description, city: input.city, region: input.region,
         country: input.country, lat: input.lat, lng: input.lng, currency: 'INR', pricePerNightMinor: Math.round(input.price * 100),
         bedrooms: input.beds, bathrooms: input.baths, maxGuests: input.maxGuests, status: 'Pending', rejectionReason: null,
-        coverImageUrl: input.coverImage, photos: input.photos, amenities: input.amenities, ratingAvg: 0, reviewCount: 0,
+        coverImageUrl: input.coverImage, photos: input.photos, videoUrl: input.videoUrl, amenities: input.amenities, ratingAvg: 0, reviewCount: 0,
         featuredRank: null, management: 'self', assured: false, approvedAt: null, createdAt: now, updatedAt: now, ...detailFields(input),
       }
       tx.set(ref(id), doc)
@@ -272,7 +272,7 @@ export const propertiesRepo = {
       title: input.title, type: input.type, description: input.description, city: input.city, region: input.region,
       country: input.country, lat: input.lat, lng: input.lng, pricePerNightMinor: Math.round(input.price * 100),
       bedrooms: input.beds, bathrooms: input.baths, maxGuests: input.maxGuests, coverImageUrl: input.coverImage,
-      photos: input.photos, amenities: input.amenities, status: 'Pending', rejectionReason: null, approvedAt: null,
+      photos: input.photos, videoUrl: input.videoUrl, amenities: input.amenities, status: 'Pending', rejectionReason: null, approvedAt: null,
       featuredRank: null, updatedAt: nowISO(), ...detailFields(input),
     })
   },

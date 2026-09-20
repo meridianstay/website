@@ -75,7 +75,7 @@ propertyRoutes.get('/properties/:slug', async (c) => {
   ])
   return c.json({
     property: {
-      ...toPropertySummary(p), gallery: p.photos, amenities, reviews, bookedRanges, reviewableBookingCode, status: p.status, ratingBreakdown, similar, promoted: promotedIds.has(p.id),
+      ...toPropertySummary(p), gallery: p.photos, amenities, reviews, bookedRanges, reviewableBookingCode, status: p.status, ratingBreakdown, similar, promoted: promotedIds.has(p.id), videoUrl: p.videoUrl ?? '',
       areaSqft: p.areaSqft, gatheringCapacity: p.gatheringCapacity, checkInTime: p.checkInTime, checkOutTime: p.checkOutTime,
       houseRules: p.houseRules, securityDeposit: p.securityDepositMinor / 100,
       dayUseSettings: p.dayUse.enabled ? {

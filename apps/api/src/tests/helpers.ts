@@ -40,7 +40,7 @@ export const listingInput = (overrides: Partial<ListingInput> = {}): ListingInpu
   country: 'India', price: 100, beds: 1, baths: 1, maxGuests: 2, lat: 12.4, lng: 75.7,
   coverImage: 'https://example.com/cover.jpg', photos: [], amenities: ['Wifi'], areaSqft: null, gatheringCapacity: null,
   checkInTime: '14:00', checkOutTime: '11:00', houseRules: { ...defaultHouseRules }, securityDeposit: 0, address: '12 Test Road, Coorg',
-  overnight: true, dayUse: { ...defaultDayUse }, discountPct: 0, ...overrides,
+  overnight: true, dayUse: { ...defaultDayUse }, discountPct: 0, videoUrl: '', ...overrides,
 })
 
 /** A live listing owned by `host`: self-managed (request to book) unless `management` is 'managed' (instant). */
