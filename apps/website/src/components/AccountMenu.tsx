@@ -66,7 +66,7 @@ export function AccountMenu() {
             <>
               <Link to={`/login?next=${here}`} onClick={close} className={`${itemClass} font-bold text-slate-900`} role="menuitem">Log in or sign up</Link>
               <div className="border-t border-slate-100 my-1" />
-              <a href={appLink('host', '/login')} className={itemClass} role="menuitem">Host login</a>
+              <Link to="/login?as=host" className={itemClass} role="menuitem">Host login</Link>
               <a href={appLink('host', '/new')} className={itemClass} role="menuitem">List your property</a>
               <Link to="/help" onClick={close} className={itemClass} role="menuitem">Help Center</Link>
             </>

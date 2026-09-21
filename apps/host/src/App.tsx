@@ -25,7 +25,7 @@ export default function App() {
       <Route
         path="*"
         element={
-          <RequireAuth loginHref={appLink('host', '/login')}>
+          <RequireAuth loginHref={appLink('website', '/login')}>
             <AppShell subtitle="Host Portal" nav={nav}>
               <Routes>
                 <Route index element={<Dashboard />} />

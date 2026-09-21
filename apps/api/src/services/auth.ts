@@ -7,7 +7,7 @@ import { checkLength, checkPhone, collect } from '../http/validate'
 
 // Sign-in with Firebase (Google or phone OTP) and Meridian Stay sessions.
 
-/** Where the person is signing in. Each portal has its own login page. */
+/** Where the person is signing in. Guests and hosts share one login page; the control centre has its own. */
 export type Portal = 'guest' | 'host' | 'admin'
 
 /** Firebase session cookies can last at most 14 days. */

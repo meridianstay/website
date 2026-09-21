@@ -89,7 +89,7 @@ reference/index.html       the original single-file prototype
 
 ## How things work
 
-- **Sign-in** is by Google or phone OTP through Firebase Authentication. Guests, hosts and admins each have their own login page; the admin one isn't linked from the website and only accepts admins. The API then sets a secure, HTTP-only session cookie shared by every app. Admins choose which sign-in methods are on in Settings.
+- **Sign-in** is by Google or phone OTP through Firebase Authentication. **Guests and hosts share one login page** (`/login`) and one account: creating a listing simply turns a guest into a host. The control centre keeps its own login (`/admin/login`), which isn't linked from the website and only accepts admins. The API then sets a secure, HTTP-only session cookie shared by every app. Admins choose which sign-in methods are on in Settings.
 - **Roles:** everyone signs up as a guest. Creating a first listing makes you a host. Only an admin can make someone an admin.
 - **Listings** go live only after an admin approves them. Any edit sends a listing back for review.
 - **Pricing** is in Indian rupees (₹) and calculated on the server when booking: the nightly price covers two guests and each extra guest adds 15%. Guests pay **no booking fee**. Money is stored in paise.

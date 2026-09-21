@@ -2,6 +2,13 @@
 
 Every change to Meridian Stay is recorded here, newest first. Each entry says what changed for the people using the platform, then the notable technical changes.
 
+## 0.16.0 — 2026-09-21
+
+### One login for guests and hosts
+- Guests and hosts now share **one login and sign-up page** on the website, and one account: booking a stay and listing a property use the same sign-in. The page only changes its wording when someone arrives from the host portal.
+- The old host login address still works and forwards to it, keeping whichever page the person was heading for. The control centre keeps its own login, still unlisted.
+- "Host login" links in the account menu and footer now open the shared page.
+
 ## 0.15.0 — 2026-09-20
 
 ### Video tours

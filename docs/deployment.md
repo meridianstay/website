@@ -89,8 +89,7 @@ Push to `main`, or press **Redeploy**. Then:
 
 - `https://<domain>/api/health` → `{"ok":true}`
 - `https://<domain>/` → the website, with stays
-- `https://<domain>/login` → guest login (Google or phone)
-- `https://<domain>/host/login` → host login
+- `https://<domain>/login` → the one login for guests and hosts (Google or phone)
 - `https://<domain>/admin/login` → control-center login (not linked from the website)
 - **Admin → Settings** shows *Live Firebase project* with Firestore, Authentication and Storage all connected.
 
