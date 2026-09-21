@@ -1,6 +1,7 @@
 import { createContext, useContext, useEffect, useState, type ReactNode } from 'react'
-import { defaultBranding, defaultTheme, themeVariables, type AppBrand, type BrandApp, type PublicSite } from '@meridian/shared'
+import { defaultBranding, defaultLanguages, defaultTheme, themeVariables, type AppBrand, type BrandApp, type LanguageSettings, type PublicSite } from '@meridian/shared'
 import { api } from '@meridian/shared/client'
+import { LanguageProvider } from './i18n'
 
 // The logo and name an app shows, set in the control centre. Fetched once per page load and shared
 // by every logo on screen; until it arrives the built-in Meridian branding shows.
@@ -20,15 +21,23 @@ function applyTheme(site: PublicSite) {
 
 const BrandContext = createContext<AppBrand>(defaultBranding.website)
 
+/** The logo, the palette and the language, all from the same one settings fetch. */
 export function BrandProvider({ app, children }: { app: BrandApp; children: ReactNode }) {
   const [brand, setBrand] = useState<AppBrand>(defaultBranding[app])
+  const [languages, setLanguages] = useState<LanguageSettings | undefined>(undefined)
   useEffect(() => {
     loadSite().then((site) => {
       applyTheme(site)
       setBrand(site.branding?.[app] ?? defaultBranding[app])
+      setLanguages(site.languages ?? defaultLanguages)
     }).catch(() => {})
   }, [app])
-  return <BrandContext.Provider value={brand}>{children}</BrandContext.Provider>
+  return (
+    <BrandContext.Provider value={brand}>
+      {/* The control centre is a staff tool and stays in English. */}
+      <LanguageProvider settings={languages} enabled={app !== 'admin'}>{children}</LanguageProvider>
+    </BrandContext.Provider>
+  )
 }
 
 export const useBrand = () => useContext(BrandContext)

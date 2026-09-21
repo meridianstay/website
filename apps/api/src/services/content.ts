@@ -29,8 +29,9 @@ export const contentService = {
     if (key === 'homepage') for (const f of ['heroTitle', 'heroHighlight', 'featuredTitle']) if (!value[f]) fields[f] = 'This can’t be empty.'
     if (key === 'announcement' && value.enabled && !value.text) fields.text = 'Write the announcement text.'
     if (key === 'signIn' && !value.google && !value.phone) fields.google = 'Keep at least one sign-in method on, or guests and hosts can’t log in.'
-    // Vercel accepts request bodies up to 4.5 MB, so uploads are capped at 4 MB.
-    if (key === 'uploads' && !(Number(value.maxMb) >= 1 && Number(value.maxMb) <= 4)) fields.maxMb = 'Choose between 1 and 4 MB.'
+    // The picked file's limit. The browser crops and shrinks it first, so what we receive is far smaller
+    // than this and stays well under the 4.5 MB body limit our hosting allows.
+    if (key === 'uploads' && !(Number(value.maxMb) >= 2 && Number(value.maxMb) <= 10)) fields.maxMb = 'Choose between 2 and 10 MB.'
     if (key === 'promotions') {
       for (const f of ['searchPerDay', 'homePerDay', 'destinationPerDay']) {
         if (!(Number(value[f]) >= 0 && Number(value[f]) <= 100000)) fields[f] = 'Enter a daily price in rupees (0–1,00,000).'

@@ -2,6 +2,27 @@
 
 Every change to Meridian Stay is recorded here, newest first. Each entry says what changed for the people using the platform, then the notable technical changes.
 
+## 0.22.0 — 2026-09-21
+
+### The site reads in your own language
+- The website, the host portal and the guest account are now available in **English, हिन्दी, বাংলা, मराठी, తెలుగు, தமிழ், ગુજરાતી, ಕನ್ನಡ, മലയാളം, ਪੰਜਾਬੀ and ଓଡ଼ିଆ**.
+- A visitor gets **their browser's language automatically** the first time, and can change it whenever they like from the **globe in the header** (or the globe in the host and account panels). The choice is remembered in that browser.
+- **Website content → Logos, colours, languages & footer** now has a **Languages** panel: tick the languages to offer, choose the default for visitors whose language you don't have, and switch automatic detection off if you'd rather everyone started in one language. English is always offered.
+- Menus, search, the stay page, checkout, trips, booking statuses and the host portal are translated. Listing titles, descriptions and the written website pages stay in the language they were entered in, and anything not yet translated shows in English rather than going blank.
+- The control centre stays in English — it's a staff tool.
+
+### Login
+- The login page now has **“I’m a guest” and “I’m a host” tabs**. The tab decides where you land: guests go to their trips, hosts go to the host portal. Arriving from the host portal opens the host tab already selected, and a link you followed still takes you back where you were.
+- The separate **“Host login”** links are gone from the footer and the account menu, now that one page does both.
+
+### Photos
+- The size limit for a photo a host picks is now **2–10 MB, 5 MB by default** (Settings → Photo uploads). The browser crops and shrinks every photo before sending it, so what reaches storage is a few hundred kilobytes whatever they choose.
+
+### Technical
+- `i18n.ts` (language list, `pickLanguage`, settings) and one dictionary per language in `shared/src/locales`, each lazily imported so only English ships in the first load.
+- `LanguageProvider`/`useT` live inside `BrandProvider`, which already had the one settings fetch; `PUT /admin/languages` saves the list.
+- 109 automated tests (6 new), including one that every dictionary carries exactly the English keys with their placeholders intact.
+
 ## 0.21.0 — 2026-09-21
 
 ### The colour palette is yours to change

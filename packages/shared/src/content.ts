@@ -2,6 +2,7 @@ import { defaultBranding, defaultFooter, defaultHeader, type BrandingSettings, t
 import { defaultPromotions, type PromotionSettings } from './promotions'
 import { defaultCommission, type CommissionRates } from './pricing'
 import { defaultTheme, type ThemeSettings } from './theme'
+import { defaultLanguages, type LanguageSettings } from './i18n'
 // Default website content. The API copies it into the database on first start; after that
 // the admin control center edits it. Legal pages start as drafts for a lawyer to review.
 
@@ -42,8 +43,7 @@ export interface SignInSettings {
   phone: boolean
 }
 
-export interface UploadSettings {
-  /** Largest photo a host or guest can upload, in MB (at most 4). */
+export interface UploadSettings {  /** Largest photo a host may choose, in MB. It is cropped and shrunk in the browser before upload. */
   maxMb: number
 }
 
@@ -57,6 +57,8 @@ export interface SiteSettings {
   /** Paid promotions hosts can buy (daily rates in ₹). */
   promotions: PromotionSettings
   /** Logos and names, per app. */
+  /** Which languages the picker offers, and what a new visitor gets. */
+  languages: LanguageSettings
   /** The colour palette every app uses. */
   theme: ThemeSettings
   branding: BrandingSettings
@@ -81,9 +83,10 @@ export const defaultSiteSettings: SiteSettings = {
     linkUrl: '/help',
   },
   signIn: { google: true, phone: true },
-  uploads: { maxMb: 4 },
+  uploads: { maxMb: 5 },
   commission: { ...defaultCommission },
   promotions: { ...defaultPromotions },
+  languages: structuredClone(defaultLanguages),
   theme: { ...defaultTheme },
   branding: structuredClone(defaultBranding),
   header: structuredClone(defaultHeader),

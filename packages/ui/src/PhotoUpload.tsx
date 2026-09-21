@@ -1,12 +1,15 @@
-import { useId, useRef, useState } from 'react'
+import { useEffect, useId, useRef, useState } from 'react'
 import { api } from '@meridian/shared/client'
+import { defaultSiteSettings } from '@meridian/shared'
 import { cropToShape } from './cropImage'
+import { loadSite } from './brand'
 
 interface Props {
   purpose: 'listing' | 'avatar' | 'content'
   /** Called with the uploaded photo's link. */
   onUploaded: (url: string) => void
   label?: string
+  /** Overrides the limit from the control centre (Settings → Photo uploads). */
   maxMb?: number
   className?: string
   /** Called with the shape the photo was cropped to, when it was cropped. */
@@ -14,17 +17,22 @@ interface Props {
 }
 
 /** A button that uploads a photo to Firebase Storage through the API. */
-export function PhotoUpload({ purpose, onUploaded, onShape, label = 'Upload photo', maxMb = 4, className = '' }: Props) {
+export function PhotoUpload({ purpose, onUploaded, onShape, label = 'Upload photo', maxMb, className = '' }: Props) {
   const input = useRef<HTMLInputElement>(null)
   // Unique per button, so several upload buttons on one page each open their own file picker.
   const id = useId()
   const [busy, setBusy] = useState(false)
   const [error, setError] = useState<string | null>(null)
+  const [limit, setLimit] = useState(maxMb ?? defaultSiteSettings.uploads.maxMb)
+  useEffect(() => {
+    if (maxMb === undefined) loadSite().then((site) => setLimit(site.uploads?.maxMb ?? defaultSiteSettings.uploads.maxMb)).catch(() => {})
+  }, [maxMb])
 
   const pick = async (file: File | undefined) => {
     if (!file) return
     setError(null)
     if (!['image/jpeg', 'image/png', 'image/webp'].includes(file.type)) return setError('Choose a JPG, PNG or WebP photo.')
+    if (file.size > limit * 1024 * 1024) return setError(`Photos can be at most ${limit} MB. This one is ${(file.size / (1024 * 1024)).toFixed(1)} MB.`)
     setBusy(true)
     try {
       // Listing photos become landscape or portrait; profile photos become square. Website content is left alone.
@@ -34,7 +42,6 @@ export function PhotoUpload({ purpose, onUploaded, onShape, label = 'Upload phot
         send = cropped.file
         onShape?.(cropped.shape)
       }
-      if (send.size > maxMb * 1024 * 1024) throw new Error(`Photos can be at most ${maxMb} MB. Try a smaller photo.`)
       onUploaded((await api.upload(send, purpose)).url)
     } catch (err) {
       setError((err as Error).message)

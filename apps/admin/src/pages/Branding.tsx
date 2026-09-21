@@ -1,8 +1,9 @@
 import { useEffect, useState } from 'react'
 import { ErrorNote, ImageField, PageHeader, Panel, Spinner } from '@meridian/ui'
 import {
-  BRAND_APPS, BRAND_LIMITS, SOCIAL_NETWORKS, THEME_PRESETS, defaultBranding, defaultFooter, defaultHeader, defaultTheme, themeVariables,
-  type BrandingSettings, type FooterColumn, type FooterSettings, type HeaderSettings, type NavItemLink, type ThemeSettings,
+  BRAND_APPS, BRAND_LIMITS, LANGUAGES, SOCIAL_NETWORKS, THEME_PRESETS,
+  defaultBranding, defaultFooter, defaultHeader, defaultLanguages, defaultTheme, themeVariables,
+  type BrandingSettings, type FooterColumn, type FooterSettings, type HeaderSettings, type LanguageSettings, type NavItemLink, type ThemeSettings,
 } from '@meridian/shared'
 import { ApiError, adminApi, appLink } from '@meridian/shared/client'
 
@@ -67,6 +68,7 @@ export function Branding() {
   const [header, setHeader] = useState<HeaderSettings>(defaultHeader)
   const [footer, setFooter] = useState<FooterSettings>(defaultFooter)
   const [theme, setTheme] = useState<ThemeSettings>(defaultTheme)
+  const [languages, setLanguages] = useState<LanguageSettings>(defaultLanguages)
   const [error, setError] = useState<string | null>(null)
   const [fields, setFields] = useState<Record<string, string>>({})
   const [state, setState] = useState<'idle' | 'saving' | 'saved'>('idle')
@@ -77,6 +79,7 @@ export function Branding() {
       setHeader(s.header ?? defaultHeader)
       setFooter(s.footer ?? defaultFooter)
       setTheme(s.theme ?? defaultTheme)
+      setLanguages(s.languages ?? defaultLanguages)
     }).catch((e) => setError(e.message))
   }, [])
 
@@ -99,6 +102,7 @@ export function Branding() {
     setFields({})
     try {
       await adminApi.saveTheme(theme)
+      await adminApi.saveLanguages(languages)
       await adminApi.saveBranding(branding)
       await adminApi.saveHeader(header)
       await adminApi.saveFooter(footer)
@@ -115,12 +119,52 @@ export function Branding() {
     <>
       <PageHeader
         eyebrow="Website content"
-        title="Logos, colours, header & footer"
+        title="Logos, colours, languages, header & footer"
         description="Each panel has its own logo and name, so the website, host portal, guest account and this control centre can look different. Changes appear the next time a page is opened."
         action={<a href={appLink('website', '/')} target="_blank" rel="noreferrer" className="bg-slate-100 hover:bg-slate-200 text-slate-800 text-xs font-bold py-3 px-5 rounded-2xl"><i className="fa-solid fa-arrow-up-right-from-square mr-2" aria-hidden="true"></i>View website</a>}
       />
 
       <div className="space-y-6">
+        <Panel title="Languages" subtitle="Which languages visitors can read the site in. English is always offered; a visitor's browser decides which one they see first, and they can change it from the globe in the header.">
+          <Toggle on={languages.autoDetect} onChange={(autoDetect) => { setLanguages({ ...languages, autoDetect }); touched() }}
+            title="Match the visitor's browser" hint="Off means everyone starts in the default language below and can still switch by hand." />
+          <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-2 mt-5">
+            {LANGUAGES.map((l) => {
+              const always = l.code === 'en'
+              const on = always || languages.enabled.includes(l.code)
+              return (
+                <label key={l.code} className={`flex items-start gap-3 p-3 rounded-2xl border-2 transition ${on ? 'border-brand-500 bg-brand-50/60' : 'border-slate-200'} ${always ? 'opacity-70' : 'cursor-pointer hover:border-slate-300'}`}>
+                  <input type="checkbox" checked={on} disabled={always} className="mt-1 w-4 h-4 accent-brand-600"
+                    onChange={(e) => {
+                      const next = e.target.checked
+                        ? [...languages.enabled, l.code]
+                        : languages.enabled.filter((c) => c !== l.code)
+                      setLanguages({ ...languages, enabled: next, fallback: next.includes(languages.fallback) ? languages.fallback : 'en' })
+                      touched()
+                    }} />
+                  <span>
+                    <span className="block text-sm font-bold text-slate-900" lang={l.code}>{l.name}</span>
+                    <span className="block text-xs text-slate-500">{l.english} · {l.where}</span>
+                  </span>
+                </label>
+              )
+            })}
+          </div>
+          <div className="mt-5 max-w-xs">
+            <label className={label} htmlFor="fallback-language">Default language</label>
+            <select id="fallback-language" value={languages.fallback} onChange={(e) => { setLanguages({ ...languages, fallback: e.target.value }); touched() }} className={input}>
+              {LANGUAGES.filter((l) => l.code === 'en' || languages.enabled.includes(l.code)).map((l) => (
+                <option key={l.code} value={l.code}>{l.english} — {l.name}</option>
+              ))}
+            </select>
+            <p className="text-xs text-slate-500 mt-1">Used when a visitor's browser asks for a language you don't offer.</p>
+            {fieldError('fallback')}
+          </div>
+          <p className="text-xs text-slate-500 mt-4">
+            Menus, search, the stay page, checkout, trips and the host portal are translated. Listing titles, descriptions and website pages stay in the language they were written in.
+          </p>
+        </Panel>
+
         <Panel title="Colours" subtitle="One main colour and one accent. Every lighter and darker shade is mixed from them, so the whole site — website, host portal, guest account and this panel — changes together.">
           <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-3">
             {THEME_PRESETS.map((p) => {

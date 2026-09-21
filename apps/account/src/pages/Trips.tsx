@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react'
-import { EmptyState, ErrorNote, PageHeader, Panel, Spinner, StatusBadge } from '@meridian/ui'
+import { EmptyState, ErrorNote, PageHeader, Panel, Spinner, StatusBadge, useT } from '@meridian/ui'
 import { bookingWhen, formatPrice, type BookingDetail } from '@meridian/shared'
 import { api, appLink } from '@meridian/shared/client'
 
@@ -48,6 +48,7 @@ function TripList({ trips, onChange }: { trips: BookingDetail[]; onChange: (b: B
 }
 
 function Trip({ booking: b, onChange }: { booking: BookingDetail; onChange: (b: BookingDetail) => void }) {
+  const t = useT()
   const [confirming, setConfirming] = useState(false)
   const [busy, setBusy] = useState(false)
   const [error, setError] = useState<string | null>(null)
@@ -56,7 +57,7 @@ function Trip({ booking: b, onChange }: { booking: BookingDetail; onChange: (b: 
   const cancellable = ['Confirmed', 'Requested', 'AwaitingPayment'].includes(b.status)
   // What the guest gets back; the server works it out, so the two can never disagree.
   const refund = b.refundIfCancelled
-  const cancelLabel = b.status === 'Requested' ? 'Withdraw request' : b.status === 'AwaitingPayment' ? 'Cancel checkout' : 'Cancel booking'
+  const cancelLabel = b.status === 'Requested' ? t('account.withdrawRequest') : b.status === 'AwaitingPayment' ? t('common.cancel') : t('account.cancelBooking')
 
   const cancel = async () => {
     setBusy(true)
@@ -86,12 +87,12 @@ function Trip({ booking: b, onChange }: { booking: BookingDetail; onChange: (b: 
         </div>
       </div>
       <div className="flex flex-wrap gap-2 text-xs font-bold">
-        <a href={appLink('website', `/booking/${b.code}`)} className="px-3 py-2 rounded-xl bg-white border border-slate-200 hover:bg-slate-100">View booking</a>
+        <a href={appLink('website', `/booking/${b.code}`)} className="px-3 py-2 rounded-xl bg-white border border-slate-200 hover:bg-slate-100">{t('account.viewBooking')}</a>
         {b.status === 'Completed' && !b.reviewed && (
-          <a href={`${stayUrl}#reviews`} className="px-3 py-2 rounded-xl bg-brand-600 text-white hover:bg-brand-700">Write a review</a>
+          <a href={`${stayUrl}#reviews`} className="px-3 py-2 rounded-xl bg-brand-600 text-white hover:bg-brand-700">{t('account.writeReview')}</a>
         )}
         {b.status === 'AwaitingPayment' && (
-          <a href={appLink('website', `/booking/${b.code}`)} className="px-3 py-2 rounded-xl bg-brand-600 text-white hover:bg-brand-700">Finish payment</a>
+          <a href={appLink('website', `/booking/${b.code}`)} className="px-3 py-2 rounded-xl bg-brand-600 text-white hover:bg-brand-700">{t('account.finishPayment')}</a>
         )}
         {cancellable && !confirming && (
           <button type="button" onClick={() => setConfirming(true)} className="px-3 py-2 rounded-xl text-rose-600 hover:bg-rose-50">{cancelLabel}</button>
@@ -104,7 +105,7 @@ function Trip({ booking: b, onChange }: { booking: BookingDetail; onChange: (b: 
                 : `${cancelLabel}? You won’t be charged.`}
             </span>
             <button type="button" disabled={busy} onClick={cancel} className="px-3 py-1 rounded-lg bg-rose-600 text-white">{busy ? 'Cancelling…' : 'Yes, cancel'}</button>
-            <button type="button" onClick={() => setConfirming(false)} className="px-2 py-1 text-slate-600">Keep it</button>
+            <button type="button" onClick={() => setConfirming(false)} className="px-2 py-1 text-slate-600">{t('account.keepIt')}</button>
           </span>
         )}
       </div>

@@ -1,8 +1,8 @@
 import { lazy, Suspense, useCallback, useEffect, useState } from 'react'
 import { Link, useParams, useSearchParams } from 'react-router'
-import { embedUrl, formatDate, formatPrice, formatTime, HOUSE_RULES, isPlayableVideo, PRIVACY_NOTE, propertyCode, REQUEST_HOURS, type PropertyDetail, type RatingBreakdown } from '@meridian/shared'
+import { embedUrl, formatDate, formatPrice, formatTime, HOUSE_RULES, isPlayableVideo, propertyCode, REQUEST_HOURS, type PropertyDetail, type RatingBreakdown } from '@meridian/shared'
 import { ApiError, api } from '@meridian/shared/client'
-import { Avatar, ErrorNote, Spinner } from '@meridian/ui'
+import { Avatar, ErrorNote, Spinner, useT } from '@meridian/ui'
 import { BookingBox } from '../components/BookingBox'
 import { PropertyCard } from '../components/PropertyCard'
 import { Modal } from '../components/Modal'
@@ -16,6 +16,7 @@ import { NotFound } from './NotFound'
 const PropertyMap = lazy(() => import('../components/PropertyMap'))
 
 export function Property() {
+  const t = useT()
   const { slug = '' } = useParams()
   const [params] = useSearchParams()
   const [property, setProperty] = useState<PropertyDetail | null>(null)
@@ -127,7 +128,7 @@ export function Property() {
         <div className="lg:col-span-2 space-y-10">
           <section className="flex items-center justify-between gap-4 pb-8 border-b border-slate-200">
             <div>
-              <h2 className="text-lg font-bold text-slate-900">Hosted by {property.host.name}</h2>
+              <h2 className="text-lg font-bold text-slate-900">{t('stay.hostedBy', { name: property.host.name })}</h2>
               <p className="text-sm text-slate-500 mt-1">
                 {property.maxGuests} guests · {property.beds} {property.beds === 1 ? 'bedroom' : 'bedrooms'} · {property.baths} {property.baths === 1 ? 'bathroom' : 'bathrooms'}
               </p>
@@ -139,7 +140,7 @@ export function Property() {
             <section className="bg-brand-50 border border-brand-100 rounded-2xl p-4 flex gap-3">
               <i className="fa-solid fa-lock text-brand-600 mt-0.5" aria-hidden="true"></i>
               <p className="text-sm text-slate-700">
-                <span className="font-bold text-slate-900">Name and owner details are private.</span> {PRIVACY_NOTE}{' '}
+                <span className="font-bold text-slate-900">{t('stay.privateTitle')}</span> {t('stay.privateBody')}{' '}
                 Everything you need to choose — photos, amenities, house rules, reviews and the area — is on this page.
               </p>
             </section>
@@ -162,7 +163,7 @@ export function Property() {
           </ul>
 
           <section>
-            <h2 className="text-lg font-bold text-slate-900 mb-3">About this space</h2>
+            <h2 className="text-lg font-bold text-slate-900 mb-3">{t('stay.aboutSpace')}</h2>
             {property.description.split('\n\n').map((para, i) => (
               <p key={i} className="text-sm text-slate-600 leading-relaxed mb-3 max-w-prose">{para}</p>
             ))}
@@ -184,7 +185,7 @@ export function Property() {
 
           {property.videoUrl && (
             <section className="pt-8 border-t border-slate-200">
-              <h2 className="text-lg font-bold text-slate-900 mb-1"><i className="fa-solid fa-video text-brand-600 mr-2" aria-hidden="true"></i>Video tour</h2>
+              <h2 className="text-lg font-bold text-slate-900 mb-1"><i className="fa-solid fa-video text-brand-600 mr-2" aria-hidden="true"></i>{t('stay.videoTour')}</h2>
               <p className="text-sm text-slate-500 mb-4">A walk-through from the host.</p>
               <VideoPlayer url={property.videoUrl} title={property.title} />
             </section>
@@ -202,7 +203,7 @@ export function Property() {
           )}
 
           <section id="rules" className="pt-8 border-t border-slate-200">
-            <h2 className="text-lg font-bold text-slate-900 mb-4">House rules</h2>
+            <h2 className="text-lg font-bold text-slate-900 mb-4">{t('stay.houseRules')}</h2>
             <ul className="grid grid-cols-1 sm:grid-cols-2 gap-3">
               {HOUSE_RULES.map((r) => {
                 const ok = property.houseRules[r.key]
@@ -232,7 +233,7 @@ export function Property() {
           </section>
 
           <section id="location" className="pt-8 border-t border-slate-200">
-            <h2 className="text-lg font-bold text-slate-900 mb-1">Where you’ll be</h2>
+            <h2 className="text-lg font-bold text-slate-900 mb-1">{t('stay.location')}</h2>
             <p className="text-sm text-slate-500 mb-4">{property.location}. The map shows the area; the exact address is shared once your booking is confirmed.</p>
             <div className="h-80 rounded-3xl overflow-hidden border border-slate-200 bg-slate-100">
               <Suspense fallback={<div className="h-full flex items-center justify-center text-sm text-slate-400">Loading map…</div>}>
@@ -290,7 +291,7 @@ export function Property() {
 
       {property.similar.length > 0 && (
         <section className="mt-16 pt-10 border-t border-slate-200">
-          <h2 className="text-lg font-bold text-slate-900 mb-1">Similar stays nearby</h2>
+          <h2 className="text-lg font-bold text-slate-900 mb-1">{t('stay.similar')}</h2>
           <p className="text-sm text-slate-500 mb-6">Other places guests look at alongside this one.</p>
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
             {property.similar.map((p, i) => <PropertyCard key={p.id} property={p} index={i} />)}

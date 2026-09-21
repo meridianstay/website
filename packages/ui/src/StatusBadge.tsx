@@ -1,3 +1,5 @@
+import { useT } from './i18n'
+
 const tones: Record<string, string> = {
   Approved: 'bg-brand-100 text-brand-700',
   Confirmed: 'bg-brand-100 text-brand-700',
@@ -16,12 +18,17 @@ const tones: Record<string, string> = {
   Cancelled: 'bg-rose-100 text-rose-700',
 }
 
-const labels: Record<string, string> = { AwaitingPayment: 'Awaiting payment', Requested: 'Awaiting host', PendingReview: 'In review' }
+/** Wording for the ones whose stored name isn't what a person would say. */
+const labels: Record<string, string> = { Requested: 'Awaiting host', PendingReview: 'In review' }
 
 export function StatusBadge({ status }: { status: string }) {
+  const t = useT()
+  // Translated where we have it (`status.Confirmed`), otherwise the English wording.
+  const translated = t(`status.${status}`)
+  const label = translated === `status.${status}` ? (labels[status] ?? status) : translated
   return (
     <span className={`inline-block px-2.5 py-1 rounded-full text-[10px] font-bold uppercase ${tones[status] ?? tones.Draft}`}>
-      {labels[status] ?? status}
+      {label}
     </span>
   )
 }

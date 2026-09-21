@@ -56,9 +56,9 @@ export function Website() {
         </SettingsForm>
       </div>
 
-      <div className="mb-8"><Panel title="Logos, colours, header & footer" action={<Link to="/website/branding" className="bg-brand-600 hover:bg-brand-700 text-white text-xs font-bold py-2.5 px-4 rounded-xl"><i className="fa-solid fa-pen mr-1.5" aria-hidden="true"></i>Edit</Link>}>
+      <div className="mb-8"><Panel title="Logos, colours, languages & footer" action={<Link to="/website/branding" className="bg-brand-600 hover:bg-brand-700 text-white text-xs font-bold py-2.5 px-4 rounded-xl"><i className="fa-solid fa-pen mr-1.5" aria-hidden="true"></i>Edit</Link>}>
         <p className="text-sm text-slate-500">
-          The colour palette, a separate logo and name for the website, the host portal, the guest account and this control centre, and what shows in the header bar and every footer column.
+          The languages the site is offered in, the colour palette, a separate logo and name for the website, the host portal, the guest account and this control centre, and what shows in the header bar and every footer column.
         </p>
       </Panel></div>
 

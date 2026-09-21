@@ -3,6 +3,7 @@ import { MapContainer, Marker, TileLayer, useMap, useMapEvents } from 'react-lea
 import L from 'leaflet'
 import 'leaflet/dist/leaflet.css'
 import { hostApi } from '@meridian/shared/client'
+import { useT } from '@meridian/ui'
 import type { Place } from '@meridian/shared'
 
 // Setting the location is the step hosts get stuck on, so it does the work for them: search for the
@@ -48,6 +49,7 @@ interface Props {
 
 /** Search for an address, use your location, or drop the pin by hand. */
 export default function LocationPicker({ lat, lng, onChange }: Props) {
+  const t = useT()
   const [query, setQuery] = useState('')
   const [results, setResults] = useState<Place[] | null>(null)
   const [busy, setBusy] = useState<'search' | 'locate' | 'address' | null>(null)
@@ -123,17 +125,17 @@ export default function LocationPicker({ lat, lng, onChange }: Props) {
             value={query}
             onChange={(e) => setQuery(e.target.value)}
             onKeyDown={(e) => { if (e.key === 'Enter') { e.preventDefault(); if (query.trim().length >= 3) search() } }}
-            placeholder="Search: village, road, landmark or PIN code"
+            placeholder={t('host.searchAddress')}
             className="w-full bg-slate-50 border border-slate-200 rounded-2xl p-3 pl-10 text-sm focus:outline-none focus:border-brand-500"
           />
         </div>
         <button type="button" onClick={search} disabled={query.trim().length < 3 || busy === 'search'}
           className="bg-brand-600 hover:bg-brand-700 disabled:opacity-50 text-white text-sm font-bold py-3 px-5 rounded-2xl shrink-0">
-          {busy === 'search' ? 'Searching…' : 'Search'}
+          {busy === 'search' ? t('common.loading') : t('common.search')}
         </button>
         <button type="button" onClick={locate} disabled={busy === 'locate'}
           className="bg-slate-100 hover:bg-slate-200 disabled:opacity-50 text-slate-800 text-sm font-bold py-3 px-5 rounded-2xl shrink-0">
-          <i className="fa-solid fa-location-crosshairs mr-2" aria-hidden="true"></i>{busy === 'locate' ? 'Finding…' : 'I’m there now'}
+          <i className="fa-solid fa-location-crosshairs mr-2" aria-hidden="true"></i>{busy === 'locate' ? t('common.loading') : t('host.imThereNow')}
         </button>
       </div>
 

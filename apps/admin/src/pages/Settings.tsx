@@ -115,12 +115,12 @@ export function Settings() {
           </SettingsForm>
 
           <SettingsForm title="Photo uploads" save={() => adminApi.saveUploads(uploads)}>
-            <label htmlFor="max-mb" className="block text-sm text-slate-600">Largest photo hosts and guests can upload</label>
+            <label htmlFor="max-mb" className="block text-sm text-slate-600">Largest photo a host may choose</label>
             <select id="max-mb" value={uploads.maxMb} onChange={(e) => setUploads({ ...uploads, maxMb: Number(e.target.value) })}
               className="bg-slate-50 border border-slate-200 rounded-xl p-2.5 text-sm font-semibold">
-              {[1, 2, 3, 4].map((n) => <option key={n} value={n}>{n} MB</option>)}
+              {[2, 3, 4, 5, 6, 8, 10].map((n) => <option key={n} value={n}>{n} MB</option>)}
             </select>
-            <p className="text-xs text-slate-500">Photos are stored in Firebase Storage. 4 MB is the most the hosting platform accepts per upload.</p>
+            <p className="text-xs text-slate-500">This is the file a host picks. Photos are cropped and shrunk in their browser before they are sent, so what reaches storage is a few hundred kilobytes whatever they choose.</p>
             <p className="text-xs text-slate-500 pt-2">Video tours aren’t uploaded here: a listing links to a video on the Meridian YouTube channel, which keeps pages fast and storage costs low.</p>
           </SettingsForm>
         </div>

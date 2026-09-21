@@ -5,10 +5,11 @@ import { loadDestinations } from './DestinationPicker'
 import { PROPERTY_TYPES } from '../lib/search'
 import { useSite } from '../lib/site'
 import { SiteLink } from './SiteLink'
-import { LogoMark } from '@meridian/ui'
+import { LogoMark, useT } from '@meridian/ui'
 
 export function Footer() {
   const { footer, branding } = useSite()
+  const t = useT()
   const [places, setPlaces] = useState<Destination[]>([])
   useEffect(() => {
     loadDestinations().then(setPlaces)
@@ -59,7 +60,7 @@ export function Footer() {
 
         {popular.length > 0 && (
           <div className="mt-10 pt-8 border-t border-slate-100 grid grid-cols-1 lg:grid-cols-4 gap-6 text-xs">
-            <h4 className="text-[11px] font-bold text-slate-900 uppercase tracking-wider">Popular searches</h4>
+            <h4 className="text-[11px] font-bold text-slate-900 uppercase tracking-wider">{t('footer.popularSearches')}</h4>
             <ul className="lg:col-span-3 flex flex-wrap gap-x-5 gap-y-2.5 font-light text-slate-600">
               {popular.map((l) => <li key={l.to}><Link to={l.to} className="hover:text-brand-600 transition">{l.label}</Link></li>)}
               {states.map((d) => <li key={d.slug}><Link to={`/destinations/${d.slug}`} className="hover:text-brand-600 transition">Stays in {d.name}</Link></li>)}

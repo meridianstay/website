@@ -1,6 +1,6 @@
 import { lazy, Suspense, useEffect, useState, type ReactNode } from 'react'
 import { Link, useNavigate, useParams } from 'react-router'
-import { ErrorNote, PageHeader, PhotoUpload, Spinner } from '@meridian/ui'
+import { ErrorNote, PageHeader, PhotoUpload, Spinner, useT } from '@meridian/ui'
 import { commissionMinor, commissionPct, defaultCommission, PHOTO_RULE, defaultDayUse, defaultHouseRules, discountedPrice, embedUrl, formatPrice, formatTime, HOUSE_RULES, quoteDayUse, quoteStay, addDays, todayISO, type Amenity, type DayUseSettings, type HouseRules, type Management, type PropertyType } from '@meridian/shared'
 import { ApiError, api, hostApi, type ListingInput } from '@meridian/shared/client'
 
@@ -14,7 +14,7 @@ const propertyTypes: { type: PropertyType; icon: string; blurb: string }[] = [
   { type: 'Resort', icon: 'umbrella-beach', blurb: 'Several units with shared amenities' },
 ]
 
-const steps = ['Property type', 'Location', 'Rooms & amenities', 'Photos & description', 'House rules', 'Price', 'Review']
+const stepKeys = ['host.step.type', 'host.step.location', 'host.step.rooms', 'host.step.photos', 'host.step.rules', 'host.step.price', 'host.step.review']
 
 // Which step each server-side field error belongs to.
 const fieldStep: Record<string, number> = {
@@ -37,6 +37,7 @@ const inputClass = 'w-full bg-slate-50 border border-slate-200 rounded-2xl p-3 t
 const isUrl = (s: string) => /^https?:\/\/\S+$/.test(s.trim())
 
 export function ListingEditor() {
+  const t = useT()
   const { id } = useParams()
   const editingId = id ? Number(id) : null
   const navigate = useNavigate()
@@ -114,8 +115,8 @@ export function ListingEditor() {
       />
 
       <ol className="flex flex-wrap gap-2 mb-8" aria-label="Steps">
-        {steps.map((label, i) => (
-          <li key={label}>
+        {stepKeys.map((key, i) => (
+          <li key={key}>
             <button
               type="button"
               onClick={() => i < step && setStep(i)}
@@ -124,7 +125,7 @@ export function ListingEditor() {
               className={`px-3 py-1.5 rounded-full text-xs font-bold ${i === step ? 'bg-brand-600 text-white' : i < step ? 'bg-brand-100 text-brand-700 hover:bg-brand-200' : 'bg-slate-100 text-slate-500'}`}
             >
               {i < step && <i className="fa-solid fa-check mr-1.5" aria-hidden="true"></i>}
-              {i + 1}. {label}
+              {i + 1}. {t(key)}
             </button>
           </li>
         ))}
@@ -168,7 +169,7 @@ export function ListingEditor() {
               <textarea id="address" rows={2} maxLength={300} className={inputClass} value={draft.address} onChange={(e) => update('address', e.target.value)} placeholder="House / farm name, road, village, landmark, PIN code" />
             </Field>
             <div>
-              <p className="block text-xs font-bold uppercase text-slate-500 mb-1">Where is it?</p>
+              <p className="block text-xs font-bold uppercase text-slate-500 mb-1">{t('host.whereIsIt')}</p>
               <p className="text-xs text-slate-400 mb-2">
                 Search for the address, or tap “I’m there now” while you’re at the property. We fill in the town and state for you;
                 drag the pin if it isn’t quite right. Guests only see the area, roughly a kilometre across, until they book.
@@ -436,7 +437,7 @@ export function ListingEditor() {
           ) : (
             <button type="button" onClick={() => setStep((s) => s - 1)} className="text-sm font-bold text-slate-600 hover:text-slate-900">Back</button>
           )}
-          {step < steps.length - 1 ? (
+          {step < stepKeys.length - 1 ? (
             <button type="button" onClick={() => setStep((s) => s + 1)} disabled={!stepValid} className="bg-brand-600 hover:bg-brand-700 disabled:bg-slate-300 text-white font-bold py-3 px-8 rounded-2xl text-sm transition">
               Continue
             </button>

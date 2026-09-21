@@ -1,12 +1,13 @@
 import { useCallback, useRef, useState } from 'react'
 import { Link, useLocation, useNavigate } from 'react-router'
-import { Avatar, useAuth } from '@meridian/ui'
+import { Avatar, useAuth, useT } from '@meridian/ui'
 import { appLink } from '@meridian/shared/client'
 import { useDismiss } from '../lib/useDismiss'
 
 const itemClass = 'flex items-center space-x-3 px-4 py-2.5 text-slate-700 hover:bg-slate-50 font-medium'
 
 export function AccountMenu() {
+  const t = useT()
   const { user, logout } = useAuth()
   const [open, setOpen] = useState(false)
   const root = useRef<HTMLDivElement>(null)
@@ -42,11 +43,11 @@ export function AccountMenu() {
                 <p className="font-semibold text-slate-900 truncate">{user.name}</p>
                 <p className="text-xs text-slate-500 truncate">{user.email ?? user.phone}</p>
               </div>
-              <a href={appLink('account', '/')} className={itemClass} role="menuitem"><i className="fa-solid fa-suitcase-rolling w-4 text-brand-600" aria-hidden="true"></i><span>Trips</span></a>
-              <a href={appLink('account', '/wishlist')} className={itemClass} role="menuitem"><i className="fa-solid fa-heart w-4 text-rose-500" aria-hidden="true"></i><span>Wishlist</span></a>
-              <a href={appLink('account', '/profile')} className={itemClass} role="menuitem"><i className="fa-solid fa-user-gear w-4 text-slate-500" aria-hidden="true"></i><span>Profile</span></a>
+              <a href={appLink('account', '/')} className={itemClass} role="menuitem"><i className="fa-solid fa-suitcase-rolling w-4 text-brand-600" aria-hidden="true"></i><span>{t('nav.trips')}</span></a>
+              <a href={appLink('account', '/wishlist')} className={itemClass} role="menuitem"><i className="fa-solid fa-heart w-4 text-rose-500" aria-hidden="true"></i><span>{t('nav.wishlist')}</span></a>
+              <a href={appLink('account', '/profile')} className={itemClass} role="menuitem"><i className="fa-solid fa-user-gear w-4 text-slate-500" aria-hidden="true"></i><span>{t('nav.profile')}</span></a>
               <div className="border-t border-slate-100 my-1" />
-              <a href={appLink('host', '/')} className={itemClass} role="menuitem"><i className="fa-solid fa-house-chimney w-4 text-brand-600" aria-hidden="true"></i><span>{user.role === 'host' ? 'Host dashboard' : 'List your property'}</span></a>
+              <a href={appLink('host', '/')} className={itemClass} role="menuitem"><i className="fa-solid fa-house-chimney w-4 text-brand-600" aria-hidden="true"></i><span>{user.role === 'host' ? t('host.dashboard') : t('nav.listProperty')}</span></a>
               <Link to="/help" onClick={close} className={itemClass} role="menuitem"><i className="fa-solid fa-circle-question w-4 text-slate-500" aria-hidden="true"></i><span>Help Center</span></Link>
               <div className="border-t border-slate-100 my-1" />
               <button
@@ -59,15 +60,14 @@ export function AccountMenu() {
                 }}
                 className={`${itemClass} w-full text-rose-600 hover:bg-rose-50`}
               >
-                <i className="fa-solid fa-right-from-bracket w-4" aria-hidden="true"></i><span>Log out</span>
+                <i className="fa-solid fa-right-from-bracket w-4" aria-hidden="true"></i><span>{t('common.signOut')}</span>
               </button>
             </>
           ) : (
             <>
-              <Link to={`/login?next=${here}`} onClick={close} className={`${itemClass} font-bold text-slate-900`} role="menuitem">Log in or sign up</Link>
+              <Link to={`/login?next=${here}`} onClick={close} className={`${itemClass} font-bold text-slate-900`} role="menuitem">{t('common.signIn')}</Link>
               <div className="border-t border-slate-100 my-1" />
-              <Link to="/login?as=host" className={itemClass} role="menuitem">Host login</Link>
-              <a href={appLink('host', '/new')} className={itemClass} role="menuitem">List your property</a>
+              <a href={appLink('host', '/new')} className={itemClass} role="menuitem">{t('nav.listProperty')}</a>
               <Link to="/help" onClick={close} className={itemClass} role="menuitem">Help Center</Link>
             </>
           )}

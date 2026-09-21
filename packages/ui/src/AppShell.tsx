@@ -1,14 +1,17 @@
-import type { ReactNode } from 'react'
+import { useState, type ReactNode } from 'react'
 import { NavLink, useLocation } from 'react-router'
 import { appLink } from '@meridian/shared/client'
 import { Logo } from './Logo'
 import { useAuth } from './auth'
 import { PageErrorBoundary } from './PageErrorBoundary'
+import { LanguagePicker } from './LanguagePicker'
+import { useLanguage } from './i18n'
 
 export interface NavItem {
   to: string
   label: string
   /** Font Awesome icon name without the prefix, e.g. "gauge-high". */
+  /** A translation key such as `host.bookings` when there is one; otherwise the English wording. */
   icon: string
   end?: boolean
 }
@@ -28,6 +31,7 @@ const linkClass = ({ isActive }: { isActive: boolean }) =>
 /** Sidebar layout shared by the admin, host and account panels. Expects a signed-in user. */
 export function AppShell({ subtitle, nav, children }: AppShellProps) {
   const { user, logout } = useAuth()
+  const { t, languages } = useLanguage()
   const { pathname } = useLocation()
   if (!user) return null
 
@@ -46,18 +50,19 @@ export function AppShell({ subtitle, nav, children }: AppShellProps) {
           {nav.map((item) => (
             <NavLink key={item.to} to={item.to} end={item.end} className={linkClass}>
               <i className={`fa-solid fa-${item.icon} w-4 text-center`} aria-hidden="true"></i>
-              <span>{item.label}</span>
+              <span>{t(item.label)}</span>
             </NavLink>
           ))}
         </nav>
         <div className="p-4 border-t border-slate-100 space-y-3">
           <a href={appLink('website', '/')} className="flex items-center space-x-3 px-4 py-2 rounded-xl text-sm font-semibold text-slate-600 hover:bg-slate-100">
             <i className="fa-solid fa-arrow-left w-4 text-center" aria-hidden="true"></i>
-            <span>Back to Meridian Stay</span>
+            <span>{t('nav.home')}</span>
           </a>
+          {languages.length > 1 && <LanguageButton />}
           <div className="flex items-center justify-between gap-2">
             <UserBadge user={user} />
-            <button type="button" onClick={signOut} aria-label="Log out" title="Log out" className="w-9 h-9 shrink-0 rounded-full text-slate-500 hover:bg-rose-50 hover:text-rose-600">
+            <button type="button" onClick={signOut} aria-label={t('common.signOut')} title={t('common.signOut')} className="w-9 h-9 shrink-0 rounded-full text-slate-500 hover:bg-rose-50 hover:text-rose-600">
               <i className="fa-solid fa-right-from-bracket" aria-hidden="true"></i>
             </button>
           </div>
@@ -70,8 +75,9 @@ export function AppShell({ subtitle, nav, children }: AppShellProps) {
           <div className="h-16 px-4 flex items-center justify-between">
             <Logo subtitle={subtitle} href={appLink('website', '/')} />
             <div className="flex items-center space-x-2">
+              {languages.length > 1 && <LanguageButton compact />}
               <Avatar user={user} />
-              <button type="button" onClick={signOut} aria-label="Log out" className="w-9 h-9 rounded-full text-slate-500 hover:bg-rose-50 hover:text-rose-600">
+              <button type="button" onClick={signOut} aria-label={t('common.signOut')} className="w-9 h-9 rounded-full text-slate-500 hover:bg-rose-50 hover:text-rose-600">
                 <i className="fa-solid fa-right-from-bracket" aria-hidden="true"></i>
               </button>
             </div>
@@ -80,7 +86,7 @@ export function AppShell({ subtitle, nav, children }: AppShellProps) {
             {nav.map((item) => (
               <NavLink key={item.to} to={item.to} end={item.end} className={linkClass}>
                 <i className={`fa-solid fa-${item.icon}`} aria-hidden="true"></i>
-                <span>{item.label}</span>
+                <span>{t(item.label)}</span>
               </NavLink>
             ))}
           </nav>
@@ -113,6 +119,36 @@ function UserBadge({ user }: { user: ShellUser }) {
         <p className="text-sm font-semibold text-slate-900 truncate">{user.name}</p>
         <p className="text-xs text-slate-500 truncate">{user.email ?? user.phone}</p>
       </div>
+    </div>
+  )
+}
+
+/** A globe that opens the language list, for the host and account panels. */
+function LanguageButton({ compact = false }: { compact?: boolean }) {
+  const [open, setOpen] = useState(false)
+  const { t } = useLanguage()
+  return (
+    <div className="relative">
+      <button
+        type="button"
+        onClick={() => setOpen(!open)}
+        aria-expanded={open}
+        aria-label={t('nav.language')}
+        className={compact
+          ? 'w-9 h-9 rounded-full text-slate-500 hover:bg-slate-100'
+          : 'flex items-center space-x-3 w-full px-4 py-2 rounded-xl text-sm font-semibold text-slate-600 hover:bg-slate-100'}
+      >
+        <i className="fa-solid fa-globe w-4 text-center" aria-hidden="true"></i>
+        {!compact && <span>{t('nav.language')}</span>}
+      </button>
+      {open && (
+        <>
+          <button type="button" aria-hidden="true" tabIndex={-1} onClick={() => setOpen(false)} className="fixed inset-0 z-40 cursor-default" />
+          <div className="absolute right-0 bottom-full mb-2 w-72 max-h-[60vh] overflow-y-auto bg-white rounded-2xl shadow-xl border border-slate-100 p-4 z-50 animate-scale-in">
+            <LanguagePicker onPicked={() => setOpen(false)} />
+          </div>
+        </>
+      )}
     </div>
   )
 }

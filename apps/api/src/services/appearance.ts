@@ -1,6 +1,7 @@
 import {
   BRAND_APPS, BRAND_LIMITS, defaultBranding, defaultFooter, defaultHeader, SOCIAL_NETWORKS,
-  isHexColor,
+  isHexColor, LANGUAGES,
+  type LanguageSettings,
   type AppBrand, type BrandingSettings, type FooterSettings, type HeaderSettings, type Me, type NavItemLink,
 } from '@meridian/shared'
 import { auditLogRepo, contentRepo } from '../repositories'
@@ -52,6 +53,20 @@ export const appearanceService = {
     await contentRepo.saveSetting('theme', theme, admin.id)
     await auditLogRepo.record(admin, 'settings.update', 'settings', 'theme', theme)
     return theme
+  },
+
+  async saveLanguages(admin: Me, body: Record<string, unknown>) {
+    const codes = Array.isArray(body.enabled) ? body.enabled.map(str) : []
+    // English is always offered, so there is something to fall back to.
+    const enabled = LANGUAGES.filter((l) => l.code === 'en' || codes.includes(l.code)).map((l) => l.code)
+    const fallbackCode = str(body.fallback) || 'en'
+    collect({
+      fallback: enabled.includes(fallbackCode) ? null : 'The default language has to be one you offer.',
+    })
+    const languages: LanguageSettings = { enabled, fallback: fallbackCode, autoDetect: body.autoDetect !== false }
+    await contentRepo.saveSetting('languages', languages, admin.id)
+    await auditLogRepo.record(admin, 'settings.update', 'settings', 'languages', { enabled, fallback: fallbackCode })
+    return languages
   },
 
   async saveHeader(admin: Me, body: Record<string, unknown>) {

@@ -10,11 +10,11 @@ import { ListingCalendar } from './pages/ListingCalendar'
 import { HostLogin } from './pages/HostLogin'
 
 const nav: NavItem[] = [
-  { to: '/', label: 'Dashboard', icon: 'chart-line', end: true },
-  { to: '/listings', label: 'My listings', icon: 'house-chimney' },
-  { to: '/bookings', label: 'Bookings', icon: 'calendar-days' },
-  { to: '/promotions', label: 'Promotions', icon: 'bullhorn' },
-  { to: '/new', label: 'Add a listing', icon: 'plus' },
+  { to: '/', label: 'host.dashboard', icon: 'chart-line', end: true },
+  { to: '/listings', label: 'host.myListings', icon: 'house-chimney' },
+  { to: '/bookings', label: 'host.bookings', icon: 'calendar-days' },
+  { to: '/promotions', label: 'host.promotions', icon: 'bullhorn' },
+  { to: '/new', label: 'host.addListing', icon: 'plus' },
 ]
 
 export default function App() {

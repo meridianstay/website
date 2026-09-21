@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react'
 import { Link, useLocation, useSearchParams } from 'react-router'
-import { Logo } from '@meridian/ui'
+import { LanguagePicker, Logo, useT } from '@meridian/ui'
 import { formatDate } from '@meridian/shared'
 import { appLink } from '@meridian/shared/client'
 import { guestLabel, readSearch } from '../lib/search'
@@ -19,6 +19,7 @@ export function Header() {
   const [placeOpen, setPlaceOpen] = useState(false)
   const { place } = usePlace()
   const { header } = useSite()
+  const t = useT()
   // Other parts of the page (e.g. the homepage's "near you" row) can open the picker.
   useEffect(() => {
     const open = () => setPlaceOpen(true)
@@ -29,9 +30,9 @@ export function Header() {
   const { pathname } = useLocation()
   const current = pathname === '/search' ? readSearch(params) : null
 
-  const whereText = current?.where || 'Anywhere'
-  const weekText = current?.checkIn ? `${formatDate(current.checkIn)} – ${formatDate(current.checkOut)}` : 'Any week'
-  const guestText = current?.guests ? guestLabel(current.guests) : 'Add guests'
+  const whereText = current?.where || t('nav.anywhere')
+  const weekText = current?.checkIn ? `${formatDate(current.checkIn)} – ${formatDate(current.checkOut)}` : t('nav.anyWeek')
+  const guestText = current?.guests ? guestLabel(current.guests) : t('nav.addGuests')
 
   return (
     <header className="sticky top-0 z-50 bg-white/95 backdrop-blur-md border-b border-slate-200">
@@ -56,13 +57,13 @@ export function Header() {
         </button>}
 
         <div className="flex items-center space-x-1 sm:space-x-2">
-          {header.showSearch && <button type="button" onClick={() => setSearchOpen(true)} aria-label="Search stays" className="md:hidden w-10 h-10 rounded-full bg-brand-500 text-white flex items-center justify-center">
+          {header.showSearch && <button type="button" onClick={() => setSearchOpen(true)} aria-label={t('common.search')} className="md:hidden w-10 h-10 rounded-full bg-brand-500 text-white flex items-center justify-center">
             <i className="fa-solid fa-magnifying-glass text-sm" aria-hidden="true"></i>
           </button>}
           {header.showDestinations && <button type="button" onClick={() => setPlaceOpen(true)} aria-label={place ? `Destination: ${place.name === 'you' ? 'near you' : place.name}. Change` : 'Choose a destination'}
             className="hidden md:flex items-center gap-2 whitespace-nowrap text-[13px] font-semibold text-slate-800 hover:bg-slate-100 h-10 px-3 rounded-full transition max-w-[150px]">
             <i className="fa-solid fa-location-dot text-brand-500" aria-hidden="true"></i>
-            <span className="hidden xl:inline truncate">{place ? (place.name === 'you' ? 'Near me' : place.name) : 'Select city'}</span>
+            <span className="hidden xl:inline truncate">{place ? (place.name === 'you' ? t('nav.nearMe') : place.name) : t('nav.selectCity')}</span>
           </button>}
           {header.showInstallApp && <InstallAppButton />}
           {header.links.map((link) => (
@@ -72,21 +73,21 @@ export function Header() {
           ))}
           {header.hostLinkLabel && <a href={appLink('host', '/new')} className="hidden sm:flex items-center space-x-2 whitespace-nowrap text-[13px] font-semibold text-slate-800 hover:bg-slate-100 py-2.5 px-4 rounded-full transition">
             <i className="fa-solid fa-house-chimney text-brand-500" aria-hidden="true"></i>
-            <span>{header.hostLinkLabel}</span>
+            <span>{header.hostLinkLabel === 'List your property' ? t('nav.listProperty') : header.hostLinkLabel}</span>
           </a>}
-          {header.showCurrency && <button type="button" onClick={() => setRegionOpen(true)} aria-label="Language and currency" className="hidden sm:flex w-10 h-10 rounded-full hover:bg-slate-100 items-center justify-center text-slate-700 transition">
+          {header.showCurrency && <button type="button" onClick={() => setRegionOpen(true)} aria-label={t('nav.languageAndCurrency')} className="hidden sm:flex w-10 h-10 rounded-full hover:bg-slate-100 items-center justify-center text-slate-700 transition">
             <i className="fa-solid fa-globe text-sm" aria-hidden="true"></i>
           </button>}
           <AccountMenu />
         </div>
       </div>
 
-      <Modal open={searchOpen} onClose={() => setSearchOpen(false)} title="Find a stay" size="lg">
+      <Modal open={searchOpen} onClose={() => setSearchOpen(false)} title={t('nav.findStay')} size="lg">
         <button type="button" onClick={() => { setSearchOpen(false); setPlaceOpen(true) }}
           className="w-full mb-5 flex items-center justify-between gap-3 bg-brand-50 border border-brand-100 rounded-2xl p-3 text-left">
           <span className="text-sm">
             <i className="fa-solid fa-location-dot text-brand-600 mr-2" aria-hidden="true"></i>
-            <span className="font-bold text-slate-900">{place ? (place.name === 'you' ? 'Near me' : place.name) : 'Choose a destination'}</span>
+            <span className="font-bold text-slate-900">{place ? (place.name === 'you' ? t('nav.nearMe') : place.name) : t('nav.chooseDestination')}</span>
             <span className="block text-xs text-slate-500 ml-6">Popular places, all destinations, or near me</span>
           </span>
           <i className="fa-solid fa-chevron-right text-xs text-slate-400" aria-hidden="true"></i>
@@ -96,21 +97,16 @@ export function Header() {
 
       <DestinationPicker open={placeOpen} onClose={() => setPlaceOpen(false)} />
 
-      <Modal open={regionOpen} onClose={() => setRegionOpen(false)} title="Language and currency">
-        <div className="space-y-5 text-sm">
+      <Modal open={regionOpen} onClose={() => setRegionOpen(false)} title={t('nav.languageAndCurrency')}>
+        <div className="space-y-6 text-sm">
+          <LanguagePicker onPicked={() => setRegionOpen(false)} />
           <div>
-            <p className="text-xs font-bold uppercase text-slate-500 mb-2">Language</p>
-            <div className="border-2 border-brand-500 bg-brand-50/60 rounded-2xl p-3 font-semibold text-slate-900 flex items-center justify-between">
-              English (India) <i className="fa-solid fa-check text-brand-600" aria-hidden="true"></i>
-            </div>
-          </div>
-          <div>
-            <p className="text-xs font-bold uppercase text-slate-500 mb-2">Currency</p>
+            <p className="text-xs font-bold uppercase text-slate-500 mb-2">{t('nav.currency')}</p>
             <div className="border-2 border-brand-500 bg-brand-50/60 rounded-2xl p-3 font-semibold text-slate-900 flex items-center justify-between">
               Indian rupee (₹) <i className="fa-solid fa-check text-brand-600" aria-hidden="true"></i>
             </div>
+            <p className="text-slate-500 mt-2 text-xs">{t('lang.pricesInRupees')}</p>
           </div>
-          <p className="text-slate-500">All prices are shown in Indian rupees.</p>
         </div>
       </Modal>
     </header>

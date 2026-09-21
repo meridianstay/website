@@ -106,7 +106,6 @@ export const defaultFooter: FooterSettings = {
       heading: 'Hosting',
       links: [
         { label: 'List your property', url: '/host/new' },
-        { label: 'Host login', url: '/login?as=host' },
         { label: 'Host protection cover', url: '/host-protection' },
         { label: 'Explore hosting resources', url: '/hosting-resources' },
         { label: 'Community guidelines', url: '/community-guidelines' },
