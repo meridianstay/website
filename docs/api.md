@@ -179,6 +179,8 @@ Every host endpoint needs a signed-in user and only acts on that user's own list
 | POST | `/api/host/bookings/:code/accept` | — | `{ booking }`, now `Confirmed`; the authorised payment is captured. `400` if already answered or expired. |
 | POST | `/api/host/bookings/:code/decline` | `{ reason? }` (up to 300 characters, shown to the guest) | `{ booking }`, now `Declined`; the guest isn't charged |
 
+**Privacy**: to guests, a listing's `title` is a description ("Farmstay in Coorg · MS007") and its slug matches. The real name, the owner's name, phone and email and the exact address are only returned to the owner, to our team, and to a guest whose booking on that property is `Confirmed`/`Completed` and paid (`revealed` on the property, `host`/`address` on the booking).
+
 **Listing body**: `{ title, type, description, city, region, country, price, beds, baths, maxGuests, lat, lng, coverImage, photos: [url], videoUrl, amenities: [name] }`. `videoUrl` is optional and must be a YouTube or Vimeo link (videos are not hosted here). Photo links must start with `https://`; up to 12 photos.
 
 ## Control center (admins only)

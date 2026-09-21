@@ -207,7 +207,7 @@ export function Checkout() {
 
           <div className="bg-brand-50 border border-brand-100 rounded-2xl p-4 text-sm text-slate-700">
             <p className="font-bold text-slate-900"><i className="fa-solid fa-shield-heart text-brand-600 mr-2" aria-hidden="true"></i>The Meridian Promise</p>
-            <p className="text-xs mt-1">If the host cancels or the place isn’t as described, we refund you in full and help you find another stay. No booking fees, and free cancellation up to 48 hours before check-in.</p>
+            <p className="text-xs mt-1">If the host cancels or the place isn’t as described, we refund you in full and help you find another stay. No booking fees. Cancel up to 48 hours before check-in and everything but our convenience fee comes back.</p>
           </div>
 
           <label className="flex items-start space-x-3 text-sm text-slate-600">
@@ -265,7 +265,7 @@ export function Checkout() {
             </div>
 
             <BookingModeNote instant={instant} />
-            <p className="text-xs text-slate-400">Prices in Indian rupees, with no booking fees. Free cancellation up to 48 hours before check-in.</p>
+            <p className="text-xs text-slate-400">Prices in Indian rupees, with no booking fees. Cancel up to 48 hours before check-in and everything but our convenience fee comes back.</p>
           </div>
         </aside>
       </form>

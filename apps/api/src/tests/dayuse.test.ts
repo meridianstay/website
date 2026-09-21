@@ -95,7 +95,7 @@ describe('day-use bookings', () => {
     assert.equal((await appError(() => listingService.addBlock(host.me, id, { checkIn: day(8), checkOut: day(9), note: '' }))).status, 409)
     const cancelled = await bookingService.cancelByGuest(guest.me, booking.code)
     assert.equal(cancelled.status, 'Cancelled')
-    assert.equal(cancelled.refunded, 3000) // more than 48 hours ahead: full refund
+    assert.equal(cancelled.refunded, 2100) // more than 48 hours ahead: everything but the 30% convenience fee
     assert.equal((await bookingService.create(other.me, other.uid, dayBooking(id, day(8), '10:00', 6))).booking.status, 'Confirmed')
   })
 

@@ -1,6 +1,6 @@
 import { lazy, Suspense, useCallback, useEffect, useState } from 'react'
 import { Link, useParams, useSearchParams } from 'react-router'
-import { embedUrl, fallbackImage, formatDate, formatPrice, formatTime, HOUSE_RULES, isPlayableVideo, propertyCode, REQUEST_HOURS, type PropertyDetail, type RatingBreakdown } from '@meridian/shared'
+import { embedUrl, fallbackImage, formatDate, formatPrice, formatTime, HOUSE_RULES, isPlayableVideo, PRIVACY_NOTE, propertyCode, REQUEST_HOURS, type PropertyDetail, type RatingBreakdown } from '@meridian/shared'
 import { ApiError, api } from '@meridian/shared/client'
 import { Avatar, ErrorNote, Spinner } from '@meridian/ui'
 import { BookingBox } from '../components/BookingBox'
@@ -141,6 +141,16 @@ export function Property() {
             <Avatar user={{ name: property.host.name, email: '', avatar: property.host.avatar }} />
           </section>
 
+          {!property.revealed && (
+            <section className="bg-brand-50 border border-brand-100 rounded-2xl p-4 flex gap-3">
+              <i className="fa-solid fa-lock text-brand-600 mt-0.5" aria-hidden="true"></i>
+              <p className="text-sm text-slate-700">
+                <span className="font-bold text-slate-900">Name and owner details are private.</span> {PRIVACY_NOTE}{' '}
+                Everything you need to choose — photos, amenities, house rules, reviews and the area — is on this page.
+              </p>
+            </section>
+          )}
+
           <ul className="flex flex-wrap gap-2" aria-label="Key facts">
             {[
               ['bed', `${property.beds} ${property.beds === 1 ? 'bedroom' : 'bedrooms'}`],
@@ -277,7 +287,7 @@ export function Property() {
             <ul className="mt-2 space-y-1.5 text-xs text-slate-600">
               <li><i className="fa-solid fa-check text-brand-600 mr-1.5" aria-hidden="true"></i>Every listing is checked by our team before it goes live.</li>
               <li><i className="fa-solid fa-check text-brand-600 mr-1.5" aria-hidden="true"></i>If the host cancels or the place isn’t as described, we refund you in full and help you find another stay.</li>
-              <li><i className="fa-solid fa-check text-brand-600 mr-1.5" aria-hidden="true"></i>No booking fees, and free cancellation up to 48 hours before check-in.</li>
+              <li><i className="fa-solid fa-check text-brand-600 mr-1.5" aria-hidden="true"></i>No booking fees. Cancel up to 48 hours before check-in and everything but our convenience fee comes back.</li>
             </ul>
             <Link to="/trust-safety" className="inline-block mt-3 text-xs font-bold text-brand-700 underline">How we keep you safe</Link>
           </div>

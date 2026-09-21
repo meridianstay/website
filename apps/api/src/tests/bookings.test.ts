@@ -49,11 +49,11 @@ describe('booking a stay (test mode, no payment keys)', () => {
     const host = await createUser('host')
     const admin = await createUser('admin')
     const guest = await createUser()
-    await contentService.saveSetting(admin.me, 'commission', { managedPct: 25, selfPct: 10 })
+    await contentService.saveSetting(admin.me, 'commission', { managedPct: 25, selfPct: 10, cancellationFeePct: 30 })
     const id = await createLiveListing(host, { price: 1000 }, 'self')
     const { booking } = await bookingService.create(guest.me, guest.uid, request(id, day(10), day(11)))
     assert.equal((await bookingsRepo.find(booking.code))!.commissionMinor, 10000)
-    assert.ok((await appError(() => contentService.saveSetting(admin.me, 'commission', { managedPct: 90, selfPct: 10 }))).fields.managedPct)
+    assert.ok((await appError(() => contentService.saveSetting(admin.me, 'commission', { managedPct: 90, selfPct: 10, cancellationFeePct: 30 }))).fields.managedPct)
   })
 
   test('refuses overlapping dates but allows back-to-back stays', async () => {
@@ -118,7 +118,8 @@ describe('booking a stay (test mode, no payment keys)', () => {
     assert.equal((await appError(() => bookingService.cancelByGuest(stranger.me, booking.code))).status, 400)
     const cancelled = await bookingService.cancelByGuest(guest.me, booking.code)
     assert.equal(cancelled.status, 'Cancelled')
-    assert.equal(cancelled.refunded, 2000)
+    // ₹2,000 paid, less the 30% convenience fee Meridian keeps on any cancellation.
+    assert.equal(cancelled.refunded, 1400)
     assert.equal((await bookingService.create(stranger.me, stranger.uid, request(id, day(10), day(12)))).booking.status, 'Confirmed')
   })
 

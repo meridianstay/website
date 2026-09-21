@@ -45,13 +45,21 @@ export function Settings() {
       <div className="grid grid-cols-1 xl:grid-cols-2 gap-8 mb-8">
         <PaymentsPanel />
         <div className="space-y-8">
-          <SettingsForm title="Commission" save={() => adminApi.saveCommission(commission)}>
+          <SettingsForm title="Commission & convenience fee" save={() => adminApi.saveCommission(commission)}>
             <p className="text-sm text-slate-500">Meridian’s share of each booking, taken from the host’s payout. Guests pay no booking fee. New rates apply to new bookings only.</p>
             <div className="grid grid-cols-2 gap-4">
               <PercentField id="managed-pct" label="Managed properties" detail="Run and maintained by Meridian · instant booking" value={commission.managedPct} onChange={(managedPct) => setCommission({ ...commission, managedPct })} />
               <PercentField id="self-pct" label="Self-managed properties" detail="Run by the host · request to book" value={commission.selfPct} onChange={(selfPct) => setCommission({ ...commission, selfPct })} />
             </div>
             <p className="text-xs text-slate-500">Set each listing’s type on the Listings page.</p>
+            <div className="pt-4 border-t border-slate-100">
+              <PercentField id="cancel-fee-pct" label="Convenience fee" detail="Kept from every cancellation, whenever it happens"
+                value={commission.cancellationFeePct} onChange={(cancellationFeePct) => setCommission({ ...commission, cancellationFeePct })} />
+              <p className="text-xs text-slate-500 mt-2">
+                Earned as soon as a booking is paid. A guest who cancels gets back what the cancellation policy allows, but never more than the total minus this fee.
+                The booking keeps the fee that applied on the day it was made.
+              </p>
+            </div>
           </SettingsForm>
           <SettingsForm title="Promotions (host ads)" save={() => adminApi.savePromotionSettings(promotions)}>
             <p className="text-sm text-slate-500">What hosts pay per day to promote a listing. Every promotion still needs your approval before it runs.</p>

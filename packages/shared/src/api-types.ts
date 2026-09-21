@@ -91,7 +91,13 @@ export interface PropertyDetail extends PropertySummary {
   dayUseFullPrice: number | null
   gallery: string[]
   amenities: Amenity[]
-  host: { name: string; joinedAt: string; avatar: string | null }
+  /**
+   * The owner. Until the viewer has a confirmed, paid booking here the name is a placeholder and
+   * `phone`/`email` are null — see `revealed`.
+   */
+  host: { name: string; joinedAt: string; avatar: string | null; phone: string | null; email: string | null }
+  /** True when this viewer may see the real property name, the owner and the exact address. */
+  revealed: boolean
   reviews: Review[]
   bookedRanges: DateRange[]
   /** Code of the signed-in guest's finished, unreviewed stay here, if any. */
@@ -148,8 +154,12 @@ export interface BookingDetail {
   securityDeposit: number
   checkInTime: string
   checkOutTime: string
-  /** The property's exact address, once the booking is confirmed. */
+  /** The property's exact address, once the booking is confirmed and paid. */
   address: string | null
+  /** The owner's name and contact details, once the booking is confirmed and paid. */
+  host: { name: string; phone: string; email: string } | null
+  /** What the guest would get back if they cancelled right now (the convenience fee is never returned). */
+  refundIfCancelled: number
   /** The host's message when declining a request. */
   declineReason: string | null
   contactPhone: string

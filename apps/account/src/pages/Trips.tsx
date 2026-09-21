@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react'
 import { EmptyState, ErrorNote, PageHeader, Panel, Spinner, StatusBadge } from '@meridian/ui'
-import { bookingWhen, formatPrice, guestRefundMinor, type BookingDetail } from '@meridian/shared'
+import { bookingWhen, formatPrice, type BookingDetail } from '@meridian/shared'
 import { api, appLink } from '@meridian/shared/client'
 
 export function Trips() {
@@ -54,8 +54,8 @@ function Trip({ booking: b, onChange }: { booking: BookingDetail; onChange: (b: 
   const stayUrl = appLink('website', `/stays/${b.property.slug}`)
 
   const cancellable = ['Confirmed', 'Requested', 'AwaitingPayment'].includes(b.status)
-  // What the guest gets back, under the same rule the server applies.
-  const refund = b.status === 'Confirmed' ? guestRefundMinor(Math.round(b.total * 100), Math.round(b.pricePerNight * 100), b.checkIn) / 100 : b.total
+  // What the guest gets back; the server works it out, so the two can never disagree.
+  const refund = b.refundIfCancelled
   const cancelLabel = b.status === 'Requested' ? 'Withdraw request' : b.status === 'AwaitingPayment' ? 'Cancel checkout' : 'Cancel booking'
 
   const cancel = async () => {

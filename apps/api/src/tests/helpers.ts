@@ -1,4 +1,4 @@
-import { addDays, commissionMinor, defaultDayUse, defaultHouseRules, quoteStay, todayISO, type ListingInput, type Management, type Me, type UserRole } from '@meridian/shared'
+import { addDays, commissionMinor, defaultDayUse, defaultHouseRules, publicTitle, quoteStay, todayISO, type ListingInput, type Management, type Me, type UserRole } from '@meridian/shared'
 import { col, nextId, nowISO, C } from '../store/db'
 import { projectId } from '../store/firebase'
 import { bookingsRepo, contentRepo, propertiesRepo, toMe, usersRepo, type UserDoc } from '../repositories'
@@ -50,6 +50,9 @@ export async function createLiveListing(host: TestUser, overrides: Partial<Listi
   return id
 }
 
+/** The name guests see for a listing: its real name stays private until they book and pay. */
+export const shownTitle = async (id: number) => publicTitle((await propertiesRepo.get(id))!)
+
 /** Writes a booking directly (e.g. one in the past, which the booking service would refuse). */
 export async function insertBooking(propertyId: number, guest: TestUser, checkIn: string, checkOut: string) {
   const property = (await propertiesRepo.get(propertyId))!
@@ -61,8 +64,8 @@ export async function insertBooking(propertyId: number, guest: TestUser, checkIn
     totalMinor: q.total * 100, commissionPct: 30, commissionMinor: commissionMinor(q.total * 100, 30), hostPayoutMinor: q.total * 100 - commissionMinor(q.total * 100, 30),
     paymentMethod: 'upi', contactPhone: '+91 90000 00000', specialRequests: null, status: 'Confirmed', paymentStatus: 'test', expiresAt: null,
     kind: 'stay', startTime: null, endTime: null, hours: null, guestBreakdown: { adults: 2, children: 0, infants: 0, pets: 0 },
-    securityDepositMinor: 0, checkInTime: '14:00', checkOutTime: '11:00', couponCode: null, discountMinor: 0,
-  }, property, (await usersRepo.findByUid(guest.uid))!)
+    securityDepositMinor: 0, checkInTime: '14:00', checkOutTime: '11:00', couponCode: null, discountMinor: 0, cancellationFeePct: 30,
+  }, property, (await usersRepo.findByUid(guest.uid))!, await usersRepo.findById(property.hostId))
   return code
 }
 

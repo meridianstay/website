@@ -20,7 +20,7 @@ describe('host listings', () => {
     const host = await createUser('host')
     const a = await listingService.create(host.me, host.uid, listingInput({ title: 'Misty Hill Cottage' }))
     const b = await listingService.create(host.me, host.uid, listingInput({ title: 'Misty Hill Cottage' }))
-    assert.deepEqual([(await propertiesRepo.get(a))!.slug, (await propertiesRepo.get(b))!.slug], ['misty-hill-cottage', 'misty-hill-cottage-2'])
+    assert.deepEqual([(await propertiesRepo.get(a))!.slug, (await propertiesRepo.get(b))!.slug], ['cottage-in-coorg', 'cottage-in-coorg-2'])
   })
 
   test('editing a live listing sends it back for review', async () => {

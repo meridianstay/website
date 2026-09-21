@@ -2,6 +2,23 @@
 
 Every change to Meridian Stay is recorded here, newest first. Each entry says what changed for the people using the platform, then the notable technical changes.
 
+## 0.18.0 — 2026-09-21
+
+### Enquiries and payments stay on Meridian
+- Guests browsing the site see **what a property is and where it is**, never its name: "Farmstay in Coorg · MS007". The web address matches, so nothing gives it away.
+- The **owner's name, phone number and email** and the **exact address** appear as soon as the booking is confirmed and paid — on the booking page and in Trips. Until then the stay page says so plainly, with everything a guest needs to choose: photos, amenities, house rules, reviews and the area.
+- Hosts always see their own listings in full, and our team sees everything.
+
+### A convenience fee that is earned at booking
+- Meridian keeps a **convenience fee** — 30% of the booking total by default — from the moment a booking is paid. A guest who cancels gets back whatever the cancellation policy allows, but never more than the rest.
+- **Settings → Commission & convenience fee** sets the percentage (0–50%). Each booking remembers the fee that applied on the day it was made, so changing it never affects bookings already taken.
+- Trips and the checkout page say exactly what would come back before anyone confirms a cancellation.
+
+### Technical
+- New `privacy.ts` in the shared package: `publicTitle`, `publicSlugBase`, `bookingUnlocked`.
+- `toPropertySummary(p, reveal)`; bookings store the owner's details and the fee percentage at booking time; `BookingDetail` gains `host` and `refundIfCancelled`.
+- 99 automated tests (4 new).
+
 ## 0.17.1 — 2026-09-21
 
 ### Video tours are YouTube links, not uploads

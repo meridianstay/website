@@ -26,9 +26,17 @@ export type Management = 'managed' | 'self'
 export interface CommissionRates {
   managedPct: number
   selfPct: number
+  /**
+   * The platform's convenience fee, as a percent of the booking total. It is earned the moment a
+   * booking is paid, so a cancellation never returns more than the rest.
+   */
+  cancellationFeePct: number
 }
 
-export const defaultCommission: CommissionRates = { managedPct: 30, selfPct: 15 }
+export const defaultCommission: CommissionRates = { managedPct: 30, selfPct: 15, cancellationFeePct: 30 }
+
+/** The convenience fee Meridian keeps on a cancellation (minor units). */
+export const convenienceFeeMinor = (totalMinor: number, feePct: number) => Math.round((totalMinor * Math.max(0, feePct)) / 100)
 
 export const commissionPct = (management: Management, rates: CommissionRates) => (management === 'managed' ? rates.managedPct : rates.selfPct)
 
@@ -66,20 +74,23 @@ export function quoteStay(pricePerNight: number, checkIn: string, checkOut: stri
 }
 
 /**
- * Refund when a guest cancels a paid, confirmed booking: in full up to 48 hours before
- * check-in (noon on the check-in date), otherwise everything except the first night.
+ * Refund when a guest cancels a paid, confirmed booking: everything up to 48 hours before check-in
+ * (noon on the check-in date), otherwise everything except the first night — and never more than the
+ * total minus the convenience fee, which is earned as soon as the booking is paid.
  */
-export function guestRefundMinor(totalMinor: number, pricePerNightMinor: number, checkIn: string, now = new Date()) {
+export function guestRefundMinor(totalMinor: number, pricePerNightMinor: number, checkIn: string, feePct = 0, now = new Date()) {
   const checkInNoon = Date.parse(`${checkIn}T12:00:00+05:30`)
   const hoursLeft = (checkInNoon - now.getTime()) / 3_600_000
-  return hoursLeft >= 48 ? totalMinor : Math.max(0, totalMinor - pricePerNightMinor)
+  const byPolicy = hoursLeft >= 48 ? totalMinor : Math.max(0, totalMinor - pricePerNightMinor)
+  return Math.max(0, Math.min(byPolicy, totalMinor - convenienceFeeMinor(totalMinor, feePct)))
 }
 
 /**
- * Refund when a guest cancels a paid day-use booking: in full up to 48 hours before it starts,
- * half up to 24 hours before, nothing after that.
+ * Refund when a guest cancels a paid day-use booking: everything up to 48 hours before it starts,
+ * half up to 24 hours before, nothing after that, less the convenience fee.
  */
-export function dayUseRefundMinor(totalMinor: number, date: string, startTime: string, now = new Date()) {
+export function dayUseRefundMinor(totalMinor: number, date: string, startTime: string, feePct = 0, now = new Date()) {
   const hoursLeft = (Date.parse(`${date}T${startTime}:00+05:30`) - now.getTime()) / 3_600_000
-  return hoursLeft >= 48 ? totalMinor : hoursLeft >= 24 ? Math.round(totalMinor / 2) : 0
+  const byPolicy = hoursLeft >= 48 ? totalMinor : hoursLeft >= 24 ? Math.round(totalMinor / 2) : 0
+  return Math.max(0, Math.min(byPolicy, totalMinor - convenienceFeeMinor(totalMinor, feePct)))
 }

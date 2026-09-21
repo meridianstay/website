@@ -1,4 +1,4 @@
-import { addDays, commissionMinor, defaultCommission, type BookingDetail, type GuestBreakdown, type BookingState, type HostBooking, type Management, type PaymentMethod, type PaymentState, type PropertyType } from '@meridian/shared'
+import { addDays, bookingUnlocked, commissionMinor, dayUseRefundMinor, defaultCommission, guestRefundMinor, publicTitle, type BookingDetail, type GuestBreakdown, type BookingState, type HostBooking, type Management, type PaymentMethod, type PaymentState, type PropertyType } from '@meridian/shared'
 import type { Transaction } from 'firebase-admin/firestore'
 import { C, all, col, daysOf, firestore, nightsOf, nowISO } from '../store/db'
 import { dayUseConflict, isLive, stayClashesWithDayUse, type DaySlot, type NightLock } from './schedule'
@@ -21,11 +21,15 @@ export interface BookingDoc {
   /** Snapshot of the listing at booking time. */
   property: { slug: string; title: string; type: PropertyType; location: string; image: string }
   guest: { name: string; email: string | null; phone: string | null }
+  /** Snapshot of the owner, shown to the guest once the booking is confirmed and paid. */
+  host: { name: string; email: string; phone: string }
   checkIn: string; checkOut: string; nights: number; guests: number; currency: string
   pricePerNightMinor: number; baseMinor: number; extraGuestMinor: number; serviceFeeMinor: number; totalMinor: number
   management: Management; instantBook: boolean
   /** Commission rate at booking time, and the resulting split of what the guest paid (minus refunds). */
   commissionPct: number; commissionMinor: number; hostPayoutMinor: number
+  /** The convenience fee agreed at booking time (percent of the total, never refunded). */
+  cancellationFeePct: number
   status: StoredStatus; paymentMethod: PaymentMethod; paymentStatus: PaymentState
   razorpayOrderId: string | null; razorpayPaymentId: string | null; refundedMinor: number
   /** A refund Razorpay refused; an admin can retry it. */
@@ -64,6 +68,7 @@ export function withDefaults(raw: Partial<BookingDoc> & Pick<BookingDoc, 'code' 
     kind: b.kind ?? 'stay', startTime: b.startTime ?? null, endTime: b.endTime ?? null, hours: b.hours ?? null,
     guestBreakdown: b.guestBreakdown ?? { adults: b.guests, children: 0, infants: 0, pets: 0 }, securityDepositMinor: b.securityDepositMinor ?? 0,
     checkInTime: b.checkInTime ?? '14:00', checkOutTime: b.checkOutTime ?? '11:00', address: b.address ?? '',
+    host: b.host ?? { name: 'Your host', email: '', phone: '' }, cancellationFeePct: b.cancellationFeePct ?? defaultCommission.cancellationFeePct,
     couponCode: b.couponCode ?? null, discountMinor: b.discountMinor ?? 0,
   }
 }
@@ -82,15 +87,26 @@ export const keptMinor = (b: BookingDoc) => (b.confirmedAt && (b.status === 'Con
 
 export function toBooking(b: BookingDoc, today: string): BookingDetail {
   const status: BookingState = b.status === 'Confirmed' && b.checkOut <= today ? 'Completed' : b.status
+  // The name of the property and who owns it are only shared once the booking is paid for.
+  const open = bookingUnlocked({ status, paymentStatus: b.paymentStatus })
+  const property = open ? b.property
+    : { ...b.property, title: publicTitle({ id: b.propertyId, type: b.property.type, city: b.property.location.split(',')[0].trim() }) }
+  const refundIfCancelled = status === 'Confirmed'
+    ? (b.kind === 'dayuse'
+      ? dayUseRefundMinor(b.totalMinor, b.checkIn, b.startTime ?? '12:00', b.cancellationFeePct)
+      : guestRefundMinor(b.totalMinor, b.pricePerNightMinor, b.checkIn, b.cancellationFeePct))
+    : status === 'Requested' || status === 'AwaitingPayment' ? b.totalMinor : 0
   return {
-    id: b.id, code: b.code, property: b.property, checkIn: b.checkIn, checkOut: b.checkOut, nights: b.nights, guests: b.guests,
+    id: b.id, code: b.code, property, checkIn: b.checkIn, checkOut: b.checkOut, nights: b.nights, guests: b.guests,
     pricePerNight: b.pricePerNightMinor / 100, baseAmount: b.baseMinor / 100, extraGuestAmount: b.extraGuestMinor / 100,
     serviceFee: b.serviceFeeMinor / 100, total: b.totalMinor / 100, status, paymentMethod: b.paymentMethod,
     paymentStatus: b.paymentStatus, refunded: b.refundedMinor / 100, expiresAt: HOLDING.includes(b.status) ? b.expiresAt : null,
     instantBook: b.instantBook, kind: b.kind, startTime: b.startTime, endTime: b.endTime, hours: b.hours, guestBreakdown: b.guestBreakdown,
     securityDeposit: b.securityDepositMinor / 100, checkInTime: b.checkInTime, checkOutTime: b.checkOutTime,
     couponCode: b.couponCode, discount: b.discountMinor / 100,
-    address: (b.status === 'Confirmed' && b.address) || null,
+    address: (open && b.address) || null,
+    host: open ? b.host : null,
+    refundIfCancelled: refundIfCancelled / 100,
     declineReason: b.declineReason ?? null, contactPhone: b.contactPhone, specialRequests: b.specialRequests, createdAt: b.createdAt, reviewed: b.reviewed,
   }
 }
@@ -100,7 +116,8 @@ export type BookingWithGuest = HostBooking
 /** For hosts and admins: the guest, and how the money splits. Before confirmation the split is what it will be. */
 export function withGuest(b: BookingDoc, today: string): BookingWithGuest {
   return {
-    ...toBooking(b, today), guestName: b.guest.name, guestEmail: b.guest.email ?? b.guest.phone ?? '',
+    // Hosts and our team always see the real name, address and owner.
+    ...toBooking(b, today), property: b.property, address: b.address || null, host: b.host, guestName: b.guest.name, guestEmail: b.guest.email ?? b.guest.phone ?? '',
     commissionPct: b.commissionPct, commission: b.commissionMinor / 100, payout: b.hostPayoutMinor / 100,
     refundPending: (b.refundPendingMinor ?? 0) / 100,
   }
@@ -112,7 +129,7 @@ export type NewBooking = Pick<BookingDoc,
   'code' | 'propertyId' | 'guestId' | 'checkIn' | 'checkOut' | 'nights' | 'guests' | 'currency' | 'pricePerNightMinor' | 'baseMinor' |
   'extraGuestMinor' | 'serviceFeeMinor' | 'totalMinor' | 'commissionPct' | 'commissionMinor' | 'hostPayoutMinor' | 'paymentMethod' |
   'contactPhone' | 'specialRequests' | 'status' | 'paymentStatus' | 'expiresAt' | 'kind' | 'startTime' | 'endTime' | 'hours' |
-  'guestBreakdown' | 'securityDepositMinor' | 'checkInTime' | 'checkOutTime' | 'couponCode' | 'discountMinor'>
+  'guestBreakdown' | 'securityDepositMinor' | 'checkInTime' | 'checkOutTime' | 'couponCode' | 'discountMinor' | 'cancellationFeePct'>
 
 /** Frees a booking's nights, but only those it still owns (an expired hold may have been taken over). */
 async function releaseNights(tx: Transaction, b: BookingDoc) {
@@ -126,7 +143,7 @@ export const bookingsRepo = {
    * Creates a booking and claims each night in one transaction. Nights held by a lapsed hold are taken over
    * and that booking is marked Expired. Throws NightsTakenError if any night is booked, blocked or validly held.
    */
-  async create(input: NewBooking, property: PropertyDoc, guest: UserDoc) {
+  async create(input: NewBooking, property: PropertyDoc, guest: UserDoc, host: UserDoc | null) {
     const now = nowISO()
     await firestore.runTransaction(async (tx) => {
       // ── Reads (Firestore needs every read before the first write) ──
@@ -184,6 +201,7 @@ export const bookingsRepo = {
           ...input, id, hostId: property.hostId, management: property.management ?? 'self', instantBook: (property.management ?? 'self') === 'managed',
           property: { slug: property.slug, title: property.title, type: property.type, location: `${property.city}, ${property.region}`, image: property.coverImageUrl },
           guest: { name: guest.name, email: guest.email, phone: guest.phone },
+          host: { name: host?.name ?? 'Your host', email: host?.email ?? '', phone: host?.phone ?? '' },
           razorpayOrderId: null, razorpayPaymentId: null, refundedMinor: 0, address: property.address ?? '',
           createdAt: now, confirmedAt: input.status === 'Confirmed' ? now : null, cancelledAt: null, decidedAt: null, declineReason: null, reviewed: false,
         }

@@ -4,7 +4,7 @@ import { addDays, clickRate, ratePerDay, todayISO, defaultPromotions } from '@me
 import { promotionService } from '../services/promotions'
 import { contentService } from '../services/content'
 import { promotionsRepo, statsRepo } from '../repositories'
-import { appError, createLiveListing, createUser, resetDatabase } from './helpers'
+import { appError, createLiveListing, createUser, resetDatabase, shownTitle } from './helpers'
 
 const today = todayISO()
 
@@ -29,7 +29,7 @@ describe('host promotions', () => {
 
     await promotionService.review(admin.me, campaign.id, true)
     const shown = await promotionService.promoted('search')
-    assert.deepEqual(shown.map((p) => p.title), ['Promoted Stay'])
+    assert.deepEqual(shown.map((p) => p.title), [await shownTitle(id)])
     assert.equal((await promotionsRepo.find(campaign.id))!.impressions, 1)
 
     await promotionService.click(campaign.id)

@@ -1,4 +1,4 @@
-import { daysBetween, defaultDayUse, embedUrl, defaultHouseRules, HOUSE_RULES, isISODate, isTime, minutesOf, todayISO, type HouseRules, type ListingInput, type Me, type PropertyType } from '@meridian/shared'
+import { daysBetween, defaultDayUse, embedUrl, publicSlugBase, defaultHouseRules, HOUSE_RULES, isISODate, isTime, minutesOf, todayISO, type HouseRules, type ListingInput, type Me, type PropertyType } from '@meridian/shared'
 import { availabilityRepo, BlockConflictError, bookingsRepo, propertiesRepo, usersRepo } from '../repositories'
 import { AppError, notFound } from '../http/errors'
 import { checkLength, collect, str } from '../http/validate'
@@ -93,7 +93,7 @@ async function requireOwn(host: Me, id: number) {
 export const listingService = {
   /** New listings wait for review. A guest's first listing makes them a host. */
   async create(host: Me, uid: string, input: ListingInput) {
-    const id = await propertiesRepo.insert(host.id, await propertiesRepo.uniqueSlug(slugify(input.title)), input)
+    const id = await propertiesRepo.insert(host.id, await propertiesRepo.uniqueSlug(slugify(publicSlugBase(input))), input)
     if (host.role === 'guest') await usersRepo.update(uid, { role: 'host' })
     return id
   },

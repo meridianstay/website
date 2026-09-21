@@ -4,7 +4,7 @@ import { defaultHomeLayout, newBlock } from '@meridian/shared'
 import { homepageService, staysFor } from '../services/homepage'
 import { adminService } from '../services/admin'
 import { contentService } from '../services/content'
-import { appError, createLiveListing, createUser, resetDatabase } from './helpers'
+import { appError, createLiveListing, createUser, resetDatabase, shownTitle } from './helpers'
 
 describe('homepage builder', () => {
   beforeEach(resetDatabase)
@@ -27,25 +27,25 @@ describe('homepage builder', () => {
     const mid = await createLiveListing(host, { title: 'Mid Cottage', type: 'Cottage', price: 6000, city: 'Coorg', region: 'Karnataka' }, 'self')
     const titles = async (patch: Partial<ReturnType<typeof newBlock>>) => (await staysFor({ ...newBlock('stays'), ...patch })).map((p) => p.title)
 
-    assert.deepEqual(await titles({ rule: 'price_low' }), ['Cheap Room', 'Mid Cottage', 'Big Villa'])
-    assert.deepEqual(await titles({ rule: 'price_high', limit: 3 }), ['Big Villa', 'Mid Cottage', 'Cheap Room'])
-    assert.deepEqual(await titles({ rule: 'instant' }), ['Big Villa'])
-    assert.deepEqual((await titles({ rule: 'request' })).sort(), ['Cheap Room', 'Mid Cottage'])
-    assert.deepEqual(await titles({ rule: 'type', propertyType: 'Cottage' }), ['Mid Cottage'])
-    assert.deepEqual(await titles({ rule: 'location', location: 'kerala' }), ['Cheap Room'])
-    assert.deepEqual(await titles({ rule: 'budget', maxPrice: 7000 }), ['Cheap Room', 'Mid Cottage'])
+    assert.deepEqual(await titles({ rule: 'price_low' }), [await shownTitle(cheap), await shownTitle(mid), await shownTitle(villa)])
+    assert.deepEqual(await titles({ rule: 'price_high', limit: 3 }), [await shownTitle(villa), await shownTitle(mid), await shownTitle(cheap)])
+    assert.deepEqual(await titles({ rule: 'instant' }), [await shownTitle(villa)])
+    assert.deepEqual((await titles({ rule: 'request' })).sort(), [await shownTitle(cheap), await shownTitle(mid)].sort())
+    assert.deepEqual(await titles({ rule: 'type', propertyType: 'Cottage' }), [await shownTitle(mid)])
+    assert.deepEqual(await titles({ rule: 'location', location: 'kerala' }), [await shownTitle(cheap)])
+    assert.deepEqual(await titles({ rule: 'budget', maxPrice: 7000 }), [await shownTitle(cheap), await shownTitle(mid)])
     // Featured: nothing featured yet → newest; then only featured, in rank order.
     assert.equal((await titles({ rule: 'featured' })).length, 3)
     await adminService.featureListing(admin.me, mid, 2)
     await adminService.featureListing(admin.me, villa, 1)
-    assert.deepEqual(await titles({ rule: 'featured' }), ['Big Villa', 'Mid Cottage'])
+    assert.deepEqual(await titles({ rule: 'featured' }), [await shownTitle(villa), await shownTitle(mid)])
     assert.ok(cheap)
   })
 
   test('saves a slider with custom sections and hides switched-off sections from the website', async () => {
     const admin = await createUser('admin')
     const host = await createUser('host')
-    await createLiveListing(host, { title: 'Kerala Stay', region: 'Kerala' })
+    const kerala = await createLiveListing(host, { title: 'Kerala Stay', region: 'Kerala' })
     const layout = defaultHomeLayout()
     layout.hero.mode = 'static'
     layout.blocks = [
@@ -56,7 +56,7 @@ describe('homepage builder', () => {
     const site = await homepageService.forWebsite()
     assert.equal(site.layout.hero.mode, 'static')
     assert.deepEqual(site.layout.blocks.map((b) => b.id), ['kerala'])
-    assert.deepEqual(site.stays.kerala.map((p) => p.title), ['Kerala Stay'])
+    assert.deepEqual(site.stays.kerala.map((p) => p.title), [await shownTitle(kerala)])
   })
 
   test('explains what needs fixing', async () => {

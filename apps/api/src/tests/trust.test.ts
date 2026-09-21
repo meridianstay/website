@@ -4,7 +4,7 @@ import { todayISO } from '@meridian/shared'
 import { reviewService } from '../services/reviews'
 import { adminService } from '../services/admin'
 import { propertiesRepo, reviewsRepo, toPropertySummary } from '../repositories'
-import { appError, createLiveListing, createUser, day, insertBooking, resetDatabase } from './helpers'
+import { appError, createLiveListing, createUser, day, insertBooking, resetDatabase, shownTitle } from './helpers'
 
 describe('trust and reviews', () => {
   beforeEach(resetDatabase)
@@ -52,11 +52,11 @@ describe('trust and reviews', () => {
   test('similar stays prefer the same type nearby', async () => {
     const host = await createUser('host')
     const base = await createLiveListing(host, { title: 'Base Cottage', type: 'Cottage', lat: 12.4, lng: 75.7 })
-    await createLiveListing(host, { title: 'Near Cottage', type: 'Cottage', lat: 12.5, lng: 75.8 })
+    const near = await createLiveListing(host, { title: 'Near Cottage', type: 'Cottage', lat: 12.5, lng: 75.8 })
     await createLiveListing(host, { title: 'Near Villa', type: 'Villa', lat: 12.45, lng: 75.75 })
     await createLiveListing(host, { title: 'Far Cottage', type: 'Cottage', lat: 30, lng: 77 })
     const similar = await propertiesRepo.similar((await propertiesRepo.get(base))!)
-    assert.equal(similar[0].title, 'Near Cottage')
+    assert.equal(similar[0].title, await shownTitle(near))
     assert.ok(!similar.some((p) => p.title === 'Base Cottage'))
   })
 })

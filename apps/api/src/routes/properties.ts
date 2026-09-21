@@ -63,7 +63,7 @@ propertyRoutes.get('/properties/:slug', async (c) => {
   const canPreview = user && (user.role === 'admin' || user.id === p?.hostId)
   if (!p || (p.status !== 'Approved' && !canPreview)) throw notFound('stay')
 
-  const [host, amenities, reviews, bookedRanges, reviewableBookingCode, ratingBreakdown, similar, promotedIds] = await Promise.all([
+  const [host, amenities, reviews, bookedRanges, reviewableBookingCode, ratingBreakdown, similar, promotedIds, hasPaidStay] = await Promise.all([
     usersRepo.findById(p.hostId),
     propertiesRepo.amenitiesOf(p),
     reviewsRepo.visibleForProperty(p.id),
@@ -72,10 +72,13 @@ propertyRoutes.get('/properties/:slug', async (c) => {
     reviewsRepo.breakdown(p.id),
     propertiesRepo.similar(p),
     promotionsRepo.livePropertyIds(todayISO()),
+    user ? bookingService.hasPaidBooking(p.id, user.id) : false,
   ])
+  // The real name, the owner and the exact address are only for our team, the owner, and guests who have paid.
+  const revealed = !!canPreview || hasPaidStay
   return c.json({
     property: {
-      ...toPropertySummary(p), gallery: p.photos, amenities, reviews, bookedRanges, reviewableBookingCode, status: p.status, ratingBreakdown, similar, promoted: promotedIds.has(p.id), videoUrl: p.videoUrl ?? '',
+      ...toPropertySummary(p, revealed), revealed, gallery: p.photos, amenities, reviews, bookedRanges, reviewableBookingCode, status: p.status, ratingBreakdown, similar, promoted: promotedIds.has(p.id), videoUrl: p.videoUrl ?? '',
       areaSqft: p.areaSqft, gatheringCapacity: p.gatheringCapacity, checkInTime: p.checkInTime, checkOutTime: p.checkOutTime,
       houseRules: p.houseRules, securityDeposit: p.securityDepositMinor / 100,
       dayUseSettings: p.dayUse.enabled ? {
@@ -83,7 +86,9 @@ propertyRoutes.get('/properties/:slug', async (c) => {
         opensAt: p.dayUse.opensAt, closesAt: p.dayUse.closesAt,
       } : null,
       dayUseFullPrice: p.dayUse.enabled && p.discountPct > 0 ? p.dayUse.priceMinor / 100 : null,
-      host: { name: host?.name ?? 'Host', joinedAt: host?.createdAt ?? p.createdAt, avatar: host?.avatarUrl ?? null },
+      host: revealed
+        ? { name: host?.name ?? 'Your host', joinedAt: host?.createdAt ?? p.createdAt, avatar: host?.avatarUrl ?? null, phone: host?.phone ?? '', email: host?.email ?? '' }
+        : { name: 'Meridian verified host', joinedAt: host?.createdAt ?? p.createdAt, avatar: null, phone: null, email: null },
     },
   })
 })

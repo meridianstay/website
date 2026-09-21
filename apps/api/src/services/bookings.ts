@@ -1,5 +1,5 @@
 import {
-  addDays, countedGuests, couponDiscount, dayUseRefundMinor, discountedPrice, formatTime, isTime, minutesOf, quoteDayUse, type GuestBreakdown,
+  addDays, bookingUnlocked, countedGuests, couponDiscount, dayUseRefundMinor, discountedPrice, formatTime, isTime, minutesOf, quoteDayUse, type GuestBreakdown,
   commissionMinor, commissionPct, daysBetween, guestRefundMinor, isISODate, MAX_NIGHTS, PAYMENT_HOLD_MINUTES, quoteStay, REQUEST_HOURS,
   todayISO, type BookingDetail, type Me, type PaymentMethod, type PaymentRequest,
 } from '@meridian/shared'
@@ -160,25 +160,26 @@ export const bookingService = {
 
     const totalMinor = slot.totalMinor - discountMinor
     const instant = (property.management ?? 'self') === 'managed'
-    const pct = commissionPct(property.management ?? 'self', (await contentRepo.settings()).commission)
+    const rates = (await contentRepo.settings()).commission
+    const pct = commissionPct(property.management ?? 'self', rates)
     const cfg = await paymentsService.activeConfig()
     const status = cfg ? 'AwaitingPayment' : instant ? 'Confirmed' : 'Requested'
     const code = newBookingCode()
-    const guestDoc = (await usersRepo.findByUid(uid))!
+    const [guestDoc, hostDoc] = await Promise.all([usersRepo.findByUid(uid), usersRepo.findById(property.hostId)])
     try {
       await bookingsRepo.create({
         code, propertyId: property.id, guestId: guest.id, checkIn, checkOut: slot.checkOut, nights: slot.nights, guests, currency: 'INR',
         pricePerNightMinor: slot.pricePerNightMinor, baseMinor: slot.baseMinor,
         // For day use this is the extra hours; for stays, the extra-guest charge.
         extraGuestMinor: slot.extraMinor, serviceFeeMinor: 0, totalMinor,
-        commissionPct: pct, ...split({ commissionPct: pct }, totalMinor),
+        commissionPct: pct, cancellationFeePct: rates.cancellationFeePct, ...split({ commissionPct: pct }, totalMinor),
         paymentMethod: req.paymentMethod as PaymentMethod, contactPhone, specialRequests: specialRequests || null,
         status, paymentStatus: cfg ? 'created' : 'test',
         expiresAt: status === 'AwaitingPayment' ? inMinutes(PAYMENT_HOLD_MINUTES) : status === 'Requested' ? slot.deadline : null,
         couponCode, discountMinor,
         kind, startTime: slot.startTime, endTime: slot.endTime, hours: slot.hours, guestBreakdown: party,
         securityDepositMinor: property.securityDepositMinor, checkInTime: property.checkInTime, checkOutTime: property.checkOutTime,
-      }, property, guestDoc)
+      }, property, guestDoc!, hostDoc)
     } catch (err) {
       if (couponCode) await couponsRepo.release(couponCode)
       if (err instanceof NightsTakenError) throw kind === 'dayuse'
@@ -299,9 +300,11 @@ export const bookingService = {
   },
 
   /**
-   * Guests can cancel until the day before check-in. Paid stays are refunded in full up to 48 hours before
+   * Guests can cancel until the day before check-in. Paid stays are refunded up to 48 hours before
    * check-in, otherwise minus the first night; paid day use in full up to 48 hours before, half up to 24 hours
-   * before, nothing later. Requests and unpaid checkouts are cancelled free.
+   * before, nothing later. Meridian's convenience fee (a percent of the total, set in Settings) is earned as
+   * soon as the booking is paid, so a refund never returns more than the rest. Requests and unpaid checkouts
+   * are cancelled free.
    */
   async cancelByGuest(guest: Me, code: string) {
     const today = todayISO()
@@ -309,7 +312,9 @@ export const bookingService = {
     const before = await bookingsRepo.transition(code, ['AwaitingPayment', 'Requested', 'Confirmed'], (b) => {
       if (b.guestId !== guest.id || b.checkIn <= today) return null
       refundMinor = b.status === 'Confirmed'
-        ? (b.kind === 'dayuse' ? dayUseRefundMinor(b.totalMinor, b.checkIn, b.startTime ?? '12:00') : guestRefundMinor(b.totalMinor, b.pricePerNightMinor, b.checkIn))
+        ? (b.kind === 'dayuse'
+          ? dayUseRefundMinor(b.totalMinor, b.checkIn, b.startTime ?? '12:00', b.cancellationFeePct)
+          : guestRefundMinor(b.totalMinor, b.pricePerNightMinor, b.checkIn, b.cancellationFeePct))
         : b.status === 'Requested' ? b.totalMinor : 0
       const kept = b.status === 'Confirmed' ? b.totalMinor - refundMinor : 0
       return {
@@ -409,6 +414,13 @@ export const bookingService = {
     if (Date.now() - lastSweep < 60_000) return
     lastSweep = Date.now()
     await this.expireStale().catch((err) => console.error('[bookings] expiry sweep failed', err))
+  },
+
+  /** True when this guest has a confirmed, paid booking here, which is what unlocks the owner's details. */
+  async hasPaidBooking(propertyId: number, guestId: number) {
+    const today = todayISO()
+    return (await bookingsRepo.forProperty(propertyId))
+      .some((b) => b.guestId === guestId && bookingUnlocked({ status: b.status === 'Confirmed' && b.checkOut <= today ? 'Completed' : b.status, paymentStatus: b.paymentStatus }))
   },
 
   /** The guest's latest finished, unreviewed stay at a listing, if any. */

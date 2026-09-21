@@ -2,7 +2,7 @@ import { beforeEach, describe, test } from 'node:test'
 import assert from 'node:assert/strict'
 import { distanceKm, formatKm, parsePropertyCode, propertyCode } from '@meridian/shared'
 import { propertiesRepo } from '../repositories'
-import { createLiveListing, createUser, resetDatabase } from './helpers'
+import { createLiveListing, createUser, resetDatabase, shownTitle } from './helpers'
 
 describe('discovery', () => {
   beforeEach(resetDatabase)
@@ -22,11 +22,11 @@ describe('discovery', () => {
   test('search finds a listing by code, and sorts nearest first', async () => {
     const host = await createUser('host')
     const coorg = await createLiveListing(host, { title: 'Coorg Stay', city: 'Coorg', region: 'Karnataka', lat: 12.42, lng: 75.74 })
-    await createLiveListing(host, { title: 'Manali Stay', city: 'Manali', region: 'Himachal Pradesh', lat: 32.24, lng: 77.19 })
-    await createLiveListing(host, { title: 'Goa Stay', city: 'Assagao', region: 'Goa', lat: 15.6, lng: 73.77 })
-    assert.deepEqual((await propertiesRepo.search({ where: propertyCode(coorg), limit: 10 })).map((p) => p.title), ['Coorg Stay'])
+    const manali = await createLiveListing(host, { title: 'Manali Stay', city: 'Manali', region: 'Himachal Pradesh', lat: 32.24, lng: 77.19 })
+    const goa = await createLiveListing(host, { title: 'Goa Stay', city: 'Assagao', region: 'Goa', lat: 15.6, lng: 73.77 })
+    assert.deepEqual((await propertiesRepo.search({ where: propertyCode(coorg), limit: 10 })).map((p) => p.title), [await shownTitle(coorg)])
     const nearBengaluru = await propertiesRepo.search({ sort: 'nearest', lat: 12.97, lng: 77.59, limit: 10 })
-    assert.deepEqual(nearBengaluru.map((p) => p.title), ['Coorg Stay', 'Goa Stay', 'Manali Stay'])
+    assert.deepEqual(nearBengaluru.map((p) => p.title), await Promise.all([coorg, goa, manali].map(shownTitle)))
   })
 
   test('destinations group live stays by town and state', async () => {

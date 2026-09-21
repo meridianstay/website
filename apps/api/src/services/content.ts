@@ -39,6 +39,7 @@ export const contentService = {
     }
     if (key === 'commission') {
       for (const f of ['managedPct', 'selfPct']) if (!(Number(value[f]) >= 0 && Number(value[f]) <= 60)) fields[f] = 'Choose between 0 and 60%.'
+      if (!(Number(value.cancellationFeePct) >= 0 && Number(value.cancellationFeePct) <= 50)) fields.cancellationFeePct = 'Choose between 0 and 50%.'
     }
     collect(fields)
     await contentRepo.saveSetting(key, value, admin.id)

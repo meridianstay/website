@@ -1,5 +1,5 @@
 import { fileURLToPath } from 'node:url'
-import { addDays, commissionMinor, defaultCommission, galleryImages as g, images, quoteStay, REQUEST_HOURS, todayISO } from '@meridian/shared'
+import { addDays, commissionMinor, defaultCommission, galleryImages as g, images, publicSlugBase, quoteStay, REQUEST_HOURS, todayISO } from '@meridian/shared'
 import { auth } from './firebase'
 import { C, col, datesOf, daysOf, firestore, nightsOf } from './seedHelpers'
 import { newBookingCode } from '../services/bookings'
@@ -296,6 +296,9 @@ export async function seed(log = console.log, force = false): Promise<boolean> {
 
   amenities.forEach(([name, icon], order) => w.set(col(C.amenities).doc(name), { name, icon, order }))
 
+  /** What a guest sees once they have paid: demo accounts sign in by phone, so there is no email. */
+  const hostContact = (u: { name: string; phone: string }) => ({ name: u.name, email: '', phone: u.phone })
+
   // People: a Firebase sign-in (by phone) plus a users document keyed by the same id.
   const ids = new Map<string, { id: number; uid: string; name: string; phone: string }>()
   // Sign-ins are created in parallel (they already exist after a demo reset, which is fine).
@@ -312,11 +315,19 @@ export async function seed(log = console.log, force = false): Promise<boolean> {
   }
 
   // Listings, with their earlier reviews (counts and averages include them).
-  const props = new Map<string, { id: number; price: number; seed: SeedProperty; rating: number; count: number }>()
+  // Web addresses never give the property's name away: "farmstay-in-coorg", "farmstay-in-coorg-2"…
+  const taken = new Map<string, number>()
+  const webSlug = (p: SeedProperty) => {
+    const base = publicSlugBase(p).toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-+|-+$/g, '')
+    const n = (taken.get(base) ?? 0) + 1
+    taken.set(base, n)
+    return n === 1 ? base : `${base}-${n}`
+  }
+  const props = new Map<string, { id: number; price: number; slug: string; seed: SeedProperty; rating: number; count: number }>()
   let reviewId = 0
   for (const [i, p] of properties.entries()) {
     const id = i + 1
-    props.set(p.slug, { id, price: p.price, seed: p, rating: p.rating, count: p.reviewCount })
+    props.set(p.slug, { id, price: p.price, slug: webSlug(p), seed: p, rating: p.rating, count: p.reviewCount })
     for (const [author, rating, comment, ago] of p.reviews) {
       reviewId++
       w.set(col(C.reviews).doc(String(reviewId)), { id: reviewId, propertyId: id, userId: null, bookingCode: null, authorName: author, rating, propertyRating: rating, serviceRating: Math.max(1, rating - (reviewId % 3 === 0 ? 1 : 0)), comment, createdAt: daysAgo(ago), hiddenAt: null })
@@ -351,8 +362,10 @@ export async function seed(log = console.log, force = false): Promise<boolean> {
     const commission = commissionMinor(status === 'Requested' ? totalMinor : kept, pct)
     w.set(col(C.bookings).doc(code), {
       id: i + 1, code, propertyId: p.id, hostId: host.id, guestId: guest.id,
-      property: { slug: p.seed.slug, title: p.seed.title, type: p.seed.type, location: `${p.seed.city}, ${p.seed.region}`, image: p.seed.cover },
+      property: { slug: p.slug, title: p.seed.title, type: p.seed.type, location: `${p.seed.city}, ${p.seed.region}`, image: p.seed.cover },
       guest: { name: guest.name, email: null, phone: guest.phone },
+      host: hostContact(host),
+      cancellationFeePct: defaultCommission.cancellationFeePct,
       checkIn, checkOut, nights: q.nights, guests: b.guests, currency: 'INR', pricePerNightMinor: p.price * 100,
       baseMinor: q.baseAmount * 100, extraGuestMinor: q.extraGuestAmount * 100, serviceFeeMinor: 0, totalMinor,
       management: p.seed.managed ? 'managed' : 'self', instantBook: !!p.seed.managed,
@@ -381,7 +394,7 @@ export async function seed(log = console.log, force = false): Promise<boolean> {
   for (const p of props.values()) {
     const s = p.seed
     w.set(col(C.properties).doc(String(p.id)), {
-      id: p.id, slug: s.slug, hostId: ids.get(s.host)!.id, title: s.title, type: s.type, description: s.description, city: s.city, region: s.region,
+      id: p.id, slug: p.slug, hostId: ids.get(s.host)!.id, title: s.title, type: s.type, description: s.description, city: s.city, region: s.region,
       country: s.country ?? 'India', lat: s.lat, lng: s.lng, currency: 'INR', pricePerNightMinor: s.price * 100, management: s.managed ? 'managed' : 'self', bedrooms: s.beds, bathrooms: s.baths,
       maxGuests: s.maxGuests, status: s.status, rejectionReason: s.rejectionReason ?? null, coverImageUrl: s.cover, photos: s.photos,
       amenities: s.amenities, ratingAvg: p.rating, reviewCount: p.count, featuredRank: s.featured ?? null,
@@ -454,7 +467,9 @@ export async function seed(log = console.log, force = false): Promise<boolean> {
     w.set(col(C.bookings).doc(code), {
       id: bookings.length + i + 1, code, propertyId: p.id, hostId: ids.get(p.seed.host)!.id, guestId: guest.id,
       property: { slug, title: p.seed.title, type: p.seed.type, location: `${p.seed.city}, ${p.seed.region}`, image: p.seed.cover },
-      guest: { name: guest.name, email: null, phone: guest.phone }, checkIn: date, checkOut: addDays(date, 1), nights: 0, guests: people,
+      guest: { name: guest.name, email: null, phone: guest.phone },
+      host: hostContact(ids.get(p.seed.host)!),
+      cancellationFeePct: defaultCommission.cancellationFeePct, checkIn: date, checkOut: addDays(date, 1), nights: 0, guests: people,
       currency: 'INR', pricePerNightMinor: d.price * 100, baseMinor: d.price * 100, extraGuestMinor: Math.max(0, hours - d.block) * d.extra * 100,
       serviceFeeMinor: 0, totalMinor, management: p.seed.managed ? 'managed' : 'self', instantBook: !!p.seed.managed,
       commissionPct: pct, commissionMinor: commission, hostPayoutMinor: totalMinor - commission, status: 'Confirmed', paymentMethod: 'upi',

@@ -1,5 +1,6 @@
 import { defaultBranding, defaultFooter, defaultHeader, type BrandingSettings, type FooterSettings, type HeaderSettings } from './branding'
 import { defaultPromotions, type PromotionSettings } from './promotions'
+import { defaultCommission, type CommissionRates } from './pricing'
 // Default website content. The API copies it into the database on first start; after that
 // the admin control center edits it. Legal pages start as drafts for a lawyer to review.
 
@@ -50,8 +51,8 @@ export interface SiteSettings {
   announcement: AnnouncementSettings
   signIn: SignInSettings
   uploads: UploadSettings
-  /** Meridian's commission, in percent, by property management type. */
-  commission: { managedPct: number; selfPct: number }
+  /** Meridian's commission by management type, and the convenience fee kept on a cancellation. */
+  commission: CommissionRates
   /** Paid promotions hosts can buy (daily rates in ₹). */
   promotions: PromotionSettings
   /** Logos and names, per app. */
@@ -78,7 +79,7 @@ export const defaultSiteSettings: SiteSettings = {
   },
   signIn: { google: true, phone: true },
   uploads: { maxMb: 4 },
-  commission: { managedPct: 30, selfPct: 15 },
+  commission: { ...defaultCommission },
   promotions: { ...defaultPromotions },
   branding: structuredClone(defaultBranding),
   header: structuredClone(defaultHeader),

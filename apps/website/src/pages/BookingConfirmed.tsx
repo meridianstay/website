@@ -117,6 +117,16 @@ export function BookingConfirmed() {
                   <dd className="text-slate-800 mt-1 whitespace-pre-line">{booking.address}</dd>
                 </div>
               )}
+              {booking.host && (
+                <div className="sm:col-span-2 bg-brand-50 rounded-xl p-3">
+                  <dt className="text-xs font-bold uppercase text-brand-700"><i className="fa-solid fa-user mr-1.5" aria-hidden="true"></i>Your host</dt>
+                  <dd className="text-slate-800 mt-1">
+                    {booking.host.name}
+                    {booking.host.phone && <> · <a href={`tel:${booking.host.phone}`} className="font-semibold hover:underline">{booking.host.phone}</a></>}
+                    {booking.host.email && <> · <a href={`mailto:${booking.host.email}`} className="font-semibold hover:underline break-all">{booking.host.email}</a></>}
+                  </dd>
+                </div>
+              )}
               {booking.kind === 'stay' && (
                 <div className="bg-slate-50 rounded-xl p-3"><dt className="text-xs font-bold uppercase text-slate-500">Times</dt><dd className="text-slate-800 mt-1">Check-in from {formatTime(booking.checkInTime)} · check-out by {formatTime(booking.checkOutTime)}</dd></div>
               )}
