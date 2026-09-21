@@ -1,4 +1,4 @@
-import { daysBetween, defaultDayUse, defaultHouseRules, HOUSE_RULES, isISODate, isTime, minutesOf, todayISO, type HouseRules, type ListingInput, type Me, type PropertyType } from '@meridian/shared'
+import { daysBetween, defaultDayUse, embedUrl, defaultHouseRules, HOUSE_RULES, isISODate, isTime, minutesOf, todayISO, type HouseRules, type ListingInput, type Me, type PropertyType } from '@meridian/shared'
 import { availabilityRepo, BlockConflictError, bookingsRepo, propertiesRepo, usersRepo } from '../repositories'
 import { AppError, notFound } from '../http/errors'
 import { checkLength, collect, str } from '../http/validate'
@@ -69,7 +69,7 @@ export function parseListing(body: Record<string, unknown>): ListingInput {
     securityDeposit: Number.isFinite(input.securityDeposit) && input.securityDeposit >= 0 && input.securityDeposit <= 500000 ? null : 'Enter a deposit between ₹0 and ₹5,00,000.',
     address: input.address.length > 300 ? 'Keep the address under 300 characters.' : null,
     discountPct: Number.isFinite(input.discountPct) && input.discountPct >= 0 && input.discountPct <= 70 ? null : 'A discount can be 0 to 70%.',
-    videoUrl: !input.videoUrl || isUrl(input.videoUrl) ? null : 'Upload a video, or paste a YouTube or Vimeo link.',
+    videoUrl: !input.videoUrl || embedUrl(input.videoUrl) ? null : 'Paste a YouTube or Vimeo link. Put the video on the Meridian YouTube channel first, then copy its link here.',
     houseRulesNotes: input.houseRules.notes.length > 1000 ? 'Keep the extra rules under 1,000 characters.' : null,
     quietAfter: !input.houseRules.quietAfter || isTime(input.houseRules.quietAfter) ? null : 'Choose a time for quiet hours, or leave it empty.',
     overnight: input.overnight || input.dayUse.enabled ? null : 'Offer overnight stays, day use, or both.',

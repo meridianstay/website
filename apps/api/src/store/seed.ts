@@ -238,10 +238,10 @@ const messages: [name: string, email: string, topic: string, message: string, st
 
 
 // Property details (demo): area, capacities, rules, deposit, a sample address, and day use on a few properties.
-/** Demo video tours (public sample clips). */
+/** Demo video tours. Real listings link to the Meridian YouTube channel; these are Creative Commons films. */
 const VIDEOS: Record<string, string> = {
-  'green-valley-organic-farmstay': 'https://storage.googleapis.com/gtv-videos-bucket/sample/ForBiggerJoyrides.mp4',
-  'emerald-luxury-pool-villa': 'https://storage.googleapis.com/gtv-videos-bucket/sample/ForBiggerBlazes.mp4',
+  'green-valley-organic-farmstay': 'https://www.youtube.com/watch?v=aqz-KE-bpKQ',
+  'emerald-luxury-pool-villa': 'https://www.youtube.com/watch?v=eRsGyueVLvQ',
 }
 
 /** Demo discounts, shown as a crossed-out price and a “% off” badge. */

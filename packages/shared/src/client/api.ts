@@ -29,16 +29,9 @@ export const api = {
   session: (idToken: string, portal: SignInPortal) => request<{ user: Me }>('/auth/session', { method: 'POST', json: { idToken, portal } }),
   logout: () => request<void>('/auth/logout', { method: 'POST' }),
   updateMe: (data: { name: string; phone: string }) => request<{ user: Me }>('/me', { method: 'PATCH', json: data }),
-  /**
-   * Prepares a property video upload. `signed` means the browser uploads straight to Firebase Storage
-   * (production); `api` means post the file to `upload()` instead (local development).
-   */
-  startVideoUpload: (contentType: string, sizeBytes: number) =>
-    request<{ mode: 'signed'; uploadUrl: string; headers: Record<string, string>; url: string; maxMb: number } | { mode: 'api'; maxMb: number }>(
-      '/uploads/video', { method: 'POST', json: { contentType, sizeBytes } }),
 
   /** Uploads a photo to Firebase Storage and returns its link. */
-  upload: (file: File, purpose: 'listing' | 'avatar' | 'content' | 'video') => {
+  upload: (file: File, purpose: 'listing' | 'avatar' | 'content') => {
     const form = new FormData()
     form.append('file', file)
     form.append('purpose', purpose)

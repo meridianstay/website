@@ -30,17 +30,11 @@ authRoutes.patch('/me', requireUser, async (c) => {
   return c.json({ user: await authService.updateProfile(currentUid(c), str(b.name), str(b.phone)) })
 })
 
-/** Photo or (in development) video upload (multipart form: `file`, `purpose` = listing | avatar | content | video). */
-/** Starts a video upload: returns a signed link the browser uploads to (or asks it to use /uploads). */
-authRoutes.post('/uploads/video', requireUser, rateLimit('upload', 60), async (c) => {
-  const b = await body(c)
-  return c.json(await uploadService.startVideoUpload(currentUser(c), str(b.contentType), Number(b.sizeBytes)))
-})
-
+/** Photo upload (multipart form: `file`, `purpose` = listing | avatar | content). */
 authRoutes.post('/uploads', requireUser, rateLimit('upload', 60), async (c) => {
   const form = await c.req.parseBody()
   const file = form.file
   if (!(file instanceof File)) throw new AppError(400, 'Choose a photo to upload.')
-  const purpose: UploadPurpose = form.purpose === 'avatar' ? 'avatar' : form.purpose === 'content' ? 'content' : form.purpose === 'video' ? 'video' : 'listing'
+  const purpose: UploadPurpose = form.purpose === 'avatar' ? 'avatar' : form.purpose === 'content' ? 'content' : 'listing'
   return c.json(await uploadService.upload(currentUser(c), currentUid(c), file, purpose), 201)
 })

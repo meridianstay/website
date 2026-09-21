@@ -1,8 +1,7 @@
 import { beforeEach, describe, test } from 'node:test'
 import assert from 'node:assert/strict'
 import { embedUrl, isPlayableVideo } from '@meridian/shared'
-import { uploadService } from '../services/uploads'
-import { listingService } from '../services/listings'
+import { listingService, parseListing } from '../services/listings'
 import { propertiesRepo } from '../repositories'
 import { appError, createUser, listingInput, resetDatabase } from './helpers'
 
@@ -18,14 +17,12 @@ describe('video tours', () => {
     assert.equal(isPlayableVideo('https://example.com/tour.pdf'), false)
   })
 
-  test('checks the video type and size before uploading', async () => {
+  test('only a YouTube or Vimeo link is accepted, and the video is optional', async () => {
     const host = await createUser('host')
-    assert.equal((await appError(() => uploadService.startVideoUpload(host.me, 'image/png', 1000))).status, 400)
-    assert.equal((await appError(() => uploadService.startVideoUpload(host.me, 'video/mp4', 900 * 1024 * 1024))).status, 400)
-    // Against the emulator the browser posts the file to the API instead of a signed link.
-    const start = await uploadService.startVideoUpload(host.me, 'video/mp4', 5 * 1024 * 1024)
-    assert.equal(start.mode, 'api')
-    assert.equal(start.maxMb, 150)
+    const err = await appError(async () => parseListing(listingInput({ videoUrl: 'https://example.com/tour.mp4' }) as unknown as Record<string, unknown>))
+    assert.ok(err.fields.videoUrl)
+    const id = await listingService.create(host.me, host.uid, listingInput({ videoUrl: '' }))
+    assert.equal((await propertiesRepo.get(id))!.videoUrl, '')
   })
 
   test('a listing keeps its video link', async () => {

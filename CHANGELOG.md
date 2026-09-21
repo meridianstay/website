@@ -2,6 +2,13 @@
 
 Every change to Meridian Stay is recorded here, newest first. Each entry says what changed for the people using the platform, then the notable technical changes.
 
+## 0.17.1 — 2026-09-21
+
+### Video tours are YouTube links, not uploads
+- A listing's video tour is now a **YouTube (or Vimeo) link**, and it is **optional**. Videos are put on the Meridian Stay YouTube channel first, then the link is pasted into the listing, so nothing large is stored on the site and pages stay fast.
+- Uploading a video file from the host portal has been removed, along with **Settings → largest property video**. Videos already saved still play.
+- The wizard explains this in the Photos & description step, and shows the video back as soon as a link is pasted.
+
 ## 0.17.0 — 2026-09-21
 
 ### Logos, header and footer, from the control centre

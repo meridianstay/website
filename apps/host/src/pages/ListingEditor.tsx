@@ -1,6 +1,6 @@
 import { lazy, Suspense, useEffect, useState, type ReactNode } from 'react'
 import { Link, useNavigate, useParams } from 'react-router'
-import { ErrorNote, PageHeader, PhotoUpload, Spinner, VideoUpload } from '@meridian/ui'
+import { ErrorNote, PageHeader, PhotoUpload, Spinner } from '@meridian/ui'
 import { commissionMinor, commissionPct, defaultCommission, defaultDayUse, defaultHouseRules, discountedPrice, embedUrl, formatPrice, formatTime, HOUSE_RULES, quoteDayUse, quoteStay, addDays, todayISO, type Amenity, type DayUseSettings, type HouseRules, type Management, type PropertyType } from '@meridian/shared'
 import { ApiError, api, hostApi, type ListingInput } from '@meridian/shared/client'
 
@@ -255,26 +255,16 @@ export function ListingEditor() {
 
             <div>
               <p className="block text-xs font-bold uppercase text-slate-500 mb-2">Video tour (optional)</p>
-              {draft.videoUrl ? (
-                <div className="rounded-2xl border border-slate-200 p-3 space-y-3">
-                  {embedUrl(draft.videoUrl)
-                    ? <iframe src={embedUrl(draft.videoUrl)!} title="Video preview" className="w-full aspect-video rounded-xl" allow="encrypted-media; picture-in-picture" allowFullScreen />
-                    : <video src={draft.videoUrl} controls playsInline className="w-full max-h-64 rounded-xl bg-slate-900" />}
-                  <div className="flex flex-wrap items-center gap-3 text-xs font-bold">
-                    <button type="button" onClick={() => update('videoUrl', '')} className="text-rose-600 hover:underline">Remove video</button>
-                    <span className="text-slate-400 font-normal truncate">{draft.videoUrl.slice(0, 60)}…</span>
-                  </div>
-                </div>
-              ) : (
-                <div className="border-2 border-dashed border-slate-200 rounded-2xl p-6 text-center space-y-3">
-                  <VideoUpload onUploaded={(url) => update('videoUrl', url)} label="Upload a video tour" />
-                  <p className="text-xs text-slate-500">MP4, WebM or MOV. A 30–60 second walk-through works best.</p>
-                  <details className="text-xs text-slate-500">
-                    <summary className="cursor-pointer">or paste a YouTube or Vimeo link</summary>
-                    <input aria-label="Video link" type="url" className={`${inputClass} mt-2`} value={draft.videoUrl} onChange={(e) => update('videoUrl', e.target.value.trim())} placeholder="https://youtu.be/…" />
-                  </details>
-                </div>
+              <p className="text-xs text-slate-500 mb-3">
+                Videos live on the <strong>Meridian Stay YouTube channel</strong>, not on this site, so pages stay fast.
+                Send your clip to our team, or upload it to YouTube yourself, then paste the link here. A 30–60 second walk-through works best.
+                You can leave this empty and add it later.
+              </p>
+              {embedUrl(draft.videoUrl) && (
+                <iframe src={embedUrl(draft.videoUrl)!} title="Video preview" className="w-full aspect-video rounded-2xl mb-3" allow="encrypted-media; picture-in-picture" allowFullScreen />
               )}
+              <input aria-label="YouTube or Vimeo link" type="url" className={inputClass} value={draft.videoUrl}
+                onChange={(e) => update('videoUrl', e.target.value.trim())} placeholder="https://youtu.be/…" />
               {fields.videoUrl && <p className="text-xs text-rose-600 font-semibold mt-1">{fields.videoUrl}</p>}
             </div>
 
