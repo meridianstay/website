@@ -1,6 +1,7 @@
 import { defaultBranding, defaultFooter, defaultHeader, type BrandingSettings, type FooterSettings, type HeaderSettings } from './branding'
 import { defaultPromotions, type PromotionSettings } from './promotions'
 import { defaultCommission, type CommissionRates } from './pricing'
+import { defaultTheme, type ThemeSettings } from './theme'
 // Default website content. The API copies it into the database on first start; after that
 // the admin control center edits it. Legal pages start as drafts for a lawyer to review.
 
@@ -56,6 +57,8 @@ export interface SiteSettings {
   /** Paid promotions hosts can buy (daily rates in ₹). */
   promotions: PromotionSettings
   /** Logos and names, per app. */
+  /** The colour palette every app uses. */
+  theme: ThemeSettings
   branding: BrandingSettings
   /** The website's header and footer. */
   header: HeaderSettings
@@ -81,6 +84,7 @@ export const defaultSiteSettings: SiteSettings = {
   uploads: { maxMb: 4 },
   commission: { ...defaultCommission },
   promotions: { ...defaultPromotions },
+  theme: { ...defaultTheme },
   branding: structuredClone(defaultBranding),
   header: structuredClone(defaultHeader),
   footer: structuredClone(defaultFooter),

@@ -1,8 +1,8 @@
 import { useEffect, useState } from 'react'
 import { ErrorNote, ImageField, PageHeader, Panel, Spinner } from '@meridian/ui'
 import {
-  BRAND_APPS, BRAND_LIMITS, SOCIAL_NETWORKS, defaultBranding, defaultFooter, defaultHeader,
-  type BrandingSettings, type FooterColumn, type FooterSettings, type HeaderSettings, type NavItemLink,
+  BRAND_APPS, BRAND_LIMITS, SOCIAL_NETWORKS, THEME_PRESETS, defaultBranding, defaultFooter, defaultHeader, defaultTheme, themeVariables,
+  type BrandingSettings, type FooterColumn, type FooterSettings, type HeaderSettings, type NavItemLink, type ThemeSettings,
 } from '@meridian/shared'
 import { ApiError, adminApi, appLink } from '@meridian/shared/client'
 
@@ -46,11 +46,27 @@ function LinkRows({ links, max, onChange }: { links: NavItemLink[]; max: number;
   )
 }
 
-/** Control center → Website content → Logos, header & footer. */
+function ColorField({ id, label: name, hint, value, onChange, error }: { id: string; label: string; hint: string; value: string; onChange: (v: string) => void; error?: React.ReactNode }) {
+  return (
+    <div>
+      <label className={label} htmlFor={id}>{name}</label>
+      <div className="flex items-center gap-3">
+        <input id={id} type="color" value={/^#[0-9a-f]{6}$/i.test(value) ? value : '#10b981'} onChange={(e) => onChange(e.target.value)}
+          className="w-12 h-12 rounded-xl border border-slate-200 bg-white cursor-pointer p-1" />
+        <input aria-label={`${name} hex code`} value={value} onChange={(e) => onChange(e.target.value)} className={`${input} font-mono uppercase`} placeholder="#10B981" />
+      </div>
+      <p className="text-xs text-slate-500 mt-1">{hint}</p>
+      {error}
+    </div>
+  )
+}
+
+/** Control center → Website content → Logos, colours, header & footer. */
 export function Branding() {
   const [branding, setBranding] = useState<BrandingSettings | null>(null)
   const [header, setHeader] = useState<HeaderSettings>(defaultHeader)
   const [footer, setFooter] = useState<FooterSettings>(defaultFooter)
+  const [theme, setTheme] = useState<ThemeSettings>(defaultTheme)
   const [error, setError] = useState<string | null>(null)
   const [fields, setFields] = useState<Record<string, string>>({})
   const [state, setState] = useState<'idle' | 'saving' | 'saved'>('idle')
@@ -60,6 +76,7 @@ export function Branding() {
       setBranding(s.branding ?? defaultBranding)
       setHeader(s.header ?? defaultHeader)
       setFooter(s.footer ?? defaultFooter)
+      setTheme(s.theme ?? defaultTheme)
     }).catch((e) => setError(e.message))
   }, [])
 
@@ -81,6 +98,7 @@ export function Branding() {
     setError(null)
     setFields({})
     try {
+      await adminApi.saveTheme(theme)
       await adminApi.saveBranding(branding)
       await adminApi.saveHeader(header)
       await adminApi.saveFooter(footer)
@@ -97,12 +115,52 @@ export function Branding() {
     <>
       <PageHeader
         eyebrow="Website content"
-        title="Logos, header & footer"
+        title="Logos, colours, header & footer"
         description="Each panel has its own logo and name, so the website, host portal, guest account and this control centre can look different. Changes appear the next time a page is opened."
         action={<a href={appLink('website', '/')} target="_blank" rel="noreferrer" className="bg-slate-100 hover:bg-slate-200 text-slate-800 text-xs font-bold py-3 px-5 rounded-2xl"><i className="fa-solid fa-arrow-up-right-from-square mr-2" aria-hidden="true"></i>View website</a>}
       />
 
       <div className="space-y-6">
+        <Panel title="Colours" subtitle="One main colour and one accent. Every lighter and darker shade is mixed from them, so the whole site — website, host portal, guest account and this panel — changes together.">
+          <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-3">
+            {THEME_PRESETS.map((p) => {
+              const on = theme.brand.toLowerCase() === p.theme.brand && theme.accent.toLowerCase() === p.theme.accent
+              return (
+                <button key={p.name} type="button" onClick={() => { setTheme({ ...p.theme }); touched() }}
+                  className={`text-left p-4 rounded-2xl border-2 transition ${on ? 'border-brand-500 bg-brand-50/60' : 'border-slate-200 hover:border-slate-300'}`}>
+                  <span className="flex items-center gap-2 mb-2">
+                    <span className="w-6 h-6 rounded-full border border-black/10" style={{ background: p.theme.brand }} />
+                    <span className="w-6 h-6 rounded-full border border-black/10" style={{ background: p.theme.accent }} />
+                    <span className="text-sm font-bold text-slate-900">{p.name}</span>
+                  </span>
+                  <span className="block text-xs text-slate-500">{p.blurb}</span>
+                </button>
+              )
+            })}
+          </div>
+
+          <div className="grid sm:grid-cols-2 gap-5 mt-6">
+            <ColorField id="brand-colour" label="Main colour" hint="Buttons, links and the logo mark." value={theme.brand}
+              onChange={(brand) => { setTheme({ ...theme, brand }); touched() }} error={fieldError('brand')} />
+            <ColorField id="accent-colour" label="Accent colour" hint="The second word in the logo, badges and highlights." value={theme.accent}
+              onChange={(accent) => { setTheme({ ...theme, accent }); touched() }} error={fieldError('accent')} />
+          </div>
+
+          <div className="mt-6">
+            <p className={label}>Every shade, mixed from those two</p>
+            <div className="flex flex-wrap gap-4">
+              {(['--brand-', '--brand-yellow-'] as const).map((prefix) => (
+                <div key={prefix} className="flex rounded-xl overflow-hidden border border-slate-200">
+                  {[50, 100, 200, 300, 400, 500, 600, 700, 800, 900].map((step) => (
+                    <span key={step} className="w-7 h-9" title={`${prefix}${step}`} style={{ background: `rgb(${themeVariables(theme)[`${prefix}${step}`]})` }} />
+                  ))}
+                </div>
+              ))}
+            </div>
+            <p className="text-xs text-slate-500 mt-2">Colours change everywhere the next time a page is opened. Reload this panel after saving to see it here.</p>
+          </div>
+        </Panel>
+
         <Panel title="Logos" subtitle="Upload a square logo (PNG with a transparent background looks best). Leave it empty to keep the Meridian sprout.">
           <div className="grid md:grid-cols-2 gap-8">
             {BRAND_APPS.map(({ app, label: name, where }) => {

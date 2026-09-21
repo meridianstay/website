@@ -1,5 +1,6 @@
 import {
   BRAND_APPS, BRAND_LIMITS, defaultBranding, defaultFooter, defaultHeader, SOCIAL_NETWORKS,
+  isHexColor,
   type AppBrand, type BrandingSettings, type FooterSettings, type HeaderSettings, type Me, type NavItemLink,
 } from '@meridian/shared'
 import { auditLogRepo, contentRepo } from '../repositories'
@@ -40,6 +41,17 @@ export const appearanceService = {
       logos: BRAND_APPS.filter(({ app }) => branding[app].logoUrl).map(({ app }) => app),
     })
     return branding
+  },
+
+  async saveTheme(admin: Me, body: Record<string, unknown>) {
+    const theme = { brand: str(body.brand), accent: str(body.accent) }
+    collect({
+      brand: isHexColor(theme.brand) ? null : 'Pick a main colour.',
+      accent: isHexColor(theme.accent) ? null : 'Pick an accent colour.',
+    })
+    await contentRepo.saveSetting('theme', theme, admin.id)
+    await auditLogRepo.record(admin, 'settings.update', 'settings', 'theme', theme)
+    return theme
   },
 
   async saveHeader(admin: Me, body: Record<string, unknown>) {

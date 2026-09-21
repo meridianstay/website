@@ -1,6 +1,6 @@
 import { beforeEach, describe, test } from 'node:test'
 import assert from 'node:assert/strict'
-import { defaultBranding, defaultFooter, defaultHeader } from '@meridian/shared'
+import { defaultBranding, defaultFooter, defaultHeader, defaultTheme, hexToRgb, themeVariables } from '@meridian/shared'
 import { appearanceService } from '../services/appearance'
 import { contentRepo } from '../repositories'
 import { appError, createUser, resetDatabase } from './helpers'
@@ -76,5 +76,31 @@ describe('Logos, header and footer', () => {
     assert.ok(err.fields['columns.0.heading'])
     assert.ok(err.fields['columns.1.links.0.url'])
     assert.ok(err.fields['social.facebook'])
+  })
+})
+
+describe('the colour palette', () => {
+  beforeEach(resetDatabase)
+
+  test('saves two colours and builds every shade from them', async () => {
+    const admin = await createUser('admin')
+    assert.deepEqual((await contentRepo.settings()).theme, defaultTheme)
+
+    const saved = await appearanceService.saveTheme(admin.me, body({ brand: '#0D9488', accent: '#FB7185' }))
+    assert.deepEqual(saved, { brand: '#0D9488', accent: '#FB7185' })
+    assert.deepEqual((await contentRepo.settings()).theme, saved)
+
+    const vars = themeVariables(saved)
+    assert.equal(vars['--brand-500'], hexToRgb('#0D9488').join(' '), '500 is the colour itself')
+    assert.equal(vars['--brand-50'], '243 250 249', 'the lightest shade is mostly white')
+    assert.equal(vars['--brand-900'], '6 71 65', 'the darkest shade is mostly black')
+    assert.equal(vars['--brand-yellow-500'], hexToRgb('#FB7185').join(' '))
+  })
+
+  test('refuses anything that isn’t a colour', async () => {
+    const admin = await createUser('admin')
+    const err = await appError(() => appearanceService.saveTheme(admin.me, body({ brand: 'green', accent: '' })))
+    assert.ok(err.fields.brand)
+    assert.ok(err.fields.accent)
   })
 })

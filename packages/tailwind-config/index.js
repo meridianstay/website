@@ -1,3 +1,6 @@
+/** One colour of the palette: a CSS variable holding an "r g b" triple, so `/20` opacities still work. */
+const c = (name, fallback) => `rgb(var(--${name}, ${fallback}) / <alpha-value>)`
+
 /**
  * Meridian Stay brand preset, shared by every app.
  * Apps add their own `content` globs and include `sharedContent`.
@@ -8,23 +11,30 @@ export default {
   theme: {
     extend: {
       colors: {
+        // Every shade reads a CSS variable so the control centre can change the palette at runtime.
+        // The fallback is the built-in Meridian emerald and solar yellow, used before settings load.
         brand: {
-          50: '#f4fbf7',
-          100: '#e1f5ec',
-          200: '#a7f3d0',
-          300: '#6ee7b7',
-          400: '#34d399',
-          500: '#10b981', // Emerald green primary
-          600: '#059669',
-          700: '#047857',
-          800: '#065f46',
-          900: '#064e3b',
+          50: c('brand-50', '244 251 247'),
+          100: c('brand-100', '225 245 236'),
+          200: c('brand-200', '167 243 208'),
+          300: c('brand-300', '110 231 183'),
+          400: c('brand-400', '52 211 153'),
+          500: c('brand-500', '16 185 129'), // Emerald green primary
+          600: c('brand-600', '5 150 105'),
+          700: c('brand-700', '4 120 87'),
+          800: c('brand-800', '6 95 70'),
+          900: c('brand-900', '6 78 59'),
           yellow: {
-            50: '#fefce8',
-            300: '#fde047',
-            400: '#facc15',
-            500: '#eab308', // Warm solar yellow accent
-            600: '#ca8a04',
+            50: c('brand-yellow-50', '254 252 232'),
+            100: c('brand-yellow-100', '254 249 195'),
+            200: c('brand-yellow-200', '254 240 138'),
+            300: c('brand-yellow-300', '253 224 71'),
+            400: c('brand-yellow-400', '250 204 21'),
+            500: c('brand-yellow-500', '234 179 8'), // Warm solar yellow accent
+            600: c('brand-yellow-600', '202 138 4'),
+            700: c('brand-yellow-700', '161 98 7'),
+            800: c('brand-yellow-800', '133 77 14'),
+            900: c('brand-yellow-900', '113 63 18'),
           },
         },
       },

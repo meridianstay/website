@@ -238,6 +238,7 @@ Every change here is recorded in the activity log.
 | PUT | `/api/admin/homepage` | `{ hero, blocks }` | `{ layout }` as saved. Section types: `stays` (`rule`: featured, top_rated, newest, instant, request, price_low, price_high, type + `propertyType`, location + `location`, budget + `maxPrice`; `limit` 3–12), `categories` (`cards: [{ type, label, tag, text, image }]`), `banner` (`badge, text, image, buttonLabel, buttonUrl, tone`). Up to 6 slides and 12 sections. |
 | POST | `/api/admin/homepage/preview` | A `stays` section | `{ properties }` it would show right now |
 | PUT | `/api/admin/branding` | `{ website, host, account, admin }`, each `{ logoUrl, showName, name, accent, subtitle }` | `{ branding }` as saved. `logoUrl` must be an uploaded or `https://` image. |
+| PUT | `/api/admin/theme` | `{ brand, accent }` (six-digit hex) | `{ theme }` as saved. Every shade from 50 to 900 is mixed from the two colours. |
 | PUT | `/api/admin/header` | `{ showSearch, showDestinations, showInstallApp, showCurrency, hostLinkLabel, links }` | `{ header }` as saved. Up to 3 extra links. |
 | PUT | `/api/admin/footer` | `{ tagline, columns, social, showPopularSearches, legal, copyright }` | `{ footer }` as saved. Up to 4 columns of 8 links; links are a site path (`/about`) or `https://`; `{year}` in `copyright` becomes the current year. |
 | GET | `/api/admin/about` | — | `{ page, stats }`, as `/api/about` |

@@ -2,6 +2,17 @@
 
 Every change to Meridian Stay is recorded here, newest first. Each entry says what changed for the people using the platform, then the notable technical changes.
 
+## 0.21.0 — 2026-09-21
+
+### The colour palette is yours to change
+- **Website content → Logos, colours, header & footer** now starts with a **Colours** panel. Pick one of six ready-made palettes — Emerald & Solar (the current look), Teak & Amber, Deep Teal & Coral, Indigo & Gold, Terracotta & Sand, Pine & Sky — or choose your own two colours with a colour picker or a hex code.
+- Every lighter and darker shade is **mixed from those two colours**, and the panel shows the full range before you save. One change re-colours the website, the host portal, the guest account and the control centre together.
+
+### Technical
+- Tailwind's `brand-*` colours are now `rgb(var(--brand-500, …) / <alpha-value>)`, so opacities like `bg-brand-500/20` still work and the built-in palette is the fallback before settings load.
+- `themeVariables()` in the shared package builds the scale; `BrandProvider` writes it onto `<html>`; `PUT /admin/theme` validates and saves it.
+- 103 automated tests (4 new).
+
 ## 0.20.0 — 2026-09-21
 
 ### Photos are one of two shapes, and the gallery follows them
