@@ -179,6 +179,17 @@ export interface PaymentRequest {
   captureNow: boolean
 }
 
+/** A place found by the address search behind the listing map. */
+export interface Place {
+  label: string
+  lat: number
+  lng: number
+  city: string
+  region: string
+  country: string
+  address: string
+}
+
 export interface SearchQuery {
   where?: string
   type?: PropertyType

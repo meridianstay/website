@@ -168,13 +168,25 @@ export function ListingEditor() {
               <textarea id="address" rows={2} maxLength={300} className={inputClass} value={draft.address} onChange={(e) => update('address', e.target.value)} placeholder="House / farm name, road, village, landmark, PIN code" />
             </Field>
             <div>
-              <p className="block text-xs font-bold uppercase text-slate-500 mb-1">Map location</p>
-              <p className="text-xs text-slate-400 mb-2">Click the map to drop a pin on your property, then drag it to adjust. Guests see the area, not the exact address.</p>
-              <Suspense fallback={<div className="h-72 rounded-2xl bg-slate-100" />}>
-                <LocationPicker lat={draft.lat} lng={draft.lng} onChange={(lat, lng) => setDraft((d) => d && { ...d, lat, lng })} />
+              <p className="block text-xs font-bold uppercase text-slate-500 mb-1">Where is it?</p>
+              <p className="text-xs text-slate-400 mb-2">
+                Search for the address, or tap “I’m there now” while you’re at the property. We fill in the town and state for you;
+                drag the pin if it isn’t quite right. Guests only see the area, roughly a kilometre across, until they book.
+              </p>
+              <Suspense fallback={<div className="h-96 rounded-2xl bg-slate-100" />}>
+                <LocationPicker
+                  lat={draft.lat}
+                  lng={draft.lng}
+                  onChange={(p) => setDraft((d) => d && {
+                    ...d, lat: p.lat, lng: p.lng,
+                    // Only fill blanks from the map, so anything the host typed stays as they wrote it.
+                    city: d.city || (p.city ?? ''), region: d.region || (p.region ?? ''),
+                    country: d.country || (p.country ?? 'India'), address: d.address || (p.address ?? ''),
+                  })}
+                />
               </Suspense>
               <p className={`text-xs mt-2 ${fields.location ? 'text-rose-600 font-semibold' : 'text-slate-500'}`}>
-                {fields.location ?? (draft.lat !== null ? `Pin set at ${draft.lat}, ${draft.lng}` : 'No pin yet.')}
+                {fields.location ?? (draft.lat !== null ? `Pin set at ${draft.lat}, ${draft.lng}` : 'No pin yet — search for the address above.')}
               </p>
             </div>
           </div>

@@ -4,8 +4,10 @@ import { amenitiesRepo, promotionsRepo, propertiesRepo, statsRepo } from '../rep
 import { bookingService } from '../services/bookings'
 import { promotionService } from '../services/promotions'
 import { listingService, parseListing } from '../services/listings'
+import { geocodeService } from '../services/geocode'
 import { body, currentUid, currentUser, requireUser, type AppEnv } from '../http/auth'
 import { str } from '../http/validate'
+import { rateLimit } from '../http/rateLimit'
 
 // Anyone signed in can host: creating a first listing turns a guest into a host.
 export const hostRoutes = new Hono<AppEnv>()
@@ -14,6 +16,13 @@ hostRoutes.use('/host/*', requireUser)
 const id = (c: { req: { param: (k: string) => string } }, key = 'id') => Number(c.req.param(key))
 
 hostRoutes.get('/amenities', async (c) => c.json({ amenities: await amenitiesRepo.list() }))
+
+// Address search for the listing map. Signed in and rate limited, because we call OpenStreetMap for it.
+hostRoutes.get('/host/places', requireUser, rateLimit('geocode', 120), async (c) =>
+  c.json({ places: await geocodeService.search(str(c.req.query('q')), str(c.req.query('country')) || 'in') }))
+
+hostRoutes.get('/host/places/at', requireUser, rateLimit('geocode', 120), async (c) =>
+  c.json({ place: await geocodeService.reverse(Number(c.req.query('lat')), Number(c.req.query('lng'))) }))
 
 hostRoutes.get('/host/stats', async (c) => {
   await bookingService.sweepSoon()

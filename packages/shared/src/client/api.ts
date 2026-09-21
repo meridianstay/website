@@ -1,7 +1,7 @@
 import type {
   AdminBooking, AdminListing, AdminReview, AdminStats, AdminUser, Amenity, AuditEntry, BookingDetail, ContactMessage,
   DbBrowseResult, DbRow, DbTableSummary, IntegrationStatus, SignInPortal,
-  HostBooking, HostCalendar, HostListing, HostStats, ListingInput, Me, PaymentMethod, PaymentRequest, PaymentSettingsView, PropertyDetail, PropertySummary, SearchQuery,
+  HostBooking, HostCalendar, HostListing, HostStats, ListingInput, Me, PaymentMethod, PaymentRequest, PaymentSettingsView, Place, PropertyDetail, PropertySummary, SearchQuery,
 } from '../api-types'
 import type { ListingStatus, UserRole } from '../types'
 import type { AnnouncementSettings, ContentPage, HomepageSettings, PublicSite, SignInSettings, SiteSettings, UploadSettings } from '../content'
@@ -100,6 +100,10 @@ export const api = {
 
 export const hostApi = {
   amenities: () => request<{ amenities: Amenity[] }>('/amenities'),
+  /** Address search for the listing map (OpenStreetMap, through our API). */
+  places: (q: string, country = 'in') => request<{ places: Place[] }>(`/host/places${qs({ q, country })}`),
+  /** The address at a point, after the host drags the pin or uses their location. */
+  placeAt: (lat: number, lng: number) => request<{ place: Place | null }>(`/host/places/at${qs({ lat, lng })}`),
   listings: () => request<{ listings: HostListing[] }>('/host/listings'),
   listing: (id: number) => request<{ listing: ListingInput & { id: number; slug: string; status: ListingStatus; rejectionReason: string | null; management: Management } }>(`/host/listings/${id}`),
   createListing: (data: ListingInput) => request<{ id: number }>('/host/listings', { method: 'POST', json: data }),

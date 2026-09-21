@@ -2,6 +2,17 @@
 
 Every change to Meridian Stay is recorded here, newest first. Each entry says what changed for the people using the platform, then the notable technical changes.
 
+## 0.19.0 — 2026-09-21
+
+### Setting a listing's location is easy now
+- The location step has an **address search**: type a village, road, landmark or PIN code and pick from the results. The pin, town, state and country are filled in for you.
+- **“I’m there now”** uses the phone's own location, which is the quickest way to get the pin exactly right while standing at the property.
+- Dragging the pin (or tapping the map) now **looks up the address at that point** and fills in the town and state — anything already typed is left alone.
+- The map is bigger, scrolls to zoom, and the step says plainly that guests only see the area, about a kilometre across, until they book.
+
+### Technical
+- `GET /api/host/places` and `/api/host/places/at` proxy OpenStreetMap's Nominatim with an identifying User-Agent, one request a second, an hour-long cache and per-IP rate limiting.
+
 ## 0.18.0 — 2026-09-21
 
 ### Enquiries and payments stay on Meridian
