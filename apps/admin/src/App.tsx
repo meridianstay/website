@@ -45,7 +45,7 @@ export default function App() {
           path="*"
           element={
             <RequireAuth roles={['admin']} loginHref={appLink('admin', '/login')}>
-              <AppShell nav={nav}>
+              <AppShell app="admin" nav={nav}>
                 <Routes>
                   <Route index element={<Overview />} />
                   <Route path="listings" element={<Listings />} />

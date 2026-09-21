@@ -1,11 +1,13 @@
 import { useState, type ReactNode } from 'react'
 import { NavLink, useLocation } from 'react-router'
 import { appLink } from '@meridian/shared/client'
+import { versionLabel, type BrandApp } from '@meridian/shared'
 import { Logo } from './Logo'
 import { useAuth } from './auth'
 import { PageErrorBoundary } from './PageErrorBoundary'
 import { LanguagePicker } from './LanguagePicker'
 import { useLanguage } from './i18n'
+import { useCredit } from './brand'
 
 export interface NavItem {
   to: string
@@ -20,6 +22,8 @@ interface AppShellProps {
   /** Overrides the subtitle from the control centre. */
   subtitle?: string
   nav: NavItem[]
+  /** Which panel this is, for the version in the footer. */
+  app: BrandApp
   children: ReactNode
 }
 
@@ -29,9 +33,10 @@ const linkClass = ({ isActive }: { isActive: boolean }) =>
   }`
 
 /** Sidebar layout shared by the admin, host and account panels. Expects a signed-in user. */
-export function AppShell({ subtitle, nav, children }: AppShellProps) {
+export function AppShell({ subtitle, nav, app, children }: AppShellProps) {
   const { user, logout } = useAuth()
   const { t, languages } = useLanguage()
+  const credit = useCredit()
   const { pathname } = useLocation()
   if (!user) return null
 
@@ -93,6 +98,14 @@ export function AppShell({ subtitle, nav, children }: AppShellProps) {
         </header>
 
         <main key={pathname} className="flex-1 p-4 sm:p-8 max-w-7xl w-full mx-auto animate-page-in"><PageErrorBoundary>{children}</PageErrorBoundary></main>
+
+        <footer className="px-4 sm:px-8 py-4 max-w-7xl w-full mx-auto flex flex-wrap items-center justify-between gap-2 text-[11px] text-slate-400">
+          <span>{credit.label && (credit.url
+            ? <a href={credit.url} target="_blank" rel="noopener noreferrer" className="hover:text-brand-600 underline decoration-slate-200">{credit.label}</a>
+            : credit.label)}</span>
+          {/* Which build this panel is on. Deliberately not a link. */}
+          <span className="text-slate-300 tabular-nums">{versionLabel(app)}</span>
+        </footer>
       </div>
     </div>
   )

@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react'
 import { Link } from 'react-router'
-import { SOCIAL_NETWORKS, TYPE_SLUGS, type Destination } from '@meridian/shared'
+import { SOCIAL_NETWORKS, TYPE_SLUGS, versionLabel, withBrandingDefaults, type Destination } from '@meridian/shared'
 import { loadDestinations } from './DestinationPicker'
 import { PROPERTY_TYPES } from '../lib/search'
 import { useSite } from '../lib/site'
@@ -21,7 +21,7 @@ export function Footer() {
     : []
   const states = footer.showPopularSearches ? places.filter((d) => d.kind === 'state').slice(0, 8) : []
   const social = SOCIAL_NETWORKS.filter((n) => footer.social[n.key])
-  const brand = branding.website
+  const brand = withBrandingDefaults(branding).apps.website
 
   return (
     <footer className="bg-white border-t border-slate-200 mt-auto">
@@ -69,9 +69,21 @@ export function Footer() {
         )}
 
         <div className="mt-10 pt-6 border-t border-slate-100 flex flex-col sm:flex-row items-center justify-between gap-3 text-[11px] text-slate-400">
-          <p>{footer.copyright.replace('{year}', String(new Date().getFullYear()))}</p>
+          <p>
+            {footer.copyright.replace('{year}', String(new Date().getFullYear()))}
+            {footer.credit?.label && (
+              <>
+                {' · '}
+                {footer.credit.url
+                  ? <a href={footer.credit.url} target="_blank" rel="noopener noreferrer" className="hover:text-brand-600 underline decoration-slate-200">{footer.credit.label}</a>
+                  : footer.credit.label}
+              </>
+            )}
+          </p>
           <div className="flex items-center space-x-6">
             {footer.legal.map((l) => <SiteLink key={l.url + l.label} url={l.url} className="hover:text-slate-700">{l.label}</SiteLink>)}
+            {/* Which build you are looking at. Deliberately not a link. */}
+            <span className="text-slate-300 tabular-nums" title="Website version">{versionLabel('website')}</span>
           </div>
         </div>
       </div>

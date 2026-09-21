@@ -2,6 +2,17 @@
 
 Every change to Meridian Stay is recorded here, newest first. Each entry says what changed for the people using the platform, then the notable technical changes.
 
+## 0.23.0 — 2026-09-21
+
+### Tab icons, preloaders and a stand-in photo
+- **Website content → Logos, colours, languages & footer** now takes a **tab icon** and a **preloader picture** for each of the four apps, next to its logo, with the same photo picker.
+- One **stand-in photo** covers the whole platform: it appears wherever a picture is missing or fails to load.
+- The tab icon changes as soon as a page opens. The preloader appears from a visitor's **second visit onwards**, because the very first paint happens before the browser has asked us anything.
+
+### Footer credit and version
+- Every footer now credits **Designed and developed by Digitech Miner**, linked to the studio's site. Both the wording and the link are editable in the footer settings, and it appears in the website footer and in all three panels.
+- The bottom-right corner of every footer shows that panel's **version** — website, host portal, guest account and control centre each carry their own, and none of them is a link.
+
 ## 0.22.0 — 2026-09-21
 
 ### The site reads in your own language

@@ -42,4 +42,12 @@ export const galleryImages = {
   seasideResort: unsplash('1561501900-3701fa6a0864', 800),
 }
 
-export const fallbackImage = 'https://placehold.co/600x400/10b981/ffffff?text=Meridian+Stay'
+/**
+ * Stands in for a photo that is missing or fails to load. The control centre can replace it, which
+ * is why this is a binding rather than a constant: `setFallbackImage` updates it everywhere at once.
+ */
+export let fallbackImage = 'https://placehold.co/600x400/10b981/ffffff?text=Meridian+Stay'
+
+export function setFallbackImage(url: string) {
+  if (url) fallbackImage = url
+}

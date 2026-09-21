@@ -27,7 +27,7 @@ export default function App() {
           path="*"
           element={
             <RequireAuth loginHref={appLink('website', '/login')}>
-              <AppShell nav={nav}>
+              <AppShell app="host" nav={nav}>
                 <Routes>
                   <Route index element={<Dashboard />} />
                   <Route path="listings" element={<MyListings />} />

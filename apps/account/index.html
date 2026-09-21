@@ -23,6 +23,18 @@
       @keyframes ms-slide{from{transform:translateX(-100%)}to{transform:translateX(250%)}}
       @media (prefers-reduced-motion:reduce){#ms-splash *,#ms-splash *::after{animation:none!important}#ms-splash svg{stroke-dashoffset:0}}
     </style>
+    <script>
+      // The tab icon and preloader picture an admin set, remembered from the last visit so they are
+      // there before the app starts. Wrapped because private windows can refuse storage.
+      try {
+        var c = JSON.parse(localStorage.getItem('meridian.chrome') || '{}')
+        if (c.favicon) { var l = document.querySelector('link[rel="icon"]'); if (l) { l.removeAttribute('type'); l.href = c.favicon } }
+        if (c.splash) document.addEventListener('DOMContentLoaded', function () {
+          var m = document.querySelector('#ms-splash .mark')
+          if (m) { m.style.background = 'none'; m.style.boxShadow = 'none'; m.innerHTML = '<img src="' + c.splash + '" alt="" style="width:100%;height:100%;object-fit:contain;border-radius:inherit">' }
+        })
+      } catch (e) {}
+    </script>
   </head>
   <body>
     <div id="ms-splash" role="status" aria-label="Loading Meridian Stay">

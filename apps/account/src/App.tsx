@@ -15,7 +15,7 @@ export default function App() {
   return (
     <BrandProvider app="account">
       <RequireAuth>
-        <AppShell nav={nav}>
+        <AppShell app="account" nav={nav}>
           <Routes>
             <Route index element={<Trips />} />
             <Route path="wishlist" element={<Wishlist />} />

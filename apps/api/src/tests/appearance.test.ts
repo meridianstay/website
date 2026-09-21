@@ -1,6 +1,6 @@
 import { beforeEach, describe, test } from 'node:test'
 import assert from 'node:assert/strict'
-import { defaultBranding, defaultFooter, defaultHeader, defaultTheme, hexToRgb, themeVariables } from '@meridian/shared'
+import { defaultBranding, defaultFooter, defaultHeader, defaultTheme, hexToRgb, themeVariables, withBrandingDefaults } from '@meridian/shared'
 import { appearanceService } from '../services/appearance'
 import { contentRepo } from '../repositories'
 import { appError, createUser, resetDatabase } from './helpers'
@@ -12,27 +12,56 @@ describe('Logos, header and footer', () => {
 
   test('each app keeps its own logo and name', async () => {
     const admin = await createUser('admin')
-    assert.equal((await contentRepo.settings()).branding.host.subtitle, defaultBranding.host.subtitle)
+    assert.equal((await contentRepo.settings()).branding.apps.host.subtitle, defaultBranding.apps.host.subtitle)
 
     const branding = structuredClone(defaultBranding)
-    branding.website.logoUrl = 'https://cdn.example.com/website.png'
-    branding.host.logoUrl = 'https://cdn.example.com/host.png'
-    branding.host.name = 'Meridian Partners'
-    branding.host.showName = false
+    branding.apps.website.logoUrl = 'https://cdn.example.com/website.png'
+    branding.apps.host.logoUrl = 'https://cdn.example.com/host.png'
+    branding.apps.host.name = 'Meridian Partners'
+    branding.apps.host.showName = false
     await appearanceService.saveBranding(admin.me, body(branding))
 
     const saved = (await contentRepo.settings()).branding
-    assert.equal(saved.website.logoUrl, 'https://cdn.example.com/website.png')
-    assert.equal(saved.host.name, 'Meridian Partners')
-    assert.equal(saved.host.showName, false)
-    assert.equal(saved.admin.logoUrl, '', 'the control centre keeps its own (empty) logo')
+    assert.equal(saved.apps.website.logoUrl, 'https://cdn.example.com/website.png')
+    assert.equal(saved.apps.host.name, 'Meridian Partners')
+    assert.equal(saved.apps.host.showName, false)
+    assert.equal(saved.apps.admin.logoUrl, '', 'the control centre keeps its own (empty) logo')
+  })
+
+  test('each app also gets its own tab icon and preloader, plus one stand-in photo', async () => {
+    const admin = await createUser('admin')
+    const branding = structuredClone(defaultBranding)
+    branding.apps.website.faviconUrl = 'https://cdn.example.com/icon.png'
+    branding.apps.host.splashUrl = 'https://cdn.example.com/host-splash.png'
+    branding.placeholderUrl = 'https://cdn.example.com/placeholder.jpg'
+    const saved = await appearanceService.saveBranding(admin.me, body(branding))
+    assert.equal(saved.apps.website.faviconUrl, 'https://cdn.example.com/icon.png')
+    assert.equal(saved.apps.host.splashUrl, 'https://cdn.example.com/host-splash.png')
+    assert.equal(saved.placeholderUrl, 'https://cdn.example.com/placeholder.jpg')
+
+    const bad = structuredClone(defaultBranding)
+    bad.apps.admin.faviconUrl = 'javascript:alert(1)'
+    bad.placeholderUrl = 'not-a-link'
+    const err = await appError(() => appearanceService.saveBranding(admin.me, body(bad)))
+    assert.ok(err.fields['admin.faviconUrl'])
+    assert.ok(err.fields.placeholderUrl)
+  })
+
+  test('settings saved before each app had its own icons still load', () => {
+    // 0.22.0 and earlier stored the four apps at the top level with no icons.
+    const old = { website: { logoUrl: 'https://cdn.example.com/old.png', name: 'Old', accent: 'Name', subtitle: '', showName: true } }
+    const filled = withBrandingDefaults(old)
+    assert.equal(filled.apps.website.logoUrl, 'https://cdn.example.com/old.png')
+    assert.equal(filled.apps.website.faviconUrl, '')
+    assert.equal(filled.apps.host.name, 'Meridian')
+    assert.equal(filled.placeholderUrl, '')
   })
 
   test('refuses a logo that is not an image and a name that is missing', async () => {
     const admin = await createUser('admin')
     const branding = structuredClone(defaultBranding)
-    branding.website.logoUrl = 'javascript:alert(1)'
-    branding.account.name = ''
+    branding.apps.website.logoUrl = 'javascript:alert(1)'
+    branding.apps.account.name = ''
     const err = await appError(() => appearanceService.saveBranding(admin.me, body(branding)))
     assert.ok(err.fields['website.logoUrl'])
     assert.ok(err.fields['account.name'])
@@ -66,6 +95,7 @@ describe('Logos, header and footer', () => {
     const saved = await appearanceService.saveFooter(admin.me, body(footer))
     assert.equal(saved.columns.length, 1)
     assert.equal(saved.social.instagram, 'https://instagram.com/meridianstay')
+    assert.equal(saved.credit.label, defaultFooter.credit.label, 'the studio credit is kept')
     assert.equal(saved.copyright, '© {year} Meridian Stay')
 
     const bad = structuredClone(defaultFooter)

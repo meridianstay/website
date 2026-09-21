@@ -1,8 +1,8 @@
 import {
-  BRAND_APPS, BRAND_LIMITS, defaultBranding, defaultFooter, defaultHeader, SOCIAL_NETWORKS,
-  isHexColor, LANGUAGES,
+  BRAND_APPS, BRAND_LIMITS, defaultFooter, defaultHeader, SOCIAL_NETWORKS,
+  isHexColor, LANGUAGES, withBrandingDefaults,
   type LanguageSettings,
-  type AppBrand, type BrandingSettings, type FooterSettings, type HeaderSettings, type Me, type NavItemLink,
+  type BrandingSettings, type FooterSettings, type HeaderSettings, type Me, type NavItemLink,
 } from '@meridian/shared'
 import { auditLogRepo, contentRepo } from '../repositories'
 import { collect, isImageUrl, str } from '../http/validate'
@@ -15,9 +15,10 @@ const isLink = (v: string) => /^\/[^\s]*$/.test(v) || /^https:\/\/\S+$/.test(v)
 export const appearanceService = {
   async saveBranding(admin: Me, body: Record<string, unknown>) {
     const fields: Record<string, string> = {}
-    const branding = {} as BrandingSettings
+    const saved = withBrandingDefaults(body as Partial<BrandingSettings>)
+    const branding: BrandingSettings = { apps: {} as BrandingSettings['apps'], placeholderUrl: '' }
     for (const { app, label } of BRAND_APPS) {
-      const raw = { ...defaultBranding[app], ...((body[app] ?? {}) as Partial<AppBrand>) }
+      const raw = saved.apps[app]
       const at = (f: string) => `${app}.${f}`
       const text = (v: unknown, max: number, key: string, required = false) => {
         const t = str(v)
@@ -25,21 +26,30 @@ export const appearanceService = {
         if (required && !t) fields[key] = `${label} needs a name.`
         return t
       }
-      const logoUrl = str(raw.logoUrl)
-      if (logoUrl && !isImageUrl(logoUrl)) fields[at('logoUrl')] = 'Upload a logo, or use an image link starting with https://'
+      const picture = (value: unknown, key: string) => {
+        const url = str(value)
+        if (url && !isImageUrl(url)) fields[key] = 'Upload a picture, or use an image link starting with https://'
+        return url
+      }
+      const logoUrl = picture(raw.logoUrl, at('logoUrl'))
       const showName = raw.showName !== false
-      branding[app] = {
+      branding.apps[app] = {
         logoUrl,
+        faviconUrl: picture(raw.faviconUrl, at('faviconUrl')),
+        splashUrl: picture(raw.splashUrl, at('splashUrl')),
         showName,
         name: text(raw.name, 40, at('name'), showName || !logoUrl),
         accent: text(raw.accent, 40, at('accent')),
         subtitle: text(raw.subtitle, 60, at('subtitle')),
       }
     }
+    const placeholderUrl = str(saved.placeholderUrl)
+    if (placeholderUrl && !isImageUrl(placeholderUrl)) fields.placeholderUrl = 'Upload a picture, or use an image link starting with https://'
+    branding.placeholderUrl = placeholderUrl
     collect(fields)
     await contentRepo.saveSetting('branding', branding, admin.id)
     await auditLogRepo.record(admin, 'settings.update', 'settings', 'branding', {
-      logos: BRAND_APPS.filter(({ app }) => branding[app].logoUrl).map(({ app }) => app),
+      logos: BRAND_APPS.filter(({ app }) => branding.apps[app].logoUrl).map(({ app }) => app),
     })
     return branding
   },
@@ -109,12 +119,22 @@ export const appearanceService = {
       showPopularSearches: raw.showPopularSearches !== false,
       legal: cleanLinks(raw.legal, BRAND_LIMITS.legal, 'legal', fields),
       copyright: str(raw.copyright).slice(0, 200),
+      credit: creditOf(raw.credit, fields),
     }
     collect(fields)
     await contentRepo.saveSetting('footer', footer, admin.id)
     await auditLogRepo.record(admin, 'settings.update', 'settings', 'footer', { columns: columns.length })
     return footer
   },
+}
+
+/** The "designed and developed by" line: a label, and a link that has to be a real one. */
+function creditOf(value: unknown, fields: Record<string, string>): FooterSettings['credit'] {
+  const c = (value ?? {}) as Partial<FooterSettings['credit']>
+  const label = str(c.label).slice(0, 80)
+  const url = str(c.url)
+  if (url && !isLink(url)) fields['credit.url'] = 'Use a link starting with https://'
+  return { label, url }
 }
 
 /** Keeps complete links only, and reports the ones that look wrong. */

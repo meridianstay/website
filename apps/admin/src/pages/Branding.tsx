@@ -3,7 +3,7 @@ import { ErrorNote, ImageField, PageHeader, Panel, Spinner } from '@meridian/ui'
 import {
   BRAND_APPS, BRAND_LIMITS, LANGUAGES, SOCIAL_NETWORKS, THEME_PRESETS,
   defaultBranding, defaultFooter, defaultHeader, defaultLanguages, defaultTheme, themeVariables,
-  type BrandingSettings, type FooterColumn, type FooterSettings, type HeaderSettings, type LanguageSettings, type NavItemLink, type ThemeSettings,
+  type AppBrand, type BrandApp, type BrandingSettings, type FooterColumn, type FooterSettings, type HeaderSettings, type LanguageSettings, type NavItemLink, type ThemeSettings,
 } from '@meridian/shared'
 import { ApiError, adminApi, appLink } from '@meridian/shared/client'
 
@@ -87,8 +87,8 @@ export function Branding() {
   if (!branding) return <Spinner />
 
   const touched = () => { if (state === 'saved') setState('idle') }
-  const setApp = (app: keyof BrandingSettings, patch: Partial<BrandingSettings[typeof app]>) => {
-    setBranding({ ...branding, [app]: { ...branding[app], ...patch } })
+  const setApp = (app: BrandApp, patch: Partial<AppBrand>) => {
+    setBranding({ ...branding, apps: { ...branding.apps, [app]: { ...branding.apps[app], ...patch } } })
     touched()
   }
   const setColumn = (i: number, patch: Partial<FooterColumn>) => {
@@ -205,18 +205,33 @@ export function Branding() {
           </div>
         </Panel>
 
-        <Panel title="Logos" subtitle="Upload a square logo (PNG with a transparent background looks best). Leave it empty to keep the Meridian sprout.">
+        <Panel title="Stand-in photo" subtitle="Shown wherever a photo is missing or fails to load, on every app.">
+          <ImageField label="Placeholder photo" value={branding.placeholderUrl}
+            onChange={(url) => { setBranding({ ...branding, placeholderUrl: url }); touched() }} error={fieldError('placeholderUrl')} />
+        </Panel>
+
+        <Panel title="Logos, tab icons and preloaders" subtitle="Upload a square logo (PNG with a transparent background looks best). Leave it empty to keep the Meridian sprout.">
           <div className="grid md:grid-cols-2 gap-8">
             {BRAND_APPS.map(({ app, label: name, where }) => {
-              const b = branding[app]
+              const b = branding.apps[app]
               return (
                 <div key={app} className="space-y-3 border border-slate-100 rounded-2xl p-4">
                   <div>
                     <h4 className="text-sm font-extrabold text-slate-900">{name}</h4>
                     <p className="text-xs text-slate-500">{where}</p>
                   </div>
-                  <ImageField label="Logo" value={b.logoUrl} onChange={(url) => setApp(app, { logoUrl: url })} shape="square" small
-                    error={fieldError(`${app}.logoUrl`)} />
+                  <div className="grid sm:grid-cols-3 gap-4">
+                    <ImageField label="Logo" value={b.logoUrl} onChange={(url) => setApp(app, { logoUrl: url })} shape="square" small
+                      error={fieldError(`${app}.logoUrl`)} />
+                    <ImageField label="Tab icon" value={b.faviconUrl} onChange={(url) => setApp(app, { faviconUrl: url })} shape="square" small
+                      error={fieldError(`${app}.faviconUrl`)} />
+                    <ImageField label="Preloader" value={b.splashUrl} onChange={(url) => setApp(app, { splashUrl: url })} shape="square" small
+                      error={fieldError(`${app}.splashUrl`)} />
+                  </div>
+                  <p className="text-[11px] text-slate-500">
+                    The tab icon is the little picture on the browser tab; a square PNG or SVG works best. The preloader shows while the app starts —
+                    it appears from a visitor's second visit onwards, because the first paint happens before we know your settings.
+                  </p>
                   <div className="grid grid-cols-2 gap-3">
                     <div>
                       <label className={label} htmlFor={`${app}-name`}>Name</label>
@@ -306,6 +321,20 @@ export function Branding() {
               <p className={label}>Small print links (up to {BRAND_LIMITS.legal})</p>
               <LinkRows links={footer.legal} max={BRAND_LIMITS.legal} onChange={(legal) => { setFooter({ ...footer, legal }); touched() }} />
               {fieldError('legal')}
+            </div>
+            <div className="grid sm:grid-cols-2 gap-4 max-w-2xl">
+              <div>
+                <label className={label} htmlFor="credit-label">Credit line</label>
+                <input id="credit-label" value={footer.credit?.label ?? ''} className={input} placeholder="Designed and developed by…"
+                  onChange={(e) => { setFooter({ ...footer, credit: { ...footer.credit, label: e.target.value } }); touched() }} />
+                <p className="text-xs text-slate-500 mt-1">Leave empty to hide it. It shows in the website footer and in every panel.</p>
+              </div>
+              <div>
+                <label className={label} htmlFor="credit-url">Credit link</label>
+                <input id="credit-url" value={footer.credit?.url ?? ''} className={input} placeholder="https://…"
+                  onChange={(e) => { setFooter({ ...footer, credit: { ...footer.credit, url: e.target.value } }); touched() }} />
+                {fieldError('credit.url')}
+              </div>
             </div>
             <div className="max-w-md">
               <label className={label} htmlFor="copyright">Copyright line</label>
