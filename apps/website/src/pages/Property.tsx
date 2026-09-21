@@ -1,11 +1,12 @@
 import { lazy, Suspense, useCallback, useEffect, useState } from 'react'
 import { Link, useParams, useSearchParams } from 'react-router'
-import { embedUrl, fallbackImage, formatDate, formatPrice, formatTime, HOUSE_RULES, isPlayableVideo, PRIVACY_NOTE, propertyCode, REQUEST_HOURS, type PropertyDetail, type RatingBreakdown } from '@meridian/shared'
+import { embedUrl, formatDate, formatPrice, formatTime, HOUSE_RULES, isPlayableVideo, PRIVACY_NOTE, propertyCode, REQUEST_HOURS, type PropertyDetail, type RatingBreakdown } from '@meridian/shared'
 import { ApiError, api } from '@meridian/shared/client'
 import { Avatar, ErrorNote, Spinner } from '@meridian/ui'
 import { BookingBox } from '../components/BookingBox'
 import { PropertyCard } from '../components/PropertyCard'
 import { Modal } from '../components/Modal'
+import { PhotoMosaic } from '../components/PhotoMosaic'
 import { ReviewForm } from '../components/ReviewForm'
 import { useWishlist } from '../lib/wishlist'
 import { readSearch } from '../lib/search'
@@ -104,30 +105,23 @@ export function Property() {
         </div>
       </div>
 
-      {/* Gallery */}
-      <div className="relative grid grid-cols-1 sm:grid-cols-4 sm:grid-rows-2 gap-2 h-72 sm:h-[420px] rounded-3xl overflow-hidden mb-10">
-        {photos.slice(0, 5).map((src, i) => (
-          <button
-            key={src + i}
-            type="button"
-            onClick={() => setPhotoIndex(i)}
-            aria-label={`Open photo ${i + 1} of ${photos.length}`}
-            className={`relative overflow-hidden ${i === 0 ? 'sm:col-span-2 sm:row-span-2' : 'hidden sm:block'}`}
-          >
-            <img src={src} alt="" loading={i === 0 ? 'eager' : 'lazy'} onError={(e) => { e.currentTarget.src = fallbackImage }} className="w-full h-full object-cover hover:brightness-90 transition" />
-          </button>
-        ))}
-        <div className="absolute bottom-4 right-4 flex gap-2">
-          {property.videoUrl && (
-            <button type="button" onClick={() => setVideoOpen(true)} className="bg-slate-900 text-white text-xs font-bold px-4 py-2 rounded-xl shadow">
-              <i className="fa-solid fa-play mr-2" aria-hidden="true"></i>Watch video
+      {/* Gallery: the shape of each tile follows the photo the host uploaded. */}
+      <PhotoMosaic
+        photos={photos}
+        onOpen={setPhotoIndex}
+        actions={
+          <>
+            {property.videoUrl && (
+              <button type="button" onClick={() => setVideoOpen(true)} className="bg-slate-900 text-white text-xs font-bold px-4 py-2 rounded-xl shadow">
+                <i className="fa-solid fa-play mr-2" aria-hidden="true"></i>Watch video
+              </button>
+            )}
+            <button type="button" onClick={() => setPhotoIndex(0)} className="bg-white text-slate-900 text-xs font-bold px-4 py-2 rounded-xl shadow border border-slate-200">
+              <i className="fa-solid fa-grip mr-2" aria-hidden="true"></i>Show all {photos.length} photos
             </button>
-          )}
-          <button type="button" onClick={() => setPhotoIndex(0)} className="bg-white text-slate-900 text-xs font-bold px-4 py-2 rounded-xl shadow border border-slate-200">
-            <i className="fa-solid fa-grip mr-2" aria-hidden="true"></i>Show all {photos.length} photos
-          </button>
-        </div>
-      </div>
+          </>
+        }
+      />
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-12">
         <div className="lg:col-span-2 space-y-10">

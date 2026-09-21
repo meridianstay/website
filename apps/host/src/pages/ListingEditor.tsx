@@ -1,7 +1,7 @@
 import { lazy, Suspense, useEffect, useState, type ReactNode } from 'react'
 import { Link, useNavigate, useParams } from 'react-router'
 import { ErrorNote, PageHeader, PhotoUpload, Spinner } from '@meridian/ui'
-import { commissionMinor, commissionPct, defaultCommission, defaultDayUse, defaultHouseRules, discountedPrice, embedUrl, formatPrice, formatTime, HOUSE_RULES, quoteDayUse, quoteStay, addDays, todayISO, type Amenity, type DayUseSettings, type HouseRules, type Management, type PropertyType } from '@meridian/shared'
+import { commissionMinor, commissionPct, defaultCommission, PHOTO_RULE, defaultDayUse, defaultHouseRules, discountedPrice, embedUrl, formatPrice, formatTime, HOUSE_RULES, quoteDayUse, quoteStay, addDays, todayISO, type Amenity, type DayUseSettings, type HouseRules, type Management, type PropertyType } from '@meridian/shared'
 import { ApiError, api, hostApi, type ListingInput } from '@meridian/shared/client'
 
 const LocationPicker = lazy(() => import('../components/LocationPicker'))
@@ -227,6 +227,10 @@ export function ListingEditor() {
 
         {step === 3 && (
           <div className="space-y-5">
+            <p className="text-xs text-slate-500 bg-slate-50 border border-slate-100 rounded-2xl p-3">
+              <i className="fa-solid fa-crop-simple text-brand-600 mr-2" aria-hidden="true"></i>
+              {PHOTO_RULE} Tall photos stay tall and wide ones stay wide — the stay page builds its mosaic around whatever you upload.
+            </p>
             <div>
               <p className="block text-xs font-bold uppercase text-slate-500 mb-2">Cover photo</p>
               {isUrl(draft.coverImage) ? (

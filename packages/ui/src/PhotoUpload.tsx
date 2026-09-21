@@ -1,5 +1,6 @@
 import { useId, useRef, useState } from 'react'
 import { api } from '@meridian/shared/client'
+import { cropToShape } from './cropImage'
 
 interface Props {
   purpose: 'listing' | 'avatar' | 'content'
@@ -8,10 +9,12 @@ interface Props {
   label?: string
   maxMb?: number
   className?: string
+  /** Called with the shape the photo was cropped to, when it was cropped. */
+  onShape?: (shape: 'landscape' | 'portrait' | 'square') => void
 }
 
 /** A button that uploads a photo to Firebase Storage through the API. */
-export function PhotoUpload({ purpose, onUploaded, label = 'Upload photo', maxMb = 4, className = '' }: Props) {
+export function PhotoUpload({ purpose, onUploaded, onShape, label = 'Upload photo', maxMb = 4, className = '' }: Props) {
   const input = useRef<HTMLInputElement>(null)
   // Unique per button, so several upload buttons on one page each open their own file picker.
   const id = useId()
@@ -22,10 +25,17 @@ export function PhotoUpload({ purpose, onUploaded, label = 'Upload photo', maxMb
     if (!file) return
     setError(null)
     if (!['image/jpeg', 'image/png', 'image/webp'].includes(file.type)) return setError('Choose a JPG, PNG or WebP photo.')
-    if (file.size > maxMb * 1024 * 1024) return setError(`Photos can be at most ${maxMb} MB.`)
     setBusy(true)
     try {
-      onUploaded((await api.upload(file, purpose)).url)
+      // Listing photos become landscape or portrait; profile photos become square. Website content is left alone.
+      let send = file
+      if (purpose !== 'content') {
+        const cropped = await cropToShape(file, purpose === 'avatar' ? 'square' : undefined)
+        send = cropped.file
+        onShape?.(cropped.shape)
+      }
+      if (send.size > maxMb * 1024 * 1024) throw new Error(`Photos can be at most ${maxMb} MB. Try a smaller photo.`)
+      onUploaded((await api.upload(send, purpose)).url)
     } catch (err) {
       setError((err as Error).message)
     } finally {

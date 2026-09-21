@@ -2,6 +2,14 @@
 
 Every change to Meridian Stay is recorded here, newest first. Each entry says what changed for the people using the platform, then the notable technical changes.
 
+## 0.20.0 — 2026-09-21
+
+### Photos are one of two shapes, and the gallery follows them
+- Every listing photo is now saved as **landscape 1600 × 1067** or **portrait 1067 × 1600**, whichever is closer to how it was taken. The browser crops from the middle and resizes before uploading, so a 12-megapixel phone photo becomes a few hundred kilobytes and never hits the upload limit.
+- Profile photos become a **square 800 × 800**. Website content photos are untouched.
+- The stay page's gallery is a proper **mosaic built from the photos themselves**: wide photos take a wide tile, tall photos a tall one, and the gaps close automatically. A tall photo of a waterfall is no longer squashed into a letterbox.
+- The photo step tells hosts the rule and asks them to keep the subject centred.
+
 ## 0.19.0 — 2026-09-21
 
 ### Setting a listing's location is easy now
