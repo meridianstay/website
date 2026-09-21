@@ -115,3 +115,20 @@ Without `FIREBASE_SERVICE_ACCOUNT`, the API answers every request with "isn’t 
 2. In every project set the app addresses so links between apps work: `VITE_WEBSITE_URL`, `VITE_ADMIN_URL`, `VITE_HOST_URL`, `VITE_ACCOUNT_URL` (full `https://` addresses).
 3. Set `COOKIE_DOMAIN=.yourdomain.com` on the API so one login works across subdomains, and add each subdomain to Firebase's authorized domains.
 4. Route `/api` on the new subdomain to the main project (a rewrite in that project's `vercel.json`).
+
+## Icons
+
+The apps ship a cut-down icon set instead of all of Font Awesome: `packages/ui/src/icons.css`
+(only the rules for icons we use) and `packages/ui/src/fa-subset.woff2` (only those glyphs).
+Both are generated and committed, so nothing extra runs at deploy time.
+
+After adding an icon, run:
+
+```bash
+npm run icons
+```
+
+It rewrites `icons.css` and `fa-subset.json`, and prints a `pyftsubset` command when the glyph list
+changed — run that too (it needs Python's `fonttools` and `brotli`) and commit the new `.woff2`.
+Tests fail if either file falls behind, so a missing icon can't slip through as a blank space.
+Icons an admin can choose in the control centre come from `ICON_CHOICES` in `packages/shared/src/icons.ts`.

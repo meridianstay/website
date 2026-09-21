@@ -2,6 +2,19 @@
 
 Every change to Meridian Stay is recorded here, newest first. Each entry says what changed for the people using the platform, then the notable technical changes.
 
+## 0.24.0 — 2026-09-21
+
+### The site loads a lot lighter
+- Pages now **download as you go**: the homepage, search and the stay page arrive first, and everything else (checkout, About, the control centre's editors, and so on) is fetched the moment you open it. The website's first download dropped from about 560 KB to 300 KB, and the control centre and host portal start on roughly a third of what they used to.
+- The **icon set is cut down to the icons we actually use** — 149 of Font Awesome's two thousand. That takes the stylesheet from 57 KB to 11 KB and the icon font from 156 KB to 20 KB.
+- All together, a first visit to the website now pulls about **120 KB instead of 334 KB** over the wire, which is the difference between a slow and a quick open on a patchy mobile connection.
+- Icons for About us cards are now **chosen from a list** in the control centre instead of typed, so a name that we don't ship can't turn into a blank space.
+
+### Technical
+- `scripts/build-icons.mjs` generates `packages/ui/src/icons.css` and the glyph list for the subset font; both are committed and guarded by tests, so nothing extra runs at deploy time. `npm run icons` rebuilds them.
+- Route-level `React.lazy` in all four apps.
+- 114 automated tests (3 new).
+
 ## 0.23.0 — 2026-09-21
 
 ### Tab icons, preloaders and a stand-in photo

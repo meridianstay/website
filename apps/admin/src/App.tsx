@@ -1,24 +1,28 @@
+import { lazy, Suspense } from 'react'
 import { Route, Routes } from 'react-router'
 import { appLink } from '@meridian/shared/client'
-import { BrandProvider, AppShell, RequireAuth, type NavItem, useHideSplash } from '@meridian/ui'
+import { BrandProvider, AppShell, BrandLoader, RequireAuth, type NavItem, useHideSplash } from '@meridian/ui'
 import { Overview } from './pages/Overview'
-import { Listings } from './pages/Listings'
-import { Bookings } from './pages/Bookings'
-import { Users } from './pages/Users'
-import { Reviews } from './pages/Reviews'
-import { Coupons } from './pages/Coupons'
-import { Promotions } from './pages/Promotions'
-import { Messages } from './pages/Messages'
-import { Website } from './pages/Website'
-import { PageEditor } from './pages/PageEditor'
-import { AboutEditor } from './pages/AboutEditor'
-import { HomepageEditor } from './pages/HomepageEditor'
-import { Branding } from './pages/Branding'
-import { Activity } from './pages/Activity'
-import { Database } from './pages/Database'
-import { DatabaseTable } from './pages/DatabaseTable'
 import { AdminLogin } from './pages/AdminLogin'
-import { Settings } from './pages/Settings'
+
+// Only the first screen and the sign-in ship up front; every other page is downloaded the
+// moment someone opens it, so the panel starts quickly on a phone.
+const Listings = lazy(() => import('./pages/Listings').then((m) => ({ default: m.Listings })))
+const Bookings = lazy(() => import('./pages/Bookings').then((m) => ({ default: m.Bookings })))
+const Users = lazy(() => import('./pages/Users').then((m) => ({ default: m.Users })))
+const Reviews = lazy(() => import('./pages/Reviews').then((m) => ({ default: m.Reviews })))
+const Coupons = lazy(() => import('./pages/Coupons').then((m) => ({ default: m.Coupons })))
+const Promotions = lazy(() => import('./pages/Promotions').then((m) => ({ default: m.Promotions })))
+const Messages = lazy(() => import('./pages/Messages').then((m) => ({ default: m.Messages })))
+const Website = lazy(() => import('./pages/Website').then((m) => ({ default: m.Website })))
+const PageEditor = lazy(() => import('./pages/PageEditor').then((m) => ({ default: m.PageEditor })))
+const AboutEditor = lazy(() => import('./pages/AboutEditor').then((m) => ({ default: m.AboutEditor })))
+const HomepageEditor = lazy(() => import('./pages/HomepageEditor').then((m) => ({ default: m.HomepageEditor })))
+const Branding = lazy(() => import('./pages/Branding').then((m) => ({ default: m.Branding })))
+const Activity = lazy(() => import('./pages/Activity').then((m) => ({ default: m.Activity })))
+const Database = lazy(() => import('./pages/Database').then((m) => ({ default: m.Database })))
+const DatabaseTable = lazy(() => import('./pages/DatabaseTable').then((m) => ({ default: m.DatabaseTable })))
+const Settings = lazy(() => import('./pages/Settings').then((m) => ({ default: m.Settings })))
 
 const nav: NavItem[] = [
   { to: '/', label: 'Overview', icon: 'gauge-high', end: true },
@@ -48,23 +52,23 @@ export default function App() {
               <AppShell app="admin" nav={nav}>
                 <Routes>
                   <Route index element={<Overview />} />
-                  <Route path="listings" element={<Listings />} />
-                  <Route path="bookings" element={<Bookings />} />
-                  <Route path="users" element={<Users />} />
-                  <Route path="reviews" element={<Reviews />} />
-                  <Route path="coupons" element={<Coupons />} />
-                  <Route path="promotions" element={<Promotions />} />
-                  <Route path="messages" element={<Messages />} />
-                  <Route path="website" element={<Website />} />
-                  <Route path="website/about" element={<AboutEditor />} />
-                  <Route path="website/homepage" element={<HomepageEditor />} />
-                  <Route path="website/branding" element={<Branding />} />
-                  <Route path="website/pages/new" element={<PageEditor />} />
-                  <Route path="website/pages/:slug" element={<PageEditor />} />
-                  <Route path="activity" element={<Activity />} />
-                  <Route path="database" element={<Database />} />
-                  <Route path="database/:table" element={<DatabaseTable />} />
-                  <Route path="settings" element={<Settings />} />
+                  <Route path="listings" element={<Suspense fallback={<BrandLoader />}><Listings /></Suspense>} />
+                  <Route path="bookings" element={<Suspense fallback={<BrandLoader />}><Bookings /></Suspense>} />
+                  <Route path="users" element={<Suspense fallback={<BrandLoader />}><Users /></Suspense>} />
+                  <Route path="reviews" element={<Suspense fallback={<BrandLoader />}><Reviews /></Suspense>} />
+                  <Route path="coupons" element={<Suspense fallback={<BrandLoader />}><Coupons /></Suspense>} />
+                  <Route path="promotions" element={<Suspense fallback={<BrandLoader />}><Promotions /></Suspense>} />
+                  <Route path="messages" element={<Suspense fallback={<BrandLoader />}><Messages /></Suspense>} />
+                  <Route path="website" element={<Suspense fallback={<BrandLoader />}><Website /></Suspense>} />
+                  <Route path="website/about" element={<Suspense fallback={<BrandLoader />}><AboutEditor /></Suspense>} />
+                  <Route path="website/homepage" element={<Suspense fallback={<BrandLoader />}><HomepageEditor /></Suspense>} />
+                  <Route path="website/branding" element={<Suspense fallback={<BrandLoader />}><Branding /></Suspense>} />
+                  <Route path="website/pages/new" element={<Suspense fallback={<BrandLoader />}><PageEditor /></Suspense>} />
+                  <Route path="website/pages/:slug" element={<Suspense fallback={<BrandLoader />}><PageEditor /></Suspense>} />
+                  <Route path="activity" element={<Suspense fallback={<BrandLoader />}><Activity /></Suspense>} />
+                  <Route path="database" element={<Suspense fallback={<BrandLoader />}><Database /></Suspense>} />
+                  <Route path="database/:table" element={<Suspense fallback={<BrandLoader />}><DatabaseTable /></Suspense>} />
+                  <Route path="settings" element={<Suspense fallback={<BrandLoader />}><Settings /></Suspense>} />
                   <Route path="*" element={<Overview />} />
                 </Routes>
               </AppShell>

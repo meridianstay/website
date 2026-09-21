@@ -1,13 +1,17 @@
+import { lazy, Suspense } from 'react'
 import { Route, Routes } from 'react-router'
-import { BrandProvider, AppShell, RequireAuth, type NavItem, useHideSplash } from '@meridian/ui'
+import { BrandProvider, AppShell, BrandLoader, RequireAuth, type NavItem, useHideSplash } from '@meridian/ui'
 import { appLink } from '@meridian/shared/client'
 import { Dashboard } from './pages/Dashboard'
-import { MyListings } from './pages/MyListings'
-import { ListingEditor } from './pages/ListingEditor'
-import { HostBookings } from './pages/HostBookings'
-import { Promotions } from './pages/Promotions'
-import { ListingCalendar } from './pages/ListingCalendar'
 import { HostLogin } from './pages/HostLogin'
+
+// Only the first screen and the sign-in ship up front; every other page is downloaded the
+// moment someone opens it, so the panel starts quickly on a phone.
+const MyListings = lazy(() => import('./pages/MyListings').then((m) => ({ default: m.MyListings })))
+const ListingEditor = lazy(() => import('./pages/ListingEditor').then((m) => ({ default: m.ListingEditor })))
+const HostBookings = lazy(() => import('./pages/HostBookings').then((m) => ({ default: m.HostBookings })))
+const Promotions = lazy(() => import('./pages/Promotions').then((m) => ({ default: m.Promotions })))
+const ListingCalendar = lazy(() => import('./pages/ListingCalendar').then((m) => ({ default: m.ListingCalendar })))
 
 const nav: NavItem[] = [
   { to: '/', label: 'host.dashboard', icon: 'chart-line', end: true },
@@ -30,12 +34,12 @@ export default function App() {
               <AppShell app="host" nav={nav}>
                 <Routes>
                   <Route index element={<Dashboard />} />
-                  <Route path="listings" element={<MyListings />} />
-                  <Route path="listings/:id/edit" element={<ListingEditor />} />
-                  <Route path="listings/:id/calendar" element={<ListingCalendar />} />
-                  <Route path="bookings" element={<HostBookings />} />
-                  <Route path="promotions" element={<Promotions />} />
-                  <Route path="new" element={<ListingEditor />} />
+                  <Route path="listings" element={<Suspense fallback={<BrandLoader />}><MyListings /></Suspense>} />
+                  <Route path="listings/:id/edit" element={<Suspense fallback={<BrandLoader />}><ListingEditor /></Suspense>} />
+                  <Route path="listings/:id/calendar" element={<Suspense fallback={<BrandLoader />}><ListingCalendar /></Suspense>} />
+                  <Route path="bookings" element={<Suspense fallback={<BrandLoader />}><HostBookings /></Suspense>} />
+                  <Route path="promotions" element={<Suspense fallback={<BrandLoader />}><Promotions /></Suspense>} />
+                  <Route path="new" element={<Suspense fallback={<BrandLoader />}><ListingEditor /></Suspense>} />
                   <Route path="*" element={<Dashboard />} />
                 </Routes>
               </AppShell>

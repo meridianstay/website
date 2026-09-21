@@ -1,18 +1,25 @@
+import { lazy, Suspense } from 'react'
 import { Navigate, Route, Routes, useLocation } from 'react-router'
-import { RequireAuth, useHideSplash } from '@meridian/ui'
+import { BrandLoader, RequireAuth, useHideSplash } from '@meridian/ui'
 import { Layout } from './components/Layout'
 import { Home } from './pages/Home'
 import { Search } from './pages/Search'
 import { Property } from './pages/Property'
-import { Checkout } from './pages/Checkout'
-import { BookingConfirmed } from './pages/BookingConfirmed'
-import { Auth } from './pages/Auth'
-import { Contact } from './pages/Contact'
-import { About } from './pages/About'
-import { Destination } from './pages/Destination'
-import { InfoPage } from './pages/InfoPage'
-import { Sitemap } from './pages/Sitemap'
-import { NotFound } from './pages/NotFound'
+
+// Home, search and the stay page are what almost every visit touches, so they ship in the first
+// download. The rest arrive when someone actually goes there, which keeps that download small.
+const Checkout = lazy(() => import('./pages/Checkout').then((m) => ({ default: m.Checkout })))
+const BookingConfirmed = lazy(() => import('./pages/BookingConfirmed').then((m) => ({ default: m.BookingConfirmed })))
+const Auth = lazy(() => import('./pages/Auth').then((m) => ({ default: m.Auth })))
+const About = lazy(() => import('./pages/About').then((m) => ({ default: m.About })))
+const Destination = lazy(() => import('./pages/Destination').then((m) => ({ default: m.Destination })))
+const Contact = lazy(() => import('./pages/Contact').then((m) => ({ default: m.Contact })))
+const Sitemap = lazy(() => import('./pages/Sitemap').then((m) => ({ default: m.Sitemap })))
+const InfoPage = lazy(() => import('./pages/InfoPage').then((m) => ({ default: m.InfoPage })))
+const NotFound = lazy(() => import('./pages/NotFound').then((m) => ({ default: m.NotFound })))
+
+/** Shown for the moment a page's code is downloading. */
+const page = (node: React.ReactNode) => <Suspense fallback={<BrandLoader />}>{node}</Suspense>
 
 export default function App() {
   useHideSplash()
@@ -22,18 +29,18 @@ export default function App() {
         <Route index element={<Home />} />
         <Route path="search" element={<Search />} />
         <Route path="stays/:slug" element={<Property />} />
-        <Route path="book/:slug" element={<RequireAuth><Checkout /></RequireAuth>} />
-        <Route path="booking/:code" element={<RequireAuth><BookingConfirmed /></RequireAuth>} />
-        <Route path="login" element={<Auth />} />
+        <Route path="book/:slug" element={<RequireAuth>{page(<Checkout />)}</RequireAuth>} />
+        <Route path="booking/:code" element={<RequireAuth>{page(<BookingConfirmed />)}</RequireAuth>} />
+        <Route path="login" element={page(<Auth />)} />
         <Route path="signup" element={<SignupRedirect />} />
-        <Route path="about" element={<About />} />
-        <Route path="destinations/:slug" element={<Destination />} />
-        <Route path="destinations/:slug/:type" element={<Destination />} />
-        <Route path="contact" element={<Contact />} />
-        <Route path="sitemap" element={<Sitemap />} />
+        <Route path="about" element={page(<About />)} />
+        <Route path="destinations/:slug" element={page(<Destination />)} />
+        <Route path="destinations/:slug/:type" element={page(<Destination />)} />
+        <Route path="contact" element={page(<Contact />)} />
+        <Route path="sitemap" element={page(<Sitemap />)} />
         {/* Information pages are managed in the admin control center */}
-        <Route path=":slug" element={<InfoPage />} />
-        <Route path="*" element={<NotFound />} />
+        <Route path=":slug" element={page(<InfoPage />)} />
+        <Route path="*" element={page(<NotFound />)} />
       </Route>
     </Routes>
   )

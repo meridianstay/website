@@ -16,7 +16,8 @@
     "dev:account": "npm run dev -w @meridian/account",
     "dev:api": "npm run dev -w @meridian/api",
     "test": "npm run test -w @meridian/api",
-    "emulators": "firebase emulators:start --project demo-meridianstay"
+    "emulators": "firebase emulators:start --project demo-meridianstay",
+    "icons": "node scripts/build-icons.mjs"
   },
   "devDependencies": {
     "esbuild": "^0.28.2",

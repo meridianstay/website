@@ -1,7 +1,7 @@
 import { useEffect, useId, useState } from 'react'
 import { Link } from 'react-router'
 import { ErrorNote, ImageField, PageHeader, Panel, Spinner } from '@meridian/ui'
-import { ABOUT_TOKENS, aboutSchema, fillStats, type AboutItem, type AboutPage, type AboutSection, type AboutStats } from '@meridian/shared'
+import { ABOUT_TOKENS, ICON_CHOICES, aboutSchema, fillStats, type AboutItem, type AboutPage, type AboutSection, type AboutStats } from '@meridian/shared'
 import { ApiError, adminApi, appLink } from '@meridian/shared/client'
 
 const input = 'w-full bg-slate-50 border border-slate-200 rounded-xl p-2.5 text-sm focus:outline-none focus:border-brand-500'
@@ -120,9 +120,10 @@ export function AboutEditor() {
                                 <div key={f} className={f === 'text' || f === 'image' ? 'sm:col-span-2' : ''}>
                                   {f === 'image' ? (
                                     <ImageField label={label.replace(' link', '')} small shape={def.key === 'founder' ? 'round' : 'square'} value={it.image} onChange={(v) => setItem(i, { image: v })} error={fieldError(at(`items.${i}.image`))} />
+                                  ) : f === 'icon' ? (
+                                    <IconPicker label={label} value={it.icon} onChange={(v) => setItem(i, { icon: v })} error={fieldError(at(`items.${i}.icon`))} />
                                   ) : (
                                     <Field label={label} small multiline={f === 'text'} value={it[f]} onChange={(v) => setItem(i, { [f]: v })}
-                                      placeholder={f === 'icon' ? 'e.g. leaf, star, handshake' : undefined}
                                       error={fieldError(at(`items.${i}.${f}`))} />
                                   )}
                                 </div>
@@ -196,6 +197,26 @@ function Field({ label, value, onChange, multiline = false, rows = 2, small = fa
       ) : (
         <input id={id} className={input} value={value} placeholder={placeholder} onChange={(e) => onChange(e.target.value)} />
       )}
+      {error}
+    </div>
+  )
+}
+
+/** The icons the site ships, so nothing typed here can end up invisible. */
+function IconPicker({ label, value, onChange, error }: { label: string; value: string; onChange: (v: string) => void; error?: React.ReactNode }) {
+  const id = useId()
+  return (
+    <div>
+      <label htmlFor={id} className="block text-[10px] font-bold uppercase text-slate-500 mb-1">{label}</label>
+      <div className="flex items-center gap-2">
+        <span className="w-9 h-9 shrink-0 rounded-xl bg-brand-50 text-brand-600 flex items-center justify-center">
+          <i className={`fa-solid fa-${value || 'circle'}`} aria-hidden="true"></i>
+        </span>
+        <select id={id} value={value} onChange={(e) => onChange(e.target.value)} className={input}>
+          <option value="">No icon</option>
+          {ICON_CHOICES.map((name) => <option key={name} value={name}>{name}</option>)}
+        </select>
+      </div>
       {error}
     </div>
   )

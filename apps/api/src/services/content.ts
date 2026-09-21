@@ -1,4 +1,4 @@
-import { ABOUT_LIMITS, aboutSchema, withAboutDefaults, type AboutItem, type AboutPage, type ContentPage, type Me, type PageSection, type SiteSettings } from '@meridian/shared'
+import { isIconName, ABOUT_LIMITS, aboutSchema, withAboutDefaults, type AboutItem, type AboutPage, type ContentPage, type Me, type PageSection, type SiteSettings } from '@meridian/shared'
 import { auditLogRepo, contentRepo } from '../repositories'
 import { AppError, notFound } from '../http/errors'
 import { checkLength, collect, isImageUrl, str } from '../http/validate'
@@ -77,7 +77,8 @@ export const contentService = {
       const items: AboutItem[] = (def.fields ? s.items.slice(0, def.maxItems ?? 8) : []).map((it, i) => {
         const use = (f: keyof AboutItem) => f in (def.fields ?? {})
         return {
-          icon: use('icon') ? (/^[a-z0-9-]{0,40}$/.test(str(it.icon)) ? str(it.icon) : ((fields[at(`items.${i}.icon`)] = 'Icon names use lowercase letters and dashes, e.g. leaf.'), '')) : '',
+          // The site ships a cut-down icon font, so only icons we actually have can be chosen.
+          icon: use('icon') ? (!str(it.icon) || isIconName(str(it.icon)) ? str(it.icon) : ((fields[at(`items.${i}.icon`)] = 'Choose one of the icons in the list, e.g. leaf.'), '')) : '',
           title: use('title') ? clean(it.title, ABOUT_LIMITS.itemTitle, at(`items.${i}.title`)) : '',
           meta: use('meta') ? clean(it.meta, ABOUT_LIMITS.itemMeta, at(`items.${i}.meta`)) : '',
           text: use('text') ? clean(it.text, ABOUT_LIMITS.itemText, at(`items.${i}.text`)) : '',
