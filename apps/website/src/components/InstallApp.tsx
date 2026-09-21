@@ -1,10 +1,12 @@
 import { useState } from 'react'
+import { useT } from '@meridian/ui'
 import { isInAppBrowser, isIOS, useInstall } from '../lib/install'
 import { Modal } from './Modal'
 
 /** Header button that installs Meridian Stay as an app on the phone (or computer). */
 export function InstallAppButton() {
   const { available, install } = useInstall()
+  const t = useT()
   const [help, setHelp] = useState(false)
   const [done, setDone] = useState(false)
   if (!available && !done) return null
@@ -20,7 +22,7 @@ export function InstallAppButton() {
       <button type="button" onClick={onClick} aria-label="Download the Meridian Stay app"
         className="flex items-center gap-2 whitespace-nowrap text-[13px] font-semibold text-slate-800 hover:bg-slate-100 h-10 px-2.5 lg:px-4 rounded-full transition">
         <i className={`fa-solid ${done ? 'fa-circle-check text-brand-600' : 'fa-mobile-screen-button text-brand-500'}`} aria-hidden="true"></i>
-        <span className="hidden lg:inline">{done ? 'App installed' : 'Download app'}</span>
+        <span className="hidden lg:inline">{done ? 'App installed' : t('nav.downloadApp')}</span>
       </button>
       <Modal open={help} onClose={() => setHelp(false)} title="Get the Meridian Stay app">
         <InstallHelp />
