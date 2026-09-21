@@ -1,5 +1,5 @@
 import { Route, Routes } from 'react-router'
-import { AppShell, RequireAuth, type NavItem, useHideSplash } from '@meridian/ui'
+import { BrandProvider, AppShell, RequireAuth, type NavItem, useHideSplash } from '@meridian/ui'
 import { Trips } from './pages/Trips'
 import { Wishlist } from './pages/Wishlist'
 import { Profile } from './pages/Profile'
@@ -13,15 +13,17 @@ const nav: NavItem[] = [
 export default function App() {
   useHideSplash()
   return (
-    <RequireAuth>
-      <AppShell subtitle="My Account" nav={nav}>
-        <Routes>
-          <Route index element={<Trips />} />
-          <Route path="wishlist" element={<Wishlist />} />
-          <Route path="profile" element={<Profile />} />
-          <Route path="*" element={<Trips />} />
-        </Routes>
-      </AppShell>
-    </RequireAuth>
+    <BrandProvider app="account">
+      <RequireAuth>
+        <AppShell nav={nav}>
+          <Routes>
+            <Route index element={<Trips />} />
+            <Route path="wishlist" element={<Wishlist />} />
+            <Route path="profile" element={<Profile />} />
+            <Route path="*" element={<Trips />} />
+          </Routes>
+        </AppShell>
+      </RequireAuth>
+    </BrandProvider>
   )
 }

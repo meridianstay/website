@@ -56,6 +56,12 @@ export function Website() {
         </SettingsForm>
       </div>
 
+      <div className="mb-8"><Panel title="Logos, header & footer" action={<Link to="/website/branding" className="bg-brand-600 hover:bg-brand-700 text-white text-xs font-bold py-2.5 px-4 rounded-xl"><i className="fa-solid fa-pen mr-1.5" aria-hidden="true"></i>Edit</Link>}>
+        <p className="text-sm text-slate-500">
+          A separate logo and name for the website, the host portal, the guest account and this control centre, plus what shows in the header bar and every footer column.
+        </p>
+      </Panel></div>
+
       <div className="mb-8"><Panel title="About us page" action={<Link to="/website/about" className="bg-brand-600 hover:bg-brand-700 text-white text-xs font-bold py-2.5 px-4 rounded-xl"><i className="fa-solid fa-pen mr-1.5" aria-hidden="true"></i>Edit</Link>}>
         <p className="text-sm text-slate-500">
           Mission, vision, company story, journey, founder, team, goals, global and local impact, and why travellers choose Meridian, at{' '}

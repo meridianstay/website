@@ -1,3 +1,4 @@
+import { defaultBranding, defaultFooter, defaultHeader, type BrandingSettings, type FooterSettings, type HeaderSettings } from './branding'
 import { defaultPromotions, type PromotionSettings } from './promotions'
 // Default website content. The API copies it into the database on first start; after that
 // the admin control center edits it. Legal pages start as drafts for a lawyer to review.
@@ -55,6 +56,11 @@ export interface SiteSettings {
   commission: { managedPct: number; selfPct: number }
   /** Paid promotions hosts can buy (daily rates in ₹). */
   promotions: PromotionSettings
+  /** Logos and names, per app. */
+  branding: BrandingSettings
+  /** The website's header and footer. */
+  header: HeaderSettings
+  footer: FooterSettings
 }
 
 export const defaultSiteSettings: SiteSettings = {
@@ -76,6 +82,9 @@ export const defaultSiteSettings: SiteSettings = {
   uploads: { maxMb: 4, maxVideoMb: 150 },
   commission: { managedPct: 30, selfPct: 15 },
   promotions: { ...defaultPromotions },
+  branding: structuredClone(defaultBranding),
+  header: structuredClone(defaultHeader),
+  footer: structuredClone(defaultFooter),
 }
 
 type DefaultPage = Omit<ContentPage, 'slug' | 'draft'> & { draft?: boolean }

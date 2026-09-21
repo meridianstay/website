@@ -1,53 +1,26 @@
 import { useEffect, useState } from 'react'
 import { Link } from 'react-router'
-import { TYPE_SLUGS, type Destination } from '@meridian/shared'
+import { SOCIAL_NETWORKS, TYPE_SLUGS, type Destination } from '@meridian/shared'
 import { loadDestinations } from './DestinationPicker'
 import { PROPERTY_TYPES } from '../lib/search'
-import { appLink } from '@meridian/shared/client'
-
-type FooterLink = { label: string; to: string; external?: boolean }
-
-const columns: { heading: string; links: FooterLink[] }[] = [
-  {
-    heading: 'About Meridian',
-    links: [
-      { label: 'About us', to: '/about' },
-      { label: 'How it works', to: '/how-it-works' },
-      { label: 'Newsroom & Press', to: '/newsroom' },
-      { label: 'Investors', to: '/investors' },
-      { label: 'Eco-Sustainability', to: '/sustainability' },
-    ],
-  },
-  {
-    heading: 'Hosting',
-    links: [
-      { label: 'List your property', to: appLink('host', '/new'), external: true },
-      { label: 'Host login', to: '/login?as=host' },
-      { label: 'Host protection cover', to: '/host-protection' },
-      { label: 'Explore hosting resources', to: '/hosting-resources' },
-      { label: 'Community guidelines', to: '/community-guidelines' },
-    ],
-  },
-  {
-    heading: 'Support',
-    links: [
-      { label: 'Help Center', to: '/help' },
-      { label: 'Cancellation options', to: '/cancellation-policy' },
-      { label: 'Trust & Safety', to: '/trust-safety' },
-      { label: 'Contact Us', to: '/contact' },
-    ],
-  },
-]
+import { useSite } from '../lib/site'
+import { SiteLink } from './SiteLink'
+import { LogoMark } from '@meridian/ui'
 
 export function Footer() {
+  const { footer, branding } = useSite()
   const [places, setPlaces] = useState<Destination[]>([])
   useEffect(() => {
     loadDestinations().then(setPlaces)
   }, [])
   // "Villas in Goa", "Farmstays in Coorg"… for the most popular destinations (also good for search engines).
-  const popular = places.filter((d) => d.kind === 'city').slice(0, 6).flatMap((d) =>
-    d.types.slice(0, 2).map((t) => ({ label: `${PROPERTY_TYPES.find((p) => p.type === t)?.label ?? t} in ${d.name}`, to: `/destinations/${d.slug}/${TYPE_SLUGS[t]}` })))
-  const states = places.filter((d) => d.kind === 'state').slice(0, 8)
+  const popular = footer.showPopularSearches
+    ? places.filter((d) => d.kind === 'city').slice(0, 6).flatMap((d) =>
+      d.types.slice(0, 2).map((t) => ({ label: `${PROPERTY_TYPES.find((p) => p.type === t)?.label ?? t} in ${d.name}`, to: `/destinations/${d.slug}/${TYPE_SLUGS[t]}` })))
+    : []
+  const states = footer.showPopularSearches ? places.filter((d) => d.kind === 'state').slice(0, 8) : []
+  const social = SOCIAL_NETWORKS.filter((n) => footer.social[n.key])
+  const brand = branding.website
 
   return (
     <footer className="bg-white border-t border-slate-200 mt-auto">
@@ -55,26 +28,28 @@ export function Footer() {
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-8 text-xs text-slate-600">
           <div>
             <div className="flex items-center space-x-2 mb-4">
-              <div className="w-8 h-8 rounded-xl bg-brand-600 flex items-center justify-center text-white">
-                <i className="fa-solid fa-seedling" aria-hidden="true"></i>
-              </div>
-              <span className="text-sm font-extrabold text-slate-900">Meridian Stay</span>
+              <LogoMark size="sm" />
+              <span className="text-sm font-extrabold text-slate-900">{brand.name} {brand.accent}</span>
             </div>
-            <p className="text-slate-500 font-light max-w-[240px]">
-              Your premium ecosystem for farmstays, boutique resorts, woodland cottages, and luxury villas.
-            </p>
+            <p className="text-slate-500 font-light max-w-[240px]">{footer.tagline}</p>
+            {social.length > 0 && (
+              <div className="flex items-center gap-3 mt-4">
+                {social.map((n) => (
+                  <a key={n.key} href={footer.social[n.key]} target="_blank" rel="noreferrer" aria-label={n.label}
+                    className="w-8 h-8 rounded-full bg-slate-100 hover:bg-brand-50 hover:text-brand-600 text-slate-600 flex items-center justify-center transition">
+                    <i className={`fa-solid fa-${n.icon} text-xs`} aria-hidden="true"></i>
+                  </a>
+                ))}
+              </div>
+            )}
           </div>
-          {columns.map((col) => (
+          {footer.columns.map((col) => (
             <div key={col.heading}>
               <h4 className="text-[11px] font-bold text-slate-900 uppercase tracking-wider mb-4">{col.heading}</h4>
               <ul className="space-y-2.5 font-light">
                 {col.links.map((link) => (
-                  <li key={link.label}>
-                    {link.external ? (
-                      <a href={link.to} className="hover:text-brand-600 transition">{link.label}</a>
-                    ) : (
-                      <Link to={link.to} className="hover:text-brand-600 transition">{link.label}</Link>
-                    )}
+                  <li key={link.url + link.label}>
+                    <SiteLink url={link.url} className="hover:text-brand-600 transition">{link.label}</SiteLink>
                   </li>
                 ))}
               </ul>
@@ -93,11 +68,9 @@ export function Footer() {
         )}
 
         <div className="mt-10 pt-6 border-t border-slate-100 flex flex-col sm:flex-row items-center justify-between gap-3 text-[11px] text-slate-400">
-          <p>© {new Date().getFullYear()} Meridian Stay Inc. All rights reserved.</p>
+          <p>{footer.copyright.replace('{year}', String(new Date().getFullYear()))}</p>
           <div className="flex items-center space-x-6">
-            <Link to="/privacy" className="hover:text-slate-700">Privacy</Link>
-            <Link to="/terms" className="hover:text-slate-700">Terms</Link>
-            <Link to="/sitemap" className="hover:text-slate-700">Sitemap</Link>
+            {footer.legal.map((l) => <SiteLink key={l.url + l.label} url={l.url} className="hover:text-slate-700">{l.label}</SiteLink>)}
           </div>
         </div>
       </div>

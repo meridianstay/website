@@ -6,6 +6,7 @@ import { bookingService } from '../services/bookings'
 import { paymentsService } from '../services/payments'
 import { homepageService, staysFor } from '../services/homepage'
 import { couponService } from '../services/coupons'
+import { appearanceService } from '../services/appearance'
 import { promotionService } from '../services/promotions'
 import { newBlock, type HomeBlock } from '@meridian/shared'
 import { demoResetAllowed, resetDemo } from '../store/resetDemo'
@@ -86,6 +87,11 @@ adminRoutes.post('/admin/reviews/:id/restore', async (c) => (await reviewService
 adminRoutes.get('/admin/messages', async (c) =>
   c.json({ messages: await messagesRepo.list(oneOf<MessageStatus>(c.req.query('status'), ['new', 'read', 'closed'])) }))
 adminRoutes.patch('/admin/messages/:id', async (c) => (await adminService.setMessageStatus(admin(c), Number(c.req.param('id')), str((await body(c)).status)), done()))
+
+// ─── Logos, header and footer ────────────────────────────────────────────────
+adminRoutes.put('/admin/branding', async (c) => c.json({ branding: await appearanceService.saveBranding(admin(c), await body(c)) }))
+adminRoutes.put('/admin/header', async (c) => c.json({ header: await appearanceService.saveHeader(admin(c), await body(c)) }))
+adminRoutes.put('/admin/footer', async (c) => c.json({ footer: await appearanceService.saveFooter(admin(c), await body(c)) }))
 
 // ─── Website content ─────────────────────────────────────────────────────────
 adminRoutes.get('/admin/settings', async (c) => c.json(await contentRepo.settings()))

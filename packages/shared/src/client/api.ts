@@ -11,6 +11,7 @@ import type { HomeBlock, HomeLayout } from '../homepage'
 import type { Destination } from '../places'
 import type { Coupon } from '../offers'
 import type { AdCampaign, AdPlacement, PromotionSettings } from '../promotions'
+import type { BrandingSettings, FooterSettings, HeaderSettings } from '../branding'
 import { request } from './http'
 
 const qs = (params: object) => {
@@ -173,6 +174,9 @@ export const adminApi = {
   previewStays: (block: HomeBlock) => request<{ properties: PropertySummary[] }>('/admin/homepage/preview', { method: 'POST', json: block }),
   about: () => request<{ page: AboutPage; stats: AboutStats }>('/admin/about'),
   saveAbout: (page: AboutPage) => request<{ page: AboutPage }>('/admin/about', { method: 'PUT', json: page }),
+  saveBranding: (value: BrandingSettings) => request<{ branding: BrandingSettings }>('/admin/branding', { method: 'PUT', json: value }),
+  saveHeader: (value: HeaderSettings) => request<{ header: HeaderSettings }>('/admin/header', { method: 'PUT', json: value }),
+  saveFooter: (value: FooterSettings) => request<{ footer: FooterSettings }>('/admin/footer', { method: 'PUT', json: value }),
   pages: () => request<{ pages: ContentPage[] }>('/admin/pages'),
   savePage: (page: ContentPage) => request<void>(`/admin/pages/${encodeURIComponent(page.slug)}`, { method: 'PUT', json: page }),
   deletePage: (slug: string) => request<void>(`/admin/pages/${encodeURIComponent(slug)}`, { method: 'DELETE' }),

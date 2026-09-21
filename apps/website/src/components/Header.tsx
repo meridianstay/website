@@ -10,12 +10,15 @@ import { DestinationPicker } from './DestinationPicker'
 import { usePlace } from '../lib/place'
 import { Modal } from './Modal'
 import { SearchForm } from './SearchForm'
+import { SiteLink } from './SiteLink'
+import { useSite } from '../lib/site'
 
 export function Header() {
   const [searchOpen, setSearchOpen] = useState(false)
   const [regionOpen, setRegionOpen] = useState(false)
   const [placeOpen, setPlaceOpen] = useState(false)
   const { place } = usePlace()
+  const { header } = useSite()
   // Other parts of the page (e.g. the homepage's "near you" row) can open the picker.
   useEffect(() => {
     const open = () => setPlaceOpen(true)
@@ -37,7 +40,7 @@ export function Header() {
           <Logo href={null} />
         </Link>
 
-        <button
+        {header.showSearch && <button
           type="button"
           onClick={() => setSearchOpen(true)}
           className="hidden md:flex items-center bg-white border border-slate-200 rounded-full py-1.5 pl-5 pr-1.5 shadow-sm hover:shadow-md transition divide-x divide-slate-200"
@@ -50,25 +53,30 @@ export function Header() {
               <i className="fa-solid fa-magnifying-glass text-xs" aria-hidden="true"></i>
             </span>
           </span>
-        </button>
+        </button>}
 
         <div className="flex items-center space-x-1 sm:space-x-2">
-          <button type="button" onClick={() => setSearchOpen(true)} aria-label="Search stays" className="md:hidden w-10 h-10 rounded-full bg-brand-500 text-white flex items-center justify-center">
+          {header.showSearch && <button type="button" onClick={() => setSearchOpen(true)} aria-label="Search stays" className="md:hidden w-10 h-10 rounded-full bg-brand-500 text-white flex items-center justify-center">
             <i className="fa-solid fa-magnifying-glass text-sm" aria-hidden="true"></i>
-          </button>
-          <button type="button" onClick={() => setPlaceOpen(true)} aria-label={place ? `Destination: ${place.name === 'you' ? 'near you' : place.name}. Change` : 'Choose a destination'}
+          </button>}
+          {header.showDestinations && <button type="button" onClick={() => setPlaceOpen(true)} aria-label={place ? `Destination: ${place.name === 'you' ? 'near you' : place.name}. Change` : 'Choose a destination'}
             className="hidden md:flex items-center gap-2 whitespace-nowrap text-[13px] font-semibold text-slate-800 hover:bg-slate-100 h-10 px-3 rounded-full transition max-w-[150px]">
             <i className="fa-solid fa-location-dot text-brand-500" aria-hidden="true"></i>
             <span className="hidden xl:inline truncate">{place ? (place.name === 'you' ? 'Near me' : place.name) : 'Select city'}</span>
-          </button>
-          <InstallAppButton />
-          <a href={appLink('host', '/new')} className="hidden sm:flex items-center space-x-2 whitespace-nowrap text-[13px] font-semibold text-slate-800 hover:bg-slate-100 py-2.5 px-4 rounded-full transition">
+          </button>}
+          {header.showInstallApp && <InstallAppButton />}
+          {header.links.map((link) => (
+            <SiteLink key={link.url + link.label} url={link.url} className="hidden lg:flex items-center whitespace-nowrap text-[13px] font-semibold text-slate-800 hover:bg-slate-100 py-2.5 px-4 rounded-full transition">
+              {link.label}
+            </SiteLink>
+          ))}
+          {header.hostLinkLabel && <a href={appLink('host', '/new')} className="hidden sm:flex items-center space-x-2 whitespace-nowrap text-[13px] font-semibold text-slate-800 hover:bg-slate-100 py-2.5 px-4 rounded-full transition">
             <i className="fa-solid fa-house-chimney text-brand-500" aria-hidden="true"></i>
-            <span>List your property</span>
-          </a>
-          <button type="button" onClick={() => setRegionOpen(true)} aria-label="Language and currency" className="hidden sm:flex w-10 h-10 rounded-full hover:bg-slate-100 items-center justify-center text-slate-700 transition">
+            <span>{header.hostLinkLabel}</span>
+          </a>}
+          {header.showCurrency && <button type="button" onClick={() => setRegionOpen(true)} aria-label="Language and currency" className="hidden sm:flex w-10 h-10 rounded-full hover:bg-slate-100 items-center justify-center text-slate-700 transition">
             <i className="fa-solid fa-globe text-sm" aria-hidden="true"></i>
-          </button>
+          </button>}
           <AccountMenu />
         </div>
       </div>

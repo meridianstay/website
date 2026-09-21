@@ -1,7 +1,7 @@
 import { StrictMode } from 'react'
 import { createRoot } from 'react-dom/client'
 import { BrowserRouter } from 'react-router'
-import { AuthProvider } from '@meridian/ui'
+import { AuthProvider, BrandProvider } from '@meridian/ui'
 import '@fortawesome/fontawesome-free/css/fontawesome.min.css'
 import '@fortawesome/fontawesome-free/css/solid.min.css'
 import '@meridian/ui/motion.css'
@@ -18,6 +18,7 @@ createRoot(document.getElementById('root')!).render(
   <StrictMode>
     <BrowserRouter basename={import.meta.env.BASE_URL.replace(/\/$/, '') || '/'}>
       <AuthProvider>
+        <BrandProvider app="website">
         <SiteProvider>
           <WishlistProvider>
             <PlaceProvider>
@@ -25,6 +26,7 @@ createRoot(document.getElementById('root')!).render(
             </PlaceProvider>
           </WishlistProvider>
         </SiteProvider>
+        </BrandProvider>
       </AuthProvider>
     </BrowserRouter>
   </StrictMode>,

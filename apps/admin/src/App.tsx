@@ -1,6 +1,6 @@
 import { Route, Routes } from 'react-router'
 import { appLink } from '@meridian/shared/client'
-import { AppShell, RequireAuth, type NavItem, useHideSplash } from '@meridian/ui'
+import { BrandProvider, AppShell, RequireAuth, type NavItem, useHideSplash } from '@meridian/ui'
 import { Overview } from './pages/Overview'
 import { Listings } from './pages/Listings'
 import { Bookings } from './pages/Bookings'
@@ -13,6 +13,7 @@ import { Website } from './pages/Website'
 import { PageEditor } from './pages/PageEditor'
 import { AboutEditor } from './pages/AboutEditor'
 import { HomepageEditor } from './pages/HomepageEditor'
+import { Branding } from './pages/Branding'
 import { Activity } from './pages/Activity'
 import { Database } from './pages/Database'
 import { DatabaseTable } from './pages/DatabaseTable'
@@ -37,37 +38,40 @@ const nav: NavItem[] = [
 export default function App() {
   useHideSplash()
   return (
-    <Routes>
-      <Route path="login" element={<AdminLogin />} />
-      <Route
-        path="*"
-        element={
-          <RequireAuth roles={['admin']} loginHref={appLink('admin', '/login')}>
-            <AppShell subtitle="Control Center" nav={nav}>
-              <Routes>
-                <Route index element={<Overview />} />
-                <Route path="listings" element={<Listings />} />
-                <Route path="bookings" element={<Bookings />} />
-                <Route path="users" element={<Users />} />
-                <Route path="reviews" element={<Reviews />} />
-                <Route path="coupons" element={<Coupons />} />
-                <Route path="promotions" element={<Promotions />} />
-                <Route path="messages" element={<Messages />} />
-                <Route path="website" element={<Website />} />
-                <Route path="website/about" element={<AboutEditor />} />
-                <Route path="website/homepage" element={<HomepageEditor />} />
-                <Route path="website/pages/new" element={<PageEditor />} />
-                <Route path="website/pages/:slug" element={<PageEditor />} />
-                <Route path="activity" element={<Activity />} />
-                <Route path="database" element={<Database />} />
-                <Route path="database/:table" element={<DatabaseTable />} />
-                <Route path="settings" element={<Settings />} />
-                <Route path="*" element={<Overview />} />
-              </Routes>
-            </AppShell>
-          </RequireAuth>
-        }
-      />
-    </Routes>
+    <BrandProvider app="admin">
+      <Routes>
+        <Route path="login" element={<AdminLogin />} />
+        <Route
+          path="*"
+          element={
+            <RequireAuth roles={['admin']} loginHref={appLink('admin', '/login')}>
+              <AppShell nav={nav}>
+                <Routes>
+                  <Route index element={<Overview />} />
+                  <Route path="listings" element={<Listings />} />
+                  <Route path="bookings" element={<Bookings />} />
+                  <Route path="users" element={<Users />} />
+                  <Route path="reviews" element={<Reviews />} />
+                  <Route path="coupons" element={<Coupons />} />
+                  <Route path="promotions" element={<Promotions />} />
+                  <Route path="messages" element={<Messages />} />
+                  <Route path="website" element={<Website />} />
+                  <Route path="website/about" element={<AboutEditor />} />
+                  <Route path="website/homepage" element={<HomepageEditor />} />
+                  <Route path="website/branding" element={<Branding />} />
+                  <Route path="website/pages/new" element={<PageEditor />} />
+                  <Route path="website/pages/:slug" element={<PageEditor />} />
+                  <Route path="activity" element={<Activity />} />
+                  <Route path="database" element={<Database />} />
+                  <Route path="database/:table" element={<DatabaseTable />} />
+                  <Route path="settings" element={<Settings />} />
+                  <Route path="*" element={<Overview />} />
+                </Routes>
+              </AppShell>
+            </RequireAuth>
+          }
+        />
+      </Routes>
+    </BrandProvider>
   )
 }

@@ -2,6 +2,20 @@
 
 Every change to Meridian Stay is recorded here, newest first. Each entry says what changed for the people using the platform, then the notable technical changes.
 
+## 0.17.0 — 2026-09-21
+
+### Logos, header and footer, from the control centre
+- **Website content → Logos, header & footer** is a new page. Every logo, the header bar and the whole footer are now edited there instead of being fixed in the code.
+- **A separate logo and name for each panel:** the website, the host portal, the guest account and the control centre. Upload a square logo with the photo picker, set the name, the yellow second word and the small line underneath, and choose whether the name shows beside the logo (turn it off when the logo already has the name in it).
+- **Header:** switch the search box, destination picker, "Download app" button and the language & currency button on or off, rename the hosting link (or leave it empty to hide it) and add up to three extra links of your own.
+- **Footer:** edit the sentence under the logo, add up to four columns of links, add Instagram, Facebook, WhatsApp, X and YouTube links (icons only appear for the ones you fill in), switch the automatic "Popular searches" row on or off, edit the small print links and the copyright line (write `{year}` for the current year).
+- Links accept a page on this site (`/about`, `/host/new`) or a full `https://` address, and are checked when you save.
+
+### Technical
+- New `branding`, `header` and `footer` settings with `PUT /admin/branding|header|footer`, validated and audit-logged by `services/appearance.ts`.
+- `BrandProvider` / `useBrand` in the shared UI package: every app declares which brand it is, the settings are fetched once per page load, and `Logo`/`LogoMark` read from it.
+- 95 automated tests (5 new).
+
 ## 0.16.0 — 2026-09-21
 
 ### One login for guests and hosts

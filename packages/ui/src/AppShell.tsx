@@ -14,7 +14,8 @@ export interface NavItem {
 }
 
 interface AppShellProps {
-  subtitle: string
+  /** Overrides the subtitle from the control centre. */
+  subtitle?: string
   nav: NavItem[]
   children: ReactNode
 }

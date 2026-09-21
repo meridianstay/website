@@ -1,5 +1,5 @@
 import { Route, Routes } from 'react-router'
-import { AppShell, RequireAuth, type NavItem, useHideSplash } from '@meridian/ui'
+import { BrandProvider, AppShell, RequireAuth, type NavItem, useHideSplash } from '@meridian/ui'
 import { appLink } from '@meridian/shared/client'
 import { Dashboard } from './pages/Dashboard'
 import { MyListings } from './pages/MyListings'
@@ -20,27 +20,29 @@ const nav: NavItem[] = [
 export default function App() {
   useHideSplash()
   return (
-    <Routes>
-      <Route path="login" element={<HostLogin />} />
-      <Route
-        path="*"
-        element={
-          <RequireAuth loginHref={appLink('website', '/login')}>
-            <AppShell subtitle="Host Portal" nav={nav}>
-              <Routes>
-                <Route index element={<Dashboard />} />
-                <Route path="listings" element={<MyListings />} />
-                <Route path="listings/:id/edit" element={<ListingEditor />} />
-                <Route path="listings/:id/calendar" element={<ListingCalendar />} />
-                <Route path="bookings" element={<HostBookings />} />
-                <Route path="promotions" element={<Promotions />} />
-                <Route path="new" element={<ListingEditor />} />
-                <Route path="*" element={<Dashboard />} />
-              </Routes>
-            </AppShell>
-          </RequireAuth>
-        }
-      />
-    </Routes>
+    <BrandProvider app="host">
+      <Routes>
+        <Route path="login" element={<HostLogin />} />
+        <Route
+          path="*"
+          element={
+            <RequireAuth loginHref={appLink('website', '/login')}>
+              <AppShell nav={nav}>
+                <Routes>
+                  <Route index element={<Dashboard />} />
+                  <Route path="listings" element={<MyListings />} />
+                  <Route path="listings/:id/edit" element={<ListingEditor />} />
+                  <Route path="listings/:id/calendar" element={<ListingCalendar />} />
+                  <Route path="bookings" element={<HostBookings />} />
+                  <Route path="promotions" element={<Promotions />} />
+                  <Route path="new" element={<ListingEditor />} />
+                  <Route path="*" element={<Dashboard />} />
+                </Routes>
+              </AppShell>
+            </RequireAuth>
+          }
+        />
+      </Routes>
+    </BrandProvider>
   )
 }
