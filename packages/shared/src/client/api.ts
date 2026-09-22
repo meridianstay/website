@@ -14,6 +14,7 @@ import type { AdCampaign, AdPlacement, PromotionSettings } from '../promotions'
 import type { BrandingSettings, FooterSettings, HeaderSettings } from '../branding'
 import type { ThemeSettings } from '../theme'
 import type { LanguageSettings } from '../i18n'
+import type { TranslationBook } from '../contentText'
 import { request } from './http'
 
 const qs = (params: object) => {
@@ -40,12 +41,12 @@ export const api = {
     return request<{ url: string }>('/uploads', { method: 'POST', body: form })
   },
 
-  site: () => request<PublicSite>('/site'),
+  site: (lang?: string) => request<PublicSite>(`/site${qs({ lang })}`),
   /** The homepage layout and the stays for each switched-on "Stays" section. */
-  home: () => request<{ layout: HomeLayout; stays: Record<string, PropertySummary[]> }>('/home'),
-  about: () => request<{ page: AboutPage; stats: AboutStats }>('/about'),
+  home: (lang?: string) => request<{ layout: HomeLayout; stays: Record<string, PropertySummary[]> }>(`/home${qs({ lang })}`),
+  about: (lang?: string) => request<{ page: AboutPage; stats: AboutStats }>(`/about${qs({ lang })}`),
   pages: () => request<{ pages: { slug: string; title: string }[] }>('/pages'),
-  page: (slug: string) => request<{ page: ContentPage }>(`/pages/${encodeURIComponent(slug)}`),
+  page: (slug: string, lang?: string) => request<{ page: ContentPage }>(`/pages/${encodeURIComponent(slug)}${qs({ lang })}`),
 
   locations: () => request<{ locations: string[] }>('/locations'),
   destinations: () => request<{ destinations: Destination[] }>('/destinations'),
@@ -174,6 +175,8 @@ export const adminApi = {
   about: () => request<{ page: AboutPage; stats: AboutStats }>('/admin/about'),
   saveAbout: (page: AboutPage) => request<{ page: AboutPage }>('/admin/about', { method: 'PUT', json: page }),
   saveBranding: (value: BrandingSettings) => request<{ branding: BrandingSettings }>('/admin/branding', { method: 'PUT', json: value }),
+  translations: () => request<{ translations: TranslationBook }>('/admin/translations'),
+  saveTranslations: (value: TranslationBook) => request<{ translations: TranslationBook }>('/admin/translations', { method: 'PUT', json: value }),
   saveLanguages: (value: LanguageSettings) => request<{ languages: LanguageSettings }>('/admin/languages', { method: 'PUT', json: value }),
   saveTheme: (value: ThemeSettings) => request<{ theme: ThemeSettings }>('/admin/theme', { method: 'PUT', json: value }),
   saveHeader: (value: HeaderSettings) => request<{ header: HeaderSettings }>('/admin/header', { method: 'PUT', json: value }),

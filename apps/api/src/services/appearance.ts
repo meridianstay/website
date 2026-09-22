@@ -1,6 +1,7 @@
 import {
   BRAND_APPS, BRAND_LIMITS, defaultFooter, defaultHeader, SOCIAL_NETWORKS,
-  isHexColor, LANGUAGES, withBrandingDefaults,
+  isHexColor, LANGUAGES, offeredLanguages, withBrandingDefaults, CONTENT_TEXT_MAX,
+  type ContentTranslations, type TranslationBook,
   type LanguageSettings,
   type BrandingSettings, type FooterSettings, type HeaderSettings, type Me, type NavItemLink,
 } from '@meridian/shared'
@@ -77,6 +78,28 @@ export const appearanceService = {
     await contentRepo.saveSetting('languages', languages, admin.id)
     await auditLogRepo.record(admin, 'settings.update', 'settings', 'languages', { enabled, fallback: fallbackCode })
     return languages
+  },
+
+  /** The control centre's translations of the words it wrote itself. */
+  async saveTranslations(admin: Me, body: Record<string, unknown>) {
+    const settings = (await contentRepo.settings()).languages
+    const offered = new Set(offeredLanguages(settings).map((l) => l.code))
+    const book: TranslationBook = {}
+    for (const [lang, entries] of Object.entries(body)) {
+      // English is the original wording, and a language that is switched off has nothing to show.
+      if (lang === 'en' || !offered.has(lang) || !entries || typeof entries !== 'object') continue
+      const map: ContentTranslations = {}
+      for (const [source, value] of Object.entries(entries as Record<string, unknown>)) {
+        const text = str(value).slice(0, CONTENT_TEXT_MAX)
+        if (source.trim() && text.trim()) map[source] = text
+      }
+      if (Object.keys(map).length) book[lang] = map
+    }
+    await contentRepo.saveSetting('translations', book, admin.id)
+    await auditLogRepo.record(admin, 'settings.update', 'settings', 'translations', {
+      languages: Object.fromEntries(Object.entries(book).map(([lang, map]) => [lang, Object.keys(map).length])),
+    })
+    return book
   },
 
   async saveHeader(admin: Me, body: Record<string, unknown>) {

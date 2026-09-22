@@ -2,6 +2,20 @@
 
 Every change to Meridian Stay is recorded here, newest first. Each entry says what changed for the people using the platform, then the notable technical changes.
 
+## 0.25.0 — 2026-09-22
+
+### Changing language now changes the whole page, not just the buttons
+- Picking a language translated the menus and buttons but left the homepage, the footer and the About us page in English. That was the wrong half: those words are **written by you in the control centre**, so no built-in dictionary could ever reach them.
+- **Website content → Translations** is a new page. Pick a language and you get every sentence you have written — hero slides, section headings, property type cards, banners, the announcement bar, footer columns and small print, and the whole About us page — each with a box for its translation. A progress bar shows how many are done, and “Only show what’s left” hides the rest.
+- Translating a sentence once covers **every place it appears**, because translations are matched on the English wording rather than on where it sits.
+- Anything you leave empty simply shows in the original wording, so a half-finished language is still safe to offer.
+- The website now asks the API for content **in the reader's language** and fetches it again when they switch, so the homepage, About us and every information page change over with the menus.
+
+### Technical
+- `translateDeep()` in the shared package; `?lang=` on `/site`, `/home`, `/about` and `/pages/:slug`; `GET`/`PUT /admin/translations`.
+- `BrandProvider` now owns the single settings fetch and refetches it per language; the website's `useSite()` reads from it instead of fetching again.
+- 117 automated tests (3 new).
+
 ## 0.24.0 — 2026-09-21
 
 ### The site loads a lot lighter

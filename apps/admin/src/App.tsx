@@ -19,6 +19,7 @@ const PageEditor = lazy(() => import('./pages/PageEditor').then((m) => ({ defaul
 const AboutEditor = lazy(() => import('./pages/AboutEditor').then((m) => ({ default: m.AboutEditor })))
 const HomepageEditor = lazy(() => import('./pages/HomepageEditor').then((m) => ({ default: m.HomepageEditor })))
 const Branding = lazy(() => import('./pages/Branding').then((m) => ({ default: m.Branding })))
+const Translations = lazy(() => import('./pages/Translations').then((m) => ({ default: m.Translations })))
 const Activity = lazy(() => import('./pages/Activity').then((m) => ({ default: m.Activity })))
 const Database = lazy(() => import('./pages/Database').then((m) => ({ default: m.Database })))
 const DatabaseTable = lazy(() => import('./pages/DatabaseTable').then((m) => ({ default: m.DatabaseTable })))
@@ -63,6 +64,7 @@ export default function App() {
                   <Route path="website/about" element={<Suspense fallback={<BrandLoader />}><AboutEditor /></Suspense>} />
                   <Route path="website/homepage" element={<Suspense fallback={<BrandLoader />}><HomepageEditor /></Suspense>} />
                   <Route path="website/branding" element={<Suspense fallback={<BrandLoader />}><Branding /></Suspense>} />
+                  <Route path="website/translations" element={<Suspense fallback={<BrandLoader />}><Translations /></Suspense>} />
                   <Route path="website/pages/new" element={<Suspense fallback={<BrandLoader />}><PageEditor /></Suspense>} />
                   <Route path="website/pages/:slug" element={<Suspense fallback={<BrandLoader />}><PageEditor /></Suspense>} />
                   <Route path="activity" element={<Suspense fallback={<BrandLoader />}><Activity /></Suspense>} />

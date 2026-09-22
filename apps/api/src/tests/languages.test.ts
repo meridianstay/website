@@ -1,6 +1,6 @@
 import { beforeEach, describe, test } from 'node:test'
 import assert from 'node:assert/strict'
-import { LANGUAGES, defaultLanguages, fill, offeredLanguages, pickLanguage } from '@meridian/shared'
+import { LANGUAGES, collectContentStrings, defaultAbout, defaultLanguages, defaultSiteSettings, fill, offeredLanguages, pickLanguage, translateDeep, translationProgress } from '@meridian/shared'
 import { en, loaders } from '@meridian/shared/locales'
 import { appearanceService } from '../services/appearance'
 import { contentRepo } from '../repositories'
@@ -63,5 +63,64 @@ describe('languages', () => {
         assert.deepEqual(placeholders(dict[key]), placeholders(en[key]), `${code}.${key} lost a placeholder`)
       }
     }
+  })
+})
+
+describe('translating the words written in the control centre', () => {
+  beforeEach(resetDatabase)
+
+  test('a translated heading replaces the English one everywhere it appears', async () => {
+    const admin = await createUser('admin')
+    await appearanceService.saveTranslations(admin.me, body({
+      mr: { 'Featured Meridian Stays': 'निवडक मेरिडियन मुक्काम', 'Explore Property Types': 'मालमत्तेचे प्रकार पाहा' },
+    }))
+
+    const words = await contentRepo.translations('mr')
+    assert.equal(words['Featured Meridian Stays'], 'निवडक मेरिडियन मुक्काम')
+
+    const layout = await contentRepo.home()
+    const marathi = translateDeep(layout, words)
+    const titles = marathi.blocks.map((b) => b.title)
+    assert.ok(titles.includes('निवडक मेरिडियन मुक्काम'))
+    assert.ok(titles.includes('मालमत्तेचे प्रकार पाहा'))
+    // Anything without a translation keeps its original wording rather than going blank.
+    assert.ok(titles.includes('Promoted stays'))
+    // Links, photos and ids are left exactly as they were.
+    assert.equal(marathi.blocks[0].id, layout.blocks[0].id)
+    assert.equal(marathi.hero.slides[0].image, layout.hero.slides[0].image)
+  })
+
+  test('English is never stored, and a switched-off language is dropped', async () => {
+    const admin = await createUser('admin')
+    await appearanceService.saveLanguages(admin.me, body({ enabled: ['mr'], fallback: 'en', autoDetect: true }))
+    const saved = await appearanceService.saveTranslations(admin.me, body({
+      en: { 'Featured Meridian Stays': 'nope' },
+      mr: { 'Featured Meridian Stays': 'निवडक' },
+      ta: { 'Featured Meridian Stays': 'தேர்ந்தெடுத்த' },
+    }))
+    assert.deepEqual(Object.keys(saved), ['mr'])
+    assert.deepEqual(await contentRepo.translations('en'), {})
+    assert.deepEqual(await contentRepo.translations('ta'), {})
+  })
+
+  test('the control centre is offered every sentence a visitor can read', async () => {
+    const groups = collectContentStrings({
+      home: await contentRepo.home(),
+      footer: defaultSiteSettings.footer,
+      header: defaultSiteSettings.header,
+      announcement: defaultSiteSettings.announcement,
+      about: defaultAbout,
+    })
+    const all = groups.flatMap((g) => g.strings)
+    assert.ok(all.includes('Featured Meridian Stays'), 'a homepage heading')
+    assert.ok(all.includes(defaultSiteSettings.footer.tagline), 'the footer tagline')
+    assert.ok(all.includes('About Meridian'), 'a footer column heading')
+    assert.ok(all.some((s) => s === defaultAbout.hero.tagline), 'the About us tagline')
+    // Never a link, a photo or a colour.
+    assert.ok(!all.some((s) => s.startsWith('http') || s.startsWith('/') || /^#[0-9a-f]{6}$/i.test(s)), 'only real wording')
+
+    const progress = translationProgress(groups, { 'Featured Meridian Stays': 'x' })
+    assert.equal(progress.done, 1)
+    assert.ok(progress.total > 30)
   })
 })

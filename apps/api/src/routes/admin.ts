@@ -90,6 +90,8 @@ adminRoutes.patch('/admin/messages/:id', async (c) => (await adminService.setMes
 
 // ─── Logos, header and footer ────────────────────────────────────────────────
 adminRoutes.put('/admin/branding', async (c) => c.json({ branding: await appearanceService.saveBranding(admin(c), await body(c)) }))
+adminRoutes.get('/admin/translations', async (c) => c.json({ translations: await contentRepo.translationBook() }))
+adminRoutes.put('/admin/translations', async (c) => c.json({ translations: await appearanceService.saveTranslations(admin(c), await body(c)) }))
 adminRoutes.put('/admin/languages', async (c) => c.json({ languages: await appearanceService.saveLanguages(admin(c), await body(c)) }))
 adminRoutes.put('/admin/theme', async (c) => c.json({ theme: await appearanceService.saveTheme(admin(c), await body(c)) }))
 adminRoutes.put('/admin/header', async (c) => c.json({ header: await appearanceService.saveHeader(admin(c), await body(c)) }))

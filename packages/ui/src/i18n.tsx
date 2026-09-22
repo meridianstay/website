@@ -37,7 +37,16 @@ const fallback: Value = {
 
 const LanguageContext = createContext<Value>(fallback)
 
-export function LanguageProvider({ settings, enabled = true, children }: { settings?: LanguageSettings; enabled?: boolean; children: ReactNode }) {
+interface ProviderProps {
+  settings?: LanguageSettings
+  /** False in the control centre, which stays in English. */
+  enabled?: boolean
+  /** Told whenever the language resolves or changes, so the settings can be refetched in it. */
+  onLanguage?: (code: string) => void
+  children: ReactNode
+}
+
+export function LanguageProvider({ settings, enabled = true, onLanguage, children }: ProviderProps) {
   const [lang, setLangState] = useState('en')
   const [dict, setDict] = useState<Dictionary>(en)
 
@@ -59,7 +68,8 @@ export function LanguageProvider({ settings, enabled = true, children }: { setti
     const code = pickLanguage(read(), navigator.languages ?? [navigator.language], settings)
     setLangState(code)
     load(code)
-  }, [enabled, settings, load])
+    onLanguage?.(code)
+  }, [enabled, settings, load, onLanguage])
 
   useEffect(() => {
     document.documentElement.lang = lang
@@ -73,7 +83,8 @@ export function LanguageProvider({ settings, enabled = true, children }: { setti
     }
     setLangState(code)
     load(code)
-  }, [load])
+    onLanguage?.(code)
+  }, [load, onLanguage])
 
   const value = useMemo<Value>(() => ({
     lang,

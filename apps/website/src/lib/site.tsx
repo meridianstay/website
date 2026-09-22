@@ -1,16 +1,11 @@
-import { createContext, useContext, useEffect, useState, type ReactNode } from 'react'
-import { defaultPublicSite, type PublicSite } from '@meridian/shared'
-import { loadSite } from '@meridian/ui'
+import type { ReactNode } from 'react'
+import { useSiteSettings } from '@meridian/ui'
 
-const SiteContext = createContext<PublicSite>(defaultPublicSite)
+// The control centre's settings, already in the reader's language. They are fetched once by
+// BrandProvider, so this is only the website's own name for them.
 
-/** Admin-editable website settings (homepage text, announcement). Falls back to defaults while loading. */
 export function SiteProvider({ children }: { children: ReactNode }) {
-  const [settings, setSettings] = useState(defaultPublicSite)
-  useEffect(() => {
-    loadSite().then(setSettings).catch(() => {})
-  }, [])
-  return <SiteContext.Provider value={settings}>{children}</SiteContext.Provider>
+  return <>{children}</>
 }
 
-export const useSite = () => useContext(SiteContext)
+export const useSite = useSiteSettings

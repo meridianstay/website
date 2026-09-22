@@ -2,22 +2,24 @@ import { useEffect, useState, type ReactNode } from 'react'
 import { Link } from 'react-router'
 import { aboutImages, defaultAbout, fillStats, type AboutItem, type AboutPage, type AboutSection, type AboutStats } from '@meridian/shared'
 import { api, appLink } from '@meridian/shared/client'
+import { useLanguage } from '@meridian/ui'
 import { useDocumentTitle } from '../lib/useDocumentTitle'
 
 // About us (/about). Content is edited in the control center (Website content → About page);
 // {{tokens}} in any text are filled with live figures from the platform.
 
 export function About() {
+  const { lang } = useLanguage()
   const [page, setPage] = useState<AboutPage>(defaultAbout)
   const [stats, setStats] = useState<AboutStats | null>(null)
   useDocumentTitle('About us')
 
   useEffect(() => {
-    api.about().then((r) => {
+    api.about(lang).then((r) => {
       setPage(r.page)
       setStats(r.stats)
     }).catch(() => {})
-  }, [])
+  }, [lang])
 
   const t = (text: string) => fillStats(text, stats)
   const s = page.sections

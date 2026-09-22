@@ -2,12 +2,13 @@ import { useEffect, useState } from 'react'
 import { Link, useParams } from 'react-router'
 import type { ContentPage } from '@meridian/shared'
 import { ApiError, api } from '@meridian/shared/client'
-import { ErrorNote, Spinner } from '@meridian/ui'
+import { ErrorNote, Spinner, useLanguage } from '@meridian/ui'
 import { useDocumentTitle } from '../lib/useDocumentTitle'
 import { NotFound } from './NotFound'
 
 /** Admin-editable information pages (help, policies, about…), served at /:slug. */
 export function InfoPage() {
+  const { lang } = useLanguage()
   const { slug = '' } = useParams()
   const [page, setPage] = useState<ContentPage | null>(null)
   const [error, setError] = useState<{ status: number; message: string } | null>(null)
@@ -16,8 +17,8 @@ export function InfoPage() {
   useEffect(() => {
     setPage(null)
     setError(null)
-    api.page(slug).then((r) => setPage(r.page)).catch((e: ApiError) => setError({ status: e.status, message: e.message }))
-  }, [slug])
+    api.page(slug, lang).then((r) => setPage(r.page)).catch((e: ApiError) => setError({ status: e.status, message: e.message }))
+  }, [slug, lang])
 
   if (error?.status === 404) return <NotFound />
   if (error) return <div className="max-w-3xl mx-auto px-5 py-12"><ErrorNote message={error.message} /></div>

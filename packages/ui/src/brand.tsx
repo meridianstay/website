@@ -1,17 +1,39 @@
-import { createContext, useContext, useEffect, useState, type ReactNode } from 'react'
-import { defaultBranding, defaultFooter, defaultLanguages, defaultTheme, setFallbackImage, themeVariables, withBrandingDefaults, type AppBrand, type BrandApp, type BrandingSettings, type FooterSettings, type LanguageSettings, type PublicSite } from '@meridian/shared'
+import { createContext, useCallback, useContext, useEffect, useState, type ReactNode } from 'react'
+import { defaultBranding, defaultFooter, defaultLanguages, defaultPublicSite, defaultTheme, setFallbackImage, themeVariables, withBrandingDefaults, type AppBrand, type BrandApp, type BrandingSettings, type FooterSettings, type PublicSite } from '@meridian/shared'
 import { api } from '@meridian/shared/client'
 import { LanguageProvider } from './i18n'
 
-// The logo and name an app shows, set in the control centre. Fetched once per page load and shared
-// by every logo on screen; until it arrives the built-in Meridian branding shows.
+// The logo, the palette, the footer credit and the language, all from one settings fetch. The words
+// in those settings are written in the control centre, so the fetch asks for the visitor's language
+// and the API answers with whatever has been translated — which is why changing language changes the
+// homepage and footer wording too, not only the buttons.
 
-let cached: Promise<PublicSite> | null = null
-/** The site settings, fetched at most once per page load (the website's own provider reuses this). */
-export const loadSite = () => (cached ??= api.site().catch((err) => {
-  cached = null
-  throw err
-}))
+const LANGUAGE_KEY = 'meridian.language'
+
+/** The best guess before any settings have loaded: what this browser chose before, else its own language. */
+export function guessLanguage(): string {
+  try {
+    const saved = localStorage.getItem(LANGUAGE_KEY)
+    if (saved) return saved
+  } catch {
+    // Storage off; fall through to the browser's own languages.
+  }
+  return (navigator.languages?.[0] ?? navigator.language ?? 'en').toLowerCase().split('-')[0]
+}
+
+const inFlight = new Map<string, Promise<PublicSite>>()
+
+/** The site settings in one language, fetched at most once per page load per language. */
+export function loadSite(lang: string = guessLanguage()): Promise<PublicSite> {
+  const key = lang || 'en'
+  if (!inFlight.has(key)) {
+    inFlight.set(key, api.site(key).catch((err) => {
+      inFlight.delete(key)
+      throw err
+    }))
+  }
+  return inFlight.get(key)!
+}
 
 /**
  * The tab icon, the preloader picture and the stand-in photo. They are also remembered in this
@@ -44,28 +66,43 @@ const BrandContext = createContext<AppBrand>(defaultBranding.apps.website)
 const CreditContext = createContext<FooterSettings['credit']>(defaultFooter.credit)
 export const useCredit = () => useContext(CreditContext)
 
-/** The logo, the palette and the language, all from the same one settings fetch. */
+/** Everything the control centre publishes, already in the reader's language. */
+const SiteContext = createContext<PublicSite>(defaultPublicSite)
+export const useSiteSettings = () => useContext(SiteContext)
+
+/** The logo, the palette, the credit line and the language, all from the same settings fetch. */
 export function BrandProvider({ app, children }: { app: BrandApp; children: ReactNode }) {
-  const [brand, setBrand] = useState<AppBrand>(defaultBranding.apps[app])
-  const [languages, setLanguages] = useState<LanguageSettings | undefined>(undefined)
-  const [credit, setCredit] = useState(defaultFooter.credit)
+  const [site, setSite] = useState<PublicSite>(defaultPublicSite)
+  // The control centre is a staff tool and stays in English, so it never asks for a translation.
+  const translated = app !== 'admin'
+  const [lang, setLang] = useState(() => (translated ? guessLanguage() : 'en'))
+
   useEffect(() => {
-    loadSite().then((site) => {
-      applyTheme(site)
-      const branding = withBrandingDefaults(site.branding)
+    let live = true
+    loadSite(lang).then((next) => {
+      if (!live) return
+      const branding = withBrandingDefaults(next.branding)
       applyChrome(branding, app)
-      setBrand(branding.apps[app])
-      setLanguages(site.languages ?? defaultLanguages)
-      setCredit(site.footer?.credit ?? defaultFooter.credit)
-    }).catch(() => {})
-  }, [app])
+      applyTheme(next)
+      setSite(next)
+    }).catch(() => {
+      // Keep the built-in wording rather than showing an empty page.
+    })
+    return () => { live = false }
+  }, [app, lang])
+
+  const onLanguage = useCallback((code: string) => setLang(code), [])
+
   return (
-    <BrandContext.Provider value={brand}>
-      <CreditContext.Provider value={credit}>
-        {/* The control centre is a staff tool and stays in English. */}
-        <LanguageProvider settings={languages} enabled={app !== 'admin'}>{children}</LanguageProvider>
-      </CreditContext.Provider>
-    </BrandContext.Provider>
+    <SiteContext.Provider value={site}>
+      <BrandContext.Provider value={withBrandingDefaults(site.branding).apps[app]}>
+        <CreditContext.Provider value={site.footer?.credit ?? defaultFooter.credit}>
+          <LanguageProvider settings={site.languages ?? defaultLanguages} enabled={translated} onLanguage={onLanguage}>
+            {children}
+          </LanguageProvider>
+        </CreditContext.Provider>
+      </BrandContext.Provider>
+    </SiteContext.Provider>
   )
 }
 

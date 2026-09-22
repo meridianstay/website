@@ -186,6 +186,8 @@ Every host endpoint needs a signed-in user and only acts on that user's own list
 | GET | `/api/host/places` | `q` (3+ characters), `country` (default `in`) | `{ places: [{ label, lat, lng, city, region, country, address }] }` from OpenStreetMap, proxied and cached for an hour |
 | GET | `/api/host/places/at` | `lat`, `lng` | `{ place }` at that point, or `null` |
 
+**Language**: `/api/site`, `/api/home`, `/api/about` and `/api/pages/:slug` take `?lang=` (e.g. `?lang=mr`) and return the control centre's words already translated, leaving anything untranslated in its original wording.
+
 **Privacy**: to guests, a listing's `title` is a description ("Farmstay in Coorg · MS007") and its slug matches. The real name, the owner's name, phone and email and the exact address are only returned to the owner, to our team, and to a guest whose booking on that property is `Confirmed`/`Completed` and paid (`revealed` on the property, `host`/`address` on the booking).
 
 **Listing body**: `{ title, type, description, city, region, country, price, beds, baths, maxGuests, lat, lng, coverImage, photos: [url], videoUrl, amenities: [name] }`. `videoUrl` is optional and must be a YouTube or Vimeo link (videos are not hosted here). Photo links must start with `https://`; up to 12 photos.
@@ -238,6 +240,8 @@ Every change here is recorded in the activity log.
 | PUT | `/api/admin/homepage` | `{ hero, blocks }` | `{ layout }` as saved. Section types: `stays` (`rule`: featured, top_rated, newest, instant, request, price_low, price_high, type + `propertyType`, location + `location`, budget + `maxPrice`; `limit` 3–12), `categories` (`cards: [{ type, label, tag, text, image }]`), `banner` (`badge, text, image, buttonLabel, buttonUrl, tone`). Up to 6 slides and 12 sections. |
 | POST | `/api/admin/homepage/preview` | A `stays` section | `{ properties }` it would show right now |
 | PUT | `/api/admin/branding` | `{ website, host, account, admin }`, each `{ logoUrl, showName, name, accent, subtitle }` | `{ branding }` as saved. `logoUrl` must be an uploaded or `https://` image. |
+| GET | `/api/admin/translations` | — | `{ translations }`: every language's content translations, keyed by the English wording |
+| PUT | `/api/admin/translations` | `{ [lang]: { [english]: translated } }` | `{ translations }` as saved. English and switched-off languages are dropped. |
 | PUT | `/api/admin/languages` | `{ enabled: [code], fallback, autoDetect }` | `{ languages }` as saved. English is always added to `enabled`; `fallback` must be one of them. |
 | PUT | `/api/admin/theme` | `{ brand, accent }` (six-digit hex) | `{ theme }` as saved. Every shade from 50 to 900 is mixed from the two colours. |
 | PUT | `/api/admin/header` | `{ showSearch, showDestinations, showInstallApp, showCurrency, hostLinkLabel, links }` | `{ header }` as saved. Up to 3 extra links. |

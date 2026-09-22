@@ -1,4 +1,4 @@
-import { defaultPages, defaultSiteSettings, withAboutDefaults, withHomeDefaults, type AboutPage, type ContentPage, type HomeLayout, type SiteSettings } from '@meridian/shared'
+import { defaultPages, defaultSiteSettings, withAboutDefaults, withHomeDefaults, type AboutPage, type ContentPage, type ContentTranslations, type HomeLayout, type SiteSettings, type TranslationBook } from '@meridian/shared'
 import { C, all, col, nowISO } from '../store/db'
 
 // Collections: siteSettings/{key} (plus siteSettings/aboutPage for the About us page), contentPages/{slug}
@@ -10,6 +10,20 @@ export const contentRepo = {
     const settings = structuredClone(defaultSiteSettings)
     for (const d of snap.docs) if (d.id in settings) Object.assign(settings[d.id as keyof SiteSettings], d.data().value)
     return settings
+  },
+
+  /** One language's content translations, keyed by the English wording. Empty when there are none. */
+  async translations(lang: string): Promise<ContentTranslations> {
+    if (!lang || lang === 'en') return {}
+    const snap = await col(C.settings).doc('translations').get()
+    const book = (snap.exists ? (snap.data()!.value as TranslationBook) : {}) ?? {}
+    return book[lang] ?? {}
+  },
+
+  /** Every language's translations, for the control centre. */
+  async translationBook(): Promise<TranslationBook> {
+    const snap = await col(C.settings).doc('translations').get()
+    return (snap.exists ? (snap.data()!.value as TranslationBook) : {}) ?? {}
   },
 
   saveSetting: (key: string, value: object, userId: number) => col(C.settings).doc(key).set({ value, updatedAt: nowISO(), updatedBy: userId }),

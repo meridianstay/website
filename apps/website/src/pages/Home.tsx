@@ -1,14 +1,15 @@
-import { useEffect, useState } from 'react'
+import { useCallback, useEffect, useState } from 'react'
 import { usePlace } from '../lib/place'
 import { defaultHomeLayout, type HomeLayout, type PropertySummary } from '@meridian/shared'
 import { api } from '@meridian/shared/client'
-import { ErrorNote } from '@meridian/ui'
+import { ErrorNote, useLanguage } from '@meridian/ui'
 import { Hero } from '../components/Hero'
 import { HomeSection } from '../components/HomeSections'
 import { useDocumentTitle } from '../lib/useDocumentTitle'
 
 /** The homepage, arranged in the control center (Website content → Homepage). */
 export function Home() {
+  const { lang } = useLanguage()
   useDocumentTitle(null)
   const [data, setData] = useState<{ layout: HomeLayout; stays: Record<string, PropertySummary[]> } | null>(null)
   const [error, setError] = useState<string | null>(null)
@@ -32,11 +33,12 @@ export function Home() {
     api.promoted('home').then((r) => setPromoted(r.properties)).catch(() => {})
   }, [data])
 
-  const load = () => {
+  // Refetched when the reader changes language, because the headings are written in the control centre.
+  const load = useCallback(() => {
     setError(null)
-    api.home().then(setData).catch((e) => setError(e.message))
-  }
-  useEffect(load, [])
+    api.home(lang).then(setData).catch((e) => setError(e.message))
+  }, [lang])
+  useEffect(load, [load])
 
   // Until the layout arrives, show the hero's first slide and placeholder rows.
   const layout = data?.layout ?? { ...defaultHomeLayout(), hero: { ...defaultHomeLayout().hero, mode: 'static' as const } }
