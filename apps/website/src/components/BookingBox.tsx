@@ -9,6 +9,7 @@ import { DateRangePicker } from './DateRangePicker'
 import { GuestPicker } from './GuestPicker'
 import { PriceBreakdown } from './PriceBreakdown'
 import { bookingQuery, partyLabel } from '../lib/booking'
+import { useT } from '@meridian/ui'
 
 interface Props {
   property: PropertyDetail
@@ -19,6 +20,7 @@ const toHHMM = (m: number) => `${String(Math.floor(m / 60)).padStart(2, '0')}:${
 
 /** The booking card on a stay page: "Stay" (nights) and/or "Day out" (hours on one day). */
 export function BookingBox({ property, initial }: Props) {
+  const t = useT()
   const offersStay = property.overnight
   const day = property.dayUseSettings
   const [kind, setKind] = useState<'stay' | 'dayuse'>(initial.kind === 'dayuse' && day ? 'dayuse' : offersStay ? 'stay' : 'dayuse')
@@ -54,11 +56,11 @@ export function BookingBox({ property, initial }: Props) {
   return (
     <div className="bg-white border border-slate-200 rounded-3xl p-6 shadow-xl shadow-slate-200/60 space-y-4">
       {offersStay && day && (
-        <div role="tablist" aria-label="Booking type" className="grid grid-cols-2 gap-1 bg-slate-100 rounded-2xl p-1">
-          {([['stay', 'Stay', 'moon'], ['dayuse', 'Day out', 'sun']] as const).map(([k, label, icon]) => (
+        <div role="tablist" aria-label={t('box.bookingType')} className="grid grid-cols-2 gap-1 bg-slate-100 rounded-2xl p-1">
+          {([['stay', 'stay.stayTab', 'moon'], ['dayuse', 'stay.dayOutTab', 'sun']] as const).map(([k, label, icon]) => (
             <button key={k} type="button" role="tab" aria-selected={kind === k} onClick={() => setKind(k)}
               className={`py-2 rounded-xl text-sm font-bold transition ${kind === k ? 'bg-white text-slate-900 shadow' : 'text-slate-500 hover:text-slate-800'}`}>
-              <i className={`fa-solid fa-${icon} mr-2 ${k === 'dayuse' ? 'text-brand-yellow-500' : 'text-brand-600'}`} aria-hidden="true"></i>{label}
+              <i className={`fa-solid fa-${icon} mr-2 ${k === 'dayuse' ? 'text-brand-yellow-500' : 'text-brand-600'}`} aria-hidden="true"></i>{t(label)}
             </button>
           ))}
         </div>
@@ -70,13 +72,14 @@ export function BookingBox({ property, initial }: Props) {
 
       <p className={`text-xs text-center font-semibold ${property.management === 'managed' ? 'text-brand-700' : 'text-amber-700'}`}>
         <i className={`fa-solid ${property.management === 'managed' ? 'fa-bolt' : 'fa-hourglass-half'} mr-1.5`} aria-hidden="true"></i>
-        {property.management === 'managed' ? 'Instant book · managed by Meridian Stay' : `Host confirms within ${REQUEST_HOURS} hours`}
+        {property.management === 'managed' ? t('box.instantNote') : t('stay.hostConfirms', { hours: REQUEST_HOURS })}
       </p>
     </div>
   )
 }
 
 function StayForm({ property, initial, party, guests }: { property: PropertyDetail; initial: Props['initial']; party: GuestBreakdown; guests: React.ReactNode }) {
+  const t = useT()
   const navigate = useNavigate()
   const overlaps = (a: string, b: string) => property.bookedRanges.some((r) => r.checkIn < b && r.checkOut > a)
   const initialFree = initial.checkIn && initial.checkOut && !overlaps(initial.checkIn, initial.checkOut)
@@ -90,7 +93,7 @@ function StayForm({ property, initial, party, guests }: { property: PropertyDeta
   const reserve = () => {
     if (!ready) {
       setCalendarOpen(true)
-      return setError('Choose your check-in and check-out dates.')
+      return setError(t('box.chooseDates'))
     }
     if (daysBetween(dates.checkIn, dates.checkOut) > MAX_NIGHTS) return setError(`Stays can be at most ${MAX_NIGHTS} nights.`)
     navigate(`/book/${property.slug}?${bookingQuery({ kind: 'stay', checkIn: dates.checkIn, checkOut: dates.checkOut, startTime: '', hours: 0, party })}`)
@@ -111,11 +114,11 @@ function StayForm({ property, initial, party, guests }: { property: PropertyDeta
         <button type="button" onClick={() => setCalendarOpen(!calendarOpen)} aria-expanded={calendarOpen} className="w-full grid grid-cols-2 text-left divide-x divide-slate-300">
           <span className="p-3">
             <span className="block text-[10px] font-bold uppercase text-slate-700">Check-in · {formatTime(property.checkInTime)}</span>
-            <span className={`text-sm ${dates.checkIn ? 'text-slate-900' : 'text-slate-400'}`}>{dates.checkIn ? formatDate(dates.checkIn, { month: 'short', day: 'numeric', year: 'numeric' }) : 'Add date'}</span>
+            <span className={`text-sm ${dates.checkIn ? 'text-slate-900' : 'text-slate-400'}`}>{dates.checkIn ? formatDate(dates.checkIn, { month: 'short', day: 'numeric', year: 'numeric' }) : t('box.addDate')}</span>
           </span>
           <span className="p-3">
             <span className="block text-[10px] font-bold uppercase text-slate-700">Check-out · {formatTime(property.checkOutTime)}</span>
-            <span className={`text-sm ${dates.checkOut ? 'text-slate-900' : 'text-slate-400'}`}>{dates.checkOut ? formatDate(dates.checkOut, { month: 'short', day: 'numeric', year: 'numeric' }) : 'Add date'}</span>
+            <span className={`text-sm ${dates.checkOut ? 'text-slate-900' : 'text-slate-400'}`}>{dates.checkOut ? formatDate(dates.checkOut, { month: 'short', day: 'numeric', year: 'numeric' }) : t('box.addDate')}</span>
           </span>
         </button>
         {calendarOpen && (
@@ -128,11 +131,11 @@ function StayForm({ property, initial, party, guests }: { property: PropertyDeta
       {guests}
       {error && <p role="alert" className="text-xs font-semibold text-rose-600">{error}</p>}
       <button type="button" onClick={reserve} className="w-full bg-gradient-to-r from-brand-600 to-brand-500 hover:from-brand-700 hover:to-brand-600 text-white font-bold py-4 rounded-2xl shadow-lg shadow-brand-500/20 text-sm transition">
-        {!ready ? 'Check availability' : property.management === 'managed' ? 'Reserve' : 'Request to book'}
+        {!ready ? t('stay.checkAvailability') : property.management === 'managed' ? t('stay.bookNow') : t('stay.requestToBook')}
       </button>
       {quote && (
         <>
-          <p className="text-center text-xs text-slate-500 animate-fade-in">You won’t be charged yet</p>
+          <p className="text-center text-xs text-slate-500 animate-fade-in">{t('box.noCharge')}</p>
           <div className="animate-fade-in"><PriceBreakdown quote={quote} /></div>
         </>
       )}
@@ -141,6 +144,7 @@ function StayForm({ property, initial, party, guests }: { property: PropertyDeta
 }
 
 function DayOutForm({ property, party, guests }: { property: PropertyDetail; party: GuestBreakdown; guests: React.ReactNode }) {
+  const t = useT()
   const navigate = useNavigate()
   const d = property.dayUseSettings!
   const [date, setDate] = useState('')
@@ -172,8 +176,8 @@ function DayOutForm({ property, party, guests }: { property: PropertyDetail; par
   const quote = start ? quoteDayUse(d, hours) : null
 
   const reserve = () => {
-    if (!date) return setError('Choose a date.')
-    if (!start) return setError('Choose a start time.')
+    if (!date) return setError(t('box.chooseDate'))
+    if (!start) return setError(t('box.chooseStart'))
     navigate(`/book/${property.slug}?${bookingQuery({ kind: 'dayuse', checkIn: date, checkOut: '', startTime: start, hours, party })}`)
   }
 
@@ -196,7 +200,7 @@ function DayOutForm({ property, party, guests }: { property: PropertyDetail; par
           <label className="block p-3">
             <span className="block text-[10px] font-bold uppercase text-slate-700">Start</span>
             <select value={start} disabled={!date || !busy} onChange={(e) => { setStart(e.target.value); setHours(d.blockHours); setError(null) }} className="w-full text-sm bg-transparent focus:outline-none disabled:text-slate-400">
-              <option value="">{!date ? 'Pick a date' : !busy ? 'Loading…' : freeStarts.length ? 'Choose' : 'Fully booked'}</option>
+              <option value="">{!date ? t('box.pickDate') : !busy ? t('common.loading') : freeStarts.length ? t('common.continue') : t('box.fullyBooked')}</option>
               {freeStarts.map((m) => <option key={m} value={toHHMM(m)}>{formatTime(toHHMM(m))}</option>)}
             </select>
           </label>
@@ -214,7 +218,7 @@ function DayOutForm({ property, party, guests }: { property: PropertyDetail; par
       {guests}
       {error && <p role="alert" className="text-xs font-semibold text-rose-600">{error}</p>}
       <button type="button" onClick={reserve} className="w-full bg-gradient-to-r from-brand-yellow-500 to-brand-500 hover:from-brand-yellow-600 hover:to-brand-600 text-white font-bold py-4 rounded-2xl shadow-lg shadow-brand-500/20 text-sm transition">
-        {!start ? 'Check availability' : property.management === 'managed' ? 'Reserve day out' : 'Request day out'}
+        {!start ? t('stay.checkAvailability') : property.management === 'managed' ? t('box.reserveDayOut') : t('box.requestDayOut')}
       </button>
       {quote && (
         <dl className="space-y-2 text-sm text-slate-600 animate-fade-in">

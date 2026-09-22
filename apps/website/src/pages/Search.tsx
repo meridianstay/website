@@ -2,7 +2,7 @@ import { lazy, Suspense, useEffect, useState } from 'react'
 import { useNavigate, useSearchParams } from 'react-router'
 import { formatDateRange, type PropertySummary } from '@meridian/shared'
 import { api } from '@meridian/shared/client'
-import { EmptyState, ErrorNote } from '@meridian/ui'
+import { EmptyState, ErrorNote, useT } from '@meridian/ui'
 import { PropertyCard, PropertyCardSkeleton } from '../components/PropertyCard'
 import { PROPERTY_TYPES, SORT_OPTIONS, guestLabel, readSearch, searchUrl } from '../lib/search'
 import { usePlace } from '../lib/place'
@@ -12,6 +12,7 @@ import { useDocumentTitle } from '../lib/useDocumentTitle'
 const PropertyMap = lazy(() => import('../components/PropertyMap'))
 
 export function Search() {
+  const t = useT()
   const [params] = useSearchParams()
   const navigate = useNavigate()
   const state = readSearch(params)
@@ -70,8 +71,8 @@ export function Search() {
     <div className="max-w-[1180px] mx-auto px-5 py-8">
       {/* Filters */}
       <div className="bg-white rounded-3xl p-4 sm:p-5 shadow-sm border border-slate-200 mb-6 space-y-4">
-        <div className="flex items-center gap-2 overflow-x-auto pb-1" role="group" aria-label="Property type">
-          <button type="button" onClick={() => update({ type: undefined })} className={chip(!state.type)} aria-pressed={!state.type}>All stays</button>
+        <div className="flex items-center gap-2 overflow-x-auto pb-1" role="group" aria-label={t('search.propertyType')}>
+          <button type="button" onClick={() => update({ type: undefined })} className={chip(!state.type)} aria-pressed={!state.type}>{t('search.allStays')}</button>
           {PROPERTY_TYPES.map((t) => (
             <button key={t.type} type="button" onClick={() => update({ type: t.type })} className={chip(state.type === t.type)} aria-pressed={state.type === t.type}>
               <i className={`fa-solid fa-${t.icon} mr-1.5`} aria-hidden="true"></i>{t.label}
@@ -87,17 +88,17 @@ export function Search() {
             }}
           >
             <label className="text-[10px] font-bold uppercase text-slate-500">
-              Min price
+              {t('search.minPrice')}
               <input type="number" min={0} inputMode="numeric" value={priceDraft.min} onChange={(e) => setPriceDraft({ ...priceDraft, min: e.target.value })} placeholder="₹0" className="block mt-1 w-24 bg-slate-50 border border-slate-200 rounded-xl px-3 py-2 text-sm font-semibold text-slate-800 focus:outline-none focus:border-brand-500" />
             </label>
             <label className="text-[10px] font-bold uppercase text-slate-500">
-              Max price
+              {t('search.maxPrice')}
               <input type="number" min={0} inputMode="numeric" value={priceDraft.max} onChange={(e) => setPriceDraft({ ...priceDraft, max: e.target.value })} placeholder="Any" className="block mt-1 w-24 bg-slate-50 border border-slate-200 rounded-xl px-3 py-2 text-sm font-semibold text-slate-800 focus:outline-none focus:border-brand-500" />
             </label>
             <button type="submit" className="bg-slate-900 text-white text-xs font-bold px-4 py-2.5 rounded-xl">Apply</button>
           </form>
           <label className="text-[10px] font-bold uppercase text-slate-500">
-            Sort by
+            {t('search.sortBy')}
             <select value={state.sort ?? 'recommended'} onChange={(e) => {
               const sort = e.target.value as typeof state.sort
               // "Nearest first" measures from the visitor's chosen place.
@@ -108,17 +109,17 @@ export function Search() {
           </label>
           <div className="flex-1" />
           {filtersActive && (
-            <button type="button" onClick={() => { setPriceDraft({ min: '', max: '' }); navigate('/search') }} className="text-xs font-bold text-slate-600 underline py-2.5">Clear all</button>
+            <button type="button" onClick={() => { setPriceDraft({ min: '', max: '' }); navigate('/search') }} className="text-xs font-bold text-slate-600 underline py-2.5">{t('search.clearAll')}</button>
           )}
           <button type="button" onClick={() => setShowMap(!showMap)} className="bg-brand-50 hover:bg-brand-100 text-brand-700 text-xs font-bold py-2.5 px-4 rounded-xl border border-brand-100 flex items-center space-x-2">
             <i className={`fa-solid ${showMap ? 'fa-grip' : 'fa-map'}`} aria-hidden="true"></i>
-            <span>{showMap ? 'Show list' : 'Show map'}</span>
+            <span>{showMap ? t('search.showList') : t('search.showMap')}</span>
           </button>
         </div>
       </div>
 
       <p className="text-sm font-semibold text-slate-600 mb-5" aria-live="polite">
-        {results ? `${results.length} ${results.length === 1 ? 'stay' : 'stays'}` : 'Searching…'}
+        {results ? t('search.results', { count: results.length }) : t('search.searching')}
         {summary.length > 0 && <span className="font-normal text-slate-500"> · {summary.join(' · ')}</span>}
         {state.checkIn && <span className="font-normal text-slate-500"> · only showing stays free on these dates</span>}
       </p>
@@ -130,9 +131,9 @@ export function Search() {
           <div className="bg-white rounded-3xl border border-slate-200">
             <EmptyState
               icon="magnifying-glass"
-              title="No stays match your search"
+              title="{t('search.none')}"
               body="Try different dates, fewer filters, or another destination."
-              action={<button type="button" onClick={() => navigate('/search')} className="bg-slate-900 text-white text-xs font-bold py-3 px-6 rounded-2xl">Clear filters</button>}
+              action={<button type="button" onClick={() => navigate('/search')} className="bg-slate-900 text-white text-xs font-bold py-3 px-6 rounded-2xl">{t('search.clearFilters')}</button>}
             />
           </div>
           <StayRequest defaultWhere={state.where} />
@@ -153,7 +154,7 @@ export function Search() {
           </div>
           {showMap && (
             <div className="lg:col-span-2 h-[70vh] lg:h-[calc(100vh-140px)] lg:sticky lg:top-24 rounded-3xl overflow-hidden border border-slate-200 bg-slate-100">
-              <Suspense fallback={<div className="h-full flex items-center justify-center text-sm text-slate-400">Loading map…</div>}>
+              <Suspense fallback={<div className="h-full flex items-center justify-center text-sm text-slate-400">{t('search.loadingMap')}</div>}>
                 <PropertyMap pins={results ?? []} highlightId={hovered} onSelect={(pin) => navigate(`/stays/${pin.slug}${linkSearch}`)} />
               </Suspense>
             </div>

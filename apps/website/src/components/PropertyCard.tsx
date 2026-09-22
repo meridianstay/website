@@ -3,6 +3,7 @@ import { fallbackImage, formatPrice, type PropertySummary } from '@meridian/shar
 import { api } from '@meridian/shared/client'
 import { useWishlist } from '../lib/wishlist'
 import { usePlace } from '../lib/place'
+import { useT } from '@meridian/ui'
 
 interface Props {
   property: PropertySummary
@@ -16,6 +17,7 @@ interface Props {
 }
 
 export function PropertyCard({ property, linkSearch = '', onHover, index = 0, promotionId }: Props) {
+  const t = useT()
   const { has, toggle } = useWishlist()
   const { place, distanceTo } = usePlace()
   const saved = has(property.id)
@@ -46,14 +48,14 @@ export function PropertyCard({ property, linkSearch = '', onHover, index = 0, pr
             <span>{property.type}</span>
           </span>
           {property.assured && (
-            <span className="bg-brand-600 text-white px-2.5 py-1 rounded-full text-[11px] font-bold shadow-sm" title="Meridian Assured: inspected and verified by our team">
-              <i className="fa-solid fa-circle-check mr-1" aria-hidden="true"></i>Assured
+            <span className="bg-brand-600 text-white px-2.5 py-1 rounded-full text-[11px] font-bold shadow-sm" title={t('card.assuredHint')}>
+              <i className="fa-solid fa-circle-check mr-1" aria-hidden="true"></i>{t('stay.assured')}
             </span>
           )}
           {property.isNew && <span className="bg-brand-yellow-500 text-slate-900 px-2.5 py-1 rounded-full text-[11px] font-extrabold shadow-sm">NEW</span>}
           {promotionId && (
-            <span className="bg-slate-900/85 text-white px-2.5 py-1 rounded-full text-[11px] font-bold shadow-sm" title="This host paid to promote this stay">
-              <i className="fa-solid fa-bullhorn mr-1" aria-hidden="true"></i>Promoted
+            <span className="bg-slate-900/85 text-white px-2.5 py-1 rounded-full text-[11px] font-bold shadow-sm" title={t('card.promotedHint')}>
+              <i className="fa-solid fa-bullhorn mr-1" aria-hidden="true"></i>{t('stay.promoted')}
             </span>
           )}
         </div>
@@ -70,7 +72,7 @@ export function PropertyCard({ property, linkSearch = '', onHover, index = 0, pr
               <span className="text-slate-300 font-normal">({property.reviewCount})</span>
             </>
           ) : (
-            <span>New</span>
+            <span>{t('stay.new')}</span>
           )}
         </div>
       </div>
@@ -106,7 +108,7 @@ export function PropertyCard({ property, linkSearch = '', onHover, index = 0, pr
             )}
           </div>
           <span aria-hidden="true" className="bg-brand-50 group-hover:bg-brand-100 text-brand-700 text-xs font-bold py-2.5 px-4 rounded-xl transition">
-            View Details
+            {t('card.view')}
           </span>
         </div>
       </div>

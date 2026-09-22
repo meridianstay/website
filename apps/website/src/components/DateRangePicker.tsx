@@ -1,5 +1,6 @@
 import { useState } from 'react'
 import { addDays, daysInMonth, formatDate, monthStartISO, todayISO, weekdayOf, type DateRange } from '@meridian/shared'
+import { useT } from '@meridian/ui'
 
 interface Props {
   checkIn: string
@@ -15,6 +16,7 @@ const WEEKDAYS = ['Su', 'Mo', 'Tu', 'We', 'Th', 'Fr', 'Sa']
 
 /** Two-month range calendar. A night is booked if checkIn <= night < checkOut of any booking. */
 export function DateRangePicker({ checkIn, checkOut, onChange, booked = [], single = false }: Props) {
+  const t = useT()
   const today = todayISO()
   const start = checkIn || today
   const [view, setView] = useState({ year: Number(start.slice(0, 4)), month: Number(start.slice(5, 7)) - 1 })
@@ -43,13 +45,13 @@ export function DateRangePicker({ checkIn, checkOut, onChange, booked = [], sing
   return (
     <div>
       <div className="flex items-center justify-between mb-2">
-        <button type="button" onClick={() => shift(-1)} disabled={atCurrentMonth} aria-label="Previous month" className="w-9 h-9 rounded-full hover:bg-slate-100 disabled:opacity-30 disabled:hover:bg-transparent">
+        <button type="button" onClick={() => shift(-1)} disabled={atCurrentMonth} aria-label={t('cal.prev')} className="w-9 h-9 rounded-full hover:bg-slate-100 disabled:opacity-30 disabled:hover:bg-transparent">
           <i className="fa-solid fa-chevron-left text-xs" aria-hidden="true"></i>
         </button>
         <p className="text-xs text-slate-500" aria-live="polite">
-          {!checkIn ? 'Select your check-in date' : !checkOut ? 'Select your check-out date' : `${formatDate(checkIn)} – ${formatDate(checkOut)}`}
+          {!checkIn ? t('cal.pickCheckIn') : !checkOut ? t('cal.pickCheckOut') : `${formatDate(checkIn)} – ${formatDate(checkOut)}`}
         </p>
-        <button type="button" onClick={() => shift(1)} aria-label="Next month" className="w-9 h-9 rounded-full hover:bg-slate-100">
+        <button type="button" onClick={() => shift(1)} aria-label={t('cal.next')} className="w-9 h-9 rounded-full hover:bg-slate-100">
           <i className="fa-solid fa-chevron-right text-xs" aria-hidden="true"></i>
         </button>
       </div>
@@ -104,7 +106,7 @@ export function DateRangePicker({ checkIn, checkOut, onChange, booked = [], sing
       {(checkIn || checkOut) && (
         <div className="text-right mt-3">
           <button type="button" onClick={() => onChange({ checkIn: '', checkOut: '' })} className="text-xs font-bold text-slate-600 underline">
-            Clear dates
+            {t('cal.clear')}
           </button>
         </div>
       )}

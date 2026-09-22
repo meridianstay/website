@@ -4,12 +4,14 @@ import type { Destination } from '@meridian/shared'
 import { api } from '@meridian/shared/client'
 import { Modal } from './Modal'
 import { locateMe, usePlace } from '../lib/place'
+import { useT } from '@meridian/ui'
 
 let cache: Promise<Destination[]> | null = null
 export const loadDestinations = () => (cache ??= api.destinations().then((r) => r.destinations).catch(() => { cache = null; return [] }))
 
 /** Where are you heading? "Near me", popular destinations with photos, and every destination A–Z. */
 export function DestinationPicker({ open, onClose }: { open: boolean; onClose: () => void }) {
+  const t = useT()
   const navigate = useNavigate()
   const { place, setPlace } = usePlace()
   const [destinations, setDestinations] = useState<Destination[] | null>(null)
@@ -57,7 +59,7 @@ export function DestinationPicker({ open, onClose }: { open: boolean; onClose: (
           <label className="flex-1 relative">
             <span className="sr-only">Search destinations</span>
             <i className="fa-solid fa-magnifying-glass absolute left-4 top-1/2 -translate-y-1/2 text-slate-400 text-sm" aria-hidden="true"></i>
-            <input autoFocus value={q} onChange={(e) => setQ(e.target.value)} placeholder="Search a town or state"
+            <input autoFocus value={q} onChange={(e) => setQ(e.target.value)} placeholder={t('dest.searchPlaceholder')}
               className="w-full bg-slate-50 border border-slate-200 rounded-2xl py-3 pl-11 pr-3 text-sm focus:outline-none focus:border-brand-500" />
           </label>
           <button type="button" onClick={nearMe} disabled={locating}
@@ -80,7 +82,7 @@ export function DestinationPicker({ open, onClose }: { open: boolean; onClose: (
           <>
             {!q && popular.length > 0 && (
               <section>
-                <h3 className="text-xs font-extrabold uppercase tracking-wider text-slate-500 mb-3">Popular destinations</h3>
+                <h3 className="text-xs font-extrabold uppercase tracking-wider text-slate-500 mb-3">{t('dest.popular')}</h3>
                 <ul className="grid grid-cols-2 sm:grid-cols-3 gap-3">
                   {popular.map((d) => (
                     <li key={d.slug}>

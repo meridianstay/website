@@ -2,6 +2,7 @@ import { Link } from 'react-router'
 import type { HomeBlock, PropertySummary } from '@meridian/shared'
 import { PropertyCard, PropertyCardSkeleton } from './PropertyCard'
 import { searchUrl } from '../lib/search'
+import { useT } from '@meridian/ui'
 
 // The homepage sections admins arrange in the control center (Website content → Homepage).
 
@@ -43,6 +44,7 @@ function exploreUrl(b: HomeBlock) {
 }
 
 function StaysRow({ block, stays, promoted = false }: { block: HomeBlock; stays: PropertySummary[] | null; promoted?: boolean }) {
+  const t = useT()
   if (stays && stays.length === 0) return null
   if (promoted && !stays) return null
   return (
@@ -50,10 +52,10 @@ function StaysRow({ block, stays, promoted = false }: { block: HomeBlock; stays:
       <SectionHeading block={block} action={
         block.rule === 'nearby' ? (
           <button type="button" onClick={() => window.dispatchEvent(new Event('ms:pick-place'))} className="shrink-0 bg-brand-50 hover:bg-brand-100 text-brand-700 text-xs font-bold py-2.5 px-5 rounded-full transition">
-            <i className="fa-solid fa-location-dot mr-1.5" aria-hidden="true"></i>Choose your city
+            <i className="fa-solid fa-location-dot mr-1.5" aria-hidden="true"></i>{t('home.chooseCity')}
           </button>
         ) : (
-          <Link to={exploreUrl(block)} className="shrink-0 bg-slate-100 hover:bg-slate-200 text-slate-800 text-xs font-bold py-2.5 px-5 rounded-full transition">Explore all</Link>
+          <Link to={exploreUrl(block)} className="shrink-0 bg-slate-100 hover:bg-slate-200 text-slate-800 text-xs font-bold py-2.5 px-5 rounded-full transition">{t('home.exploreAll')}</Link>
         )
       } />
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-8">
@@ -66,11 +68,12 @@ function StaysRow({ block, stays, promoted = false }: { block: HomeBlock; stays:
 }
 
 function CategoryCards({ block }: { block: HomeBlock }) {
+  const t = useT()
   return (
     <section className="max-w-[1180px] mx-auto px-5 pt-14 pb-12">
       <SectionHeading block={block} action={
         <Link to="/search" className="shrink-0 text-xs font-semibold text-brand-600 hover:text-brand-700 flex items-center space-x-1">
-          <span>View all properties</span><i className="fa-solid fa-arrow-right text-[10px]" aria-hidden="true"></i>
+          <span>{t('home.viewAll')}</span><i className="fa-solid fa-arrow-right text-[10px]" aria-hidden="true"></i>
         </Link>
       } />
       <div className={`grid grid-cols-2 gap-6 ${block.cards.length >= 4 ? 'lg:grid-cols-4' : block.cards.length === 3 ? 'lg:grid-cols-3' : ''}`}>

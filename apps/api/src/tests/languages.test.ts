@@ -43,14 +43,26 @@ describe('languages', () => {
     assert.ok(err.fields.fallback)
   })
 
-  test('every language has a dictionary with the same keys as English', async () => {
-    const keys = Object.keys(en)
+  test('every language has a dictionary, and none of them invents a key', async () => {
+    const english = new Set(Object.keys(en))
     for (const { code } of LANGUAGES.filter((l) => l.code !== 'en')) {
       const loader = loaders[code]
       assert.ok(loader, `${code} has no dictionary`)
       const dict = (await loader()).default
-      assert.deepEqual(Object.keys(dict), keys, `${code} does not match the English keys`)
-      for (const key of keys) assert.ok(dict[key].trim(), `${code}.${key} is empty`)
+      const extra = Object.keys(dict).filter((k) => !english.has(k))
+      assert.deepEqual(extra, [], `${code} has keys English doesn't — they would never be used`)
+      for (const [key, text] of Object.entries(dict)) assert.ok(text.trim(), `${code}.${key} is empty`)
+    }
+  })
+
+  test('the languages we offer by default are fully translated', async () => {
+    // The rest fall back to English wording, which is fine, but these are the ones on the picker
+    // out of the box, so a half-translated screen would be ours to fix, not the client's.
+    const english = Object.keys(en)
+    for (const code of ['hi', 'mr', 'gu']) {
+      const dict = (await loaders[code]()).default
+      const missing = english.filter((k) => !(dict[k] ?? '').trim())
+      assert.deepEqual(missing, [], `${code} is missing ${missing.length} of ${english.length} keys`)
     }
   })
 
