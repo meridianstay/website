@@ -1,7 +1,7 @@
 import { beforeEach, describe, test } from 'node:test'
 import assert from 'node:assert/strict'
-import { LANGUAGES, collectContentStrings, defaultAbout, defaultLanguages, defaultSiteSettings, fill, offeredLanguages, pickLanguage, translateDeep, translationProgress } from '@meridian/shared'
-import { en, loaders } from '@meridian/shared/locales'
+import { LANGUAGES, collectContentStrings, defaultAbout, defaultHomeLayout, defaultLanguages, defaultSiteSettings, fill, offeredLanguages, pickLanguage, translateDeep, translationProgress } from '@meridian/shared'
+import { en, loaders, starterContent } from '@meridian/shared/locales'
 import { appearanceService } from '../services/appearance'
 import { contentRepo } from '../repositories'
 import { appError, createUser, resetDatabase } from './helpers'
@@ -72,19 +72,24 @@ describe('translating the words written in the control centre', () => {
   test('a translated heading replaces the English one everywhere it appears', async () => {
     const admin = await createUser('admin')
     await appearanceService.saveTranslations(admin.me, body({
-      mr: { 'Featured Meridian Stays': 'निवडक मेरिडियन मुक्काम', 'Explore Property Types': 'मालमत्तेचे प्रकार पाहा' },
+      mr: { 'Featured Meridian Stays': 'निवडक मेरिडियन मुक्काम' },
+      ta: { 'Featured Meridian Stays': 'தேர்ந்தெடுத்த இடங்கள்' },
     }))
 
     const words = await contentRepo.translations('mr')
-    assert.equal(words['Featured Meridian Stays'], 'निवडक मेरिडियन मुक्काम')
+    assert.equal(words['Featured Meridian Stays'], 'निवडक मेरिडियन मुक्काम', 'what the control centre saved wins')
+    assert.equal(words['Explore Property Types'], 'मालमत्तेचे प्रकार पाहा', 'and the starter pack fills the rest')
 
     const layout = await contentRepo.home()
     const marathi = translateDeep(layout, words)
     const titles = marathi.blocks.map((b) => b.title)
     assert.ok(titles.includes('निवडक मेरिडियन मुक्काम'))
     assert.ok(titles.includes('मालमत्तेचे प्रकार पाहा'))
-    // Anything without a translation keeps its original wording rather than going blank.
-    assert.ok(titles.includes('Promoted stays'))
+
+    // Tamil has no starter pack, so only the one saved sentence changes.
+    const tamil = translateDeep(layout, await contentRepo.translations('ta'))
+    assert.ok(tamil.blocks.map((b) => b.title).includes('தேர்ந்தெடுத்த இடங்கள்'))
+    assert.ok(tamil.blocks.map((b) => b.title).includes('Promoted stays'), 'untranslated wording is left alone')
     // Links, photos and ids are left exactly as they were.
     assert.equal(marathi.blocks[0].id, layout.blocks[0].id)
     assert.equal(marathi.hero.slides[0].image, layout.hero.slides[0].image)
@@ -99,8 +104,8 @@ describe('translating the words written in the control centre', () => {
       ta: { 'Featured Meridian Stays': 'தேர்ந்தெடுத்த' },
     }))
     assert.deepEqual(Object.keys(saved), ['mr'])
-    assert.deepEqual(await contentRepo.translations('en'), {})
-    assert.deepEqual(await contentRepo.translations('ta'), {})
+    assert.deepEqual(await contentRepo.translations('en'), {}, 'English is the original wording')
+    assert.deepEqual(await contentRepo.translations('ta'), {}, 'a language with no pack and nothing saved')
   })
 
   test('the control centre is offered every sentence a visitor can read', async () => {
@@ -122,5 +127,35 @@ describe('translating the words written in the control centre', () => {
     const progress = translationProgress(groups, { 'Featured Meridian Stays': 'x' })
     assert.equal(progress.done, 1)
     assert.ok(progress.total > 30)
+  })
+})
+
+describe('the starter translations', () => {
+  test('cover the homepage, header and footer as they ship', () => {
+    const groups = collectContentStrings({
+      home: defaultHomeLayout(),
+      footer: defaultSiteSettings.footer,
+      header: defaultSiteSettings.header,
+      announcement: defaultSiteSettings.announcement,
+    })
+    const wanted = new Set(groups.flatMap((g) => g.strings))
+    for (const lang of ['hi', 'mr', 'gu']) {
+      const pack = starterContent[lang]
+      assert.ok(pack, `${lang} has no starter pack`)
+      const missing = [...wanted].filter((s) => !(pack[s] ?? '').trim())
+      assert.deepEqual(missing, [], `${lang} is missing translations for the default wording`)
+      for (const [source, text] of Object.entries(pack)) {
+        assert.notEqual(text, source, `${lang}.${source} was left in English`)
+      }
+    }
+  })
+
+  test('keep the placeholders the original wording used', () => {
+    for (const lang of ['hi', 'mr', 'gu']) {
+      for (const [source, text] of Object.entries(starterContent[lang])) {
+        const marks = (s: string) => (s.match(/\{\w+\}/g) ?? []).sort()
+        assert.deepEqual(marks(text), marks(source), `${lang}.${source} lost a placeholder`)
+      }
+    }
   })
 })

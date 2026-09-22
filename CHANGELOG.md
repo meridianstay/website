@@ -9,12 +9,14 @@ Every change to Meridian Stay is recorded here, newest first. Each entry says wh
 - **Website content → Translations** is a new page. Pick a language and you get every sentence you have written — hero slides, section headings, property type cards, banners, the announcement bar, footer columns and small print, and the whole About us page — each with a box for its translation. A progress bar shows how many are done, and “Only show what’s left” hides the rest.
 - Translating a sentence once covers **every place it appears**, because translations are matched on the English wording rather than on where it sits.
 - Anything you leave empty simply shows in the original wording, so a half-finished language is still safe to offer.
+- **Hindi, Marathi and Gujarati start already translated.** The homepage, header and footer as they ship are pre-filled, so switching language changes the page straight away without anyone typing a word. They appear in the Translations page like any other entry, so you can reword them; anything you save wins over ours. Other languages start empty.
 - The website now asks the API for content **in the reader's language** and fetches it again when they switch, so the homepage, About us and every information page change over with the menus.
 
 ### Technical
 - `translateDeep()` in the shared package; `?lang=` on `/site`, `/home`, `/about` and `/pages/:slug`; `GET`/`PUT /admin/translations`.
 - `BrandProvider` now owns the single settings fetch and refetches it per language; the website's `useSite()` reads from it instead of fetching again.
-- 117 automated tests (3 new).
+- A starter pack in `shared/src/locales/content`, merged underneath whatever the control centre has saved.
+- 119 automated tests (5 new).
 
 ## 0.24.0 — 2026-09-21
 

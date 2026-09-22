@@ -1,4 +1,5 @@
 import { defaultPages, defaultSiteSettings, withAboutDefaults, withHomeDefaults, type AboutPage, type ContentPage, type ContentTranslations, type HomeLayout, type SiteSettings, type TranslationBook } from '@meridian/shared'
+import { starterContent, withStarterContent } from '@meridian/shared/locales'
 import { C, all, col, nowISO } from '../store/db'
 
 // Collections: siteSettings/{key} (plus siteSettings/aboutPage for the About us page), contentPages/{slug}
@@ -17,13 +18,19 @@ export const contentRepo = {
     if (!lang || lang === 'en') return {}
     const snap = await col(C.settings).doc('translations').get()
     const book = (snap.exists ? (snap.data()!.value as TranslationBook) : {}) ?? {}
-    return book[lang] ?? {}
+    return withStarterContent(lang, book[lang])
   },
 
   /** Every language's translations, for the control centre. */
   async translationBook(): Promise<TranslationBook> {
     const snap = await col(C.settings).doc('translations').get()
-    return (snap.exists ? (snap.data()!.value as TranslationBook) : {}) ?? {}
+    const book = (snap.exists ? (snap.data()!.value as TranslationBook) : {}) ?? {}
+    // The control centre sees the starter pack filled in, so it can edit those words like any other.
+    const merged: TranslationBook = { ...book }
+    for (const lang of new Set([...Object.keys(starterContent), ...Object.keys(book)])) {
+      merged[lang] = withStarterContent(lang, book[lang])
+    }
+    return merged
   },
 
   saveSetting: (key: string, value: object, userId: number) => col(C.settings).doc(key).set({ value, updatedAt: nowISO(), updatedBy: userId }),

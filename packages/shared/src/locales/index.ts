@@ -18,3 +18,4 @@ export const loaders: Record<string, () => Promise<{ default: Dictionary }>> = {
 }
 
 export { en }
+export { starterContent, withStarterContent } from './content'
