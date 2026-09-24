@@ -40,7 +40,7 @@ export function Property() {
 
   if (error?.status === 404) return <NotFound what="stay" />
   if (error) return <div className="max-w-[1180px] mx-auto px-5 py-12"><ErrorNote message={error.message} onRetry={load} /></div>
-  if (!property) return <Spinner label="Loading stay…" />
+  if (!property) return <Spinner label={t('stay.loading')} />
 
   const photos = [property.image, ...property.gallery]
   const search = readSearch(params)
@@ -73,10 +73,10 @@ export function Property() {
       <div className="flex flex-col sm:flex-row sm:items-end justify-between gap-3 mb-5">
         <div>
           <span className="inline-block text-[11px] font-bold uppercase text-brand-700 bg-brand-50 px-3 py-1 rounded-full mb-2">{property.type}</span>
-          <span className="inline-block ml-2 text-[11px] font-mono font-bold text-slate-500 bg-slate-100 px-2.5 py-1 rounded-full mb-2" title="Quote this code to our team, or search for it">{propertyCode(property.id)}</span>
+          <span className="inline-block ml-2 text-[11px] font-mono font-bold text-slate-500 bg-slate-100 px-2.5 py-1 rounded-full mb-2" title="{t('stay.quoteCode')}">{propertyCode(property.id)}</span>
           {property.assured && (
             <button type="button" onClick={() => setAssuredOpen(true)} className="inline-block ml-2 text-[11px] font-bold text-white bg-brand-600 hover:bg-brand-700 px-2.5 py-1 rounded-full mb-2">
-              <i className="fa-solid fa-circle-check mr-1" aria-hidden="true"></i>Meridian Assured
+              <i className="fa-solid fa-circle-check mr-1" aria-hidden="true"></i>{t('stay.assured')}
             </button>
           )}
           {property.isNew && <span className="inline-block ml-2 text-[11px] font-extrabold text-slate-900 bg-brand-yellow-500 px-2.5 py-1 rounded-full mb-2">NEW</span>}
@@ -90,7 +90,7 @@ export function Property() {
             {property.reviewCount > 0 ? (
               <a href="#reviews" className="hover:underline"><i className="fa-solid fa-star text-brand-yellow-400 mr-1" aria-hidden="true"></i>{property.rating.toFixed(2)} · {property.reviewCount} reviews</a>
             ) : (
-              <span><i className="fa-solid fa-star text-brand-yellow-400 mr-1" aria-hidden="true"></i>New listing</span>
+              <span><i className="fa-solid fa-star text-brand-yellow-400 mr-1" aria-hidden="true"></i>{t('stay.newListing')}</span>
             )}
             <span aria-hidden="true">·</span>
             <a href="#location" className="hover:underline"><i className="fa-solid fa-location-dot text-slate-400 mr-1" aria-hidden="true"></i>{property.location}</a>
@@ -98,7 +98,7 @@ export function Property() {
         </div>
         <div className="flex space-x-2">
           <button type="button" onClick={share} className="text-sm font-semibold text-slate-700 hover:bg-slate-100 px-3 py-2 rounded-xl">
-            <i className="fa-solid fa-arrow-up-from-bracket mr-2" aria-hidden="true"></i>{copied ? 'Link copied' : 'Share'}
+            <i className="fa-solid fa-arrow-up-from-bracket mr-2" aria-hidden="true"></i>{copied ? t('stay.linkCopied') : 'Share'}
           </button>
           <button type="button" onClick={() => toggle(property.id)} aria-pressed={saved} className="text-sm font-semibold text-slate-700 hover:bg-slate-100 px-3 py-2 rounded-xl">
             <i className={`fa-solid fa-heart mr-2 ${saved ? 'text-rose-500' : 'text-slate-400'}`} aria-hidden="true"></i>{saved ? 'Saved' : 'Save'}
@@ -146,7 +146,7 @@ export function Property() {
             </section>
           )}
 
-          <ul className="flex flex-wrap gap-2" aria-label="Key facts">
+          <ul className="flex flex-wrap gap-2" aria-label={t('stay.keyFacts')}>
             {[
               ['bed', `${property.beds} ${property.beds === 1 ? 'bedroom' : 'bedrooms'}`],
               ['bath', `${property.baths} ${property.baths === 1 ? 'bathroom' : 'bathrooms'}`],
@@ -186,14 +186,14 @@ export function Property() {
           {property.videoUrl && (
             <section className="pt-8 border-t border-slate-200">
               <h2 className="text-lg font-bold text-slate-900 mb-1"><i className="fa-solid fa-video text-brand-600 mr-2" aria-hidden="true"></i>{t('stay.videoTour')}</h2>
-              <p className="text-sm text-slate-500 mb-4">A walk-through from the host.</p>
+              <p className="text-sm text-slate-500 mb-4">{t('stay.videoNote')}</p>
               <VideoPlayer url={property.videoUrl} title={property.title} />
             </section>
           )}
 
           {property.dayUseSettings && (
             <section className="pt-8 border-t border-slate-200">
-              <h2 className="text-lg font-bold text-slate-900 mb-1"><i className="fa-solid fa-sun text-brand-yellow-500 mr-2" aria-hidden="true"></i>Day out</h2>
+              <h2 className="text-lg font-bold text-slate-900 mb-1"><i className="fa-solid fa-sun text-brand-yellow-500 mr-2" aria-hidden="true"></i>{t('search.dayUse')}</h2>
               <p className="text-sm text-slate-600 max-w-prose">
                 Book the property for a picnic, pool day or celebration: {formatPrice(property.dayUseSettings.price)} for {property.dayUseSettings.blockHours} hours
                 {property.dayUseSettings.extraHourPrice > 0 && <>, then {formatPrice(property.dayUseSettings.extraHourPrice)} for each extra hour</>}, any time between {formatTime(property.dayUseSettings.opensAt)} and {formatTime(property.dayUseSettings.closesAt)}
@@ -212,7 +212,7 @@ export function Property() {
                     <span className={`w-8 h-8 rounded-full flex items-center justify-center shrink-0 ${ok ? 'bg-brand-50 text-brand-600' : 'bg-rose-50 text-rose-500'}`}>
                       <i className={`fa-solid fa-${r.icon} text-xs`} aria-hidden="true"></i>
                     </span>
-                    <span><span className="sr-only">{ok ? 'Allowed: ' : 'Not allowed: '}</span>{ok ? r.yes : r.no}</span>
+                    <span><span className="sr-only">{ok ? `${t('stay.allowed')} ` : `${t('stay.notAllowed')} `}</span>{t(`rule.${r.key}.${ok ? 'yes' : 'no'}`)}</span>
                   </li>
                 )
               })}
@@ -227,7 +227,7 @@ export function Property() {
             {property.securityDeposit > 0 && (
               <div className="mt-4 flex items-start gap-3 bg-amber-50 border border-amber-100 rounded-2xl p-4 max-w-prose">
                 <i className="fa-solid fa-shield-halved text-amber-600 mt-0.5" aria-hidden="true"></i>
-                <p className="text-sm text-slate-700"><span className="font-bold">Refundable security deposit: {formatPrice(property.securityDeposit)}.</span> Paid to the host at check-in (cash or UPI) and returned at check-out if nothing is damaged.</p>
+                <p className="text-sm text-slate-700"><span className="font-bold">Refundable security deposit: {formatPrice(property.securityDeposit)}.</span> {t('stay.depositNote')}</p>
               </div>
             )}
           </section>
@@ -246,7 +246,7 @@ export function Property() {
             <h2 className="text-lg font-bold text-slate-900">
               {property.reviewCount > 0 ? (
                 <><i className="fa-solid fa-star text-brand-yellow-400 mr-2" aria-hidden="true"></i>{property.rating.toFixed(2)} · {property.reviewCount} reviews</>
-              ) : 'No reviews yet'}
+              ) : t('stay.noReviews')}
             </h2>
             {property.ratingBreakdown.count > 0 && <RatingSummary breakdown={property.ratingBreakdown} average={property.rating} />}
             {property.reviewableBookingCode && <ReviewForm slug={property.slug} bookingCode={property.reviewableBookingCode} onPosted={load} />}
@@ -278,13 +278,13 @@ export function Property() {
         <aside id="book" className="lg:sticky lg:top-28 h-max space-y-4 scroll-mt-28">
           <BookingBox property={property} initial={{ ...search, kind: params.get('kind') === 'dayuse' ? 'dayuse' : 'stay' }} />
           <div className="bg-brand-50 border border-brand-100 rounded-3xl p-5">
-            <p className="font-bold text-sm text-slate-900"><i className="fa-solid fa-shield-heart text-brand-600 mr-2" aria-hidden="true"></i>The Meridian Promise</p>
+            <p className="font-bold text-sm text-slate-900"><i className="fa-solid fa-shield-heart text-brand-600 mr-2" aria-hidden="true"></i>{t('stay.promise')}</p>
             <ul className="mt-2 space-y-1.5 text-xs text-slate-600">
-              <li><i className="fa-solid fa-check text-brand-600 mr-1.5" aria-hidden="true"></i>Every listing is checked by our team before it goes live.</li>
+              <li><i className="fa-solid fa-check text-brand-600 mr-1.5" aria-hidden="true"></i>{t('stay.everyListingChecked')}</li>
               <li><i className="fa-solid fa-check text-brand-600 mr-1.5" aria-hidden="true"></i>If the host cancels or the place isn’t as described, we refund you in full and help you find another stay.</li>
               <li><i className="fa-solid fa-check text-brand-600 mr-1.5" aria-hidden="true"></i>No booking fees. Cancel up to 48 hours before check-in and everything but our convenience fee comes back.</li>
             </ul>
-            <Link to="/trust-safety" className="inline-block mt-3 text-xs font-bold text-brand-700 underline">How we keep you safe</Link>
+            <Link to="/trust-safety" className="inline-block mt-3 text-xs font-bold text-brand-700 underline">{t('stay.howSafe')}</Link>
           </div>
         </aside>
       </div>
@@ -292,7 +292,7 @@ export function Property() {
       {property.similar.length > 0 && (
         <section className="mt-16 pt-10 border-t border-slate-200">
           <h2 className="text-lg font-bold text-slate-900 mb-1">{t('stay.similar')}</h2>
-          <p className="text-sm text-slate-500 mb-6">Other places guests look at alongside this one.</p>
+          <p className="text-sm text-slate-500 mb-6">{t('stay.similarNote')}</p>
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
             {property.similar.map((p, i) => <PropertyCard key={p.id} property={p} index={i} />)}
           </div>
@@ -308,7 +308,7 @@ export function Property() {
             <p className="font-extrabold text-slate-900 truncate">{formatPrice(property.dayUseSettings.price)}<span className="text-xs font-normal text-slate-500"> for {property.dayUseSettings.blockHours}h</span></p>
           )}
           <p className="text-[11px] text-slate-500 truncate">
-            {property.management === 'managed' ? 'Instant book' : `Host replies in ${REQUEST_HOURS} h`}
+            {property.management === 'managed' ? t('stay.instantBook') : t('stay.hostReplies', { hours: REQUEST_HOURS })}
             {property.dayUseSettings && property.overnight ? ' · Day out available' : ''}
           </p>
         </div>
@@ -323,17 +323,17 @@ export function Property() {
         <VideoPlayer url={property.videoUrl} title={property.title} autoPlay />
       </Modal>
 
-      <Modal open={promotedOpen} onClose={() => setPromotedOpen(false)} title="Promoted stay">
+      <Modal open={promotedOpen} onClose={() => setPromotedOpen(false)} title={t('stay.promotedStay')}>
         <div className="space-y-3 text-sm text-slate-600">
-          <p className="flex items-center gap-2 font-bold text-slate-900"><i className="fa-solid fa-bullhorn text-slate-700" aria-hidden="true"></i>What “Promoted” means</p>
+          <p className="flex items-center gap-2 font-bold text-slate-900"><i className="fa-solid fa-bullhorn text-slate-700" aria-hidden="true"></i>{t('stay.promotedMeans')}</p>
           <p>The host is paying Meridian Stay to show this listing more often, for example at the top of search results or on our homepage.</p>
           <p>It doesn’t change anything else: reviews are only from guests who stayed, the price is the host’s own, and promoted stays are checked and must follow the same rules as every other listing.</p>
         </div>
       </Modal>
 
-      <Modal open={assuredOpen} onClose={() => setAssuredOpen(false)} title="Meridian Assured">
+      <Modal open={assuredOpen} onClose={() => setAssuredOpen(false)} title={t('stay.assured')}>
         <div className="space-y-3 text-sm text-slate-600">
-          <p className="flex items-center gap-2 font-bold text-slate-900"><i className="fa-solid fa-circle-check text-brand-600" aria-hidden="true"></i>What the badge means</p>
+          <p className="flex items-center gap-2 font-bold text-slate-900"><i className="fa-solid fa-circle-check text-brand-600" aria-hidden="true"></i>{t('stay.badgeMeans')}</p>
           <p>Our team has visited or thoroughly reviewed this property: the photos match, the amenities are real, and the host answers guests quickly.</p>
           <p>Assured stays are re-checked whenever the listing changes, and we step in ourselves if anything goes wrong during your stay.</p>
         </div>
@@ -367,6 +367,7 @@ export function Property() {
 
 /** Overall stars, how many reviews gave each rating, and the property and service averages. */
 function RatingSummary({ breakdown, average }: { breakdown: RatingBreakdown; average: number }) {
+  const t = useT()
   const most = Math.max(1, ...breakdown.stars)
   return (
     <div className="grid sm:grid-cols-2 gap-6 bg-slate-50 rounded-3xl p-5">
@@ -395,7 +396,7 @@ function RatingSummary({ breakdown, average }: { breakdown: RatingBreakdown; ave
             <dd className="font-extrabold text-slate-900 tabular-nums">{value === null ? '—' : value.toFixed(1)}</dd>
           </div>
         ))}
-        <p className="text-xs text-slate-400">Guests rate the property and the host’s service separately.</p>
+        <p className="text-xs text-slate-400">{t('stay.ratingSplit')}</p>
       </dl>
     </div>
   )
@@ -403,6 +404,7 @@ function RatingSummary({ breakdown, average }: { breakdown: RatingBreakdown; ave
 
 /** Plays an uploaded video, or embeds a YouTube or Vimeo link. */
 function VideoPlayer({ url, title, autoPlay = false }: { url: string; title: string; autoPlay?: boolean }) {
+  const t = useT()
   const embed = embedUrl(url)
   if (embed) {
     return (
@@ -412,7 +414,7 @@ function VideoPlayer({ url, title, autoPlay = false }: { url: string; title: str
     )
   }
   if (!isPlayableVideo(url)) {
-    return <a href={url} target="_blank" rel="noreferrer" className="text-sm font-bold text-brand-700 underline">Watch the video tour</a>
+    return <a href={url} target="_blank" rel="noreferrer" className="text-sm font-bold text-brand-700 underline">{t('stay.watchTour')}</a>
   }
   return <video src={url} controls playsInline autoPlay={autoPlay} preload="metadata" className="w-full max-h-[70vh] rounded-2xl bg-slate-900" />
 }

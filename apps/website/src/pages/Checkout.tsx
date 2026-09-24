@@ -2,7 +2,7 @@ import { useEffect, useState } from 'react'
 import { Link, useNavigate, useParams, useSearchParams } from 'react-router'
 import { formatDate, formatDateRange, formatPrice, formatTime, HOUSE_RULES, minutesOf, quoteDayUse, quoteStay, REQUEST_HOURS, type PaymentMethod, type PropertyDetail } from '@meridian/shared'
 import { ApiError, api } from '@meridian/shared/client'
-import { ErrorNote, Spinner, useAuth } from '@meridian/ui'
+import { ErrorNote, Spinner, useAuth, useT } from '@meridian/ui'
 import { PriceBreakdown } from '../components/PriceBreakdown'
 import { bookingQuery, partyLabel, readBooking } from '../lib/booking'
 import { useSite } from '../lib/site'
@@ -16,6 +16,7 @@ const METHODS: { value: PaymentMethod; label: string; icon: string }[] = [
 ]
 
 export function Checkout() {
+  const t = useT()
   const { slug = '' } = useParams()
   const [params] = useSearchParams()
   const { user } = useAuth()
@@ -55,7 +56,7 @@ export function Checkout() {
       <div className="max-w-xl mx-auto px-5 py-16 text-center space-y-4">
         <h1 className="text-2xl font-extrabold text-slate-900">{datesTaken ? 'Those dates were just booked' : 'Choose your dates first'}</h1>
         <p className="text-sm text-slate-500">
-          {datesTaken ? 'Someone booked some of these nights. Pick new dates on the stay page.' : isDay ? `Pick a date, start time and up to ${max} guests.` : `Pick check-in and check-out dates and up to ${max} guests.`}
+          {datesTaken ? t('checkout.takenNights') : isDay ? `Pick a date, start time and up to ${max} guests.` : `Pick check-in and check-out dates and up to ${max} guests.`}
         </p>
         <Link to={backToStay} className="inline-block bg-slate-900 text-white text-xs font-bold py-3 px-6 rounded-2xl">Back to {property.title}</Link>
       </div>
@@ -75,8 +76,8 @@ export function Checkout() {
   const submit = async (e: React.FormEvent) => {
     e.preventDefault()
     const errors: Record<string, string> = {}
-    if (!/^\+?[\d\s-]{8,20}$/.test(form.phone.trim())) errors.contactPhone = 'Enter a valid phone number, e.g. +91 98765 43210.'
-    if (!form.agreed) errors.agreed = 'Please accept the booking terms to continue.'
+    if (!/^\+?[\d\s-]{8,20}$/.test(form.phone.trim())) errors.contactPhone = t('checkout.badPhone')
+    if (!form.agreed) errors.agreed = t('checkout.acceptTerms')
     setFieldErrors(errors)
     if (Object.keys(errors).length) return
 
@@ -128,14 +129,14 @@ export function Checkout() {
   return (
     <div className="max-w-[1180px] mx-auto px-5 py-10">
       <Link to={changeLink} className="text-xs font-bold text-slate-600 hover:text-slate-900 inline-flex items-center space-x-2 mb-6">
-        <i className="fa-solid fa-arrow-left" aria-hidden="true"></i><span>Back to stay</span>
+        <i className="fa-solid fa-arrow-left" aria-hidden="true"></i><span>{t('checkout.backToStay')}</span>
       </Link>
       <h1 className="text-3xl font-extrabold text-slate-900 mb-8">{instant ? 'Confirm and pay' : 'Request to book'}</h1>
 
       <form onSubmit={submit} noValidate className="grid grid-cols-1 lg:grid-cols-5 gap-10">
         <div className="lg:col-span-3 space-y-6">
           <section className="bg-white rounded-3xl p-6 border border-slate-200 space-y-4">
-            <h2 className="text-lg font-bold text-slate-900">Your trip</h2>
+            <h2 className="text-lg font-bold text-slate-900">{t('checkout.yourTrip')}</h2>
             <dl className="grid grid-cols-2 gap-4 text-sm">
               {isDay ? (
                 <div><dt className="text-xs font-bold uppercase text-slate-400">Day out</dt><dd className="font-semibold text-slate-900">{formatDate(checkIn, { weekday: 'short', month: 'short', day: 'numeric' })} · {formatTime(choice.startTime)}–{formatTime(endTime)} ({choice.hours} h)</dd></div>
@@ -148,7 +149,7 @@ export function Checkout() {
           </section>
 
           <section className="bg-white rounded-3xl p-6 border border-slate-200 space-y-3">
-            <h2 className="text-lg font-bold text-slate-900">House rules</h2>
+            <h2 className="text-lg font-bold text-slate-900">{t('stay.houseRules')}</h2>
             <ul className="grid grid-cols-1 sm:grid-cols-2 gap-2 text-sm">
               {HOUSE_RULES.map((r) => (
                 <li key={r.key} className="flex items-center gap-2 text-slate-700">
@@ -164,15 +165,15 @@ export function Checkout() {
           </section>
 
           <section className="bg-white rounded-3xl p-6 border border-slate-200 space-y-4">
-            <h2 className="text-lg font-bold text-slate-900">Contact details</h2>
+            <h2 className="text-lg font-bold text-slate-900">{t('checkout.contact')}</h2>
             <div>
-              <label htmlFor="phone" className="block text-xs font-bold uppercase text-slate-500 mb-1">Phone number</label>
+              <label htmlFor="phone" className="block text-xs font-bold uppercase text-slate-500 mb-1">{t('booking.contactPhone')}</label>
               <input id="phone" type="tel" autoComplete="tel" value={form.phone} onChange={(e) => setForm({ ...form, phone: e.target.value })} placeholder="+91 98765 43210" aria-invalid={!!fieldErrors.contactPhone} aria-describedby="phone-help" className={input} />
-              <p id="phone-help" className={`text-xs mt-1 ${fieldErrors.contactPhone ? 'text-rose-600 font-semibold' : 'text-slate-400'}`}>{fieldErrors.contactPhone ?? 'Your host uses this to coordinate check-in.'}</p>
+              <p id="phone-help" className={`text-xs mt-1 ${fieldErrors.contactPhone ? 'text-rose-600 font-semibold' : 'text-slate-400'}`}>{fieldErrors.contactPhone ?? t('checkout.phoneWhy')}</p>
             </div>
             <div>
-              <label htmlFor="requests" className="block text-xs font-bold uppercase text-slate-500 mb-1">Message for the host (optional)</label>
-              <textarea id="requests" rows={3} maxLength={500} value={form.requests} onChange={(e) => setForm({ ...form, requests: e.target.value })} placeholder="Arrival time, dietary needs, celebrations…" className={input} />
+              <label htmlFor="requests" className="block text-xs font-bold uppercase text-slate-500 mb-1">{t('checkout.messageHost')}</label>
+              <textarea id="requests" rows={3} maxLength={500} value={form.requests} onChange={(e) => setForm({ ...form, requests: e.target.value })} placeholder={t('checkout.requestsPlaceholder')} className={input} />
             </div>
           </section>
 
@@ -180,13 +181,13 @@ export function Checkout() {
             <div className="flex items-center justify-between">
               <h2 className="text-lg font-bold text-slate-900">Payment</h2>
               {paymentsOnline ? (
-                <span className="text-[10px] font-extrabold uppercase bg-brand-100 text-brand-700 px-2.5 py-1 rounded-full"><i className="fa-solid fa-lock mr-1" aria-hidden="true"></i>Secured by Razorpay</span>
+                <span className="text-[10px] font-extrabold uppercase bg-brand-100 text-brand-700 px-2.5 py-1 rounded-full"><i className="fa-solid fa-lock mr-1" aria-hidden="true"></i>{t('checkout.securedBy')}</span>
               ) : (
-                <span className="text-[10px] font-extrabold uppercase bg-amber-100 text-amber-800 px-2.5 py-1 rounded-full">Test mode</span>
+                <span className="text-[10px] font-extrabold uppercase bg-amber-100 text-amber-800 px-2.5 py-1 rounded-full">{t('checkout.testMode')}</span>
               )}
             </div>
             <fieldset className="grid grid-cols-1 sm:grid-cols-3 gap-3">
-              <legend className="sr-only">Payment method</legend>
+              <legend className="sr-only">{t('checkout.paymentMethod')}</legend>
               {METHODS.map((m) => (
                 <label key={m.value} className={`border-2 rounded-2xl p-4 flex items-center space-x-3 cursor-pointer text-sm font-bold ${form.method === m.value ? 'border-brand-500 bg-brand-50/50 text-slate-900' : 'border-slate-200 text-slate-700'}`}>
                   <input type="radio" name="method" value={m.value} checked={form.method === m.value} onChange={() => setForm({ ...form, method: m.value })} className="accent-brand-600" />
@@ -198,15 +199,15 @@ export function Checkout() {
             <p className="text-xs text-slate-500 bg-slate-50 rounded-xl p-3">
               <i className="fa-solid fa-circle-info mr-1.5" aria-hidden="true"></i>
               {!paymentsOnline
-                ? `No money is taken while Meridian Stay is in testing. ${instant ? 'Your booking is confirmed straight away' : 'Your request goes straight to the host'} and you won’t be asked for card or bank details.`
+                ? `${t('checkout.testModeNote')} ${instant ? t('checkout.confirmedStraightAway') : t('checkout.requestGoesToHost')}.`
                 : instant
-                  ? 'You’ll pay securely in the Razorpay window. Your booking is confirmed as soon as the payment goes through.'
-                  : `You’ll approve the payment in the Razorpay window, but you’re only charged if the host accepts within ${REQUEST_HOURS} hours. If they decline or don’t reply, the hold is released.`}
+                  ? t('checkout.razorpayNote')
+                  : t('checkout.authoriseNote', { hours: REQUEST_HOURS })}
             </p>
           </section>
 
           <div className="bg-brand-50 border border-brand-100 rounded-2xl p-4 text-sm text-slate-700">
-            <p className="font-bold text-slate-900"><i className="fa-solid fa-shield-heart text-brand-600 mr-2" aria-hidden="true"></i>The Meridian Promise</p>
+            <p className="font-bold text-slate-900"><i className="fa-solid fa-shield-heart text-brand-600 mr-2" aria-hidden="true"></i>{t('stay.promise')}</p>
             <p className="text-xs mt-1">If the host cancels or the place isn’t as described, we refund you in full and help you find another stay. No booking fees. Cancel up to 48 hours before check-in and everything but our convenience fee comes back.</p>
           </div>
 
@@ -220,7 +221,7 @@ export function Checkout() {
 
           {submitError && !fieldErrors.contactPhone && <ErrorNote message={submitError} />}
           {fieldErrors.checkIn && (
-            <Link to={backToStay} className="text-sm font-bold text-brand-700 underline">Pick new dates</Link>
+            <Link to={backToStay} className="text-sm font-bold text-brand-700 underline">{t('checkout.pickNewDates')}</Link>
           )}
 
           <button type="submit" disabled={!!submitting} className="w-full bg-gradient-to-r from-brand-600 to-brand-500 hover:from-brand-700 hover:to-brand-600 disabled:from-slate-400 disabled:to-slate-400 text-white font-bold py-4 rounded-2xl shadow-xl shadow-brand-500/20 text-sm transition">
@@ -253,7 +254,7 @@ export function Checkout() {
               ) : (
                 <div className="flex gap-2">
                   <label className="flex-1">
-                    <span className="sr-only">Coupon code</span>
+                    <span className="sr-only">{t('booking.coupon')}</span>
                     <input value={couponInput} onChange={(e) => { setCouponInput(e.target.value.toUpperCase()); setCouponError(null) }} placeholder="Coupon code"
                       className="w-full bg-slate-50 border border-slate-200 rounded-xl p-2.5 text-sm font-mono uppercase focus:outline-none focus:border-brand-500" />
                   </label>
@@ -275,15 +276,16 @@ export function Checkout() {
 
 /** Explains instant booking (Meridian-managed) versus requests (host-managed). */
 export function BookingModeNote({ instant }: { instant: boolean }) {
+  const t = useT()
   return instant ? (
     <p className="text-xs text-slate-600 bg-brand-50 rounded-xl p-3 flex gap-2">
       <i className="fa-solid fa-bolt text-brand-600 mt-0.5" aria-hidden="true"></i>
-      <span><span className="font-bold text-slate-900">Instant book.</span> Managed by Meridian Stay, so your booking is confirmed straight away.</span>
+      <span><span className="font-bold text-slate-900">{t('checkout.instantBook')}</span> {t('checkout.managedNote')}</span>
     </p>
   ) : (
     <p className="text-xs text-slate-600 bg-amber-50 rounded-xl p-3 flex gap-2">
       <i className="fa-solid fa-hourglass-half text-amber-600 mt-0.5" aria-hidden="true"></i>
-      <span><span className="font-bold text-slate-900">Request to book.</span> The host confirms within {REQUEST_HOURS} hours. You’re not charged unless they accept.</span>
+      <span><span className="font-bold text-slate-900">{t('checkout.requestToBook')}</span> The host confirms within {REQUEST_HOURS} hours. You’re not charged unless they accept.</span>
     </p>
   )
 }

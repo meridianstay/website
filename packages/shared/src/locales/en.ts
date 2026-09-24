@@ -412,6 +412,25 @@ const en: Dictionary = {
   'request.whoPlaceholder': '8 adults, 2 kids',
   'request.budgetPlaceholder': 'Up to ₹8,000',
   'request.elsePlaceholder': 'Pet friendly, pool, close to the lake…',
+
+  // Checkout notes
+  'checkout.testModeNote': 'No money is taken while Meridian Stay is in testing.',
+  'checkout.authoriseNote': 'You’ll approve the payment in the Razorpay window, but you’re only charged if the host accepts within {hours} hours. If they decline or don’t reply, the hold is released.',
+
+  // Booking confirmation notes
+  'confirmed.goingTo': 'You’re going to {place}!',
+  'confirmed.hostHasUntil': 'The host has until {time} to accept.',
+  'confirmed.paidBy': 'Paid {amount} by Razorpay.',
+  'confirmed.hostHasPhone': 'Your host has your phone number ({phone}) to arrange check-in.',
+  'confirmed.hostSaid': 'The host said: “{reason}”',
+  'confirmed.tryOther': 'Try other dates or another stay.',
+  'confirmed.hostsHave': 'Hosts have {hours} hours to answer.',
+  'confirmed.refunding': '{amount} is being refunded to your original payment method (usually 5–7 working days).',
+  'confirmed.soon': 'soon',
+
+  // Stay page notes
+  'stay.allowed': 'Allowed:',
+  'stay.hostReplies': 'Host replies in {hours} h',
 }
 
 export default en

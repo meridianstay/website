@@ -2,6 +2,16 @@
 
 Every change to Meridian Stay is recorded here, newest first. Each entry says what changed for the people using the platform, then the notable technical changes.
 
+## 0.26.0 — 2026-09-24
+
+### The rest of the website reads in your language too
+- The first pass translated the menus; this one covers what people actually spend their time on: **property cards, the search page and every filter, the date and guest pickers, the destination picker, the booking box, the stay page, checkout and the booking confirmation**.
+- **Property types, house rules and amenity names** are translated as well — they come from the database rather than the code, so "Farmstay", "No pets" and "Breakfast included" now read properly in Hindi, Marathi and Gujarati.
+- 371 pieces of wording in total, up from 147.
+
+### Technical
+- The dictionary test now checks coverage instead of identical key sets: Hindi, Marathi and Gujarati must be complete, and the other seven languages fall back to English wording rather than blocking a release.
+
 ## 0.25.0 — 2026-09-22
 
 ### Changing language now changes the whole page, not just the buttons

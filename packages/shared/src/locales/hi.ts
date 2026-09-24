@@ -392,6 +392,25 @@ const hi: Dictionary = {
   'request.whoPlaceholder': '8 वयस्क, 2 बच्चे',
   'request.budgetPlaceholder': '₹8,000 तक',
   'request.elsePlaceholder': 'पालतू जानवर चलें, पूल हो, झील के पास…',
+
+  // Checkout notes
+  'checkout.testModeNote': 'मेरिडियन स्टे अभी परीक्षण में है, इसलिए कोई पैसा नहीं लिया जाता।',
+  'checkout.authoriseNote': 'आप Razorpay विंडो में भुगतान मंज़ूर करेंगे, पर पैसे तभी कटेंगे जब होस्ट {hours} घंटे में स्वीकार करें। मना करने या जवाब न देने पर रोक हट जाती है।',
+
+  // Booking confirmation notes
+  'confirmed.goingTo': 'आप {place} जा रहे हैं!',
+  'confirmed.hostHasUntil': 'होस्ट के पास स्वीकार करने के लिए {time} तक का समय है।',
+  'confirmed.paidBy': 'Razorpay से {amount} का भुगतान हुआ।',
+  'confirmed.hostHasPhone': 'चेक-इन तय करने के लिए होस्ट के पास आपका फ़ोन नंबर ({phone}) है।',
+  'confirmed.hostSaid': 'होस्ट ने कहा: “{reason}”',
+  'confirmed.tryOther': 'दूसरी तारीख़ें या कोई और ठिकाना देखिए।',
+  'confirmed.hostsHave': 'होस्ट के पास जवाब देने के लिए {hours} घंटे होते हैं।',
+  'confirmed.refunding': '{amount} आपके मूल भुगतान माध्यम में लौटाया जा रहा है (आमतौर पर 5–7 कार्यदिवस)।',
+  'confirmed.soon': 'जल्द',
+
+  // Stay page notes
+  'stay.allowed': 'अनुमति है:',
+  'stay.hostReplies': 'होस्ट {hours} घंटे में जवाब देते हैं',
 }
 
 export default hi

@@ -392,6 +392,25 @@ const gu: Dictionary = {
   'request.whoPlaceholder': '8 પુખ્ત, 2 બાળકો',
   'request.budgetPlaceholder': '₹8,000 સુધી',
   'request.elsePlaceholder': 'પાલતુ પ્રાણી ચાલે, પૂલ હોય, તળાવ પાસે…',
+
+  // Checkout notes
+  'checkout.testModeNote': 'મેરિડિયન સ્ટે હાલ પરીક્ષણમાં છે, તેથી કોઈ પૈસા લેવાતા નથી.',
+  'checkout.authoriseNote': 'તમે Razorpay વિન્ડોમાં ચુકવણી મંજૂર કરશો, પણ હોસ્ટ {hours} કલાકમાં સ્વીકારે તો જ પૈસા કપાશે. ના પાડે કે જવાબ ન આપે, તો રોક હટી જાય છે.',
+
+  // Booking confirmation notes
+  'confirmed.goingTo': 'તમે {place} જઈ રહ્યા છો!',
+  'confirmed.hostHasUntil': 'હોસ્ટ પાસે સ્વીકારવા માટે {time} સુધીનો સમય છે.',
+  'confirmed.paidBy': 'Razorpay થી {amount} ચુકવાયા.',
+  'confirmed.hostHasPhone': 'ચેક-ઇન નક્કી કરવા હોસ્ટ પાસે તમારો ફોન નંબર ({phone}) છે.',
+  'confirmed.hostSaid': 'હોસ્ટે કહ્યું: “{reason}”',
+  'confirmed.tryOther': 'બીજી તારીખો કે બીજું ઠેકાણું જુઓ.',
+  'confirmed.hostsHave': 'હોસ્ટ પાસે જવાબ આપવા {hours} કલાક હોય છે.',
+  'confirmed.refunding': '{amount} તમારી મૂળ ચુકવણી પદ્ધતિમાં પરત કરાઈ રહ્યા છે (સામાન્ય રીતે 5–7 કામકાજના દિવસ).',
+  'confirmed.soon': 'જલદી',
+
+  // Stay page notes
+  'stay.allowed': 'મંજૂરી છે:',
+  'stay.hostReplies': 'હોસ્ટ {hours} કલાકમાં જવાબ આપે છે',
 }
 
 export default gu

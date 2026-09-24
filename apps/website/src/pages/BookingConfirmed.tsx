@@ -2,7 +2,7 @@ import { useEffect, useState } from 'react'
 import { Link, useLocation, useParams } from 'react-router'
 import { bookingWhen, formatTime, formatPrice, REQUEST_HOURS, type BookingDetail } from '@meridian/shared'
 import { ApiError, api, appLink } from '@meridian/shared/client'
-import { ErrorNote, Spinner, useAuth } from '@meridian/ui'
+import { ErrorNote, Spinner, useAuth, useT } from '@meridian/ui'
 import { PriceBreakdown } from '../components/PriceBreakdown'
 import { CheckoutDismissed, payWithRazorpay } from '../lib/razorpay'
 import { useDocumentTitle } from '../lib/useDocumentTitle'
@@ -10,40 +10,43 @@ import { useDocumentTitle } from '../lib/useDocumentTitle'
 type Tone = 'good' | 'wait' | 'ended'
 
 /** Headline, badge and colour for each booking state. */
-function describe(b: BookingDetail): { tone: Tone; badge: string; title: string; note: string } {
+function describe(b: BookingDetail, t: Translate): { tone: Tone; badge: string; title: string; note: string } {
   const paidOnline = b.paymentStatus !== 'test'
   switch (b.status) {
     case 'AwaitingPayment':
-      return { tone: 'wait', badge: 'Payment pending', title: 'Finish paying to book', note: 'Your dates are held for a few minutes while you pay.' }
+      return { tone: 'wait', badge: t('confirmed.paymentPending'), title: t('confirmed.finishPaying'), note: t('confirmed.datesHeld') }
     case 'Requested':
       return {
-        tone: 'wait', badge: 'Request sent', title: 'Your request is with the host',
-        note: `The host has until ${fmtTime(b.expiresAt)} to accept. ${paidOnline ? 'Your payment is only authorised: you’re charged if they accept, and the hold is released if they don’t.' : 'Test mode: no payment is taken.'}`,
+        tone: 'wait', badge: t('confirmed.requestSent'), title: t('confirmed.withHost'),
+        note: `${t('confirmed.hostHasUntil', { time: fmtTime(b.expiresAt, t) })} ${paidOnline ? t('confirmed.authorisedNote') : t('confirmed.testModeNow')}`,
       }
     case 'Confirmed':
     case 'Completed':
       return {
-        tone: 'good', badge: 'Booking confirmed', title: 'You’re going to Nature!',
-        note: `${paidOnline ? `Paid ${formatPrice(b.total)} by Razorpay.` : 'Test mode: no payment was taken.'} Your host has your phone number (${b.contactPhone}) to arrange check-in.`,
+        tone: 'good', badge: t('confirmed.confirmed'), title: t('confirmed.goingTo', { place: b.property.location.split(',')[0].trim() }),
+        note: `${paidOnline ? t('confirmed.paidBy', { amount: formatPrice(b.total) }) : t('confirmed.testModeWas')} ${t('confirmed.hostHasPhone', { phone: b.contactPhone })}`,
       }
     case 'Declined':
-      return { tone: 'ended', badge: 'Request declined', title: 'The host couldn’t accept this request', note: `${b.declineReason ? `The host said: “${b.declineReason}” ` : ''}${paidOnline ? 'You haven’t been charged; the payment hold has been released. ' : ''}Try other dates or another stay.` }
+      return { tone: 'ended', badge: t('confirmed.declined'), title: t('confirmed.hostCouldnt'), note: `${b.declineReason ? `${t('confirmed.hostSaid', { reason: b.declineReason })} ` : ''}${paidOnline ? `${t('confirmed.notChargedHold')} ` : ''}${t('confirmed.tryOther')}` }
     case 'Expired':
       return b.paymentStatus === 'created' || b.paymentStatus === 'failed'
-        ? { tone: 'ended', badge: 'Checkout expired', title: 'This checkout expired', note: 'The payment wasn’t completed in time, so the dates were released. You can book again.' }
-        : { tone: 'ended', badge: 'Request expired', title: 'The host didn’t reply in time', note: `Hosts have ${REQUEST_HOURS} hours to answer. ${paidOnline ? 'You haven’t been charged; the hold has been released.' : ''}` }
+        ? { tone: 'ended', badge: t('confirmed.checkoutExpired'), title: t('confirmed.thisExpired'), note: t('confirmed.paymentLate') }
+        : { tone: 'ended', badge: t('confirmed.requestExpired'), title: t('confirmed.hostNoReply'), note: `${t('confirmed.hostsHave', { hours: REQUEST_HOURS })} ${paidOnline ? t('confirmed.notCharged') : ''}` }
     default:
       return {
-        tone: 'ended', badge: 'Booking cancelled', title: 'This booking was cancelled',
-        note: b.refunded > 0 ? `${formatPrice(b.refunded)} is being refunded to your original payment method (usually 5–7 working days).` : 'No payment was taken for this booking.',
+        tone: 'ended', badge: t('confirmed.cancelled'), title: t('confirmed.wasCancelled'),
+        note: b.refunded > 0 ? t('confirmed.refunding', { amount: formatPrice(b.refunded) }) : t('confirmed.noPaymentTaken'),
       }
   }
 }
 
-const fmtTime = (iso: string | null) =>
-  iso ? new Date(iso).toLocaleString('en-IN', { weekday: 'short', day: 'numeric', month: 'short', hour: 'numeric', minute: '2-digit' }) : 'soon'
+type Translate = ReturnType<typeof useT>
+
+const fmtTime = (iso: string | null, t: Translate) =>
+  iso ? new Date(iso).toLocaleString('en-IN', { weekday: 'short', day: 'numeric', month: 'short', hour: 'numeric', minute: '2-digit' }) : t('confirmed.soon')
 
 export function BookingConfirmed() {
+  const t = useT()
   const { code = '' } = useParams()
   const { user } = useAuth()
   const location = useLocation()
@@ -60,7 +63,7 @@ export function BookingConfirmed() {
   if (error) return <div className="max-w-xl mx-auto px-5 py-12"><ErrorNote message={error} /></div>
   if (!booking) return <Spinner />
 
-  const d = describe(booking)
+  const d = describe(booking, t)
 
   const pay = async () => {
     setPaying(true)
@@ -113,13 +116,13 @@ export function BookingConfirmed() {
             <dl className="grid sm:grid-cols-2 gap-3 text-sm">
               {booking.address && (
                 <div className="sm:col-span-2 bg-brand-50 rounded-xl p-3">
-                  <dt className="text-xs font-bold uppercase text-brand-700"><i className="fa-solid fa-location-dot mr-1.5" aria-hidden="true"></i>Address</dt>
+                  <dt className="text-xs font-bold uppercase text-brand-700"><i className="fa-solid fa-location-dot mr-1.5" aria-hidden="true"></i>{t('booking.address')}</dt>
                   <dd className="text-slate-800 mt-1 whitespace-pre-line">{booking.address}</dd>
                 </div>
               )}
               {booking.host && (
                 <div className="sm:col-span-2 bg-brand-50 rounded-xl p-3">
-                  <dt className="text-xs font-bold uppercase text-brand-700"><i className="fa-solid fa-user mr-1.5" aria-hidden="true"></i>Your host</dt>
+                  <dt className="text-xs font-bold uppercase text-brand-700"><i className="fa-solid fa-user mr-1.5" aria-hidden="true"></i>{t('booking.yourHost')}</dt>
                   <dd className="text-slate-800 mt-1">
                     {booking.host.name}
                     {booking.host.phone && <> · <a href={`tel:${booking.host.phone}`} className="font-semibold hover:underline">{booking.host.phone}</a></>}
@@ -128,10 +131,10 @@ export function BookingConfirmed() {
                 </div>
               )}
               {booking.kind === 'stay' && (
-                <div className="bg-slate-50 rounded-xl p-3"><dt className="text-xs font-bold uppercase text-slate-500">Times</dt><dd className="text-slate-800 mt-1">Check-in from {formatTime(booking.checkInTime)} · check-out by {formatTime(booking.checkOutTime)}</dd></div>
+                <div className="bg-slate-50 rounded-xl p-3"><dt className="text-xs font-bold uppercase text-slate-500">{t('booking.times')}</dt><dd className="text-slate-800 mt-1">Check-in from {formatTime(booking.checkInTime)} · check-out by {formatTime(booking.checkOutTime)}</dd></div>
               )}
               {booking.securityDeposit > 0 && (
-                <div className="bg-amber-50 rounded-xl p-3"><dt className="text-xs font-bold uppercase text-amber-700">Security deposit</dt><dd className="text-slate-800 mt-1">{formatPrice(booking.securityDeposit)} at check-in, refunded at check-out</dd></div>
+                <div className="bg-amber-50 rounded-xl p-3"><dt className="text-xs font-bold uppercase text-amber-700">{t('booking.securityDeposit')}</dt><dd className="text-slate-800 mt-1">{formatPrice(booking.securityDeposit)} at check-in, refunded at check-out</dd></div>
               )}
             </dl>
           )}
@@ -142,8 +145,8 @@ export function BookingConfirmed() {
             </button>
           )}
           <div className="flex flex-col sm:flex-row gap-3">
-            <a href={appLink('account', '/')} className="flex-1 text-center bg-slate-900 hover:bg-slate-800 text-white font-bold py-3.5 rounded-2xl text-sm">View my trips</a>
-            <Link to="/search" className="flex-1 text-center bg-slate-100 hover:bg-slate-200 text-slate-800 font-bold py-3.5 rounded-2xl text-sm">Keep exploring</Link>
+            <a href={appLink('account', '/')} className="flex-1 text-center bg-slate-900 hover:bg-slate-800 text-white font-bold py-3.5 rounded-2xl text-sm">{t('confirmed.viewTrips')}</a>
+            <Link to="/search" className="flex-1 text-center bg-slate-100 hover:bg-slate-200 text-slate-800 font-bold py-3.5 rounded-2xl text-sm">{t('confirmed.keepExploring')}</Link>
           </div>
         </div>
       </div>
