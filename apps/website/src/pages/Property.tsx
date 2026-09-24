@@ -163,6 +163,19 @@ export function Property() {
           </ul>
         </div>
 
+        <aside id="book" className="lg:col-start-3 lg:row-start-1 lg:row-span-2 lg:sticky lg:top-28 h-max space-y-4 scroll-mt-28">
+          <BookingBox property={property} initial={{ ...search, kind: params.get('kind') === 'dayuse' ? 'dayuse' : 'stay' }} />
+          <div className="bg-brand-50 border border-brand-100 rounded-3xl p-5">
+            <p className="font-bold text-sm text-slate-900"><i className="fa-solid fa-shield-heart text-brand-600 mr-2" aria-hidden="true"></i>{t('stay.promise')}</p>
+            <ul className="mt-2 space-y-1.5 text-xs text-slate-600">
+              <li><i className="fa-solid fa-check text-brand-600 mr-1.5" aria-hidden="true"></i>{t('stay.everyListingChecked')}</li>
+              <li><i className="fa-solid fa-check text-brand-600 mr-1.5" aria-hidden="true"></i>If the host cancels or the place isn’t as described, we refund you in full and help you find another stay.</li>
+              <li><i className="fa-solid fa-check text-brand-600 mr-1.5" aria-hidden="true"></i>No booking fees. Cancel up to 48 hours before check-in and everything but our convenience fee comes back.</li>
+            </ul>
+            <Link to="/trust-safety" className="inline-block mt-3 text-xs font-bold text-brand-700 underline">{t('stay.howSafe')}</Link>
+          </div>
+        </aside>
+
         <div className="lg:col-span-2 lg:row-start-2 space-y-10">
           <section>
             <h2 className="text-lg font-bold text-slate-900 mb-3">{t('stay.aboutSpace')}</h2>
@@ -277,18 +290,6 @@ export function Property() {
           </section>
         </div>
 
-        <aside id="book" className="lg:col-start-3 lg:row-start-1 lg:row-span-2 lg:sticky lg:top-28 h-max space-y-4 scroll-mt-28">
-          <BookingBox property={property} initial={{ ...search, kind: params.get('kind') === 'dayuse' ? 'dayuse' : 'stay' }} />
-          <div className="bg-brand-50 border border-brand-100 rounded-3xl p-5">
-            <p className="font-bold text-sm text-slate-900"><i className="fa-solid fa-shield-heart text-brand-600 mr-2" aria-hidden="true"></i>{t('stay.promise')}</p>
-            <ul className="mt-2 space-y-1.5 text-xs text-slate-600">
-              <li><i className="fa-solid fa-check text-brand-600 mr-1.5" aria-hidden="true"></i>{t('stay.everyListingChecked')}</li>
-              <li><i className="fa-solid fa-check text-brand-600 mr-1.5" aria-hidden="true"></i>If the host cancels or the place isn’t as described, we refund you in full and help you find another stay.</li>
-              <li><i className="fa-solid fa-check text-brand-600 mr-1.5" aria-hidden="true"></i>No booking fees. Cancel up to 48 hours before check-in and everything but our convenience fee comes back.</li>
-            </ul>
-            <Link to="/trust-safety" className="inline-block mt-3 text-xs font-bold text-brand-700 underline">{t('stay.howSafe')}</Link>
-          </div>
-        </aside>
       </div>
 
       {property.similar.length > 0 && (
