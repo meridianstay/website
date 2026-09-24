@@ -422,6 +422,9 @@ const hi: Dictionary = {
   // Guest counts
   'search.guestCount': '{count} मेहमान',
   'search.oneGuest': '1 मेहमान',
+
+  // Host payouts
+  'host.payouts': 'भुगतान',
 }
 
 export default hi

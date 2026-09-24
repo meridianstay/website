@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react'
 import { Link } from 'react-router'
 import { ErrorNote, PageHeader, Panel, Spinner } from '@meridian/ui'
-import type { CommissionRates, IntegrationStatus, PaymentSettingsView, PromotionSettings, ServiceCheck, SignInSettings, UploadSettings } from '@meridian/shared'
+import { PAYOUT_SCHEDULES, type CommissionRates, type IntegrationStatus, type PaymentSettingsView, type PayoutSettings, type PromotionSettings, type ServiceCheck, type SignInSettings, type UploadSettings } from '@meridian/shared'
 import { ApiError, adminApi } from '@meridian/shared/client'
 
 const SERVICES: [key: keyof IntegrationStatus['services'], label: string, detail: string][] = [
@@ -16,6 +16,7 @@ export function Settings() {
   const [uploads, setUploads] = useState<UploadSettings | null>(null)
   const [commission, setCommission] = useState<CommissionRates | null>(null)
   const [promotions, setPromotions] = useState<PromotionSettings | null>(null)
+  const [payouts, setPayouts] = useState<PayoutSettings | null>(null)
   const [demoReset, setDemoReset] = useState(false)
   const [error, setError] = useState<string | null>(null)
 
@@ -29,13 +30,14 @@ export function Settings() {
         setUploads(settings.uploads)
         setCommission(settings.commission)
         setPromotions(settings.promotions)
+        setPayouts(settings.payouts)
       })
       .catch((e) => setError(e.message))
   }
   useEffect(load, [])
 
   if (error && !status) return <ErrorNote message={error} onRetry={load} />
-  if (!status || !signIn || !uploads || !commission || !promotions) return <Spinner />
+  if (!status || !signIn || !uploads || !commission || !promotions || !payouts) return <Spinner />
 
   const modeLabel = { emulator: 'Local emulator (development)', live: 'Live Firebase project', unconfigured: 'Not connected' }[status.mode]
 
@@ -61,6 +63,38 @@ export function Settings() {
               </p>
             </div>
           </SettingsForm>
+          <SettingsForm title="Host payouts" save={() => adminApi.savePayoutSettings(payouts)}>
+            <p className="text-sm text-slate-500">When a host's earnings become payable, and how often you send them. Meridian never moves money on its own — your team makes each transfer.</p>
+            <div className="grid sm:grid-cols-2 gap-4">
+              <div>
+                <label htmlFor="hold-days" className="block text-xs font-bold uppercase text-slate-500 mb-1">Hold after check-out</label>
+                <select id="hold-days" value={payouts.holdDays} onChange={(e) => setPayouts({ ...payouts, holdDays: Number(e.target.value) })}
+                  className="w-full bg-slate-50 border border-slate-200 rounded-xl p-2.5 text-sm font-semibold">
+                  {[0, 1, 2, 3, 5, 7, 14].map((d) => <option key={d} value={d}>{d === 0 ? 'No hold' : `${d} day${d === 1 ? '' : 's'}`}</option>)}
+                </select>
+                <p className="text-xs text-slate-500 mt-1">Covers late cancellations and complaints.</p>
+              </div>
+              <div>
+                <label htmlFor="min-payout" className="block text-xs font-bold uppercase text-slate-500 mb-1">Smallest payout</label>
+                <div className="flex items-center">
+                  <span className="px-3 py-2.5 bg-slate-100 border border-r-0 border-slate-200 rounded-l-xl text-sm text-slate-600">₹</span>
+                  <input id="min-payout" type="number" min={0} step={100} value={payouts.minimumPayout}
+                    onChange={(e) => setPayouts({ ...payouts, minimumPayout: Number(e.target.value) })}
+                    className="w-full bg-slate-50 border border-slate-200 rounded-r-xl p-2.5 text-sm font-semibold focus:outline-none focus:border-brand-500" />
+                </div>
+                <p className="text-xs text-slate-500 mt-1">Smaller amounts wait for the next booking.</p>
+              </div>
+            </div>
+            <div>
+              <label htmlFor="payout-schedule" className="block text-xs font-bold uppercase text-slate-500 mb-1">How often you pay</label>
+              <select id="payout-schedule" value={payouts.schedule} onChange={(e) => setPayouts({ ...payouts, schedule: e.target.value as PayoutSettings['schedule'] })}
+                className="w-full bg-slate-50 border border-slate-200 rounded-xl p-2.5 text-sm font-semibold">
+                {PAYOUT_SCHEDULES.map((s) => <option key={s.value} value={s.value}>{s.label}</option>)}
+              </select>
+              <p className="text-xs text-slate-500 mt-1">{PAYOUT_SCHEDULES.find((s) => s.value === payouts.schedule)?.explain}</p>
+            </div>
+          </SettingsForm>
+
           <Panel title="Promotions (host ads)">
             <p className="text-sm text-slate-500">
               What hosts can buy, how far each plan reaches and what it costs now lives on its own page, beside the promotions waiting for your approval.

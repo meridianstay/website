@@ -271,6 +271,9 @@ export const bookingsRepo = {
       .sort((a, b) => b.checkIn.localeCompare(a.checkIn)).map((b) => toBooking(b, today))
   },
 
+  /** Every booking at this host's properties, as stored — used by payouts, which needs the raw sums. */
+  forHostRaw: (hostId: number) => readAll(col(C.bookings).where('hostId', '==', hostId)),
+
   async listForHost(hostId: number, today: string) {
     const rows = await readAll(col(C.bookings).where('hostId', '==', hostId))
     // Hosts only see bookings once the guest has paid (or requested).

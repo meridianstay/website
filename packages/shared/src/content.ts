@@ -4,6 +4,7 @@ import { defaultCommission, type CommissionRates } from './pricing'
 import { defaultTheme, type ThemeSettings } from './theme'
 import { defaultLanguages, type LanguageSettings } from './i18n'
 import { defaultNotifications, type NotificationSettings } from './notifications'
+import { defaultPayouts, type PayoutSettings } from './payouts'
 // Default website content. The API copies it into the database on first start; after that
 // the admin control center edits it. Legal pages start as drafts for a lawyer to review.
 
@@ -58,6 +59,8 @@ export interface SiteSettings {
   /** Paid promotions hosts can buy (daily rates in ₹). */
   promotions: PromotionSettings
   /** Logos and names, per app. */
+  /** When host earnings become payable, and how often you send them. */
+  payouts: PayoutSettings
   /** What the platform emails and texts, and which gateway it uses. */
   notifications: NotificationSettings
   /** Which languages the picker offers, and what a new visitor gets. */
@@ -91,6 +94,7 @@ export const defaultSiteSettings: SiteSettings = {
   uploads: { maxMb: 5 },
   commission: { ...defaultCommission },
   promotions: { ...defaultPromotions },
+  payouts: { ...defaultPayouts },
   notifications: structuredClone(defaultNotifications),
   languages: structuredClone(defaultLanguages),
   theme: { ...defaultTheme },

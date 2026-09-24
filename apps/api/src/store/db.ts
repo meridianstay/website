@@ -19,6 +19,8 @@ export const C = {
   counters: 'counters',
   /** What the platform has emailed or texted, and whether it arrived. */
   notifications: 'notifications',
+  /** What has been paid to hosts, and what each payment covered. */
+  payouts: 'payouts',
   /** Encrypted integration secrets (Razorpay, mail and SMS). Never listed in the admin Database screen. */
   secrets: 'secrets',
 } as const

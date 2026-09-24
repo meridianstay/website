@@ -422,6 +422,9 @@ const mr: Dictionary = {
   // Guest counts
   'search.guestCount': '{count} पाहुणे',
   'search.oneGuest': '1 पाहुणा',
+
+  // Host payouts
+  'host.payouts': 'देयके',
 }
 
 export default mr

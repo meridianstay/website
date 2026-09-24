@@ -1,4 +1,4 @@
-import { isIconName, AD_PLACEMENTS, AD_REACH, PLAN_LIMITS, ABOUT_LIMITS, aboutSchema, withAboutDefaults, type AboutItem, type AboutPage, type ContentPage, type Me, type PageSection, type SiteSettings } from '@meridian/shared'
+import { isIconName, AD_PLACEMENTS, AD_REACH, PAYOUT_SCHEDULES, PLAN_LIMITS, ABOUT_LIMITS, aboutSchema, withAboutDefaults, type AboutItem, type AboutPage, type ContentPage, type Me, type PageSection, type SiteSettings } from '@meridian/shared'
 import { auditLogRepo, contentRepo } from '../repositories'
 import { AppError, notFound } from '../http/errors'
 import { checkLength, collect, isImageUrl, str } from '../http/validate'
@@ -51,6 +51,11 @@ export const contentService = {
         if (!(Number(plan.pricePerDay) >= 0 && Number(plan.pricePerDay) <= PLAN_LIMITS.pricePerDay)) fields[`plans.${i}.pricePerDay`] = 'Enter a daily price in rupees (0–1,00,000).'
         if (!(Number(plan.maxDays) >= 1 && Number(plan.maxDays) <= PLAN_LIMITS.maxDays)) fields[`plans.${i}.maxDays`] = 'Between 1 and 365 days.'
       })
+    }
+    if (key === 'payouts') {
+      if (!(Number(value.holdDays) >= 0 && Number(value.holdDays) <= 30)) fields.holdDays = 'Choose between 0 and 30 days.'
+      if (!(Number(value.minimumPayout) >= 0 && Number(value.minimumPayout) <= 100000)) fields.minimumPayout = 'Enter an amount in rupees (0–1,00,000).'
+      if (!PAYOUT_SCHEDULES.some((s) => s.value === value.schedule)) fields.schedule = 'Choose how often you pay hosts.'
     }
     if (key === 'commission') {
       for (const f of ['managedPct', 'selfPct']) if (!(Number(value[f]) >= 0 && Number(value[f]) <= 60)) fields[f] = 'Choose between 0 and 60%.'

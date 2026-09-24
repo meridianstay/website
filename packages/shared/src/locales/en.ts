@@ -442,6 +442,9 @@ const en: Dictionary = {
   // Guest counts
   'search.guestCount': '{count} guests',
   'search.oneGuest': '1 guest',
+
+  // Host payouts
+  'host.payouts': 'Payouts',
 }
 
 export default en

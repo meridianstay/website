@@ -422,6 +422,9 @@ const gu: Dictionary = {
   // Guest counts
   'search.guestCount': '{count} મહેમાન',
   'search.oneGuest': '1 મહેમાન',
+
+  // Host payouts
+  'host.payouts': 'ચુકવણીઓ',
 }
 
 export default gu

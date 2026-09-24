@@ -5,6 +5,7 @@ import { bookingService } from '../services/bookings'
 import { promotionService } from '../services/promotions'
 import { listingService, parseListing } from '../services/listings'
 import { geocodeService } from '../services/geocode'
+import { payoutService } from '../services/payouts'
 import { body, currentUid, currentUser, requireUser, type AppEnv } from '../http/auth'
 import { str } from '../http/validate'
 import { rateLimit } from '../http/rateLimit'
@@ -27,6 +28,23 @@ hostRoutes.get('/host/places/at', requireUser, rateLimit('geocode', 120), async 
 /** The plans a host can buy, with the slots still free over the dates they are looking at. */
 hostRoutes.get('/host/promotion-plans', async (c) =>
   c.json({ plans: await promotionService.plansFor(str(c.req.query('startDate')), Number(c.req.query('days')) || 7) }))
+
+// ─── Payouts ─────────────────────────────────────────────────────────────────
+hostRoutes.get('/host/payouts', async (c) => {
+  const me = currentUser(c)
+  const [account, summary, history] = await Promise.all([
+    payoutService.view(me.id), payoutService.summary(me.id), payoutService.history(me.id),
+  ])
+  return c.json({ account, summary, payouts: history })
+})
+
+hostRoutes.put('/host/payout-account', async (c) => {
+  const b = await body(c)
+  return c.json({ account: await payoutService.saveAccount(currentUser(c), {
+    holder: str(b.holder), accountNumber: str(b.accountNumber), ifsc: str(b.ifsc),
+    bankName: str(b.bankName), upiId: str(b.upiId), pan: str(b.pan),
+  }) })
+})
 
 hostRoutes.get('/host/stats', async (c) => {
   await bookingService.sweepSoon()

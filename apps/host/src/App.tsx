@@ -11,6 +11,7 @@ const MyListings = lazy(() => import('./pages/MyListings').then((m) => ({ defaul
 const ListingEditor = lazy(() => import('./pages/ListingEditor').then((m) => ({ default: m.ListingEditor })))
 const HostBookings = lazy(() => import('./pages/HostBookings').then((m) => ({ default: m.HostBookings })))
 const Promotions = lazy(() => import('./pages/Promotions').then((m) => ({ default: m.Promotions })))
+const Payouts = lazy(() => import('./pages/Payouts').then((m) => ({ default: m.Payouts })))
 const ListingCalendar = lazy(() => import('./pages/ListingCalendar').then((m) => ({ default: m.ListingCalendar })))
 
 const nav: NavItem[] = [
@@ -18,6 +19,7 @@ const nav: NavItem[] = [
   { to: '/listings', label: 'host.myListings', icon: 'house-chimney' },
   { to: '/bookings', label: 'host.bookings', icon: 'calendar-days' },
   { to: '/promotions', label: 'host.promotions', icon: 'bullhorn' },
+  { to: '/payouts', label: 'host.payouts', icon: 'indian-rupee-sign' },
   { to: '/new', label: 'host.addListing', icon: 'plus' },
 ]
 
@@ -39,6 +41,7 @@ export default function App() {
                   <Route path="listings/:id/calendar" element={<Suspense fallback={<BrandLoader />}><ListingCalendar /></Suspense>} />
                   <Route path="bookings" element={<Suspense fallback={<BrandLoader />}><HostBookings /></Suspense>} />
                   <Route path="promotions" element={<Suspense fallback={<BrandLoader />}><Promotions /></Suspense>} />
+                  <Route path="payouts" element={<Suspense fallback={<BrandLoader />}><Payouts /></Suspense>} />
                   <Route path="new" element={<Suspense fallback={<BrandLoader />}><ListingEditor /></Suspense>} />
                   <Route path="*" element={<Dashboard />} />
                 </Routes>

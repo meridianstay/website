@@ -64,6 +64,12 @@ export const usersRepo = {
     return (await this.findByUid(uid))!
   },
 
+  /** Everyone who hosts and hasn't been suspended, for payouts. */
+  async allHosts(): Promise<UserDoc[]> {
+    const users = await all<UserDoc>(col(C.users))
+    return users.filter((u) => u.role === 'host' && !u.suspendedAt)
+  },
+
   async list(filters: { q?: string | null; role?: UserRole | null }): Promise<AdminUser[]> {
     const [users, properties, bookings] = await Promise.all([
       all<UserDoc>(col(C.users)),

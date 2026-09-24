@@ -183,6 +183,8 @@ Every host endpoint needs a signed-in user and only acts on that user's own list
 
 | Method | Path | Body / query | Returns |
 | --- | --- | --- | --- |
+| GET | `/api/host/payouts` | — | `{ account, summary, payouts }` — where money goes, what is due or on hold, and every payout so far |
+| PUT | `/api/host/payout-account` | `{ holder, accountNumber?, ifsc, bankName, upiId, pan }` | `{ account }`. A blank account number keeps the saved one; it is AES-encrypted and only the last four digits are ever returned. |
 | GET | `/api/host/promotion-plans` | `startDate`, `days` | `{ plans }` — every plan on offer with `slotsLeft` over those dates |
 | GET | `/api/host/places` | `q` (3+ characters), `country` (default `in`) | `{ places: [{ label, lat, lng, city, region, country, address }] }` from OpenStreetMap, proxied and cached for an hour |
 | GET | `/api/host/places/at` | `lat`, `lng` | `{ place }` at that point, or `null` |
@@ -245,6 +247,11 @@ Every change here is recorded in the activity log.
 | PUT | `/api/admin/branding` | `{ website, host, account, admin }`, each `{ logoUrl, showName, name, accent, subtitle }` | `{ branding }` as saved. `logoUrl` must be an uploaded or `https://` image. |
 | GET | `/api/admin/translations` | — | `{ translations }`: every language's content translations, keyed by the English wording |
 | PUT | `/api/admin/translations` | `{ [lang]: { [english]: translated } }` | `{ translations }` as saved. English and switched-off languages are dropped. |
+| GET | `/api/admin/payouts` | `status` | `{ minimumPayout, holdDays, hosts, payouts }` |
+| POST | `/api/admin/payouts` | `{ hostId }` | `{ payout }` covering everything due. Refused with no account, nothing due, or under the minimum. |
+| POST | `/api/admin/payouts/:id/paid` | `{ reference, note }` | `{ payout }`. The reference (UTR) is required and the host is told. |
+| POST | `/api/admin/payouts/:id/failed` | `{ note }` | `{ payout }`. The earnings return to the queue. |
+| GET | `/api/admin/payouts/account/:hostId` | — | The full bank details, for making the transfer. Recorded in the activity log. |
 | GET | `/api/admin/notifications` | — | Settings plus which secrets are saved and the event list |
 | PUT | `/api/admin/notifications` | Settings and templates | `{ notifications }` as saved |
 | PUT | `/api/admin/notifications/credentials` | `{ smtpHost, smtpPort, smtpUser, smtpPass?, smtpSecure, smsKey?, smsSecret? }` | The view again. Blank secrets keep the saved ones; all are AES-encrypted. |

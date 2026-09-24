@@ -1,6 +1,7 @@
 // The data layer: every Firestore read and write in the API lives in these repositories.
 export { usersRepo, toMe, type UserDoc, type AdminUser } from './users'
 export { notificationsRepo } from './notifications'
+export { payoutsRepo, type PayoutDoc } from './payouts'
 export { propertiesRepo, toPropertySummary, datesIn, type PropertyDoc, type HostListing, type AdminListing } from './properties'
 export { amenitiesRepo } from './amenities'
 export { bookingsRepo, toBooking, withGuest, keptMinor, NightsTakenError, HOLDING, type BookingDoc, type BookingWithGuest, type StoredStatus } from './bookings'

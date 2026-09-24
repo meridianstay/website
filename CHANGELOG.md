@@ -2,6 +2,24 @@
 
 Every change to Meridian Stay is recorded here, newest first. Each entry says what changed for the people using the platform, then the notable technical changes.
 
+## 0.30.0 — 2026-09-24
+
+### Paying hosts
+- Every booking already worked out the host's share and your commission. What was missing was somewhere to send it and a record of what was sent — both are here now.
+- **Hosts add their bank or UPI details** in a new Payouts page in the host portal. Account numbers are encrypted, and only ever shown back as the last four digits. A UPI id on its own is enough.
+- **Earnings wait out a hold period** after each guest checks out — two days by default — which covers late cancellations and complaints. Hosts see what is ready, what is still on hold, what is on its way and what has been paid.
+- **Control centre → Payouts** lists every host with money waiting, most owed first, and flags anyone who hasn't added an account. Create a payout, reveal the bank details to make the transfer, then record the bank's reference. The host is told immediately, with the reference they need to trace it.
+- A transfer that bounces is marked failed and **the earnings go straight back into the queue**.
+- **Settings → Host payouts** sets the hold period, the smallest amount worth transferring, and how often you pay.
+
+### How the money actually moves
+- Meridian does not send money on its own. Your team makes each transfer from your own bank or RazorpayX and records the reference here. Automating it needs a Razorpay Route account with a KYC-verified linked account per host; the ledger is built so that slots in later without changing anything a host sees.
+
+### Technical
+- A booking can never be paid twice: each payout records the booking codes it covers, and a failed payout releases them again.
+- Bank details are AES-256-GCM encrypted with the same `SETTINGS_ENCRYPTION_KEY` as the Razorpay and mail secrets. Revealing them is written to the activity log.
+- 146 automated tests (10 new).
+
 ## 0.29.0 — 2026-09-24
 
 ### Tablets

@@ -8,6 +8,7 @@ import { homepageService, staysFor } from '../services/homepage'
 import { couponService } from '../services/coupons'
 import { appearanceService } from '../services/appearance'
 import { notifyService } from '../services/notify'
+import { payoutService } from '../services/payouts'
 import { promotionService } from '../services/promotions'
 import { newBlock, type HomeBlock } from '@meridian/shared'
 import { demoResetAllowed, resetDemo } from '../store/resetDemo'
@@ -96,6 +97,27 @@ adminRoutes.put('/admin/translations', async (c) => c.json({ translations: await
 adminRoutes.put('/admin/languages', async (c) => c.json({ languages: await appearanceService.saveLanguages(admin(c), await body(c)) }))
 adminRoutes.put('/admin/theme', async (c) => c.json({ theme: await appearanceService.saveTheme(admin(c), await body(c)) }))
 adminRoutes.put('/admin/header', async (c) => c.json({ header: await appearanceService.saveHeader(admin(c), await body(c)) }))
+// ─── Payouts ─────────────────────────────────────────────────────────────────
+adminRoutes.get('/admin/payouts', async (c) => {
+  const [owing, payouts] = await Promise.all([payoutService.owing(), payoutService.all(c.req.query('status') ?? null)])
+  return c.json({ ...owing, payouts })
+})
+
+adminRoutes.post('/admin/payouts', async (c) =>
+  c.json({ payout: await payoutService.create(admin(c), Number((await body(c)).hostId)) }, 201))
+
+adminRoutes.post('/admin/payouts/:id/paid', async (c) => {
+  const b = await body(c)
+  return c.json({ payout: await payoutService.markPaid(admin(c), Number(c.req.param('id')), str(b.reference), str(b.note)) })
+})
+
+adminRoutes.post('/admin/payouts/:id/failed', async (c) =>
+  c.json({ payout: await payoutService.markFailed(admin(c), Number(c.req.param('id')), str((await body(c)).note)) }))
+
+/** The full bank details, for an admin about to make the transfer. Recorded in the activity log. */
+adminRoutes.get('/admin/payouts/account/:hostId', async (c) =>
+  c.json({ account: await payoutService.fullAccount(admin(c), Number(c.req.param('hostId'))) }))
+
 // ─── Notifications ───────────────────────────────────────────────────────────
 adminRoutes.get('/admin/notifications', async (c) => c.json(await notifyService.view()))
 adminRoutes.put('/admin/notifications', async (c) => c.json({ notifications: await notifyService.saveSettings(admin(c), await body(c)) }))

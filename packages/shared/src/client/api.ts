@@ -21,6 +21,15 @@ import type { ThemeSettings } from '../theme'
 import type { LanguageSettings } from '../i18n'
 import type { TranslationBook } from '../contentText'
 import type { EventDefinition, NotificationLogEntry, NotificationSettings } from '../notifications'
+import type { BankAccount, Payout, PayoutAccountView, PayoutSettings, PayoutSummary } from '../payouts'
+
+/** The control centre's payout screen: who is owed what, and every payout so far. */
+export interface PayoutQueue {
+  minimumPayout: number
+  holdDays: number
+  hosts: { hostId: number; hostName: string; contact: string; due: number; bookings: number; pending: number; accountReady: boolean; account: string }[]
+  payouts: Payout[]
+}
 
 /** What the Notifications screen shows: the settings, plus which secrets are already saved. */
 export interface NotificationsView extends NotificationSettings {
@@ -123,6 +132,8 @@ export const hostApi = {
   amenities: () => request<{ amenities: Amenity[] }>('/amenities'),
   /** Address search for the listing map (OpenStreetMap, through our API). */
   /** The promotion plans on offer, with slots free over these dates. */
+  payouts: () => request<{ account: PayoutAccountView; summary: PayoutSummary; payouts: Payout[] }>('/host/payouts'),
+  savePayoutAccount: (value: Partial<BankAccount>) => request<{ account: PayoutAccountView }>('/host/payout-account', { method: 'PUT', json: value }),
   promotionPlans: (startDate: string, days: number) => request<{ plans: PlanOnOffer[] }>(`/host/promotion-plans${qs({ startDate, days })}`),
   places: (q: string, country = 'in') => request<{ places: Place[] }>(`/host/places${qs({ q, country })}`),
   /** The address at a point, after the host drags the pin or uses their location. */
@@ -200,6 +211,11 @@ export const adminApi = {
   saveLanguages: (value: LanguageSettings) => request<{ languages: LanguageSettings }>('/admin/languages', { method: 'PUT', json: value }),
   saveTheme: (value: ThemeSettings) => request<{ theme: ThemeSettings }>('/admin/theme', { method: 'PUT', json: value }),
   saveHeader: (value: HeaderSettings) => request<{ header: HeaderSettings }>('/admin/header', { method: 'PUT', json: value }),
+  payoutQueue: (status?: string) => request<PayoutQueue>(`/admin/payouts${qs({ status })}`),
+  createPayout: (hostId: number) => request<{ payout: Payout }>('/admin/payouts', { method: 'POST', json: { hostId } }),
+  markPayoutPaid: (id: number, reference: string, note = '') => request<{ payout: Payout }>(`/admin/payouts/${id}/paid`, { method: 'POST', json: { reference, note } }),
+  markPayoutFailed: (id: number, note: string) => request<{ payout: Payout }>(`/admin/payouts/${id}/failed`, { method: 'POST', json: { note } }),
+  hostBankAccount: (hostId: number) => request<{ account: { holder: string; accountNumber: string; ifsc: string; bankName: string } }>(`/admin/payouts/account/${hostId}`),
   notifications: () => request<NotificationsView>('/admin/notifications'),
   saveNotifications: (value: NotificationSettings) => request<{ notifications: NotificationSettings }>('/admin/notifications', { method: 'PUT', json: value }),
   /** Blank secrets keep the saved ones. */
@@ -217,6 +233,7 @@ export const adminApi = {
   promotions: (status?: string) => request<{ campaigns: AdCampaign[] }>(`/admin/promotions${qs({ status })}`),
   approvePromotion: (id: number) => request<{ campaign: AdCampaign }>(`/admin/promotions/${id}/approve`, { method: 'POST' }),
   rejectPromotion: (id: number, reason: string) => request<{ campaign: AdCampaign }>(`/admin/promotions/${id}/reject`, { method: 'POST', json: { reason } }),
+  savePayoutSettings: (value: PayoutSettings) => request<void>('/admin/settings/payouts', { method: 'PUT', json: value }),
   savePromotionSettings: (value: PromotionSettings) => request<void>('/admin/settings/promotions', { method: 'PUT', json: value }),
   coupons: () => request<{ coupons: Coupon[] }>('/admin/coupons'),
   createCoupon: (coupon: Coupon) => request<{ coupon: Coupon }>('/admin/coupons', { method: 'POST', json: coupon }),

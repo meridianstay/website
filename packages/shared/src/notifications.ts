@@ -16,6 +16,7 @@ export type NotificationEvent =
   | 'listing.rejected'
   | 'promotion.approved'
   | 'promotion.rejected'
+  | 'payout.sent'
 
 export type Audience = 'guest' | 'host'
 
@@ -44,6 +45,7 @@ export const NOTIFICATION_EVENTS: EventDefinition[] = [
   { event: 'listing.rejected', to: 'host', label: 'Listing needs changes', when: 'Our team asks for changes', tokens: ['reason'] },
   { event: 'promotion.approved', to: 'host', label: 'Promotion approved', when: 'A paid promotion is approved', tokens: ['dates', 'total'] },
   { event: 'promotion.rejected', to: 'host', label: 'Promotion rejected', when: 'A paid promotion is rejected and refunded', tokens: ['reason', 'total'] },
+  { event: 'payout.sent', to: 'host', label: 'Payout sent', when: 'Your team marks a payout as paid', tokens: ['dates', 'total', 'reference', 'account'] },
 ]
 
 export interface MessageTemplate {
@@ -143,6 +145,12 @@ export const defaultNotifications: NotificationSettings = {
       'Your promotion for {property} is running',
       'Hello {name},\n\nYour promotion for {property} is approved and runs {dates}.\n\nPaid: {total}\n\nWatch how it performs here: {link}\n\n{site}',
       '{site}: your promotion for {property} is live, {dates}.',
+    ),
+    'payout.sent': template(
+      '{total} is on its way to you',
+      'Hello {name},\n\nWe have sent you {total} for your bookings from {dates}.\n\nTo: {account}\nBank reference: {reference}\n\nIt usually reaches the account within a working day. Every booking in this payout is listed here: {link}\n\n{site}',
+      '{site}: {total} sent to {account}. Bank ref {reference}.',
+      true,
     ),
     'promotion.rejected': template(
       'About your promotion for {property}',

@@ -21,6 +21,7 @@ const HomepageEditor = lazy(() => import('./pages/HomepageEditor').then((m) => (
 const Branding = lazy(() => import('./pages/Branding').then((m) => ({ default: m.Branding })))
 const Translations = lazy(() => import('./pages/Translations').then((m) => ({ default: m.Translations })))
 const Notifications = lazy(() => import('./pages/Notifications').then((m) => ({ default: m.Notifications })))
+const Payouts = lazy(() => import('./pages/Payouts').then((m) => ({ default: m.Payouts })))
 const Activity = lazy(() => import('./pages/Activity').then((m) => ({ default: m.Activity })))
 const Database = lazy(() => import('./pages/Database').then((m) => ({ default: m.Database })))
 const DatabaseTable = lazy(() => import('./pages/DatabaseTable').then((m) => ({ default: m.DatabaseTable })))
@@ -34,6 +35,7 @@ const nav: NavItem[] = [
   { to: '/reviews', label: 'Reviews', icon: 'star' },
   { to: '/coupons', label: 'Coupons', icon: 'ticket' },
   { to: '/promotions', label: 'Promotions', icon: 'bullhorn' },
+  { to: '/payouts', label: 'Payouts', icon: 'indian-rupee-sign' },
   { to: '/messages', label: 'Messages', icon: 'envelope' },
   { to: '/website', label: 'Website content', icon: 'pen-to-square' },
   { to: '/activity', label: 'Activity log', icon: 'clock-rotate-left' },
@@ -72,6 +74,7 @@ export default function App() {
                   <Route path="activity" element={<Suspense fallback={<BrandLoader />}><Activity /></Suspense>} />
                   <Route path="database" element={<Suspense fallback={<BrandLoader />}><Database /></Suspense>} />
                   <Route path="database/:table" element={<Suspense fallback={<BrandLoader />}><DatabaseTable /></Suspense>} />
+                  <Route path="payouts" element={<Suspense fallback={<BrandLoader />}><Payouts /></Suspense>} />
                   <Route path="notifications" element={<Suspense fallback={<BrandLoader />}><Notifications /></Suspense>} />
                   <Route path="settings" element={<Suspense fallback={<BrandLoader />}><Settings /></Suspense>} />
                   <Route path="*" element={<Overview />} />
