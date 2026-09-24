@@ -1,8 +1,10 @@
 import {
-  addDays, AD_PLACEMENTS, isISODate, isLiveToday, ratePerDay, todayISO,
+  addDays, AD_PLACEMENTS, formatDate, formatPrice, isISODate, isLiveToday, ratePerDay, todayISO,
   type AdCampaign, type AdPlacement, type Me, type PaymentRequest, type PropertySummary,
 } from '@meridian/shared'
-import { auditLogRepo, contentRepo, promotionsRepo, propertiesRepo, toPropertySummary } from '../repositories'
+import { auditLogRepo, contentRepo, promotionsRepo, propertiesRepo, toPropertySummary, usersRepo } from '../repositories'
+import { notifyService } from './notify'
+import { siteOrigin } from '../http/origin'
 import type { CampaignDoc } from '../repositories/promotions'
 import { AppError, notFound } from '../http/errors'
 import { collect, str } from '../http/validate'
@@ -136,6 +138,18 @@ export const promotionService = {
       }
     }
     await auditLogRepo.record(admin, approve ? 'promotion.approve' : 'promotion.reject', 'promotion', id, approve ? {} : { reason })
+
+    const host = await usersRepo.findById(c.hostId)
+    if (host) {
+      await notifyService.send(approve ? 'promotion.approved' : 'promotion.rejected',
+        { name: host.name, email: host.email, phone: host.phone }, {
+          property: c.property.title,
+          dates: `${formatDate(c.startDate, { day: 'numeric', month: 'short' })} – ${formatDate(c.endDate, { day: 'numeric', month: 'short' })}`,
+          total: formatPrice(c.total),
+          reason,
+          link: `${siteOrigin()}/host/promotions`,
+        })
+    }
     return publicFields((await promotionsRepo.find(id))!)
   },
 

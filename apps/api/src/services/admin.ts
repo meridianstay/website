@@ -4,6 +4,8 @@ import { nowISO } from '../store/db'
 import { auditLogRepo, bookingsRepo, messagesRepo, promotionsRepo, propertiesRepo, usersRepo, type MessageStatus } from '../repositories'
 import { AppError, notFound } from '../http/errors'
 import { checkLength, collect } from '../http/validate'
+import { notifyService } from './notify'
+import { siteOrigin } from '../http/origin'
 
 // Control-center actions. Every change is written to the audit log.
 
@@ -13,11 +15,25 @@ async function requireListing(id: number) {
   return p
 }
 
+/** Tells the host what our team decided about their listing. */
+async function tellHost(event: 'listing.approved' | 'listing.rejected', id: number, reason = '') {
+  const property = await propertiesRepo.get(id)
+  if (!property) return
+  const host = await usersRepo.findById(property.hostId)
+  if (!host) return
+  await notifyService.send(event, { name: host.name, email: host.email, phone: host.phone }, {
+    property: property.title,
+    reason,
+    link: `${siteOrigin()}/host/listings`,
+  })
+}
+
 export const adminService = {
   async approveListing(admin: Me, id: number) {
     await requireListing(id)
     await propertiesRepo.setFields(id, { status: 'Approved', rejectionReason: null, approvedAt: nowISO() })
     await auditLogRepo.record(admin, 'listing.approve', 'property', id)
+    await tellHost('listing.approved', id)
   },
 
   async rejectListing(admin: Me, id: number, reason: string) {
@@ -25,6 +41,7 @@ export const adminService = {
     await requireListing(id)
     await propertiesRepo.setFields(id, { status: 'Rejected', rejectionReason: reason, approvedAt: null, featuredRank: null })
     await auditLogRepo.record(admin, 'listing.reject', 'property', id, { reason })
+    await tellHost('listing.rejected', id, reason)
   },
 
   async featureListing(admin: Me, id: number, rank: number | null) {

@@ -20,6 +20,7 @@ const AboutEditor = lazy(() => import('./pages/AboutEditor').then((m) => ({ defa
 const HomepageEditor = lazy(() => import('./pages/HomepageEditor').then((m) => ({ default: m.HomepageEditor })))
 const Branding = lazy(() => import('./pages/Branding').then((m) => ({ default: m.Branding })))
 const Translations = lazy(() => import('./pages/Translations').then((m) => ({ default: m.Translations })))
+const Notifications = lazy(() => import('./pages/Notifications').then((m) => ({ default: m.Notifications })))
 const Activity = lazy(() => import('./pages/Activity').then((m) => ({ default: m.Activity })))
 const Database = lazy(() => import('./pages/Database').then((m) => ({ default: m.Database })))
 const DatabaseTable = lazy(() => import('./pages/DatabaseTable').then((m) => ({ default: m.DatabaseTable })))
@@ -37,6 +38,7 @@ const nav: NavItem[] = [
   { to: '/website', label: 'Website content', icon: 'pen-to-square' },
   { to: '/activity', label: 'Activity log', icon: 'clock-rotate-left' },
   { to: '/database', label: 'Database', icon: 'database' },
+  { to: '/notifications', label: 'Notifications', icon: 'bell' },
   { to: '/settings', label: 'Settings', icon: 'gear' },
 ]
 
@@ -70,6 +72,7 @@ export default function App() {
                   <Route path="activity" element={<Suspense fallback={<BrandLoader />}><Activity /></Suspense>} />
                   <Route path="database" element={<Suspense fallback={<BrandLoader />}><Database /></Suspense>} />
                   <Route path="database/:table" element={<Suspense fallback={<BrandLoader />}><DatabaseTable /></Suspense>} />
+                  <Route path="notifications" element={<Suspense fallback={<BrandLoader />}><Notifications /></Suspense>} />
                   <Route path="settings" element={<Suspense fallback={<BrandLoader />}><Settings /></Suspense>} />
                   <Route path="*" element={<Overview />} />
                 </Routes>

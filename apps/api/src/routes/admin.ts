@@ -1,12 +1,13 @@
 import { Hono } from 'hono'
 import { todayISO, type ListingStatus, type UserRole } from '@meridian/shared'
-import { auditLogRepo, contentRepo, messagesRepo, reviewsRepo, statsRepo, usersRepo, type MessageStatus } from '../repositories'
+import { auditLogRepo, contentRepo, messagesRepo, notificationsRepo, reviewsRepo, statsRepo, usersRepo, type MessageStatus } from '../repositories'
 import { integrationsService } from '../services/integrations'
 import { bookingService } from '../services/bookings'
 import { paymentsService } from '../services/payments'
 import { homepageService, staysFor } from '../services/homepage'
 import { couponService } from '../services/coupons'
 import { appearanceService } from '../services/appearance'
+import { notifyService } from '../services/notify'
 import { promotionService } from '../services/promotions'
 import { newBlock, type HomeBlock } from '@meridian/shared'
 import { demoResetAllowed, resetDemo } from '../store/resetDemo'
@@ -95,6 +96,30 @@ adminRoutes.put('/admin/translations', async (c) => c.json({ translations: await
 adminRoutes.put('/admin/languages', async (c) => c.json({ languages: await appearanceService.saveLanguages(admin(c), await body(c)) }))
 adminRoutes.put('/admin/theme', async (c) => c.json({ theme: await appearanceService.saveTheme(admin(c), await body(c)) }))
 adminRoutes.put('/admin/header', async (c) => c.json({ header: await appearanceService.saveHeader(admin(c), await body(c)) }))
+// ─── Notifications ───────────────────────────────────────────────────────────
+adminRoutes.get('/admin/notifications', async (c) => c.json(await notifyService.view()))
+adminRoutes.put('/admin/notifications', async (c) => c.json({ notifications: await notifyService.saveSettings(admin(c), await body(c)) }))
+
+adminRoutes.put('/admin/notifications/credentials', async (c) => {
+  const b = await body(c)
+  await notifyService.saveCredentials({
+    smtpHost: str(b.smtpHost), smtpPort: Number(b.smtpPort) || 587, smtpUser: str(b.smtpUser),
+    smtpPass: str(b.smtpPass) || undefined, smtpSecure: b.smtpSecure === true,
+    smsKey: str(b.smsKey) || undefined, smsSecret: str(b.smsSecret) || undefined,
+  })
+  return c.json(await notifyService.view())
+})
+
+/** Sends one message to the signed-in admin, so the setup can be checked before going live. */
+adminRoutes.post('/admin/notifications/test', async (c) => {
+  const me = admin(c)
+  const channel = str((await body(c)).channel) === 'sms' ? 'sms' : 'email'
+  return c.json(await notifyService.test({ name: me.name, email: me.email, phone: me.phone }, channel))
+})
+
+adminRoutes.get('/admin/notifications/log', async (c) =>
+  c.json({ entries: await notificationsRepo.recent(c.req.query('event') ?? null, c.req.query('status') ?? null) }))
+
 adminRoutes.put('/admin/bottom-nav', async (c) => c.json({ bottomNav: await appearanceService.saveBottomNav(admin(c), await body(c)) }))
 adminRoutes.put('/admin/footer', async (c) => c.json({ footer: await appearanceService.saveFooter(admin(c), await body(c)) }))
 

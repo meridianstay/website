@@ -1,5 +1,5 @@
 import {
-  addDays, bookingUnlocked, countedGuests, couponDiscount, dayUseRefundMinor, discountedPrice, formatTime, isTime, minutesOf, quoteDayUse, type GuestBreakdown,
+  addDays, bookingUnlocked, bookingWhen, countedGuests, couponDiscount, dayUseRefundMinor, discountedPrice, formatPrice, formatTime, isTime, minutesOf, quoteDayUse, type GuestBreakdown, type NotificationEvent,
   commissionMinor, commissionPct, daysBetween, guestRefundMinor, isISODate, MAX_NIGHTS, PAYMENT_HOLD_MINUTES, quoteStay, REQUEST_HOURS,
   todayISO, type BookingDetail, type Me, type PaymentMethod, type PaymentRequest,
 } from '@meridian/shared'
@@ -7,6 +7,8 @@ import { randomInt } from 'node:crypto'
 import { auditLogRepo, bookingsRepo, contentRepo, couponsRepo, keptMinor, NightsTakenError, propertiesRepo, toBooking, usersRepo, type BookingDoc } from '../repositories'
 import { nowISO } from '../store/db'
 import { AppError, notFound } from '../http/errors'
+import { notifyService } from './notify'
+import { siteOrigin } from '../http/origin'
 import { checkPhone, collect, str } from '../http/validate'
 import { paymentGateway, paymentsService, type GatewayConfig, type GatewayPayment } from './payments'
 
@@ -75,6 +77,39 @@ const returnedStatus = (b: BookingDoc) =>
   b.paymentStatus === 'test' ? 'test' as const : b.paymentStatus === 'paid' ? 'refunded' as const : b.paymentStatus === 'authorized' ? 'released' as const : b.paymentStatus
 
 let lastSweep = 0
+
+
+/** Everything a message about a booking can mention. */
+function bookingTokens(b: BookingDoc) {
+  const site = siteOrigin()
+  return {
+    code: b.code,
+    property: b.property.title,
+    dates: bookingWhen(toBooking(b, todayISO())),
+    guests: String(b.guests),
+    total: formatPrice(b.totalMinor / 100),
+    address: b.address || '',
+    hostName: b.host?.name ?? '',
+    hostPhone: b.host?.phone ?? '',
+    guestName: b.guest.name,
+    checkInTime: formatTime(b.checkInTime),
+    answerBy: b.expiresAt ? new Date(b.expiresAt).toLocaleString('en-IN', { day: 'numeric', month: 'short', hour: 'numeric', minute: '2-digit' }) : '',
+    refund: formatPrice(b.refundedMinor / 100),
+    fee: formatPrice((b.totalMinor - b.refundedMinor) / 100),
+    link: `${site}/booking/${b.code}`,
+  }
+}
+
+/** Tells the guest or the host what just happened. Failures are logged, never thrown. */
+async function announce(event: NotificationEvent, b: BookingDoc, extra: Record<string, string> = {}) {
+  const toHost = event === 'booking.requested' || event === 'booking.hostCancelled'
+  const who = toHost
+    ? { name: b.host?.name ?? 'there', email: b.host?.email || null, phone: b.host?.phone || null }
+    : { name: b.guest.name, email: b.guest.email, phone: b.guest.phone ?? b.contactPhone }
+  const tokens = { ...bookingTokens(b), ...extra }
+  if (toHost) tokens.link = `${siteOrigin()}/host/bookings`
+  await notifyService.send(event, who, tokens, b.code)
+}
 
 export const bookingService = {
   async create(guest: Me, uid: string, req: BookingRequest): Promise<{ booking: BookingDetail; payment: PaymentRequest | null }> {
@@ -189,6 +224,10 @@ export const bookingService = {
     }
 
     let booking = (await bookingsRepo.find(code))!
+    if (!cfg) {
+      // No payment gateway, so the booking is already in its final state and can be announced now.
+      await announce(booking.status === 'Requested' ? 'booking.requested' : 'booking.confirmed', booking)
+    }
     if (cfg) {
       try {
         const order = await paymentGateway().createOrder(cfg, {
@@ -267,6 +306,11 @@ export const bookingService = {
     if (!moved && status === 'captured') {
       const current = await bookingsRepo.find(b.code)
       if (current?.razorpayPaymentId !== payment.id) await paymentGateway().refund(cfg, payment.id, payment.amount).catch(() => {})
+      return
+    }
+    if (moved) {
+      const fresh = (await bookingsRepo.find(b.code))!
+      await announce(fresh.status === 'Requested' ? 'booking.requested' : 'booking.confirmed', fresh)
     }
   },
 
@@ -327,7 +371,11 @@ export const bookingService = {
     await refund(before, refundMinor)
     // A coupon on a booking that was never confirmed can be used again.
     if (before.couponCode && !before.confirmedAt) await couponsRepo.release(before.couponCode)
-    return toBooking((await bookingsRepo.find(code))!, today)
+    const cancelled = (await bookingsRepo.find(code))!
+    await announce('booking.cancelled', cancelled)
+    // The host only hears about bookings they had actually been told about.
+    if (before.status !== 'AwaitingPayment') await announce('booking.hostCancelled', cancelled)
+    return toBooking(cancelled, today)
   },
 
   /** The host accepts a request: the payment is captured and the stay confirmed. */
@@ -355,7 +403,9 @@ export const bookingService = {
       if (paymentStatus === 'paid' && b.paymentStatus === 'authorized') await refund({ ...b, paymentStatus: 'paid' }, b.totalMinor)
       throw new AppError(409, 'The guest withdrew this request.')
     }
-    return toBooking((await bookingsRepo.find(code))!, todayISO())
+    const confirmed = (await bookingsRepo.find(code))!
+    await announce('booking.accepted', confirmed)
+    return toBooking(confirmed, todayISO())
   },
 
   /** The host declines a request: the guest's payment is released in full. */
@@ -368,7 +418,9 @@ export const bookingService = {
     if (!before) throw new AppError(400, 'This request has already been answered or has expired.')
     await refund(before, before.totalMinor)
     if (before.couponCode) await couponsRepo.release(before.couponCode)
-    return toBooking((await bookingsRepo.find(code))!, todayISO())
+    const declined = (await bookingsRepo.find(code))!
+    await announce('booking.declined', declined, { reason: reason || '' })
+    return toBooking(declined, todayISO())
   },
 
   /** Admins can cancel any upcoming booking, request or checkout; the guest gets everything back. */
@@ -400,6 +452,10 @@ export const bookingService = {
     }) : null)
     if (before?.status === 'Requested') await refund(before, before.totalMinor)
     if (before?.couponCode) await couponsRepo.release(before.couponCode)
+    // A request that lapsed reads to the guest the same as a decline: nobody took it, nothing charged.
+    if (before?.status === 'Requested') {
+      await announce('booking.declined', (await bookingsRepo.find(b.code))!, { reason: '' })
+    }
     return !!before
   },
 

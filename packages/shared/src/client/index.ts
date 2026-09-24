@@ -1,4 +1,4 @@
-export { api, hostApi, adminApi } from './api'
+export { api, hostApi, adminApi, type NotificationsView } from './api'
 export { ApiError, request } from './http'
 export { appUrls, appLink, safeNext, loginUrl, currentLocation, isPanelPath, type AppName } from './appUrls'
 // Types kept here for existing imports; they're defined in ../api-types.

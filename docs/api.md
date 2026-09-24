@@ -242,6 +242,11 @@ Every change here is recorded in the activity log.
 | PUT | `/api/admin/branding` | `{ website, host, account, admin }`, each `{ logoUrl, showName, name, accent, subtitle }` | `{ branding }` as saved. `logoUrl` must be an uploaded or `https://` image. |
 | GET | `/api/admin/translations` | — | `{ translations }`: every language's content translations, keyed by the English wording |
 | PUT | `/api/admin/translations` | `{ [lang]: { [english]: translated } }` | `{ translations }` as saved. English and switched-off languages are dropped. |
+| GET | `/api/admin/notifications` | — | Settings plus which secrets are saved and the event list |
+| PUT | `/api/admin/notifications` | Settings and templates | `{ notifications }` as saved |
+| PUT | `/api/admin/notifications/credentials` | `{ smtpHost, smtpPort, smtpUser, smtpPass?, smtpSecure, smsKey?, smsSecret? }` | The view again. Blank secrets keep the saved ones; all are AES-encrypted. |
+| POST | `/api/admin/notifications/test` | `{ channel: "email" \| "sms" }` | `{ sentTo }` — one message to the signed-in admin |
+| GET | `/api/admin/notifications/log` | `event`, `status` | `{ entries }`, newest first, addresses masked |
 | PUT | `/api/admin/languages` | `{ enabled: [code], fallback, autoDetect }` | `{ languages }` as saved. English is always added to `enabled`; `fallback` must be one of them. |
 | PUT | `/api/admin/theme` | `{ brand, accent }` (six-digit hex) | `{ theme }` as saved. Every shade from 50 to 900 is mixed from the two colours. |
 | PUT | `/api/admin/header` | `{ showSearch, showDestinations, showInstallApp, showCurrency, hostLinkLabel, links }` | `{ header }` as saved. Up to 3 extra links. |

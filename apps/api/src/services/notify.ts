@@ -1,11 +1,12 @@
 import {
   NOTIFICATION_EVENTS, defaultNotifications, fillTemplate,
-  type NotificationEvent, type NotificationSettings,
+  type MessageTemplate, type Me, type NotificationEvent, type NotificationSettings,
 } from '@meridian/shared'
-import { contentRepo, notificationsRepo } from '../repositories'
+import { auditLogRepo, contentRepo, notificationsRepo } from '../repositories'
 import { decryptSecret, encryptSecret, encryptionReady } from '../store/secrets'
 import { C, col } from '../store/db'
 import { AppError } from '../http/errors'
+import { collect, str } from '../http/validate'
 import { sendEmail, sendSms, type SmsConfig, type SmtpConfig } from './delivery'
 
 // Deciding what to send, to whom, and writing down what happened. Nothing here throws into the
@@ -147,6 +148,49 @@ export const notifyService = {
       smsKeySet: !!stored.smsKeyEnc,
       events: NOTIFICATION_EVENTS,
     }
+  },
+
+  /** The wording and which events are on. Secrets go through saveCredentials instead. */
+  async saveSettings(admin: Me, body: Record<string, unknown>) {
+    const raw = body as Partial<NotificationSettings>
+    const fields: Record<string, string> = {}
+    const fromEmail = str(raw.fromEmail)
+    if (fromEmail && !/^[^@\s]+@[^@\s.]+\.[^@\s]+$/.test(fromEmail)) fields.fromEmail = 'That doesn’t look like an email address.'
+    const replyTo = str(raw.replyTo)
+    if (replyTo && !/^[^@\s]+@[^@\s.]+\.[^@\s]+$/.test(replyTo)) fields.replyTo = 'That doesn’t look like an email address.'
+    const email = raw.email === 'smtp' ? 'smtp' : 'none'
+    const sms = raw.sms === 'msg91' || raw.sms === 'twilio' ? raw.sms : 'none'
+    const senderId = str(raw.smsSenderId).toUpperCase()
+    if (sms === 'msg91' && senderId && !/^[A-Z]{6}$/.test(senderId)) {
+      fields.smsSenderId = 'Indian gateways want exactly six letters, e.g. MERIDN.'
+    }
+
+    const templates = {} as NotificationSettings['templates']
+    for (const { event } of NOTIFICATION_EVENTS) {
+      const fallback = defaultNotifications.templates[event]
+      const t = ((raw.templates ?? {}) as Record<string, Partial<MessageTemplate>>)[event] ?? {}
+      const subject = str(t.subject ?? fallback.subject).slice(0, 200)
+      const bodyText = str(t.body ?? fallback.body).slice(0, 4000)
+      const smsText = str(t.smsText ?? fallback.smsText).slice(0, 320)
+      if (t.email !== false && !subject) fields[`${event}.subject`] = 'An email needs a subject line.'
+      if (t.email !== false && !bodyText) fields[`${event}.body`] = 'An email needs something to say.'
+      if (t.sms && !smsText) fields[`${event}.smsText`] = 'A text message needs something to say.'
+      templates[event] = {
+        enabled: t.enabled !== false,
+        email: t.email !== false,
+        sms: !!t.sms,
+        subject, body: bodyText, smsText,
+      }
+    }
+    collect(fields)
+
+    const saved: NotificationSettings = {
+      fromName: str(raw.fromName).slice(0, 60) || defaultNotifications.fromName,
+      fromEmail, replyTo, email, sms, smsSenderId: senderId, templates,
+    }
+    await contentRepo.saveSetting('notifications', saved, admin.id)
+    await auditLogRepo.record(admin, 'settings.update', 'settings', 'notifications', { email, sms })
+    return saved
   },
 
   /** Blank secrets keep whatever is already saved, the same as the Razorpay screen. */

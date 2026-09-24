@@ -1,5 +1,6 @@
 import { Hono } from 'hono'
 import { loadUser, type AppEnv } from './http/auth'
+import { rememberOrigin } from './http/origin'
 import { AppError } from './http/errors'
 import { firestore } from './store/firebase'
 import { authRoutes } from './routes/auth'
@@ -18,6 +19,7 @@ import { seoRoutes } from './routes/seo'
  */
 export const app = new Hono<AppEnv>().basePath('/api')
 
+app.use('*', rememberOrigin)
 app.use('*', loadUser)
 // Checks that Firestore answers, and says why not (Firebase's message; never includes keys).
 app.get('/health', async (c) => {

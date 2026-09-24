@@ -2,6 +2,22 @@
 
 Every change to Meridian Stay is recorded here, newest first. Each entry says what changed for the people using the platform, then the notable technical changes.
 
+## 0.27.0 — 2026-09-24
+
+### The platform talks to people now
+- Until today Firebase only sent sign-in codes: nobody got a booking confirmation, no host was told a request was waiting, and a refund arrived with no explanation. **Twelve messages** now go out on their own.
+- **Guests hear** when a booking is confirmed, when a host accepts or declines, and when a booking is cancelled — with what came back and what the convenience fee kept.
+- **Hosts hear** when a request is waiting (with the deadline to answer), when a guest cancels, when a listing goes live or needs changes, and when a promotion is approved or rejected.
+- **Control centre → Notifications** is a new page. Set who messages come from, connect a mail server, optionally connect an SMS gateway, and send a **test message to yourself** before going live. Every message's wording is editable, with the placeholders it can use listed beside it, and each can be switched off or set to email only.
+- **A log of everything sent**, with what failed and why. Addresses and phone numbers are shortened, so the log never becomes a copy of everyone's contact details.
+- Nothing sends until you connect a mail server; until then each message is recorded as skipped with the reason. A booking never fails because a mailbox did.
+
+### Technical
+- SMTP is spoken directly in `services/delivery.ts` — no mail dependency, so the API starts as fast as it did. MSG91 and Twilio over HTTPS for SMS.
+- Mail and SMS passwords are AES-256-GCM encrypted with the same `SETTINGS_ENCRYPTION_KEY` as the Razorpay keys.
+- `PUBLIC_SITE_URL`, or the host a request arrived on, builds the links inside messages.
+- 131 automated tests (8 new).
+
 ## 0.26.0 — 2026-09-24
 
 ### The rest of the website reads in your language too

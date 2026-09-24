@@ -132,3 +132,17 @@ It rewrites `icons.css` and `fa-subset.json`, and prints a `pyftsubset` command 
 changed — run that too (it needs Python's `fonttools` and `brotli`) and commit the new `.woff2`.
 Tests fail if either file falls behind, so a missing icon can't slip through as a blank space.
 Icons an admin can choose in the control centre come from `ICON_CHOICES` in `packages/shared/src/icons.ts`.
+
+## Notifications
+
+Booking emails and texts are set up in **Control centre → Notifications**, not in environment
+variables — the only thing the hosting needs is `SETTINGS_ENCRYPTION_KEY`, which is already required
+for the Razorpay keys and is what encrypts the mail password too.
+
+Email goes over plain SMTP, spoken directly by `services/delivery.ts`, so any mailbox works: Zoho,
+Google Workspace, or whatever came with the hosting. Port 587 uses STARTTLS, 465 is TLS throughout.
+SMS goes through MSG91 or Twilio over HTTPS; Indian gateways need a DLT-registered six-letter sender
+ID. Both are optional, and each message says in the log why it could not be sent.
+
+Set `PUBLIC_SITE_URL` so links inside messages point at the right place when nothing else tells us —
+otherwise the host the request arrived on is used, which is right in every normal case.

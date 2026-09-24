@@ -15,6 +15,19 @@ import type { BottomNavSettings, BrandingSettings, FooterSettings, HeaderSetting
 import type { ThemeSettings } from '../theme'
 import type { LanguageSettings } from '../i18n'
 import type { TranslationBook } from '../contentText'
+import type { EventDefinition, NotificationLogEntry, NotificationSettings } from '../notifications'
+
+/** What the Notifications screen shows: the settings, plus which secrets are already saved. */
+export interface NotificationsView extends NotificationSettings {
+  encryptionReady: boolean
+  smtpHost: string
+  smtpPort: number
+  smtpUser: string
+  smtpSecure: boolean
+  smtpPassSet: boolean
+  smsKeySet: boolean
+  events: EventDefinition[]
+}
 import { request } from './http'
 
 const qs = (params: object) => {
@@ -180,6 +193,14 @@ export const adminApi = {
   saveLanguages: (value: LanguageSettings) => request<{ languages: LanguageSettings }>('/admin/languages', { method: 'PUT', json: value }),
   saveTheme: (value: ThemeSettings) => request<{ theme: ThemeSettings }>('/admin/theme', { method: 'PUT', json: value }),
   saveHeader: (value: HeaderSettings) => request<{ header: HeaderSettings }>('/admin/header', { method: 'PUT', json: value }),
+  notifications: () => request<NotificationsView>('/admin/notifications'),
+  saveNotifications: (value: NotificationSettings) => request<{ notifications: NotificationSettings }>('/admin/notifications', { method: 'PUT', json: value }),
+  /** Blank secrets keep the saved ones. */
+  saveMailCredentials: (value: { smtpHost: string; smtpPort: number; smtpUser: string; smtpPass?: string; smtpSecure: boolean; smsKey?: string; smsSecret?: string }) =>
+    request<NotificationsView>('/admin/notifications/credentials', { method: 'PUT', json: value }),
+  testNotification: (channel: 'email' | 'sms') => request<{ sentTo: string }>('/admin/notifications/test', { method: 'POST', json: { channel } }),
+  notificationLog: (filter: { event?: string; status?: string } = {}) =>
+    request<{ entries: NotificationLogEntry[] }>(`/admin/notifications/log${qs(filter)}`),
   saveBottomNav: (value: BottomNavSettings) => request<{ bottomNav: BottomNavSettings }>('/admin/bottom-nav', { method: 'PUT', json: value }),
   saveFooter: (value: FooterSettings) => request<{ footer: FooterSettings }>('/admin/footer', { method: 'PUT', json: value }),
   pages: () => request<{ pages: ContentPage[] }>('/admin/pages'),
