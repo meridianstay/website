@@ -1,11 +1,8 @@
 import { useEffect, useState } from 'react'
 import { Link } from 'react-router'
 import { EmptyState, ErrorNote, PageHeader, Panel, Spinner, StatCard, StatusBadge } from '@meridian/ui'
-import {
-  AD_PLACEMENTS, addDays, clickRate, formatDate, formatPrice, ratePerDay, todayISO,
-  type AdCampaign, type AdPlacement, type HostListing, type PromotionSettings,
-} from '@meridian/shared'
-import { ApiError, hostApi } from '@meridian/shared/client'
+import { AD_PLACEMENTS, AD_REACH, addDays, clickRate, formatDate, formatPrice, todayISO, type AdCampaign, type HostListing, type PromotionSettings } from '@meridian/shared'
+import { ApiError, hostApi, type PlanOnOffer } from '@meridian/shared/client'
 import { payWithRazorpay, CheckoutDismissed } from '../lib/razorpay'
 
 const input = 'w-full bg-slate-50 border border-slate-200 rounded-2xl p-3 text-sm focus:outline-none focus:border-brand-500'
@@ -62,7 +59,7 @@ export function Promotions() {
 
       {creating && (
         <div className="mb-8">
-          <NewPromotion listings={listings} settings={settings} onCancel={() => setCreating(false)} onDone={() => { setCreating(false); load() }} />
+          <NewPromotion listings={listings} onCancel={() => setCreating(false)} onDone={() => { setCreating(false); load() }} />
         </div>
       )}
 
@@ -123,13 +120,25 @@ function CampaignRow({ campaign: c, onChanged }: { campaign: AdCampaign; onChang
   )
 }
 
-function NewPromotion({ listings, settings, onCancel, onDone }: { listings: HostListing[]; settings: PromotionSettings; onCancel: () => void; onDone: () => void }) {
-  const [form, setForm] = useState({ propertyId: listings[0]?.id ?? 0, placement: 'search' as AdPlacement, startDate: addDays(todayISO(), 1), days: 7 })
+function NewPromotion({ listings, onCancel, onDone }: { listings: HostListing[]; onCancel: () => void; onDone: () => void }) {
+  const [form, setForm] = useState({ propertyId: listings[0]?.id ?? 0, planId: '', startDate: addDays(todayISO(), 1), days: 7 })
+  const [plans, setPlans] = useState<PlanOnOffer[] | null>(null)
   const [fields, setFields] = useState<Record<string, string>>({})
   const [error, setError] = useState<string | null>(null)
   const [step, setStep] = useState<'idle' | 'booking' | 'paying'>('idle')
 
-  const rate = ratePerDay(settings, form.placement)
+  // Slots are counted over the dates chosen, so the list reloads whenever they change.
+  useEffect(() => {
+    hostApi.promotionPlans(form.startDate, form.days)
+      .then((r) => {
+        setPlans(r.plans)
+        setForm((f) => (f.planId && r.plans.some((p) => p.id === f.planId) ? f : { ...f, planId: r.plans.find((p) => p.slotsLeft > 0)?.id ?? r.plans[0]?.id ?? '' }))
+      })
+      .catch(() => setPlans([]))
+  }, [form.startDate, form.days])
+
+  const plan = plans?.find((p) => p.id === form.planId)
+  const rate = plan?.pricePerDay ?? 0
   const total = rate * form.days
   const listing = listings.find((l) => l.id === form.propertyId)
 
@@ -166,20 +175,35 @@ function NewPromotion({ listings, settings, onCancel, onDone }: { listings: Host
           </div>
 
           <fieldset>
-            <legend className="block text-xs font-bold uppercase text-slate-500 mb-2">Where to show it</legend>
-            <div className="space-y-2">
-              {AD_PLACEMENTS.map((p) => (
-                <label key={p.value} className={`flex items-start gap-3 p-3 rounded-2xl border-2 cursor-pointer ${form.placement === p.value ? 'border-brand-500 bg-brand-50/60' : 'border-slate-200 hover:border-slate-300'}`}>
-                  <input type="radio" name="placement" className="sr-only" checked={form.placement === p.value} onChange={() => setForm({ ...form, placement: p.value })} />
-                  <i className={`fa-solid fa-${p.icon} text-brand-600 mt-0.5 w-5 text-center`} aria-hidden="true"></i>
-                  <span className="flex-1">
-                    <span className="block font-bold text-sm text-slate-900">{p.label}</span>
-                    <span className="block text-xs text-slate-500">{p.explain} Up to {p.slots} listings share this spot.</span>
-                  </span>
-                  <span className="font-bold text-sm text-slate-900 whitespace-nowrap">{formatPrice(ratePerDay(settings, p.value))}<span className="text-xs font-normal text-slate-500">/day</span></span>
-                </label>
-              ))}
-            </div>
+            <legend className="block text-xs font-bold uppercase text-slate-500 mb-2">Choose a plan</legend>
+            {!plans ? <Spinner /> : plans.length === 0 ? (
+              <p className="text-sm text-slate-500">No plans are on offer right now.</p>
+            ) : (
+              <div className="space-y-2">
+                {plans.map((p) => {
+                  const full = p.slotsLeft < 1
+                  const on = form.planId === p.id
+                  const where = AD_PLACEMENTS.find((x) => x.value === p.placement)
+                  const far = AD_REACH.find((x) => x.value === p.reach)
+                  return (
+                    <label key={p.id} className={`flex items-start gap-3 p-3 rounded-2xl border-2 ${full ? 'border-slate-100 opacity-60' : on ? 'border-brand-500 bg-brand-50/60 cursor-pointer' : 'border-slate-200 hover:border-slate-300 cursor-pointer'}`}>
+                      <input type="radio" name="plan" className="sr-only" checked={on} disabled={full} onChange={() => setForm({ ...form, planId: p.id })} />
+                      <i className={`fa-solid fa-${far?.icon ?? 'bullhorn'} text-brand-600 mt-0.5 w-5 text-center`} aria-hidden="true"></i>
+                      <span className="flex-1 min-w-0">
+                        <span className="block font-bold text-sm text-slate-900">{p.name}</span>
+                        <span className="block text-xs text-slate-500">{p.blurb}</span>
+                        <span className="block text-[11px] text-slate-400 mt-1">
+                          {where?.label} · {far?.label}
+                          {full ? ' · full for these dates' : ` · ${p.slotsLeft} of ${p.slots} slots free`}
+                        </span>
+                      </span>
+                      <span className="font-bold text-sm text-slate-900 whitespace-nowrap">{formatPrice(p.pricePerDay)}<span className="text-xs font-normal text-slate-500">/day</span></span>
+                    </label>
+                  )
+                })}
+              </div>
+            )}
+            {fields.planId && <p className="text-xs text-rose-600 font-semibold mt-1">{fields.planId}</p>}
           </fieldset>
 
           <div className="grid grid-cols-2 gap-4">
@@ -191,7 +215,7 @@ function NewPromotion({ listings, settings, onCancel, onDone }: { listings: Host
             <div>
               <label htmlFor="promo-days" className="block text-xs font-bold uppercase text-slate-500 mb-1">For how long</label>
               <select id="promo-days" value={form.days} onChange={(e) => setForm({ ...form, days: Number(e.target.value) })} className={input}>
-                {[3, 5, 7, 14, 21, 30].filter((d) => d <= settings.maxDays).map((d) => <option key={d} value={d}>{d} days</option>)}
+                {[3, 5, 7, 14, 21, 30].filter((d) => d <= (plan?.maxDays ?? 30)).map((d) => <option key={d} value={d}>{d} days</option>)}
               </select>
               {fields.days && <p className="text-xs text-rose-600 font-semibold mt-1">{fields.days}</p>}
             </div>
@@ -201,7 +225,7 @@ function NewPromotion({ listings, settings, onCancel, onDone }: { listings: Host
         <div className="bg-slate-50 rounded-2xl p-5 space-y-3 self-start">
           <p className="text-xs font-bold uppercase text-slate-500">Summary</p>
           <p className="font-bold text-slate-900">{listing?.title}</p>
-          <p className="text-sm text-slate-600">{AD_PLACEMENTS.find((p) => p.value === form.placement)?.label}</p>
+          <p className="text-sm text-slate-600">{plan?.name} — {AD_REACH.find((r) => r.value === plan?.reach)?.label.toLowerCase()}</p>
           <p className="text-sm text-slate-600">{formatDate(form.startDate, { day: 'numeric', month: 'short' })} – {formatDate(addDays(form.startDate, form.days - 1), { day: 'numeric', month: 'short', year: 'numeric' })}</p>
           <dl className="pt-3 border-t border-slate-200 space-y-1 text-sm">
             <div className="flex justify-between"><dt className="text-slate-600">{formatPrice(rate)} × {form.days} days</dt><dd className="tabular-nums">{formatPrice(total)}</dd></div>
@@ -210,7 +234,7 @@ function NewPromotion({ listings, settings, onCancel, onDone }: { listings: Host
           <p className="text-xs text-slate-500">Paid now. Our team checks your promotion before it starts; if we can’t approve it, you get a full refund. Stop it any time and we refund the days that haven’t run.</p>
           {error && !Object.keys(fields).length && <p role="alert" className="text-xs text-rose-600 font-semibold">{error}</p>}
           <div className="flex items-center gap-4 pt-1">
-            <button type="button" onClick={submit} disabled={step !== 'idle' || !listing} className="bg-brand-600 hover:bg-brand-700 disabled:bg-slate-400 text-white font-bold py-3 px-6 rounded-2xl text-sm">
+            <button type="button" onClick={submit} disabled={step !== 'idle' || !listing || !plan} className="bg-brand-600 hover:bg-brand-700 disabled:bg-slate-400 text-white font-bold py-3 px-6 rounded-2xl text-sm">
               {step === 'booking' ? 'Starting…' : step === 'paying' ? 'Waiting for payment…' : `Promote for ${formatPrice(total)}`}
             </button>
             <button type="button" onClick={onCancel} className="text-sm font-bold text-slate-600">Cancel</button>

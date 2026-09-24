@@ -1,5 +1,5 @@
 import { fileURLToPath } from 'node:url'
-import { addDays, commissionMinor, defaultCommission, galleryImages as g, images, publicSlugBase, quoteStay, REQUEST_HOURS, todayISO } from '@meridian/shared'
+import { addDays, commissionMinor, defaultCommission, defaultPromotions, galleryImages as g, images, publicSlugBase, quoteStay, REQUEST_HOURS, todayISO } from '@meridian/shared'
 import { auth } from './firebase'
 import { C, col, datesOf, daysOf, firestore, nightsOf } from './seedHelpers'
 import { newBookingCode } from '../services/bookings'
@@ -486,19 +486,22 @@ export async function seed(log = console.log, force = false): Promise<boolean> {
   for (const [name, value] of Object.entries(counters)) w.set(col(C.counters).doc(name), { value })
 
   // Demo promotions (host ads): one running, one waiting for review, one finished.
-  const promos: [slug: string, placement: 'search' | 'home' | 'destination', startIn: number, days: number, status: string, shown: number, clicks: number][] = [
-    ['golden-sunset-hillside-resort', 'search', -2, 14, 'Running', 1840, 96],
-    ['green-valley-organic-farmstay', 'home', 2, 7, 'PendingReview', 0, 0],
-    ['gokarna-cliffside-resort', 'destination', -30, 10, 'Finished', 940, 41],
+  // One of each plan, so the reach filtering is visible in the demo: a statewide one running, a
+  // local one waiting for review, and an all-India one that has finished.
+  const promos: [slug: string, planId: string, startIn: number, days: number, status: string, shown: number, clicks: number][] = [
+    ['golden-sunset-hillside-resort', 'search-city', -2, 14, 'Running', 1840, 96],
+    ['green-valley-organic-farmstay', 'home-local', 2, 7, 'PendingReview', 0, 0],
+    ['gokarna-cliffside-resort', 'home-india', -30, 10, 'Finished', 940, 41],
   ]
-  const rates = { search: 499, home: 999, destination: 299 }
-  for (const [i, [slug, placement, startIn, days, status, shown, clicks]] of promos.entries()) {
+  for (const [i, [slug, planId, startIn, days, status, shown, clicks]] of promos.entries()) {
     const p = props.get(slug)!
+    const plan = defaultPromotions.plans.find((x) => x.id === planId)!
     const startDate = addDays(today, startIn)
     w.set(col(C.promotions).doc(String(i + 1)), {
       id: i + 1, hostId: ids.get(p.seed.host)!.id, propertyId: p.id,
-      property: { slug, title: p.seed.title, image: p.seed.cover, location: `${p.seed.city}, ${p.seed.region}` },
-      placement, startDate, endDate: addDays(startDate, days - 1), days, ratePerDay: rates[placement], total: rates[placement] * days,
+      property: { slug: p.slug, title: p.seed.title, image: p.seed.cover, location: `${p.seed.city}, ${p.seed.region}` },
+      planId, planName: plan.name, placement: plan.placement, reach: plan.reach,
+      startDate, endDate: addDays(startDate, days - 1), days, ratePerDay: plan.pricePerDay, total: plan.pricePerDay * days,
       status, paymentStatus: 'test', impressions: shown, clicks, createdAt: daysAgo(Math.max(1, -startIn + 1)),
       reviewedAt: status === 'PendingReview' ? null : daysAgo(Math.max(1, -startIn)), rejectionReason: null, refunded: 0,
       razorpayOrderId: null, razorpayPaymentId: null,

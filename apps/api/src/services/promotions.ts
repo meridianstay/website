@@ -1,6 +1,6 @@
 import {
-  addDays, AD_PLACEMENTS, formatDate, formatPrice, isISODate, isLiveToday, ratePerDay, todayISO,
-  type AdCampaign, type AdPlacement, type Me, type PaymentRequest, type PropertySummary,
+  addDays, distanceKm, findPlan, formatDate, formatPrice, isISODate, isLiveToday, reaches, todayISO, withPromotionDefaults,
+  type AdCampaign, type AdPlacement, type Me, type PaymentRequest, type PromotionPlan, type PropertySummary, type Viewer,
 } from '@meridian/shared'
 import { auditLogRepo, contentRepo, promotionsRepo, propertiesRepo, toPropertySummary, usersRepo } from '../repositories'
 import { notifyService } from './notify'
@@ -26,7 +26,30 @@ async function refreshSoon(today: string) {
 
 export const promotionService = {
   async settings() {
-    return (await contentRepo.settings()).promotions
+    return withPromotionDefaults((await contentRepo.settings()).promotions)
+  },
+
+  /**
+   * How many listings can still run on a plan over these dates. Slots are what the host is really
+   * buying, so we check them at the moment of purchase rather than only when showing.
+   */
+  async slotsLeft(plan: PromotionPlan, startDate: string, endDate: string) {
+    const overlapping = (await promotionsRepo.listAll(null))
+      .filter((c) => c.planId === plan.id
+        && ['AwaitingPayment', 'PendingReview', 'Scheduled', 'Running'].includes(c.status)
+        && c.startDate <= endDate && c.endDate >= startDate)
+    return Math.max(0, plan.slots - overlapping.length)
+  },
+
+  /** The plans a host can buy right now, with how many slots are free over the dates they picked. */
+  async plansFor(startDate: string, days: number) {
+    const settings = await this.settings()
+    if (!settings.enabled) return []
+    const from = isISODate(startDate) ? startDate : todayISO()
+    return Promise.all(settings.plans.filter((p) => p.enabled).map(async (plan) => ({
+      ...plan,
+      slotsLeft: await this.slotsLeft(plan, from, addDays(from, Math.max(1, days) - 1)),
+    })))
   },
 
   async forHost(host: Me) {
@@ -35,29 +58,34 @@ export const promotionService = {
   },
 
   /** Books a promotion and starts its payment. */
-  async create(host: Me, input: { propertyId: number; placement: string; startDate: string; days: number }): Promise<{ campaign: AdCampaign; payment: PaymentRequest | null }> {
+  async create(host: Me, input: { propertyId: number; planId: string; startDate: string; days: number }): Promise<{ campaign: AdCampaign; payment: PaymentRequest | null }> {
     const settings = await this.settings()
     if (!settings.enabled) throw new AppError(400, 'Promotions are switched off at the moment.')
     const today = todayISO()
-    const placement = AD_PLACEMENTS.find((p) => p.value === input.placement)?.value
+    const plan = findPlan(settings, input.planId)
     const days = Math.round(Number(input.days))
     collect({
-      placement: placement ? null : 'Choose where your listing should appear.',
+      planId: plan?.enabled ? null : 'Choose one of the plans on offer.',
       startDate: isISODate(input.startDate) && input.startDate >= today ? null : 'Choose a start date from today onwards.',
-      days: days >= 1 && days <= settings.maxDays ? null : `Promote for 1 to ${settings.maxDays} days.`,
+      days: plan && days >= 1 && days <= plan.maxDays ? null : `Promote for 1 to ${plan?.maxDays ?? 30} days.`,
     })
+    const endDate = addDays(input.startDate, days - 1)
+    if (await this.slotsLeft(plan!, input.startDate, endDate) < 1) {
+      collect({ startDate: `All ${plan!.slots} slots on ${plan!.name} are taken for those dates. Try different dates, or another plan.` })
+    }
 
     const property = await propertiesRepo.ownedBy(input.propertyId, host.id)
     if (!property) throw notFound('listing')
     if (property.status !== 'Approved') throw new AppError(400, 'Only live listings can be promoted. This one isn’t live yet.')
 
-    const rate = ratePerDay(settings, placement!)
+    const rate = plan!.pricePerDay
     const total = rate * days
     const cfg = await paymentsService.activeConfig()
     const campaign = await promotionsRepo.create({
       hostId: host.id, propertyId: property.id,
       property: { slug: property.slug, title: property.title, image: property.coverImageUrl, location: `${property.city}, ${property.region}` },
-      placement: placement!, startDate: input.startDate, endDate: addDays(input.startDate, days - 1), days,
+      planId: plan!.id, planName: plan!.name, placement: plan!.placement, reach: plan!.reach,
+      startDate: input.startDate, endDate, days,
       ratePerDay: rate, total, status: cfg ? 'AwaitingPayment' : 'PendingReview', paymentStatus: cfg ? 'created' : 'test',
       impressions: 0, clicks: 0, createdAt: promotionsRepo.now(), reviewedAt: null, rejectionReason: null, refunded: 0,
       razorpayOrderId: null, razorpayPaymentId: null,
@@ -159,20 +187,24 @@ export const promotionService = {
    * Promoted listings for a placement, newest campaigns rotated so everyone gets a turn.
    * Counts one impression for each campaign returned.
    */
-  async promoted(placement: AdPlacement, filter: { where?: string; type?: string } = {}): Promise<(PropertySummary & { promotionId: number })[]> {
+  async promoted(placement: AdPlacement, viewer: Viewer & { type?: string } = {}): Promise<(PropertySummary & { promotionId: number })[]> {
     const today = todayISO()
     await refreshSoon(today)
     const live = (await promotionsRepo.liveFor(placement, today)).filter((c) => isLiveToday(c, today))
     if (!live.length) return []
-    const slots = AD_PLACEMENTS.find((p) => p.value === placement)!.slots
-    const where = filter.where?.toLowerCase()
+    const settings = await this.settings()
     const chosen: { campaign: CampaignDoc; property: PropertySummary }[] = []
+    // Shuffled, so every host on a plan gets a turn rather than the oldest always winning.
     for (const c of live.sort(() => Math.random() - 0.5)) {
-      if (chosen.length >= slots) break
+      const plan = findPlan(settings, c.planId)
+      // Slots cap each plan separately, so a cheap local plan can't crowd out an all-India one.
+      const taken = chosen.filter((x) => x.campaign.planId === c.planId).length
+      if (taken >= (plan?.slots ?? 1)) continue
       const p = await propertiesRepo.get(c.propertyId)
       if (!p || p.status !== 'Approved') continue
-      if (filter.type && p.type !== filter.type) continue
-      if (where && !`${p.title} ${p.city}, ${p.region}, ${p.country}`.toLowerCase().includes(where)) continue
+      if (viewer.type && p.type !== viewer.type) continue
+      const target = { city: p.city, region: p.region, lat: p.lat, lng: p.lng }
+      if (!reaches(c.reach ?? 'everywhere', target, viewer, (a, b) => distanceKm(a, b))) continue
       chosen.push({ campaign: c, property: toPropertySummary(p) })
     }
     await promotionsRepo.countImpressions(chosen.map((x) => x.campaign.id))
@@ -182,6 +214,6 @@ export const promotionService = {
   click: (id: number) => promotionsRepo.countClick(id),
 
   parse: (b: Record<string, unknown>) => ({
-    propertyId: Number(b.propertyId), placement: str(b.placement), startDate: str(b.startDate), days: Number(b.days),
+    propertyId: Number(b.propertyId), planId: str(b.planId), startDate: str(b.startDate), days: Number(b.days),
   }),
 }

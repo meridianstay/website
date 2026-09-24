@@ -29,7 +29,7 @@ export function Destination() {
     if (!place) return
     setStays(null)
     api.searchProperties({ where: place.name, type, limit: 60, sort: 'rating' }).then((r) => setStays(r.properties)).catch((e) => setError(e.message))
-    api.promoted('destination', { where: place.name, type }).then((r) => setPromoted(r.properties)).catch(() => {})
+    api.promoted('destination', { where: place.name, type, lat: place.lat, lng: place.lng }).then((r) => setPromoted(r.properties)).catch(() => {})
   }, [place, type])
 
   const heading = place ? `${type ? typeLabel(type) : 'Stays'} in ${place.name}` : null

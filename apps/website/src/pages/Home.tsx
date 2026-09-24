@@ -30,8 +30,8 @@ export function Home() {
   // Paid placements: fetched here so each view counts once.
   useEffect(() => {
     if (!data?.layout.blocks.some((b) => b.enabled && b.rule === 'promoted')) return
-    api.promoted('home').then((r) => setPromoted(r.properties)).catch(() => {})
-  }, [data])
+    api.promoted('home', { where: place?.name, lat: place?.lat, lng: place?.lng }).then((r) => setPromoted(r.properties)).catch(() => {})
+  }, [data, place])
 
   // Refetched when the reader changes language, because the headings are written in the control centre.
   const load = useCallback(() => {

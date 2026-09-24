@@ -1,4 +1,4 @@
-import { isIconName, ABOUT_LIMITS, aboutSchema, withAboutDefaults, type AboutItem, type AboutPage, type ContentPage, type Me, type PageSection, type SiteSettings } from '@meridian/shared'
+import { isIconName, AD_PLACEMENTS, AD_REACH, PLAN_LIMITS, ABOUT_LIMITS, aboutSchema, withAboutDefaults, type AboutItem, type AboutPage, type ContentPage, type Me, type PageSection, type SiteSettings } from '@meridian/shared'
 import { auditLogRepo, contentRepo } from '../repositories'
 import { AppError, notFound } from '../http/errors'
 import { checkLength, collect, isImageUrl, str } from '../http/validate'
@@ -17,7 +17,9 @@ export const contentService = {
     const value: Record<string, unknown> = {}
     const fields: Record<string, string> = {}
     for (const [field, def] of Object.entries(template)) {
-      if (typeof def === 'boolean') value[field] = body[field] === true
+      // Lists (promotion plans) are checked by the rules below rather than field by field.
+      if (Array.isArray(def)) value[field] = Array.isArray(body[field]) ? body[field] : def
+      else if (typeof def === 'boolean') value[field] = body[field] === true
       else if (typeof def === 'number') {
         value[field] = Number(body[field])
         if (!Number.isFinite(value[field])) fields[field] = 'Enter a number.'
@@ -33,10 +35,22 @@ export const contentService = {
     // than this and stays well under the 4.5 MB body limit our hosting allows.
     if (key === 'uploads' && !(Number(value.maxMb) >= 2 && Number(value.maxMb) <= 10)) fields.maxMb = 'Choose between 2 and 10 MB.'
     if (key === 'promotions') {
-      for (const f of ['searchPerDay', 'homePerDay', 'destinationPerDay']) {
-        if (!(Number(value[f]) >= 0 && Number(value[f]) <= 100000)) fields[f] = 'Enter a daily price in rupees (0–1,00,000).'
-      }
-      if (!(Number(value.maxDays) >= 1 && Number(value.maxDays) <= 365)) fields.maxDays = 'Choose between 1 and 365 days.'
+      const plans = Array.isArray(value.plans) ? (value.plans as Record<string, unknown>[]) : []
+      if (!plans.length) fields.plans = 'Write at least one plan, or switch promotions off.'
+      if (plans.length > PLAN_LIMITS.plans) fields.plans = `Keep it to ${PLAN_LIMITS.plans} plans.`
+      const seen = new Set<string>()
+      plans.forEach((plan, i) => {
+        const id = str(plan.id)
+        if (!id) fields[`plans.${i}.id`] = 'Every plan needs an id.'
+        if (seen.has(id)) fields[`plans.${i}.id`] = 'Two plans share this id.'
+        seen.add(id)
+        if (!str(plan.name)) fields[`plans.${i}.name`] = 'Give the plan a name hosts will understand.'
+        if (!AD_PLACEMENTS.some((p) => p.value === plan.placement)) fields[`plans.${i}.placement`] = 'Choose where it appears.'
+        if (!AD_REACH.some((r) => r.value === plan.reach)) fields[`plans.${i}.reach`] = 'Choose how far it reaches.'
+        if (!(Number(plan.slots) >= 1 && Number(plan.slots) <= PLAN_LIMITS.slots)) fields[`plans.${i}.slots`] = `Between 1 and ${PLAN_LIMITS.slots} slots.`
+        if (!(Number(plan.pricePerDay) >= 0 && Number(plan.pricePerDay) <= PLAN_LIMITS.pricePerDay)) fields[`plans.${i}.pricePerDay`] = 'Enter a daily price in rupees (0–1,00,000).'
+        if (!(Number(plan.maxDays) >= 1 && Number(plan.maxDays) <= PLAN_LIMITS.maxDays)) fields[`plans.${i}.maxDays`] = 'Between 1 and 365 days.'
+      })
     }
     if (key === 'commission') {
       for (const f of ['managedPct', 'selfPct']) if (!(Number(value[f]) >= 0 && Number(value[f]) <= 60)) fields[f] = 'Choose between 0 and 60%.'

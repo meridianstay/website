@@ -29,7 +29,7 @@ export function Search() {
 
   useEffect(() => {
     setPromoted([])
-    api.promoted('search', { where: state.where || undefined, type: state.type }).then((r) => setPromoted(r.properties)).catch(() => {})
+    api.promoted('search', { where: state.where || place?.name, type: state.type, lat: place?.lat, lng: place?.lng }).then((r) => setPromoted(r.properties)).catch(() => {})
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [key])
 

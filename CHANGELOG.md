@@ -2,6 +2,21 @@
 
 Every change to Meridian Stay is recorded here, newest first. Each entry says what changed for the people using the platform, then the notable technical changes.
 
+## 0.28.0 — 2026-09-24
+
+### Promotion plans, priced by how far they reach
+- Promotions used to be three fixed spots at three fixed prices. They are now **plans you write yourself** in the control centre, beside the promotions waiting for your approval.
+- Each plan sets **where the listing appears** (homepage row, top of search, destination page), **how far it reaches**, **how many listings share it**, **what a day costs** and **how long it can run**.
+- **Reach is the new idea**: Nearby (about 25 km), Town or city, District (about 75 km), Whole state, or All of India. A farm outside Nashik can pay a little to be seen by people nearby, or a lot to be seen across the country — and you set what each is worth.
+- Six plans ship ready to use, from **Local spotlight at ₹299 a day** to **All-India homepage at ₹1,999**. Rename them, reprice them, add your own or switch any off.
+- **Slots are real now.** A plan with three slots takes three promotions for a given stretch of dates; the fourth host is told it is full and offered other dates or another plan. Hosts see how many slots are free before they pay.
+- Guests only see promotions that reach them. Someone in Delhi never sees a plan bought for guests near Coorg — so a host's money goes where they aimed it. When we can't tell where a guest is, only All-India plans show.
+
+### Technical
+- `withPromotionDefaults()` reads the old three-price settings and keeps their prices, giving each the `everywhere` reach it effectively had.
+- `/api/promoted` takes `lat`/`lng`/`where`; the website passes the destination the visitor picked.
+- 136 automated tests (5 new).
+
 ## 0.27.0 — 2026-09-24
 
 ### The platform talks to people now

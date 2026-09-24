@@ -172,7 +172,7 @@ Every host endpoint needs a signed-in user and only acts on that user's own list
 | DELETE | `/api/host/listings/:id/blocks/:blockId` | — | `204` |
 | GET | `/api/host/listings` | — | Each listing also has `promoted` (a promotion is showing today) |
 | GET | `/api/host/promotions` | — | `{ campaigns, settings }` |
-| POST | `/api/host/promotions` | `{ propertyId, placement, startDate, days }` | `201 { campaign, payment }` (`payment` is null in test mode) |
+| POST | `/api/host/promotions` | `{ propertyId, planId, startDate, days }` | `{ campaign, payment }`. Refused when the plan's slots are full for those dates. |
 | POST | `/api/host/promotions/:id/pay` | Razorpay Checkout's result | `{ campaign }`, now waiting for review |
 | POST | `/api/host/promotions/:id/cancel` | — | `{ campaign }`; unused days are refunded |
 | GET | `/api/host/bookings` | — | `{ bookings }` for your listings, each with `guestName`, `guestEmail`, `commissionPct`, `commission` and `payout` |
@@ -183,8 +183,11 @@ Every host endpoint needs a signed-in user and only acts on that user's own list
 
 | Method | Path | Body / query | Returns |
 | --- | --- | --- | --- |
+| GET | `/api/host/promotion-plans` | `startDate`, `days` | `{ plans }` — every plan on offer with `slotsLeft` over those dates |
 | GET | `/api/host/places` | `q` (3+ characters), `country` (default `in`) | `{ places: [{ label, lat, lng, city, region, country, address }] }` from OpenStreetMap, proxied and cached for an hour |
 | GET | `/api/host/places/at` | `lat`, `lng` | `{ place }` at that point, or `null` |
+
+**Promotions**: `/api/promoted` takes `placement`, and optionally `where`, `lat`, `lng` and `type`. A campaign is only returned when its plan's reach covers the viewer — `everywhere` always, `state`/`city` by what they are looking at, `nearby`/`district` by distance. With no location at all, only `everywhere` plans show.
 
 **Language**: `/api/site`, `/api/home`, `/api/about` and `/api/pages/:slug` take `?lang=` (e.g. `?lang=mr`) and return the control centre's words already translated, leaving anything untranslated in its original wording.
 

@@ -44,7 +44,13 @@ propertyRoutes.get('/properties', async (c) => {
 propertyRoutes.get('/promoted', async (c) => {
   const placement = c.req.query('placement')
   if (!AD_PLACEMENTS.some((p) => p.value === placement)) throw new AppError(400, 'Unknown placement.')
-  const properties = await promotionService.promoted(placement as AdPlacement, { where: c.req.query('where'), type: c.req.query('type') })
+  const lat = Number(c.req.query('lat'))
+  const lng = Number(c.req.query('lng'))
+  const properties = await promotionService.promoted(placement as AdPlacement, {
+    where: c.req.query('where'), type: c.req.query('type'),
+    lat: Number.isFinite(lat) ? lat : undefined,
+    lng: Number.isFinite(lng) ? lng : undefined,
+  })
   return c.json({ properties })
 })
 

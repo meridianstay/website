@@ -10,7 +10,12 @@ import type { AboutPage, AboutStats } from '../about'
 import type { HomeBlock, HomeLayout } from '../homepage'
 import type { Destination } from '../places'
 import type { Coupon } from '../offers'
-import type { AdCampaign, AdPlacement, PromotionSettings } from '../promotions'
+import type { AdCampaign, AdPlacement, PromotionPlan, PromotionSettings } from '../promotions'
+
+/** A plan as a host sees it: what it costs, and how much room is left over their dates. */
+export interface PlanOnOffer extends PromotionPlan {
+  slotsLeft: number
+}
 import type { BottomNavSettings, BrandingSettings, FooterSettings, HeaderSettings } from '../branding'
 import type { ThemeSettings } from '../theme'
 import type { LanguageSettings } from '../i18n'
@@ -64,7 +69,7 @@ export const api = {
   locations: () => request<{ locations: string[] }>('/locations'),
   destinations: () => request<{ destinations: Destination[] }>('/destinations'),
   /** Listings hosts have paid to promote in a place on the site. */
-  promoted: (placement: AdPlacement, params: { where?: string; type?: string } = {}) =>
+  promoted: (placement: AdPlacement, params: { where?: string; type?: string; lat?: number; lng?: number } = {}) =>
     request<{ properties: (PropertySummary & { promotionId: number })[] }>(`/promoted${qs({ placement, ...params })}`),
   promotedClick: (promotionId: number) => request<void>(`/promoted/${promotionId}/click`, { method: 'POST' }),
   searchProperties: (query: SearchQuery) => request<{ properties: PropertySummary[] }>(`/properties${qs(query)}`),
@@ -117,6 +122,8 @@ export const api = {
 export const hostApi = {
   amenities: () => request<{ amenities: Amenity[] }>('/amenities'),
   /** Address search for the listing map (OpenStreetMap, through our API). */
+  /** The promotion plans on offer, with slots free over these dates. */
+  promotionPlans: (startDate: string, days: number) => request<{ plans: PlanOnOffer[] }>(`/host/promotion-plans${qs({ startDate, days })}`),
   places: (q: string, country = 'in') => request<{ places: Place[] }>(`/host/places${qs({ q, country })}`),
   /** The address at a point, after the host drags the pin or uses their location. */
   placeAt: (lat: number, lng: number) => request<{ place: Place | null }>(`/host/places/at${qs({ lat, lng })}`),
@@ -134,7 +141,7 @@ export const hostApi = {
     request<void>(`/host/listings/${id}/blocks`, { method: 'POST', json: data }),
   removeBlock: (id: number, blockId: number) => request<void>(`/host/listings/${id}/blocks/${blockId}`, { method: 'DELETE' }),
   promotions: () => request<{ campaigns: AdCampaign[]; settings: PromotionSettings }>('/host/promotions'),
-  createPromotion: (data: { propertyId: number; placement: AdPlacement; startDate: string; days: number }) =>
+  createPromotion: (data: { propertyId: number; planId: string; startDate: string; days: number }) =>
     request<{ campaign: AdCampaign; payment: PaymentRequest | null }>('/host/promotions', { method: 'POST', json: data }),
   payPromotion: (id: number, result: { razorpay_order_id: string; razorpay_payment_id: string; razorpay_signature: string }) =>
     request<{ campaign: AdCampaign }>(`/host/promotions/${id}/pay`, { method: 'POST', json: result }),

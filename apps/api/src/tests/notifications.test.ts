@@ -110,7 +110,6 @@ describe('notifications', () => {
   })
 
   test('a test send explains what is missing instead of failing quietly', async () => {
-    const admin = await createUser('admin')
     const err = await appError(() => notifyService.test({ name: 'Admin', email: 'admin@example.com' }, 'email'))
     assert.match(err.message, /mail server/i)
   })

@@ -24,6 +24,10 @@ hostRoutes.get('/host/places', requireUser, rateLimit('geocode', 120), async (c)
 hostRoutes.get('/host/places/at', requireUser, rateLimit('geocode', 120), async (c) =>
   c.json({ place: await geocodeService.reverse(Number(c.req.query('lat')), Number(c.req.query('lng'))) }))
 
+/** The plans a host can buy, with the slots still free over the dates they are looking at. */
+hostRoutes.get('/host/promotion-plans', async (c) =>
+  c.json({ plans: await promotionService.plansFor(str(c.req.query('startDate')), Number(c.req.query('days')) || 7) }))
+
 hostRoutes.get('/host/stats', async (c) => {
   await bookingService.sweepSoon()
   return c.json(await statsRepo.forHost(currentUser(c).id, todayISO()))
