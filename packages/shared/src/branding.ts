@@ -160,4 +160,33 @@ export const defaultFooter: FooterSettings = {
   credit: { label: 'Designed and developed by Digitech Miner', url: 'https://digitechminer.com' },
 }
 
-export const BRAND_LIMITS = { headerLinks: 3, columns: 4, columnLinks: 8, legal: 5 }
+/** One tab in the bar along the bottom of a phone or tablet. */
+export interface BottomTab {
+  /** Stable name, so the code knows which tab does what: home, search, saved, trips, account. */
+  key: string
+  label: string
+  /** Font Awesome icon name, without the prefix. */
+  icon: string
+  /** A page on this site (/search) or a panel path (/account/wishlist). */
+  url: string
+  enabled: boolean
+}
+
+export interface BottomNavSettings {
+  /** Off hides the bar everywhere; the header still works. */
+  enabled: boolean
+  tabs: BottomTab[]
+}
+
+export const defaultBottomNav: BottomNavSettings = {
+  enabled: true,
+  tabs: [
+    { key: 'home', label: 'Home', icon: 'house', url: '/', enabled: true },
+    { key: 'search', label: 'Explore', icon: 'magnifying-glass', url: '/search', enabled: true },
+    { key: 'saved', label: 'Saved', icon: 'heart', url: '/account/wishlist', enabled: true },
+    { key: 'trips', label: 'Trips', icon: 'suitcase-rolling', url: '/account', enabled: true },
+    { key: 'account', label: 'Account', icon: 'user', url: '/account/profile', enabled: true },
+  ],
+}
+
+export const BRAND_LIMITS = { headerLinks: 3, columns: 4, columnLinks: 8, legal: 5, bottomTabs: 5 }

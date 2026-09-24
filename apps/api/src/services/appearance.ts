@@ -1,5 +1,6 @@
 import {
-  BRAND_APPS, BRAND_LIMITS, defaultFooter, defaultHeader, SOCIAL_NETWORKS,
+  BRAND_APPS, BRAND_LIMITS, defaultBottomNav, defaultFooter, defaultHeader, SOCIAL_NETWORKS,
+  type BottomNavSettings,
   isHexColor, LANGUAGES, offeredLanguages, withBrandingDefaults, CONTENT_TEXT_MAX,
   type ContentTranslations, type TranslationBook,
   type LanguageSettings,
@@ -117,6 +118,26 @@ export const appearanceService = {
     await contentRepo.saveSetting('header', header, admin.id)
     await auditLogRepo.record(admin, 'settings.update', 'settings', 'header', { links: header.links.length })
     return header
+  },
+
+  async saveBottomNav(admin: Me, body: Record<string, unknown>) {
+    const raw = { ...defaultBottomNav, ...(body as Partial<BottomNavSettings>) }
+    const fields: Record<string, string> = {}
+    const tabs = (Array.isArray(raw.tabs) ? raw.tabs : []).slice(0, BRAND_LIMITS.bottomTabs).map((tab, i) => {
+      const known = defaultBottomNav.tabs.find((d) => d.key === tab?.key)
+      if (!known) fields[`tabs.${i}.key`] = 'That isn’t one of the tabs the bar can show.'
+      const label = str(tab?.label).slice(0, 14)
+      if (!label) fields[`tabs.${i}.label`] = 'Give the tab a short name.'
+      const url = str(tab?.url)
+      if (!isLink(url)) fields[`tabs.${i}.url`] = 'Use a page on this site, e.g. /search.'
+      return { key: str(tab?.key), label, icon: str(tab?.icon) || known?.icon || 'circle', url, enabled: tab?.enabled !== false }
+    })
+    if (!tabs.some((tab) => tab.enabled)) fields.tabs = 'Keep at least one tab, or switch the whole bar off.'
+    collect(fields)
+    const bottomNav: BottomNavSettings = { enabled: raw.enabled !== false, tabs }
+    await contentRepo.saveSetting('bottomNav', bottomNav, admin.id)
+    await auditLogRepo.record(admin, 'settings.update', 'settings', 'bottomNav', { tabs: tabs.filter((t) => t.enabled).length })
+    return bottomNav
   },
 
   async saveFooter(admin: Me, body: Record<string, unknown>) {

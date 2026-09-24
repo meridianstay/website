@@ -11,7 +11,7 @@ import type { HomeBlock, HomeLayout } from '../homepage'
 import type { Destination } from '../places'
 import type { Coupon } from '../offers'
 import type { AdCampaign, AdPlacement, PromotionSettings } from '../promotions'
-import type { BrandingSettings, FooterSettings, HeaderSettings } from '../branding'
+import type { BottomNavSettings, BrandingSettings, FooterSettings, HeaderSettings } from '../branding'
 import type { ThemeSettings } from '../theme'
 import type { LanguageSettings } from '../i18n'
 import type { TranslationBook } from '../contentText'
@@ -180,6 +180,7 @@ export const adminApi = {
   saveLanguages: (value: LanguageSettings) => request<{ languages: LanguageSettings }>('/admin/languages', { method: 'PUT', json: value }),
   saveTheme: (value: ThemeSettings) => request<{ theme: ThemeSettings }>('/admin/theme', { method: 'PUT', json: value }),
   saveHeader: (value: HeaderSettings) => request<{ header: HeaderSettings }>('/admin/header', { method: 'PUT', json: value }),
+  saveBottomNav: (value: BottomNavSettings) => request<{ bottomNav: BottomNavSettings }>('/admin/bottom-nav', { method: 'PUT', json: value }),
   saveFooter: (value: FooterSettings) => request<{ footer: FooterSettings }>('/admin/footer', { method: 'PUT', json: value }),
   pages: () => request<{ pages: ContentPage[] }>('/admin/pages'),
   savePage: (page: ContentPage) => request<void>(`/admin/pages/${encodeURIComponent(page.slug)}`, { method: 'PUT', json: page }),

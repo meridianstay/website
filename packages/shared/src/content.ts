@@ -1,8 +1,9 @@
-import { defaultBranding, defaultFooter, defaultHeader, type BrandingSettings, type FooterSettings, type HeaderSettings } from './branding'
+import { defaultBottomNav, defaultBranding, defaultFooter, defaultHeader, type BottomNavSettings, type BrandingSettings, type FooterSettings, type HeaderSettings } from './branding'
 import { defaultPromotions, type PromotionSettings } from './promotions'
 import { defaultCommission, type CommissionRates } from './pricing'
 import { defaultTheme, type ThemeSettings } from './theme'
 import { defaultLanguages, type LanguageSettings } from './i18n'
+import { defaultNotifications, type NotificationSettings } from './notifications'
 // Default website content. The API copies it into the database on first start; after that
 // the admin control center edits it. Legal pages start as drafts for a lawyer to review.
 
@@ -57,11 +58,15 @@ export interface SiteSettings {
   /** Paid promotions hosts can buy (daily rates in ₹). */
   promotions: PromotionSettings
   /** Logos and names, per app. */
+  /** What the platform emails and texts, and which gateway it uses. */
+  notifications: NotificationSettings
   /** Which languages the picker offers, and what a new visitor gets. */
   languages: LanguageSettings
   /** The colour palette every app uses. */
   theme: ThemeSettings
   branding: BrandingSettings
+  /** The bar along the bottom on phones and tablets. */
+  bottomNav: BottomNavSettings
   /** The website's header and footer. */
   header: HeaderSettings
   footer: FooterSettings
@@ -86,9 +91,11 @@ export const defaultSiteSettings: SiteSettings = {
   uploads: { maxMb: 5 },
   commission: { ...defaultCommission },
   promotions: { ...defaultPromotions },
+  notifications: structuredClone(defaultNotifications),
   languages: structuredClone(defaultLanguages),
   theme: { ...defaultTheme },
   branding: structuredClone(defaultBranding),
+  bottomNav: structuredClone(defaultBottomNav),
   header: structuredClone(defaultHeader),
   footer: structuredClone(defaultFooter),
 }

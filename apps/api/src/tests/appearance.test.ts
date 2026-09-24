@@ -1,6 +1,6 @@
 import { beforeEach, describe, test } from 'node:test'
 import assert from 'node:assert/strict'
-import { defaultBranding, defaultFooter, defaultHeader, defaultTheme, hexToRgb, themeVariables, withBrandingDefaults } from '@meridian/shared'
+import { defaultBottomNav, defaultBranding, defaultFooter, defaultHeader, defaultTheme, hexToRgb, themeVariables, withBrandingDefaults } from '@meridian/shared'
 import { appearanceService } from '../services/appearance'
 import { contentRepo } from '../repositories'
 import { appError, createUser, resetDatabase } from './helpers'
@@ -132,5 +132,40 @@ describe('the colour palette', () => {
     const err = await appError(() => appearanceService.saveTheme(admin.me, body({ brand: 'green', accent: '' })))
     assert.ok(err.fields.brand)
     assert.ok(err.fields.accent)
+  })
+})
+
+describe('the bottom bar', () => {
+  beforeEach(resetDatabase)
+
+  test('tabs can be renamed, relinked and switched off', async () => {
+    const admin = await createUser('admin')
+    const nav = structuredClone(defaultBottomNav)
+    nav.tabs[1].label = 'Browse'
+    nav.tabs[2].enabled = false
+    const saved = await appearanceService.saveBottomNav(admin.me, body(nav))
+    assert.equal(saved.tabs[1].label, 'Browse')
+    assert.equal(saved.tabs[2].enabled, false)
+    assert.deepEqual((await contentRepo.settings()).bottomNav, saved)
+  })
+
+  test('the whole bar can be switched off, but not left with nothing in it', async () => {
+    const admin = await createUser('admin')
+    const off = { ...structuredClone(defaultBottomNav), enabled: false }
+    assert.equal((await appearanceService.saveBottomNav(admin.me, body(off))).enabled, false)
+
+    const empty = structuredClone(defaultBottomNav)
+    empty.tabs = empty.tabs.map((t) => ({ ...t, enabled: false }))
+    assert.ok((await appError(() => appearanceService.saveBottomNav(admin.me, body(empty)))).fields.tabs)
+  })
+
+  test('a tab has to point somewhere on this site', async () => {
+    const admin = await createUser('admin')
+    const nav = structuredClone(defaultBottomNav)
+    nav.tabs[0].url = 'javascript:alert(1)'
+    nav.tabs[1].label = ''
+    const err = await appError(() => appearanceService.saveBottomNav(admin.me, body(nav)))
+    assert.ok(err.fields['tabs.0.url'])
+    assert.ok(err.fields['tabs.1.label'])
   })
 })

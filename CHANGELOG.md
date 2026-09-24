@@ -11,7 +11,9 @@ Every change to Meridian Stay is recorded here, newest first. Each entry says wh
 
 ### A bottom bar on phones and tablets
 - Phones and tablets now get a **bar along the bottom** with Home, Explore, Saved, Trips and Account — the five things people reach for, where a thumb actually lands. The saved tab carries a count.
+- It **stays with guests after they sign in**, so the same bar is there in their account and they never lose their way back to browsing.
 - It shows the host dashboard instead of Trips once someone is a host, and "Sign in" instead of Account when they are signed out. It disappears on desktop, where the header already has room.
+- **Website content → Logos, colours, languages & footer** controls it: switch the whole bar off, hide individual tabs, rename them or point them somewhere else. Default names stay translated; a renamed tab shows exactly as you write it.
 - The bar clears the phone's own home indicator, and the footer clears the bar.
 
 ### Technical

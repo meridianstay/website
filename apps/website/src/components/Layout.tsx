@@ -3,10 +3,12 @@ import { Link, Outlet, useLocation } from 'react-router'
 import { useSite } from '../lib/site'
 import { Header } from './Header'
 import { Footer } from './Footer'
-import { BottomNav } from './BottomNav'
+import { BottomNav } from '@meridian/ui'
+import { useWishlist } from '../lib/wishlist'
 
 export function Layout() {
   const { pathname } = useLocation()
+  const { count } = useWishlist()
   useEffect(() => {
     window.scrollTo(0, 0)
   }, [pathname])
@@ -24,7 +26,15 @@ export function Layout() {
       <Footer />
       {/* The bar sits over the page on phones and tablets, so the footer clears it. */}
       <div className="lg:hidden h-16" aria-hidden="true" style={{ marginBottom: 'env(safe-area-inset-bottom, 0px)' }} />
-      <BottomNav />
+      <BottomNav
+        pathname={pathname}
+        savedCount={count}
+        link={(href, className, current, children) => (
+          href.startsWith('/') && !href.startsWith('//') && !/^\/(account|host|admin)(\/|$)/.test(href)
+            ? <Link to={href} className={className} aria-current={current ? 'page' : undefined}>{children}</Link>
+            : <a href={href} className={className}>{children}</a>
+        )}
+      />
     </div>
   )
 }

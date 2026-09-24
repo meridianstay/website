@@ -6,6 +6,7 @@ import { Logo } from './Logo'
 import { useAuth } from './auth'
 import { PageErrorBoundary } from './PageErrorBoundary'
 import { LanguagePicker } from './LanguagePicker'
+import { BottomNav } from './BottomNav'
 import { useLanguage } from './i18n'
 import { useCredit } from './brand'
 
@@ -98,6 +99,14 @@ export function AppShell({ subtitle, nav, app, children }: AppShellProps) {
         </header>
 
         <main key={pathname} className="flex-1 p-4 sm:p-8 max-w-7xl w-full mx-auto animate-page-in"><PageErrorBoundary>{children}</PageErrorBoundary></main>
+
+        {/* Guests keep the same bar they had on the website, so they can get back to browsing. */}
+        {app === 'account' && (
+          <>
+            <div className="lg:hidden h-16" aria-hidden="true" style={{ marginBottom: 'env(safe-area-inset-bottom, 0px)' }} />
+            <BottomNav pathname={`/account${pathname === '/' ? '' : pathname}`} />
+          </>
+        )}
 
         <footer className="px-4 sm:px-8 py-4 max-w-7xl w-full mx-auto flex flex-wrap items-center justify-between gap-2 text-[11px] text-slate-400">
           <span>{credit.label && (credit.url

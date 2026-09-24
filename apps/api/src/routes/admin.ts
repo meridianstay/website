@@ -95,6 +95,7 @@ adminRoutes.put('/admin/translations', async (c) => c.json({ translations: await
 adminRoutes.put('/admin/languages', async (c) => c.json({ languages: await appearanceService.saveLanguages(admin(c), await body(c)) }))
 adminRoutes.put('/admin/theme', async (c) => c.json({ theme: await appearanceService.saveTheme(admin(c), await body(c)) }))
 adminRoutes.put('/admin/header', async (c) => c.json({ header: await appearanceService.saveHeader(admin(c), await body(c)) }))
+adminRoutes.put('/admin/bottom-nav', async (c) => c.json({ bottomNav: await appearanceService.saveBottomNav(admin(c), await body(c)) }))
 adminRoutes.put('/admin/footer', async (c) => c.json({ footer: await appearanceService.saveFooter(admin(c), await body(c)) }))
 
 // ─── Website content ─────────────────────────────────────────────────────────

@@ -17,7 +17,9 @@ export const C = {
   coupons: 'coupons',
   promotions: 'adCampaigns',
   counters: 'counters',
-  /** Encrypted integration secrets (Razorpay). Never listed in the admin Database screen. */
+  /** What the platform has emailed or texted, and whether it arrived. */
+  notifications: 'notifications',
+  /** Encrypted integration secrets (Razorpay, mail and SMS). Never listed in the admin Database screen. */
   secrets: 'secrets',
 } as const
 

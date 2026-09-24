@@ -2,8 +2,8 @@ import { useEffect, useState } from 'react'
 import { ErrorNote, ImageField, PageHeader, Panel, Spinner } from '@meridian/ui'
 import {
   BRAND_APPS, BRAND_LIMITS, LANGUAGES, SOCIAL_NETWORKS, THEME_PRESETS,
-  defaultBranding, defaultFooter, defaultHeader, defaultLanguages, defaultTheme, themeVariables,
-  type AppBrand, type BrandApp, type BrandingSettings, type FooterColumn, type FooterSettings, type HeaderSettings, type LanguageSettings, type NavItemLink, type ThemeSettings,
+  defaultBottomNav, defaultBranding, defaultFooter, defaultHeader, defaultLanguages, defaultTheme, themeVariables,
+  type AppBrand, type BottomNavSettings, type BrandApp, type BrandingSettings, type FooterColumn, type FooterSettings, type HeaderSettings, type LanguageSettings, type NavItemLink, type ThemeSettings,
 } from '@meridian/shared'
 import { ApiError, adminApi, appLink } from '@meridian/shared/client'
 
@@ -69,6 +69,7 @@ export function Branding() {
   const [footer, setFooter] = useState<FooterSettings>(defaultFooter)
   const [theme, setTheme] = useState<ThemeSettings>(defaultTheme)
   const [languages, setLanguages] = useState<LanguageSettings>(defaultLanguages)
+  const [bottomNav, setBottomNav] = useState<BottomNavSettings>(defaultBottomNav)
   const [error, setError] = useState<string | null>(null)
   const [fields, setFields] = useState<Record<string, string>>({})
   const [state, setState] = useState<'idle' | 'saving' | 'saved'>('idle')
@@ -80,6 +81,7 @@ export function Branding() {
       setFooter(s.footer ?? defaultFooter)
       setTheme(s.theme ?? defaultTheme)
       setLanguages(s.languages ?? defaultLanguages)
+      setBottomNav(s.bottomNav ?? defaultBottomNav)
     }).catch((e) => setError(e.message))
   }, [])
 
@@ -105,6 +107,7 @@ export function Branding() {
       await adminApi.saveLanguages(languages)
       await adminApi.saveBranding(branding)
       await adminApi.saveHeader(header)
+      await adminApi.saveBottomNav(bottomNav)
       await adminApi.saveFooter(footer)
       setState('saved')
     } catch (err) {
@@ -273,6 +276,33 @@ export function Branding() {
             <LinkRows links={header.links} max={BRAND_LIMITS.headerLinks} onChange={(links) => { setHeader({ ...header, links }); touched() }} />
             {fieldError('links')}
           </div>
+        </Panel>
+
+        <Panel title="Bottom bar on phones and tablets" subtitle="The bar a thumb reaches on a small screen. It follows guests into their account, and disappears on desktop where the header has room.">
+          <Toggle on={bottomNav.enabled} onChange={(enabled) => { setBottomNav({ ...bottomNav, enabled }); touched() }}
+            title="Show the bottom bar" hint="Off leaves only the header, on every screen size." />
+          <ul className="mt-5 divide-y divide-slate-100">
+            {bottomNav.tabs.map((tab, i) => (
+              <li key={tab.key} className="py-3 flex flex-wrap items-center gap-3">
+                <input type="checkbox" checked={tab.enabled} className="w-4 h-4 accent-brand-600" aria-label={`Show the ${tab.label} tab`}
+                  onChange={(e) => { setBottomNav({ ...bottomNav, tabs: bottomNav.tabs.map((x, n) => (n === i ? { ...x, enabled: e.target.checked } : x)) }); touched() }} />
+                <span className="w-9 h-9 shrink-0 rounded-xl bg-slate-100 text-slate-600 flex items-center justify-center">
+                  <i className={`fa-solid fa-${tab.icon}`} aria-hidden="true"></i>
+                </span>
+                <input value={tab.label} aria-label={`${tab.key} label`} className={`${input} w-32`} maxLength={14}
+                  onChange={(e) => { setBottomNav({ ...bottomNav, tabs: bottomNav.tabs.map((x, n) => (n === i ? { ...x, label: e.target.value } : x)) }); touched() }} />
+                <input value={tab.url} aria-label={`${tab.key} link`} className={`${input} flex-1 min-w-[160px] font-mono text-xs`}
+                  onChange={(e) => { setBottomNav({ ...bottomNav, tabs: bottomNav.tabs.map((x, n) => (n === i ? { ...x, url: e.target.value } : x)) }); touched() }} />
+                {fieldError(`tabs.${i}.label`)}
+                {fieldError(`tabs.${i}.url`)}
+              </li>
+            ))}
+          </ul>
+          <p className="text-xs text-slate-500 mt-3">
+            Default names are translated automatically; rename one and it shows exactly as you write it in every language.
+            The account tab says “Sign in” to signed-out visitors, and Trips becomes the host dashboard for hosts.
+          </p>
+          {fieldError('tabs')}
         </Panel>
 
         <Panel title="Website footer" subtitle="The columns of links at the bottom of every page.">
