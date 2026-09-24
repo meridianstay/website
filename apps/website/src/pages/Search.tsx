@@ -95,7 +95,7 @@ export function Search() {
               {t('search.maxPrice')}
               <input type="number" min={0} inputMode="numeric" value={priceDraft.max} onChange={(e) => setPriceDraft({ ...priceDraft, max: e.target.value })} placeholder="Any" className="block mt-1 w-24 bg-slate-50 border border-slate-200 rounded-xl px-3 py-2 text-sm font-semibold text-slate-800 focus:outline-none focus:border-brand-500" />
             </label>
-            <button type="submit" className="bg-slate-900 text-white text-xs font-bold px-4 py-2.5 rounded-xl">Apply</button>
+            <button type="submit" className="bg-slate-900 text-white text-xs font-bold px-4 py-2.5 rounded-xl">{t('booking.apply')}</button>
           </form>
           <label className="text-[10px] font-bold uppercase text-slate-500">
             {t('search.sortBy')}
@@ -104,7 +104,7 @@ export function Search() {
               // "Nearest first" measures from the visitor's chosen place.
               update(sort === 'nearest' && place && state.lat === undefined ? { sort, lat: place.lat, lng: place.lng } : { sort })
             }} className="block mt-1 bg-slate-50 border border-slate-200 rounded-xl px-3 py-2 text-sm font-semibold text-slate-800 focus:outline-none focus:border-brand-500">
-              {SORT_OPTIONS.filter((o) => o.value !== 'nearest' || place || state.lat !== undefined).map((o) => <option key={o.value} value={o.value}>{o.label}</option>)}
+              {SORT_OPTIONS.filter((o) => o.value !== 'nearest' || place || state.lat !== undefined).map((o) => <option key={o.value} value={o.value}>{t(o.label)}</option>)}
             </select>
           </label>
           <div className="flex-1" />

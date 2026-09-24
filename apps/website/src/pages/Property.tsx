@@ -124,8 +124,8 @@ export function Property() {
         }
       />
 
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-12">
-        <div className="lg:col-span-2 space-y-10">
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-x-12 gap-y-10">
+        <div className="lg:col-span-2 lg:row-start-1 space-y-10">
           <section className="flex items-center justify-between gap-4 pb-8 border-b border-slate-200">
             <div>
               <h2 className="text-lg font-bold text-slate-900">{t('stay.hostedBy', { name: property.host.name })}</h2>
@@ -161,7 +161,9 @@ export function Property() {
               </li>
             ))}
           </ul>
+        </div>
 
+        <div className="lg:col-span-2 lg:row-start-2 space-y-10">
           <section>
             <h2 className="text-lg font-bold text-slate-900 mb-3">{t('stay.aboutSpace')}</h2>
             {property.description.split('\n\n').map((para, i) => (
@@ -275,7 +277,7 @@ export function Property() {
           </section>
         </div>
 
-        <aside id="book" className="lg:sticky lg:top-28 h-max space-y-4 scroll-mt-28">
+        <aside id="book" className="lg:col-start-3 lg:row-start-1 lg:row-span-2 lg:sticky lg:top-28 h-max space-y-4 scroll-mt-28">
           <BookingBox property={property} initial={{ ...search, kind: params.get('kind') === 'dayuse' ? 'dayuse' : 'stay' }} />
           <div className="bg-brand-50 border border-brand-100 rounded-3xl p-5">
             <p className="font-bold text-sm text-slate-900"><i className="fa-solid fa-shield-heart text-brand-600 mr-2" aria-hidden="true"></i>{t('stay.promise')}</p>

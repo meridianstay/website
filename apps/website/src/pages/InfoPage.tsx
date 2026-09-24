@@ -17,7 +17,11 @@ export function InfoPage() {
   useEffect(() => {
     setPage(null)
     setError(null)
-    api.page(slug, lang).then((r) => setPage(r.page)).catch((e: ApiError) => setError({ status: e.status, message: e.message }))
+    let current = true
+    api.page(slug, lang)
+      .then((r) => { if (current) setPage(r.page) })
+      .catch((e: ApiError) => { if (current) setError({ status: e.status, message: e.message }) })
+    return () => { current = false }
   }, [slug, lang])
 
   if (error?.status === 404) return <NotFound />

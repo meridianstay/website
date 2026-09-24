@@ -88,7 +88,8 @@ export function AppShell({ subtitle, nav, app, children }: AppShellProps) {
               </button>
             </div>
           </div>
-          <nav className="px-3 pb-3 flex space-x-1 overflow-x-auto" aria-label="Main">
+          {/* A phone scrolls this sideways; a tablet has room to wrap it, so nothing hides off-screen. */}
+          <nav className="px-3 pb-3 flex gap-1 overflow-x-auto md:flex-wrap md:overflow-x-visible" aria-label="Main">
             {nav.map((item) => (
               <NavLink key={item.to} to={item.to} end={item.end} className={linkClass}>
                 <i className={`fa-solid fa-${item.icon}`} aria-hidden="true"></i>

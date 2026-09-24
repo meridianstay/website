@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useState } from 'react'
+import { useCallback, useEffect, useState, useRef } from 'react'
 import { usePlace } from '../lib/place'
 import { defaultHomeLayout, type HomeLayout, type PropertySummary } from '@meridian/shared'
 import { api } from '@meridian/shared/client'
@@ -10,6 +10,8 @@ import { useDocumentTitle } from '../lib/useDocumentTitle'
 /** The homepage, arranged in the control center (Website content → Homepage). */
 export function Home() {
   const { lang } = useLanguage()
+  const langRef = useRef(lang)
+  langRef.current = lang
   useDocumentTitle(null)
   const [data, setData] = useState<{ layout: HomeLayout; stays: Record<string, PropertySummary[]> } | null>(null)
   const [error, setError] = useState<string | null>(null)
@@ -36,7 +38,10 @@ export function Home() {
   // Refetched when the reader changes language, because the headings are written in the control centre.
   const load = useCallback(() => {
     setError(null)
-    api.home(lang).then(setData).catch((e) => setError(e.message))
+    // Ignore a reply for a language the reader has already moved on from, or a slow English
+    // response would land after the Hindi one and put the page back into English.
+    const asked = lang
+    api.home(asked).then((r) => { if (asked === langRef.current) setData(r) }).catch((e) => setError(e.message))
   }, [lang])
   useEffect(load, [load])
 

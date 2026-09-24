@@ -17,13 +17,14 @@ export const PROPERTY_TYPES: { type: PropertyType; label: string; icon: string }
   { type: 'Villa', label: 'Villas', icon: 'hotel' },
 ]
 
+/** `label` is a translation key; the search page runs it through t(). */
 export const SORT_OPTIONS: { value: NonNullable<SearchQuery['sort']>; label: string }[] = [
-  { value: 'recommended', label: 'Recommended' },
-  { value: 'price_asc', label: 'Price: low to high' },
-  { value: 'price_desc', label: 'Price: high to low' },
-  { value: 'rating', label: 'Top rated' },
-  { value: 'newest', label: 'Newest' },
-  { value: 'nearest', label: 'Nearest first' },
+  { value: 'recommended', label: 'search.sortRecommended' },
+  { value: 'price_asc', label: 'search.sortPriceLow' },
+  { value: 'price_desc', label: 'search.sortPriceHigh' },
+  { value: 'rating', label: 'search.sortRating' },
+  { value: 'newest', label: 'search.sortNewest' },
+  { value: 'nearest', label: 'search.sortNearest' },
 ]
 
 export function readSearch(params: URLSearchParams): SearchState & Pick<SearchQuery, 'type' | 'minPrice' | 'maxPrice' | 'sort' | 'lat' | 'lng'> {

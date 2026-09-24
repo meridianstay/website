@@ -15,10 +15,13 @@ export function About() {
   useDocumentTitle('About us')
 
   useEffect(() => {
+    let current = true
     api.about(lang).then((r) => {
+      if (!current) return
       setPage(r.page)
       setStats(r.stats)
     }).catch(() => {})
+    return () => { current = false }
   }, [lang])
 
   const t = (text: string) => fillStats(text, stats)
