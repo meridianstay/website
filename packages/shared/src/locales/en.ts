@@ -431,6 +431,13 @@ const en: Dictionary = {
   // Stay page notes
   'stay.allowed': 'Allowed:',
   'stay.hostReplies': 'Host replies in {hours} h',
+
+  // Bottom bar
+  'tab.explore': 'Explore',
+  'tab.saved': 'Saved',
+  'tab.trips': 'Trips',
+  'tab.account': 'Account',
+  'tab.host': 'Host',
 }
 
 export default en

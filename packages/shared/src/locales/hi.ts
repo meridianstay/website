@@ -411,6 +411,13 @@ const hi: Dictionary = {
   // Stay page notes
   'stay.allowed': 'अनुमति है:',
   'stay.hostReplies': 'होस्ट {hours} घंटे में जवाब देते हैं',
+
+  // Bottom bar
+  'tab.explore': 'खोजें',
+  'tab.saved': 'सहेजे',
+  'tab.trips': 'यात्राएँ',
+  'tab.account': 'खाता',
+  'tab.host': 'होस्ट',
 }
 
 export default hi

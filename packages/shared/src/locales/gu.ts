@@ -411,6 +411,13 @@ const gu: Dictionary = {
   // Stay page notes
   'stay.allowed': 'મંજૂરી છે:',
   'stay.hostReplies': 'હોસ્ટ {hours} કલાકમાં જવાબ આપે છે',
+
+  // Bottom bar
+  'tab.explore': 'શોધો',
+  'tab.saved': 'સાચવેલ',
+  'tab.trips': 'પ્રવાસ',
+  'tab.account': 'ખાતું',
+  'tab.host': 'હોસ્ટ',
 }
 
 export default gu

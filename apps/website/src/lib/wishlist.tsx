@@ -6,6 +6,8 @@ import { api } from '@meridian/shared/client'
 interface WishlistState {
   has: (propertyId: number) => boolean
   toggle: (propertyId: number) => void
+  /** How many stays are saved, for the badge on the bottom bar. */
+  count: number
 }
 
 const WishlistContext = createContext<WishlistState | null>(null)
@@ -42,7 +44,7 @@ export function WishlistProvider({ children }: { children: ReactNode }) {
     [user, ids, navigate, location],
   )
 
-  return <WishlistContext.Provider value={{ has: (id) => ids.has(id), toggle }}>{children}</WishlistContext.Provider>
+  return <WishlistContext.Provider value={{ has: (id) => ids.has(id), toggle, count: ids.size }}>{children}</WishlistContext.Provider>
 }
 
 export function useWishlist() {

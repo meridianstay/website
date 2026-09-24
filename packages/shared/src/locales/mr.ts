@@ -411,6 +411,13 @@ const mr: Dictionary = {
   // Stay page notes
   'stay.allowed': 'परवानगी आहे:',
   'stay.hostReplies': 'होस्ट {hours} तासांत उत्तर देतात',
+
+  // Bottom bar
+  'tab.explore': 'शोधा',
+  'tab.saved': 'जतन',
+  'tab.trips': 'सहली',
+  'tab.account': 'खाते',
+  'tab.host': 'होस्ट',
 }
 
 export default mr

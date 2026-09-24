@@ -3,6 +3,7 @@ import { Link, Outlet, useLocation } from 'react-router'
 import { useSite } from '../lib/site'
 import { Header } from './Header'
 import { Footer } from './Footer'
+import { BottomNav } from './BottomNav'
 
 export function Layout() {
   const { pathname } = useLocation()
@@ -21,6 +22,9 @@ export function Layout() {
         </div>
       </main>
       <Footer />
+      {/* The bar sits over the page on phones and tablets, so the footer clears it. */}
+      <div className="lg:hidden h-16" aria-hidden="true" style={{ marginBottom: 'env(safe-area-inset-bottom, 0px)' }} />
+      <BottomNav />
     </div>
   )
 }

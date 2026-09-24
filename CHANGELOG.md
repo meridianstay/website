@@ -9,6 +9,11 @@ Every change to Meridian Stay is recorded here, newest first. Each entry says wh
 - **Property types, house rules and amenity names** are translated as well — they come from the database rather than the code, so "Farmstay", "No pets" and "Breakfast included" now read properly in Hindi, Marathi and Gujarati.
 - 371 pieces of wording in total, up from 147.
 
+### A bottom bar on phones and tablets
+- Phones and tablets now get a **bar along the bottom** with Home, Explore, Saved, Trips and Account — the five things people reach for, where a thumb actually lands. The saved tab carries a count.
+- It shows the host dashboard instead of Trips once someone is a host, and "Sign in" instead of Account when they are signed out. It disappears on desktop, where the header already has room.
+- The bar clears the phone's own home indicator, and the footer clears the bar.
+
 ### Technical
 - The dictionary test now checks coverage instead of identical key sets: Hindi, Marathi and Gujarati must be complete, and the other seven languages fall back to English wording rather than blocking a release.
 
