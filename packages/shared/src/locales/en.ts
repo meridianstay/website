@@ -438,6 +438,10 @@ const en: Dictionary = {
   'tab.trips': 'Trips',
   'tab.account': 'Account',
   'tab.host': 'Host',
+
+  // Guest counts
+  'search.guestCount': '{count} guests',
+  'search.oneGuest': '1 guest',
 }
 
 export default en

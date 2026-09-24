@@ -32,7 +32,7 @@ export function Header() {
 
   const whereText = current?.where || t('nav.anywhere')
   const weekText = current?.checkIn ? `${formatDate(current.checkIn)} – ${formatDate(current.checkOut)}` : t('nav.anyWeek')
-  const guestText = current?.guests ? guestLabel(current.guests) : t('nav.addGuests')
+  const guestText = guestLabel(current?.guests ?? 0, t)
 
   return (
     <header className="sticky top-0 z-50 bg-white/95 backdrop-blur-md border-b border-slate-200">

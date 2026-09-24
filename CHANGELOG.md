@@ -2,6 +2,17 @@
 
 Every change to Meridian Stay is recorded here, newest first. Each entry says what changed for the people using the platform, then the notable technical changes.
 
+## 0.29.0 — 2026-09-24
+
+### Tablets
+- At tablet width the header ran off the right of the screen, so **every page scrolled sideways** and the account button was cut off. Tablets now get the compact search button and an icon-only hosting link, and nothing in the header can push past the edge.
+- On the stay page the **booking card used to sit below every review** on anything narrower than a desktop — five screens of scrolling before you could book. It now comes straight after the key facts, and still sits in its sticky column on a desktop.
+- In the panels, the row of sections **wraps on a tablet** instead of hiding items off the side.
+
+### Also
+- Switching language no longer flickers back: a slow reply in the previous language used to land after the new one and overwrite the page.
+- The sort menu, the Apply button and the guest count on the search form are translated.
+
 ## 0.28.0 — 2026-09-24
 
 ### Promotion plans, priced by how far they reach

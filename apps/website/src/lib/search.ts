@@ -66,4 +66,8 @@ export function searchUrl(state: Partial<SearchState> & Partial<Pick<SearchQuery
   return qs ? `/search?${qs}` : '/search'
 }
 
-export const guestLabel = (n: number) => (n ? `${n} guest${n === 1 ? '' : 's'}` : 'Add guests')
+/** "2 guests", or the prompt when none are chosen. `t` comes from the component that draws it. */
+export const guestLabel = (n: number, t?: (key: string, values?: Record<string, string | number>) => string) => {
+  if (!t) return n ? `${n} guest${n === 1 ? '' : 's'}` : 'Add guests'
+  return n ? (n === 1 ? t('search.oneGuest') : t('search.guestCount', { count: n })) : t('nav.addGuests')
+}

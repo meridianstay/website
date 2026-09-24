@@ -418,6 +418,10 @@ const hi: Dictionary = {
   'tab.trips': 'यात्राएँ',
   'tab.account': 'खाता',
   'tab.host': 'होस्ट',
+
+  // Guest counts
+  'search.guestCount': '{count} मेहमान',
+  'search.oneGuest': '1 मेहमान',
 }
 
 export default hi

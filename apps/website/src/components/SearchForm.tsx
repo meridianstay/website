@@ -93,7 +93,7 @@ export function SearchForm({ initial = {}, layout = 'bar', onSubmitted }: Props)
       </button>
       <button type="button" onClick={() => setOpen(open === 'guests' ? null : 'guests')} aria-expanded={open === 'guests'} className="text-left px-4 py-2 rounded-xl hover:bg-slate-50 transition border-t sm:border-t-0 border-slate-100">
         <span className="block text-[10px] font-bold uppercase text-slate-500 tracking-wide">{t('search.who')}</span>
-        <span className="block text-[13px] mt-0.5 font-semibold text-slate-800">{guestLabel(guests)}</span>
+        <span className="block text-[13px] mt-0.5 font-semibold text-slate-800">{guestLabel(guests, t)}</span>
       </button>
       <button
         type="submit"

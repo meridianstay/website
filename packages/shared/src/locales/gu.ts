@@ -418,6 +418,10 @@ const gu: Dictionary = {
   'tab.trips': 'પ્રવાસ',
   'tab.account': 'ખાતું',
   'tab.host': 'હોસ્ટ',
+
+  // Guest counts
+  'search.guestCount': '{count} મહેમાન',
+  'search.oneGuest': '1 મહેમાન',
 }
 
 export default gu

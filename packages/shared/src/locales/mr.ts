@@ -418,6 +418,10 @@ const mr: Dictionary = {
   'tab.trips': 'सहली',
   'tab.account': 'खाते',
   'tab.host': 'होस्ट',
+
+  // Guest counts
+  'search.guestCount': '{count} पाहुणे',
+  'search.oneGuest': '1 पाहुणा',
 }
 
 export default mr
