@@ -4,6 +4,8 @@ import { couponService } from '../services/coupons'
 import { body, currentUid, currentUser, requireUser, type AppEnv } from '../http/auth'
 import { AppError } from '../http/errors'
 import { str } from '../http/validate'
+import { campaignService } from '../services/campaigns'
+import { pushService } from '../services/push'
 
 export const bookingRoutes = new Hono<AppEnv>()
 bookingRoutes.use('/bookings', requireUser)
@@ -61,5 +63,10 @@ paymentRoutes.get('/cron/expire', async (c) => {
 paymentRoutes.get('/cron/daily', async (c) => {
   const secret = process.env.CRON_SECRET
   if (!secret || c.req.header('authorization') !== `Bearer ${secret}`) throw new AppError(401, 'Not allowed.')
-  return c.json(await bookingService.sendDailyMessages())
+  const [messages, schedule, pushed] = await Promise.all([
+    bookingService.sendDailyMessages(),
+    campaignService.refreshSchedule(),
+    pushService.sendDueCampaigns(),
+  ])
+  return c.json({ ...messages, campaigns: { ...schedule, ...pushed } })
 })

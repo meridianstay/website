@@ -2,6 +2,23 @@
 
 Every change to Meridian Stay is recorded here, newest first. Each entry says what changed for the people using the platform, then the notable technical changes.
 
+## 0.32.0 — 2026-09-27
+
+### Offers and announcements you write yourself
+- The twelve booking messages tell someone what just happened to their booking. This is the other kind: **an offer, a festival discount, a new destination** — written in the control centre, in your own words, and sent to whoever you choose. **Notifications → Campaigns.**
+- Two ways to send it, and you can use both: a **popup card on the website**, which everyone browsing sees and needs no permission, and a **push notification to phones and desktops**, which arrives even with the site closed but only reaches people who allowed it.
+- **Pick who sees it** by ticking any number of categories — not signed in, signed in, guests, hosts, people who have stayed before, people who signed up but never booked, people with the app installed. Anyone in *any* ticked category counts; tick none and it goes to everyone.
+- **Narrow it by place** as well: name the towns or states, and only people looking at those see it. A monsoon offer for Wayanad never interrupts someone browsing Rajasthan.
+- **Send it now or on a date.** A campaign with a start date waits, goes live on the morning it should, and finishes itself on the end date. Push goes out once and can never be sent twice, however many times the scheduler runs.
+- **How often a popup may come back** is yours to set — once per person, once a day, or every visit — along with how many seconds of reading before it appears, and whether it shows everywhere, on the homepage only, or on search and stay pages.
+- Every campaign counts what it did: shown, clicked, dismissed, pushed, failed.
+- The permission request is asked **25 seconds after someone signs in**, never the moment they arrive, because a prompt on arrival is how people learn to press Block.
+
+### Under the bonnet
+- Web push is spoken directly — the signed application token (RFC 8292) and the per-subscriber message encryption (RFC 8291) are both done with Node's own crypto, so the API takes on no new dependency. A test encrypts a message and decrypts it the way a browser would, to prove the wire format is right.
+- Push keys are generated from the control centre and stored encrypted. Subscriptions a push service reports as gone are deleted rather than retried forever.
+- The service worker now shows a pushed notification and, when it is clicked, reuses an already-open tab instead of opening another.
+
 ## 0.31.0 — 2026-09-27
 
 ### Checkout asks for an email address

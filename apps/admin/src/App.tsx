@@ -22,6 +22,7 @@ const Branding = lazy(() => import('./pages/Branding').then((m) => ({ default: m
 const Translations = lazy(() => import('./pages/Translations').then((m) => ({ default: m.Translations })))
 const Notifications = lazy(() => import('./pages/Notifications').then((m) => ({ default: m.Notifications })))
 const Payouts = lazy(() => import('./pages/Payouts').then((m) => ({ default: m.Payouts })))
+const Campaigns = lazy(() => import('./pages/Campaigns').then((m) => ({ default: m.Campaigns })))
 const Activity = lazy(() => import('./pages/Activity').then((m) => ({ default: m.Activity })))
 const Database = lazy(() => import('./pages/Database').then((m) => ({ default: m.Database })))
 const DatabaseTable = lazy(() => import('./pages/DatabaseTable').then((m) => ({ default: m.DatabaseTable })))
@@ -41,6 +42,7 @@ const nav: NavItem[] = [
   { to: '/activity', label: 'Activity log', icon: 'clock-rotate-left' },
   { to: '/database', label: 'Database', icon: 'database' },
   { to: '/notifications', label: 'Notifications', icon: 'bell' },
+  { to: '/campaigns', label: 'Offers & alerts', icon: 'bullhorn' },
   { to: '/settings', label: 'Settings', icon: 'gear' },
 ]
 
@@ -76,6 +78,7 @@ export default function App() {
                   <Route path="database/:table" element={<Suspense fallback={<BrandLoader />}><DatabaseTable /></Suspense>} />
                   <Route path="payouts" element={<Suspense fallback={<BrandLoader />}><Payouts /></Suspense>} />
                   <Route path="notifications" element={<Suspense fallback={<BrandLoader />}><Notifications /></Suspense>} />
+                  <Route path="campaigns" element={<Suspense fallback={<BrandLoader />}><Campaigns /></Suspense>} />
                   <Route path="settings" element={<Suspense fallback={<BrandLoader />}><Settings /></Suspense>} />
                   <Route path="*" element={<Overview />} />
                 </Routes>

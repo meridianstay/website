@@ -9,6 +9,8 @@ import { couponService } from '../services/coupons'
 import { appearanceService } from '../services/appearance'
 import { notifyService } from '../services/notify'
 import { payoutService } from '../services/payouts'
+import { campaignService } from '../services/campaigns'
+import { pushService } from '../services/push'
 import { promotionService } from '../services/promotions'
 import { newBlock, type HomeBlock } from '@meridian/shared'
 import { demoResetAllowed, resetDemo } from '../store/resetDemo'
@@ -97,6 +99,29 @@ adminRoutes.put('/admin/translations', async (c) => c.json({ translations: await
 adminRoutes.put('/admin/languages', async (c) => c.json({ languages: await appearanceService.saveLanguages(admin(c), await body(c)) }))
 adminRoutes.put('/admin/theme', async (c) => c.json({ theme: await appearanceService.saveTheme(admin(c), await body(c)) }))
 adminRoutes.put('/admin/header', async (c) => c.json({ header: await appearanceService.saveHeader(admin(c), await body(c)) }))
+// ─── Campaigns: offers and announcements ────────────────────────────────────
+adminRoutes.get('/admin/campaigns', async (c) => c.json({ campaigns: await campaignService.list(), push: await pushService.status() }))
+adminRoutes.post('/admin/campaigns', async (c) => c.json({ campaign: await campaignService.create(admin(c), await body(c)) }, 201))
+adminRoutes.put('/admin/campaigns/:id', async (c) => c.json({ campaign: await campaignService.update(admin(c), Number(c.req.param('id')), await body(c)) }))
+adminRoutes.post('/admin/campaigns/:id/publish', async (c) => c.json({ campaign: await campaignService.publish(admin(c), Number(c.req.param('id'))) }))
+adminRoutes.post('/admin/campaigns/:id/stop', async (c) => c.json({ campaign: await campaignService.stop(admin(c), Number(c.req.param('id'))) }))
+adminRoutes.delete('/admin/campaigns/:id', async (c) => {
+  await campaignService.remove(admin(c), Number(c.req.param('id')))
+  return c.body(null, 204)
+})
+
+/** Sends a campaign's push right away rather than waiting for the daily run. */
+adminRoutes.post('/admin/campaigns/:id/push', async (c) => {
+  const campaign = await campaignService.list().then((all) => all.find((x) => x.id === Number(c.req.param('id'))))
+  if (!campaign) throw new AppError(404, 'No such campaign.')
+  const result = await pushService.sendCampaign(campaign)
+  if (!result.skipped) await campaignService.markPushed(campaign.id, result.sent, result.failed)
+  return c.json(result)
+})
+
+adminRoutes.post('/admin/push/keys', async (c) => c.json(await pushService.createKeys(admin(c))))
+adminRoutes.post('/admin/push/test', async (c) => c.json(await pushService.test(admin(c))))
+
 // ─── Payouts ─────────────────────────────────────────────────────────────────
 adminRoutes.get('/admin/payouts', async (c) => {
   const [owing, payouts] = await Promise.all([payoutService.owing(), payoutService.all(c.req.query('status') ?? null)])

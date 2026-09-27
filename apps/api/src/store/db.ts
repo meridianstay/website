@@ -21,6 +21,10 @@ export const C = {
   notifications: 'notifications',
   /** What has been paid to hosts, and what each payment covered. */
   payouts: 'payouts',
+  /** Offers and announcements the control centre writes itself. */
+  campaigns: 'campaigns',
+  /** Browsers and phones that agreed to receive push notifications. */
+  pushSubscriptions: 'pushSubscriptions',
   /** Encrypted integration secrets (Razorpay, mail and SMS). Never listed in the admin Database screen. */
   secrets: 'secrets',
 } as const

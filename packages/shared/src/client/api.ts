@@ -11,6 +11,7 @@ import type { HomeBlock, HomeLayout } from '../homepage'
 import type { Destination } from '../places'
 import type { Coupon } from '../offers'
 import type { AdCampaign, AdPlacement, PromotionPlan, PromotionSettings } from '../promotions'
+import type { Campaign, CampaignContent } from '../campaigns'
 
 /** A plan as a host sees it: what it costs, and how much room is left over their dates. */
 export interface PlanOnOffer extends PromotionPlan {
@@ -78,6 +79,16 @@ export const api = {
   locations: () => request<{ locations: string[] }>('/locations'),
   destinations: () => request<{ destinations: Destination[] }>('/destinations'),
   /** Listings hosts have paid to promote in a place on the site. */
+  /** The one offer popup this visitor should see, if any. */
+  livePopup: (params: { page: string; installed: boolean; place?: string }) =>
+    request<{ popup: { id: number; content: CampaignContent; afterSeconds: number; frequency: 'once' | 'daily' | 'always' } | null }>(
+      `/campaigns/popup${qs({ page: params.page, installed: params.installed ? 1 : undefined, place: params.place })}`),
+  countCampaign: (id: number, event: 'shown' | 'clicked' | 'dismissed') =>
+    request<void>(`/campaigns/${id}/${event}`, { method: 'POST' }),
+  pushKey: () => request<{ publicKey: string }>('/push/key'),
+  subscribePush: (subscription: unknown, installed: boolean, language: string) =>
+    request<void>('/push/subscribe', { method: 'POST', json: { subscription, installed, language } }),
+  unsubscribePush: (endpoint: string) => request<void>('/push/unsubscribe', { method: 'POST', json: { endpoint } }),
   promoted: (placement: AdPlacement, params: { where?: string; type?: string; lat?: number; lng?: number } = {}) =>
     request<{ properties: (PropertySummary & { promotionId: number })[] }>(`/promoted${qs({ placement, ...params })}`),
   promotedClick: (promotionId: number) => request<void>(`/promoted/${promotionId}/click`, { method: 'POST' }),
@@ -212,6 +223,15 @@ export const adminApi = {
   saveLanguages: (value: LanguageSettings) => request<{ languages: LanguageSettings }>('/admin/languages', { method: 'PUT', json: value }),
   saveTheme: (value: ThemeSettings) => request<{ theme: ThemeSettings }>('/admin/theme', { method: 'PUT', json: value }),
   saveHeader: (value: HeaderSettings) => request<{ header: HeaderSettings }>('/admin/header', { method: 'PUT', json: value }),
+  campaigns: () => request<{ campaigns: Campaign[]; push: { ready: boolean; publicKey: string; subscribers: number; encryptionReady: boolean } }>('/admin/campaigns'),
+  createCampaign: (value: Partial<Campaign>) => request<{ campaign: Campaign }>('/admin/campaigns', { method: 'POST', json: value }),
+  updateCampaign: (id: number, value: Partial<Campaign>) => request<{ campaign: Campaign }>(`/admin/campaigns/${id}`, { method: 'PUT', json: value }),
+  publishCampaign: (id: number) => request<{ campaign: Campaign }>(`/admin/campaigns/${id}/publish`, { method: 'POST' }),
+  stopCampaign: (id: number) => request<{ campaign: Campaign }>(`/admin/campaigns/${id}/stop`, { method: 'POST' }),
+  deleteCampaign: (id: number) => request<void>(`/admin/campaigns/${id}`, { method: 'DELETE' }),
+  pushCampaign: (id: number) => request<{ sent: number; failed: number; skipped: string }>(`/admin/campaigns/${id}/push`, { method: 'POST' }),
+  createPushKeys: () => request<{ publicKey: string }>('/admin/push/keys', { method: 'POST' }),
+  testPush: () => request<{ sentTo: number }>('/admin/push/test', { method: 'POST' }),
   payoutQueue: (status?: string) => request<PayoutQueue>(`/admin/payouts${qs({ status })}`),
   createPayout: (hostId: number) => request<{ payout: Payout }>('/admin/payouts', { method: 'POST', json: { hostId } }),
   markPayoutPaid: (id: number, reference: string, note = '') => request<{ payout: Payout }>(`/admin/payouts/${id}/paid`, { method: 'POST', json: { reference, note } }),

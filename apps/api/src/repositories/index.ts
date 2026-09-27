@@ -2,6 +2,8 @@
 export { usersRepo, toMe, type UserDoc, type AdminUser } from './users'
 export { notificationsRepo } from './notifications'
 export { payoutsRepo, type PayoutDoc } from './payouts'
+export { campaignsRepo } from './campaigns'
+export { pushRepo, endpointId, type PushSubscriptionDoc } from './push'
 export { propertiesRepo, toPropertySummary, datesIn, type PropertyDoc, type HostListing, type AdminListing } from './properties'
 export { amenitiesRepo } from './amenities'
 export { bookingsRepo, toBooking, withGuest, keptMinor, NightsTakenError, HOLDING, type BookingDoc, type BookingWithGuest, type StoredStatus } from './bookings'
