@@ -160,6 +160,20 @@ export const defaultNotifications: NotificationSettings = {
   },
 }
 
+/**
+ * Fills in anything a stored copy is missing — most often a template for an event added in a later
+ * release, which would otherwise leave the control centre with nothing to draw.
+ */
+export function withNotificationDefaults(saved: Partial<NotificationSettings> | null | undefined): NotificationSettings {
+  const base = structuredClone(defaultNotifications)
+  if (!saved) return base
+  return {
+    ...base,
+    ...saved,
+    templates: { ...base.templates, ...(saved.templates ?? {}) },
+  }
+}
+
 /** Fills {tokens}. Anything missing is removed rather than left showing braces. */
 export function fillTemplate(text: string, values: Record<string, string | number | null | undefined>): string {
   return text

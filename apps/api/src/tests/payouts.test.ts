@@ -7,7 +7,6 @@ import { notificationsRepo, payoutsRepo, propertiesRepo } from '../repositories'
 import { appError, createLiveListing, createUser, insertBooking, resetDatabase } from './helpers'
 
 const today = todayISO()
-const body = (value: unknown) => value as Record<string, unknown>
 
 describe('host payouts', () => {
   beforeEach(resetDatabase)

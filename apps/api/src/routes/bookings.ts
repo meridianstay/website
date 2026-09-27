@@ -56,3 +56,10 @@ paymentRoutes.get('/cron/expire', async (c) => {
   if (!secret || c.req.header('authorization') !== `Bearer ${secret}`) throw new AppError(401, 'Not allowed.')
   return c.json({ expired: await bookingService.expireStale() })
 })
+
+/** Check-in reminders and review invitations. Call once a day, the same way as /cron/expire. */
+paymentRoutes.get('/cron/daily', async (c) => {
+  const secret = process.env.CRON_SECRET
+  if (!secret || c.req.header('authorization') !== `Bearer ${secret}`) throw new AppError(401, 'Not allowed.')
+  return c.json(await bookingService.sendDailyMessages())
+})

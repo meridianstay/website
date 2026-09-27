@@ -4,12 +4,33 @@ import { C, all, col, nowISO } from '../store/db'
 
 // Collections: siteSettings/{key} (plus siteSettings/aboutPage for the About us page), contentPages/{slug}
 
+/**
+ * Fills a stored value in over the defaults, key by key. Lists are replaced whole — a footer column
+ * or promotion plan someone deleted must stay deleted — but plain objects keep any key the stored
+ * copy has never heard of.
+ */
+function deepMerge<T>(base: T, stored: unknown): T {
+  if (stored === null || stored === undefined) return base
+  if (Array.isArray(stored) || Array.isArray(base)) return stored as T
+  if (typeof stored !== 'object' || typeof base !== 'object' || base === null) return stored as T
+  const out = { ...(base as Record<string, unknown>) }
+  for (const [key, value] of Object.entries(stored as Record<string, unknown>)) {
+    out[key] = key in out ? deepMerge(out[key], value) : value
+  }
+  return out as T
+}
+
 export const contentRepo = {
-  /** Stored settings merged over the defaults, so new fields always have a value. */
+  /**
+   * Stored settings merged over the defaults, so a field added in a later release always has a
+   * value. The merge goes all the way down: a stored `notifications` doc written before an event
+   * existed must not hide that event's template, which is exactly what a shallow merge did.
+   */
   async settings(): Promise<SiteSettings> {
     const snap = await col(C.settings).get()
     const settings = structuredClone(defaultSiteSettings)
-    for (const d of snap.docs) if (d.id in settings) Object.assign(settings[d.id as keyof SiteSettings], d.data().value)
+    const merged = settings as unknown as Record<string, unknown>
+    for (const d of snap.docs) if (d.id in merged) merged[d.id] = deepMerge(merged[d.id], d.data().value)
     return settings
   },
 

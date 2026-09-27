@@ -6,7 +6,7 @@ import { indianMobile } from '../services/delivery'
 import { bookingService } from '../services/bookings'
 import { adminService } from '../services/admin'
 import { contentRepo, notificationsRepo, propertiesRepo } from '../repositories'
-import { appError, createLiveListing, createUser, day, listingInput, resetDatabase } from './helpers'
+import { appError, createLiveListing, createUser, day, insertBooking, listingInput, resetDatabase } from './helpers'
 import { listingService } from '../services/listings'
 
 const body = (value: unknown) => value as Record<string, unknown>
@@ -112,5 +112,64 @@ describe('notifications', () => {
   test('a test send explains what is missing instead of failing quietly', async () => {
     const err = await appError(() => notifyService.test({ name: 'Admin', email: 'admin@example.com' }, 'email'))
     assert.match(err.message, /mail server/i)
+  })
+})
+
+describe('settings written by an older release', () => {
+  beforeEach(resetDatabase)
+
+  test('a stored copy missing a newer event still gives every template', async () => {
+    const admin = await createUser('admin')
+    // What the database holds if it was first written before payout.sent existed.
+    const old = structuredClone(defaultNotifications) as unknown as { templates: Record<string, unknown> }
+    delete old.templates['payout.sent']
+    await contentRepo.saveSetting('notifications', old as unknown as object, admin.me.id)
+
+    const view = await notifyService.view()
+    for (const def of NOTIFICATION_EVENTS) {
+      assert.ok(view.templates[def.event], `${def.event} lost its template`)
+      assert.ok(view.templates[def.event].subject, `${def.event} has no subject`)
+    }
+  })
+
+  test('deleting a list in the control centre stays deleted', async () => {
+    const admin = await createUser('admin')
+    // Lists are replaced, not merged, or a removed footer column would come back.
+    await contentRepo.saveSetting('footer', { columns: [], legal: [] }, admin.me.id)
+    const footer = (await contentRepo.settings()).footer
+    assert.deepEqual(footer.columns, [])
+    assert.deepEqual(footer.legal, [])
+    assert.ok(footer.tagline, 'but untouched fields keep their default')
+  })
+})
+
+describe('the messages that depend on a date', () => {
+  beforeEach(resetDatabase)
+
+  test('a reminder goes the day before check-in, and only once', async () => {
+    const host = await createUser('host')
+    const guest = await createUser()
+    const id = await createLiveListing(host)
+    await insertBooking(id, guest, day(1), day(3))
+
+    const first = await bookingService.sendDailyMessages()
+    assert.equal(first.reminders, 1)
+    const sent = await notificationsRepo.recent('booking.reminder', null)
+    assert.ok(sent.length > 0)
+
+    // Running the cron twice in a day must not send it again.
+    assert.equal((await bookingService.sendDailyMessages()).reminders, 0)
+  })
+
+  test('a review invitation goes the day after check-out', async () => {
+    const host = await createUser('host')
+    const guest = await createUser()
+    const id = await createLiveListing(host)
+    await insertBooking(id, guest, day(-3), day(-1))
+
+    const run = await bookingService.sendDailyMessages()
+    assert.equal(run.invites, 1)
+    assert.ok((await notificationsRepo.recent('review.invite', null)).length > 0)
+    assert.equal((await bookingService.sendDailyMessages()).invites, 0)
   })
 })

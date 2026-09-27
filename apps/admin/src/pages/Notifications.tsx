@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react'
 import { ErrorNote, PageHeader, Panel, Spinner, StatusBadge } from '@meridian/ui'
-import { COMMON_TOKENS, formatDate, type EventDefinition, type MessageTemplate, type NotificationEvent, type NotificationLogEntry } from '@meridian/shared'
+import { COMMON_TOKENS, defaultNotifications, formatDate, type EventDefinition, type MessageTemplate, type NotificationEvent, type NotificationLogEntry } from '@meridian/shared'
 import { ApiError, adminApi, type NotificationsView } from '@meridian/shared/client'
 
 // Control centre → Notifications. Firebase only sends sign-in codes, so everything else — booking
@@ -183,7 +183,7 @@ export function Notifications() {
         <Panel title="What we send, and when">
           <ul className="divide-y divide-slate-100">
             {view.events.map((def: EventDefinition) => {
-              const template = view.templates[def.event]
+              const template = view.templates[def.event] ?? defaultNotifications.templates[def.event]
               const showing = open === def.event
               return (
                 <li key={def.event} className="py-4">

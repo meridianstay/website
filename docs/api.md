@@ -132,6 +132,7 @@ Booking modes: listings with `management: "managed"` book instantly (`Confirmed`
 | --- | --- | --- | --- |
 | POST | `/api/payments/razorpay/webhook` | Razorpay (checked by the `X-Razorpay-Signature` header and the webhook secret) | `{ ok: true }`. Handles `payment.authorized`, `payment.captured` and `payment.failed`, so bookings complete even if the guest's browser closed. |
 | GET | `/api/cron/expire` | `Authorization: Bearer $CRON_SECRET` | `{ expired }`, the number of lapsed checkouts and requests closed |
+| GET | `/api/cron/daily` | `Authorization: Bearer $CRON_SECRET` | `{ reminders, invites }`. Call once a day: check-in reminders go the day before, review invitations the day after check-out. Each booking is marked, so running it twice sends nothing twice. |
 
 ## Wishlist
 

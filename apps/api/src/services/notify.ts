@@ -1,5 +1,5 @@
 import {
-  NOTIFICATION_EVENTS, defaultNotifications, fillTemplate,
+  NOTIFICATION_EVENTS, defaultNotifications, fillTemplate, withNotificationDefaults,
   type MessageTemplate, type Me, type NotificationEvent, type NotificationSettings,
 } from '@meridian/shared'
 import { auditLogRepo, contentRepo, notificationsRepo } from '../repositories'
@@ -32,8 +32,7 @@ export interface Recipient {
 }
 
 async function settings(): Promise<NotificationSettings> {
-  const all = await contentRepo.settings()
-  return all.notifications ?? defaultNotifications
+  return withNotificationDefaults((await contentRepo.settings()).notifications)
 }
 
 async function credentials(): Promise<StoredCredentials> {

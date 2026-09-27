@@ -2,6 +2,12 @@
 
 Every change to Meridian Stay is recorded here, newest first. Each entry says what changed for the people using the platform, then the notable technical changes.
 
+## 0.30.1 — 2026-09-27
+
+### Fixes
+- **The Notifications page showed an error instead of the settings.** Settings are written to the database once and never rewritten, so an install that started before the payout message existed had no template for it — and the page fell over reading one. Stored settings now merge over the defaults **all the way down**, so a field added in a later release always has a value. Lists you have edited are still replaced whole, so a footer column you deleted stays deleted.
+- **Check-in reminders and review invitations were never sent.** Both messages existed and could be edited, but nothing ever fired them: they depend on a date rather than on someone doing something. A new `GET /api/cron/daily` sends them — reminders the day before check-in, invitations the day after check-out — and marks each booking so running it twice sends nothing twice. **Point your scheduler at it or these two stay silent.**
+
 ## 0.30.0 — 2026-09-24
 
 ### Paying hosts

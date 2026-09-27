@@ -39,6 +39,8 @@ export interface BookingDoc {
   contactPhone: string; specialRequests: string | null
   createdAt: string; confirmedAt: string | null; cancelledAt: string | null; decidedAt: string | null
   declineReason: string | null; reviewed: boolean
+  /** When the check-in reminder and the review invitation were sent, so neither goes twice. */
+  remindedAt?: string | null; reviewInvitedAt?: string | null
   /** stay: nights checkIn → checkOut. dayuse: one day (checkIn), startTime → endTime ("HH:MM"). */
   kind: 'stay' | 'dayuse'; startTime: string | null; endTime: string | null; hours: number | null
   guestBreakdown: GuestBreakdown; securityDepositMinor: number; checkInTime: string; checkOutTime: string
@@ -270,6 +272,12 @@ export const bookingsRepo = {
     return rows.filter((b) => !(['Expired', 'Cancelled'].includes(b.status) && ['created', 'failed'].includes(b.paymentStatus)))
       .sort((a, b) => b.checkIn.localeCompare(a.checkIn)).map((b) => toBooking(b, today))
   },
+
+  /** Bookings whose stay starts on this date, for the check-in reminder. */
+  startingOn: (date: string) => readAll(col(C.bookings).where('checkIn', '==', date)),
+
+  /** Bookings whose stay ended on this date, for the review invitation. */
+  endingOn: (date: string) => readAll(col(C.bookings).where('checkOut', '==', date)),
 
   /** Every booking at this host's properties, as stored — used by payouts, which needs the raw sums. */
   forHostRaw: (hostId: number) => readAll(col(C.bookings).where('hostId', '==', hostId)),

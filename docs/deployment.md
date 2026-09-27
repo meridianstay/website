@@ -63,7 +63,7 @@ While `SEED_DEMO_DATA=true`, **Admin → Settings → Demo data → Reset demo d
 | `FIREBASE_SERVICE_ACCOUNT` | The **entire contents** of the service-account JSON (Firebase → Project settings → Service accounts → Generate new private key) | **Yes.** Never share it in chat or email. Delete the downloaded file after pasting. |
 | `SEED_DEMO_DATA` | `true` for a client preview; remove for the real launch | No |
 | `SETTINGS_ENCRYPTION_KEY` | Any long random text (e.g. from `openssl rand -base64 32`). Encrypts the Razorpay secrets saved in Settings. **Don't change it later**, or the saved keys must be entered again. | **Yes** |
-| `CRON_SECRET` | Optional. Random text; lets a scheduler call `GET /api/cron/expire` with `Authorization: Bearer <secret>` to expire lapsed requests promptly (they also expire whenever someone opens bookings). | Yes |
+| `CRON_SECRET` | Optional. Random text; lets a scheduler call `GET /api/cron/expire` (expires lapsed requests, which also happens whenever someone opens bookings) and `GET /api/cron/daily` (check-in reminders and review invitations — **these two messages only go if something calls this once a day**). | Yes |
 | `FIREBASE_STORAGE_BUCKET` | Only if the bucket isn't `meridianstay-bcfd0.firebasestorage.app` | No |
 
 The Firebase **web config** (API key, project id and so on) is already in [`.env.production`](../.env.production). Those values are public by design and are built into the pages.

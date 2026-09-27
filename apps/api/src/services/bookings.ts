@@ -459,6 +459,34 @@ export const bookingService = {
     return !!before
   },
 
+  /**
+   * The messages that depend on a date rather than on someone doing something: a reminder the day
+   * before check-in, and a review invitation the day after check-out. Run once a day from the cron
+   * route. Each booking is marked so a second run that day can't send it twice.
+   */
+  async sendDailyMessages() {
+    const today = todayISO()
+    const tomorrow = addDays(today, 1)
+    const yesterday = addDays(today, -1)
+    let reminders = 0
+    let invites = 0
+
+    for (const b of await bookingsRepo.startingOn(tomorrow)) {
+      if (b.status !== 'Confirmed' || b.remindedAt) continue
+      await announce('booking.reminder', b)
+      await bookingsRepo.setFields(b.code, { remindedAt: nowISO() })
+      reminders++
+    }
+
+    for (const b of await bookingsRepo.endingOn(yesterday)) {
+      if (b.status !== 'Confirmed' || b.reviewed || b.reviewInvitedAt) continue
+      await announce('review.invite', b, { link: `${siteOrigin()}/stays/${b.property.slug}#reviews` })
+      await bookingsRepo.setFields(b.code, { reviewInvitedAt: nowISO() })
+      invites++
+    }
+    return { reminders, invites }
+  },
+
   /** Expires every lapsed checkout and request. Runs from the cron route and, at most once a minute, on reads. */
   async expireStale() {
     let expired = 0
