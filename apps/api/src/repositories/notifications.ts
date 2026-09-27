@@ -29,6 +29,18 @@ export const notificationsRepo = {
       .slice(0, LOG_LIMIT)
   },
 
+  async countBefore(cutoff: string): Promise<number> {
+    return (await col(C.notifications).where('createdAt', '<', cutoff).count().get()).data().count
+  },
+
+  async deleteBefore(cutoff: string): Promise<number> {
+    const snap = await col(C.notifications).where('createdAt', '<', cutoff).limit(2000).get()
+    const writer = firestore.bulkWriter()
+    snap.docs.forEach((d) => writer.delete(d.ref))
+    await writer.close()
+    return snap.size
+  },
+
   /** Keeps the log from growing for ever; called after each send. */
   async trim(): Promise<void> {
     const rows = await all<NotificationDoc>(col(C.notifications))

@@ -27,6 +27,7 @@ const Activity = lazy(() => import('./pages/Activity').then((m) => ({ default: m
 const Database = lazy(() => import('./pages/Database').then((m) => ({ default: m.Database })))
 const DatabaseTable = lazy(() => import('./pages/DatabaseTable').then((m) => ({ default: m.DatabaseTable })))
 const Settings = lazy(() => import('./pages/Settings').then((m) => ({ default: m.Settings })))
+const Server = lazy(() => import('./pages/Server').then((m) => ({ default: m.Server })))
 
 const nav: NavItem[] = [
   { to: '/', label: 'Overview', icon: 'gauge-high', end: true },
@@ -44,6 +45,7 @@ const nav: NavItem[] = [
   { to: '/notifications', label: 'Notifications', icon: 'bell' },
   { to: '/campaigns', label: 'Offers & alerts', icon: 'bullhorn' },
   { to: '/settings', label: 'Settings', icon: 'gear' },
+  { to: '/server', label: 'Server', icon: 'screwdriver-wrench' },
 ]
 
 export default function App() {
@@ -80,6 +82,7 @@ export default function App() {
                   <Route path="notifications" element={<Suspense fallback={<BrandLoader />}><Notifications /></Suspense>} />
                   <Route path="campaigns" element={<Suspense fallback={<BrandLoader />}><Campaigns /></Suspense>} />
                   <Route path="settings" element={<Suspense fallback={<BrandLoader />}><Settings /></Suspense>} />
+                  <Route path="server" element={<Suspense fallback={<BrandLoader />}><Server /></Suspense>} />
                   <Route path="*" element={<Overview />} />
                 </Routes>
               </AppShell>

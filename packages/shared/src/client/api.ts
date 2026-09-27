@@ -12,6 +12,7 @@ import type { Destination } from '../places'
 import type { Coupon } from '../offers'
 import type { AdCampaign, AdPlacement, PromotionPlan, PromotionSettings } from '../promotions'
 import type { Campaign, CampaignContent } from '../campaigns'
+import type { CacheReport, CronRun, ServerReport, ServerSettings, StorageUsage } from '../server'
 
 /** A plan as a host sees it: what it costs, and how much room is left over their dates. */
 export interface PlanOnOffer extends PromotionPlan {
@@ -175,6 +176,12 @@ export const hostApi = {
 
 // ─── Admin panel ──────────────────────────────────────────────────────────────
 
+/** How much of each log Housekeeping would clear right now. */
+export interface HousekeepingPending {
+  audit: number
+  notifications: number
+}
+
 export const adminApi = {
   stats: () => request<AdminStats>('/admin/stats'),
   listings: (params: { status?: ListingStatus; q?: string } = {}) => request<{ listings: AdminListing[] }>(`/admin/listings${qs(params)}`),
@@ -262,6 +269,16 @@ export const adminApi = {
   deleteCoupon: (code: string) => request<void>(`/admin/coupons/${encodeURIComponent(code)}`, { method: 'DELETE' }),
 
   audit: () => request<{ entries: AuditEntry[] }>('/admin/audit'),
+
+  /** The Server page: runtime, environment, caches, collection sizes and scheduled jobs. */
+  server: () => request<ServerReport & { pending: HousekeepingPending }>('/admin/server'),
+  saveServerSettings: (value: ServerSettings) => request<{ settings: ServerSettings }>('/admin/server/settings', { method: 'PUT', json: value }),
+  clearCache: (group?: string) => request<{ cache: CacheReport }>('/admin/server/cache/clear', { method: 'POST', json: { group } }),
+  measureStorage: () => request<{ storage: StorageUsage }>('/admin/server/storage', { method: 'POST' }),
+  housekeeping: (what: 'all' | 'audit' | 'notifications') =>
+    request<{ deleted: Record<string, number>; pending: HousekeepingPending }>('/admin/server/housekeeping', { method: 'POST', json: { what } }),
+  runJob: (name: string) => request<{ run: CronRun }>(`/admin/server/jobs/${encodeURIComponent(name)}`, { method: 'POST' }),
+
 
   dbTables: () => request<{ tables: DbTableSummary[] }>('/admin/db/tables'),
   dbBrowse: (table: string, params: { page?: number; pageSize?: number; q?: string; sort?: string; dir?: 'asc' | 'desc' } = {}) =>

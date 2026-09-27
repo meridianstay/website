@@ -47,6 +47,7 @@ Documents use short numeric ids (listing 7, user 12…) so links stay readable. 
 | `adCampaigns` | campaign id | Paid host promotions: listing, placement, dates, daily rate, total, status, payment, views and clicks |
 | `coupons` | the code (uppercase) | Discount codes: kind, value, cap, smallest total, dates, usage limit and count |
 | `counters` | sequence name | The last number used for each kind of record |
+| `serverState` | `cache`, `jobs`, `storage` | How the server itself is running, rather than anything about the business: the counter every instance watches to know when to drop what it is holding, when each scheduled job last ran and what it did, and the last measurement of the photo bucket. Not shown on the Database screen. |
 
 ### How double bookings are prevented
 
@@ -92,3 +93,11 @@ The Firebase CLI in this repo is version 13, which works with Java 17. Newer ver
 ## Scaling notes
 
 Some list screens (search, admin tables, statistics) read whole collections and filter in the API. That is simple and fast at this platform's size (thousands of documents). When listings or bookings grow into the tens of thousands, add Firestore indexes (`firebase/firestore.indexes.json`) and move those filters into queries, starting with search and the admin bookings list.
+
+### What is held in memory
+
+A few reads happen on every single page load and change only when an admin changes them: the site settings, the translated wording, the homepage layout, the amenity list, the running offers, and the About page figures. `store/cache.ts` keeps those in the instance's memory for a minute (**Control centre → Server** sets the lifetime, or switches it off). Site settings alone were being read three times over while answering one booking request, each time fetching the whole `siteSettings` collection.
+
+Nothing belonging to one person is ever cached — a booking, a guest, a host's earnings and a property are always read fresh.
+
+The API runs as more than one instance, each with its own memory, so a repository that writes something cached calls `clear()`: it empties this instance at once and bumps `serverState/cache.epoch`, which the others re-read at most every five seconds and then drop what they hold. An admin's own edit is therefore immediate, and other visitors see it within a few seconds.

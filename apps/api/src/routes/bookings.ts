@@ -4,8 +4,7 @@ import { couponService } from '../services/coupons'
 import { body, currentUid, currentUser, requireUser, type AppEnv } from '../http/auth'
 import { AppError } from '../http/errors'
 import { str } from '../http/validate'
-import { campaignService } from '../services/campaigns'
-import { pushService } from '../services/push'
+import { runJob } from '../services/jobs'
 
 export const bookingRoutes = new Hono<AppEnv>()
 bookingRoutes.use('/bookings', requireUser)
@@ -52,21 +51,22 @@ paymentRoutes.post('/payments/razorpay/webhook', async (c) => {
   return c.json({ ok: true })
 })
 
-/** Expires lapsed checkouts and requests. Call with `Authorization: Bearer $CRON_SECRET` (Vercel Cron sends it). */
-paymentRoutes.get('/cron/expire', async (c) => {
+/** Only the hosting may call these: Vercel Cron sends the secret automatically once it is set. */
+const fromScheduler = (c: { req: { header: (k: string) => string | undefined } }) => {
   const secret = process.env.CRON_SECRET
   if (!secret || c.req.header('authorization') !== `Bearer ${secret}`) throw new AppError(401, 'Not allowed.')
-  return c.json({ expired: await bookingService.expireStale() })
+}
+
+/** Releases dates held by an unpaid checkout or an unanswered request. Scheduled in vercel.json. */
+paymentRoutes.get('/cron/expire', async (c) => {
+  fromScheduler(c)
+  const { result } = await runJob('expire', 'schedule')
+  return c.json(result)
 })
 
-/** Check-in reminders and review invitations. Call once a day, the same way as /cron/expire. */
+/** Check-in reminders, review invitations, and starting or finishing scheduled offers. */
 paymentRoutes.get('/cron/daily', async (c) => {
-  const secret = process.env.CRON_SECRET
-  if (!secret || c.req.header('authorization') !== `Bearer ${secret}`) throw new AppError(401, 'Not allowed.')
-  const [messages, schedule, pushed] = await Promise.all([
-    bookingService.sendDailyMessages(),
-    campaignService.refreshSchedule(),
-    pushService.sendDueCampaigns(),
-  ])
-  return c.json({ ...messages, campaigns: { ...schedule, ...pushed } })
+  fromScheduler(c)
+  const { result } = await runJob('daily', 'schedule')
+  return c.json(result)
 })

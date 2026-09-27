@@ -1,5 +1,6 @@
 import type { AboutStats, AdminStats, HostStats } from '@meridian/shared'
 import { C, all, col } from '../store/db'
+import { cached } from '../store/cache'
 import { promotionsRepo } from './promotions'
 import { keptMinor, withDefaults, type BookingDoc } from './bookings'
 import type { PropertyDoc } from './properties'
@@ -54,8 +55,12 @@ export const statsRepo = {
     }
   },
 
-  /** Live figures for the About us page. */
+  /** Live figures for the About us page. Counted across every listing and booking, so cached. */
   async forAbout(): Promise<AboutStats> {
+    return cached('stats', 'about', async () => this.aboutStats())
+  },
+
+  async aboutStats(): Promise<AboutStats> {
     const [live, bookings] = await Promise.all([
       all<PropertyDoc>(col(C.properties).where('status', '==', 'Approved')),
       all<BookingDoc>(col(C.bookings)).then((r) => r.map(withDefaults)),

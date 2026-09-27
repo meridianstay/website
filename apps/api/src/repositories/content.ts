@@ -1,6 +1,7 @@
 import { defaultPages, defaultSiteSettings, withAboutDefaults, withHomeDefaults, type AboutPage, type ContentPage, type ContentTranslations, type HomeLayout, type SiteSettings, type TranslationBook } from '@meridian/shared'
 import { starterContent, withStarterContent } from '@meridian/shared/locales'
 import { C, all, col, nowISO } from '../store/db'
+import { cached, clear, configure } from '../store/cache'
 
 // Collections: siteSettings/{key} (plus siteSettings/aboutPage for the About us page), contentPages/{slug}
 
@@ -27,19 +28,25 @@ export const contentRepo = {
    * existed must not hide that event's template, which is exactly what a shallow merge did.
    */
   async settings(): Promise<SiteSettings> {
-    const snap = await col(C.settings).get()
-    const settings = structuredClone(defaultSiteSettings)
-    const merged = settings as unknown as Record<string, unknown>
-    for (const d of snap.docs) if (d.id in merged) merged[d.id] = deepMerge(merged[d.id], d.data().value)
-    return settings
+    return cached('settings', 'all', async () => {
+      const snap = await col(C.settings).get()
+      const settings = structuredClone(defaultSiteSettings)
+      const merged = settings as unknown as Record<string, unknown>
+      for (const d of snap.docs) if (d.id in merged) merged[d.id] = deepMerge(merged[d.id], d.data().value)
+      // The cache reads its own switch and lifetime from here, so changing them needs no redeploy.
+      configure(settings.server?.cache)
+      return settings
+    })
   },
 
   /** One language's content translations, keyed by the English wording. Empty when there are none. */
   async translations(lang: string): Promise<ContentTranslations> {
     if (!lang || lang === 'en') return {}
-    const snap = await col(C.settings).doc('translations').get()
-    const book = (snap.exists ? (snap.data()!.value as TranslationBook) : {}) ?? {}
-    return withStarterContent(lang, book[lang])
+    return cached('translations', lang, async () => {
+      const snap = await col(C.settings).doc('translations').get()
+      const book = (snap.exists ? (snap.data()!.value as TranslationBook) : {}) ?? {}
+      return withStarterContent(lang, book[lang])
+    })
   },
 
   /** Every language's translations, for the control centre. */
@@ -54,45 +61,66 @@ export const contentRepo = {
     return merged
   },
 
-  saveSetting: (key: string, value: object, userId: number) => col(C.settings).doc(key).set({ value, updatedAt: nowISO(), updatedBy: userId }),
+  async saveSetting(key: string, value: object, userId: number) {
+    await col(C.settings).doc(key).set({ value, updatedAt: nowISO(), updatedBy: userId })
+    // Cleared everywhere, so an edit shows on the website without waiting for the cache to lapse.
+    await clear()
+  },
 
   /** The homepage layout. Until it's first saved, it's built from the older homepage texts. */
   async home(): Promise<HomeLayout> {
-    const [snap, settings] = await Promise.all([col(C.settings).doc('homeLayout').get(), this.settings()])
-    return withHomeDefaults(snap.exists ? (snap.data()!.value as HomeLayout) : null, settings.homepage)
+    return cached('content', 'home', async () => {
+      const [snap, settings] = await Promise.all([col(C.settings).doc('homeLayout').get(), this.settings()])
+      return withHomeDefaults(snap.exists ? (snap.data()!.value as HomeLayout) : null, settings.homepage)
+    })
   },
 
-  saveHome: (layout: HomeLayout, userId: number) => col(C.settings).doc('homeLayout').set({ value: layout, updatedAt: nowISO(), updatedBy: userId }),
+  async saveHome(layout: HomeLayout, userId: number) {
+    await col(C.settings).doc('homeLayout').set({ value: layout, updatedAt: nowISO(), updatedBy: userId })
+    await clear()
+  },
 
   /** The About us page: saved content over the defaults. */
   async about(): Promise<AboutPage> {
-    const snap = await col(C.settings).doc('aboutPage').get()
-    return withAboutDefaults(snap.exists ? (snap.data()!.value as AboutPage) : null)
+    return cached('content', 'about', async () => {
+      const snap = await col(C.settings).doc('aboutPage').get()
+      return withAboutDefaults(snap.exists ? (snap.data()!.value as AboutPage) : null)
+    })
   },
 
-  saveAbout: (page: AboutPage, userId: number) => col(C.settings).doc('aboutPage').set({ value: page, updatedAt: nowISO(), updatedBy: userId }),
+  async saveAbout(page: AboutPage, userId: number) {
+    await col(C.settings).doc('aboutPage').set({ value: page, updatedAt: nowISO(), updatedBy: userId })
+    await clear()
+  },
 
   async publishedPageTitles() {
-    const pages = await all<ContentPage>(col(C.pages).where('published', '==', true))
-    return pages.map(({ slug, title }) => ({ slug, title })).sort((a, b) => a.title.localeCompare(b.title))
+    return cached('content', 'pageTitles', async () => {
+      const pages = await all<ContentPage>(col(C.pages).where('published', '==', true))
+      return pages.map(({ slug, title }) => ({ slug, title })).sort((a, b) => a.title.localeCompare(b.title))
+    })
   },
 
   async publishedPage(slug: string) {
-    const page = (await col(C.pages).doc(slug).get()).data() as ContentPage | undefined
-    return page?.published ? page : null
+    return cached('content', `page:${slug}`, async () => {
+      const page = (await col(C.pages).doc(slug).get()).data() as ContentPage | undefined
+      return page?.published ? page : null
+    })
   },
 
   async allPages() {
     return (await all<ContentPage>(col(C.pages))).sort((a, b) => a.title.localeCompare(b.title))
   },
 
-  savePage: (page: ContentPage, userId: number) =>
-    col(C.pages).doc(page.slug).set({ ...page, published: page.published !== false, updatedAt: nowISO(), updatedBy: userId }),
+  async savePage(page: ContentPage, userId: number) {
+    await col(C.pages).doc(page.slug).set({ ...page, published: page.published !== false, updatedAt: nowISO(), updatedBy: userId })
+    await clear()
+  },
 
   async deletePage(slug: string) {
     const ref = col(C.pages).doc(slug)
     if (!(await ref.get()).exists) return false
     await ref.delete()
+    await clear()
     return true
   },
 
@@ -104,5 +132,6 @@ export const contentRepo = {
     for (const p of defaultPages) {
       await col(C.pages).doc(p.slug).create({ ...p, published: true, updatedAt: nowISO(), updatedBy: null }).catch(() => {})
     }
+    await clear()
   },
 }

@@ -5,6 +5,7 @@ import { defaultTheme, type ThemeSettings } from './theme'
 import { defaultLanguages, type LanguageSettings } from './i18n'
 import { defaultNotifications, type NotificationSettings } from './notifications'
 import { defaultPayouts, type PayoutSettings } from './payouts'
+import { defaultServerSettings, type ServerSettings } from './server'
 // Default website content. The API copies it into the database on first start; after that
 // the admin control center edits it. Legal pages start as drafts for a lawyer to review.
 
@@ -73,6 +74,8 @@ export interface SiteSettings {
   /** The website's header and footer. */
   header: HeaderSettings
   footer: FooterSettings
+  /** How the API caches and how long the logs are kept. Nothing a visitor ever sees. */
+  server: ServerSettings
 }
 
 export const defaultSiteSettings: SiteSettings = {
@@ -102,6 +105,7 @@ export const defaultSiteSettings: SiteSettings = {
   bottomNav: structuredClone(defaultBottomNav),
   header: structuredClone(defaultHeader),
   footer: structuredClone(defaultFooter),
+  server: structuredClone(defaultServerSettings),
 }
 
 type DefaultPage = Omit<ContentPage, 'slug' | 'draft'> & { draft?: boolean }
@@ -217,6 +221,25 @@ const pages: Record<string, DefaultPage> = {
 
 export const defaultPages: ContentPage[] = Object.entries(pages).map(([slug, p]) => ({ slug, draft: false, ...p }))
 
-/** What GET /api/site returns: the settings plus whether online payment (Razorpay) is switched on. */
-export type PublicSite = SiteSettings & { paymentsOnline: boolean }
-export const defaultPublicSite: PublicSite = { ...defaultSiteSettings, paymentsOnline: false }
+/**
+ * Settings a visitor's browser has no business seeing: what the platform emails and texts, how host
+ * earnings are held and paid, what promotion plans cost, and how the server behaves. All of it was
+ * being sent to every visitor along with the rest of the settings — several kilobytes of
+ * notification wording on every page load — and now stays inside the API.
+ *
+ * Commission rates stay public on purpose: a host is shown what Meridian's share will be before
+ * they list a property.
+ */
+export const PRIVATE_SETTING_KEYS = ['notifications', 'payouts', 'promotions', 'server'] as const
+
+/** What GET /api/site returns: the public settings plus whether online payment (Razorpay) is on. */
+export type PublicSite = Omit<SiteSettings, (typeof PRIVATE_SETTING_KEYS)[number]> & { paymentsOnline: boolean }
+
+/** Drops the private sections. Used by the API on the way out, so nothing has to remember to. */
+export function publicSettings(settings: SiteSettings): Omit<SiteSettings, (typeof PRIVATE_SETTING_KEYS)[number]> {
+  const out = { ...settings } as Record<string, unknown>
+  for (const key of PRIVATE_SETTING_KEYS) delete out[key]
+  return out as Omit<SiteSettings, (typeof PRIVATE_SETTING_KEYS)[number]>
+}
+
+export const defaultPublicSite: PublicSite = { ...publicSettings(defaultSiteSettings), paymentsOnline: false }

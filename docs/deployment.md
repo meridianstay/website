@@ -63,7 +63,9 @@ While `SEED_DEMO_DATA=true`, **Admin → Settings → Demo data → Reset demo d
 | `FIREBASE_SERVICE_ACCOUNT` | The **entire contents** of the service-account JSON (Firebase → Project settings → Service accounts → Generate new private key) | **Yes.** Never share it in chat or email. Delete the downloaded file after pasting. |
 | `SEED_DEMO_DATA` | `true` for a client preview; remove for the real launch | No |
 | `SETTINGS_ENCRYPTION_KEY` | Any long random text (e.g. from `openssl rand -base64 32`). Encrypts the Razorpay secrets saved in Settings. **Don't change it later**, or the saved keys must be entered again. | **Yes** |
-| `CRON_SECRET` | Optional. Random text; lets a scheduler call `GET /api/cron/expire` (expires lapsed requests, which also happens whenever someone opens bookings) and `GET /api/cron/daily` (check-in reminders and review invitations — **these two messages only go if something calls this once a day**). | Yes |
+| `CRON_SECRET` | Random text. Vercel Cron sends it automatically once it is set, and the two scheduled jobs in [`vercel.json`](../vercel.json) refuse to run without it. **Check-in reminders, review invitations and scheduled offers only go out if this is set.** | Yes |
+| `PUBLIC_SITE_URL` | Optional. The live address used in emails, texts and the sitemap, e.g. `https://meridianstay.com`. Guessed from the request when unset, which is wrong behind a proxy. | No |
+| `COOKIE_DOMAIN` | Optional. The shared domain (e.g. `.meridianstay.com`) so one sign-in covers the website, account, host and admin panels. | No |
 | `FIREBASE_STORAGE_BUCKET` | Only if the bucket isn't `meridianstay-bcfd0.firebasestorage.app` | No |
 
 The Firebase **web config** (API key, project id and so on) is already in [`.env.production`](../.env.production). Those values are public by design and are built into the pages.
@@ -71,6 +73,19 @@ The Firebase **web config** (API key, project id and so on) is already in [`.env
 **Settings → General:** Root Directory empty (repository root), Framework Preset *Other*, Node.js 22.x.
 
 You can delete the old `DATABASE_URL` variable (from the earlier Postgres version).
+
+**Control centre → Server** shows every variable on this list as set or missing (never its value), along with the region, the deployed commit, what the API is holding in memory and how big the database has grown. Check it after the first deploy.
+
+### Scheduled jobs
+
+[`vercel.json`](../vercel.json) asks Vercel to call two jobs each day:
+
+| Job | When (UTC) | What it does |
+| --- | --- | --- |
+| `/api/cron/daily` | 02:30 (08:00 IST) | Check-in reminders, review invitations, and starting or finishing scheduled offers |
+| `/api/cron/expire` | 03:00 | Releases dates held by an unpaid checkout or an unanswered request |
+
+Vercel's Hobby plan allows two cron jobs, run once a day; more frequent schedules need Pro. Each run is recorded, and **Server → Scheduled jobs** shows when each last ran and what it did — plus a **Run now** button for when the schedule isn't set up yet.
 
 ## 3. Razorpay (payments)
 

@@ -294,6 +294,28 @@ Direct access to the Firestore collections listed in [`src/explorer/registry.ts`
 | PATCH | `/api/admin/db/tables/:table/rows` | `{ key: { _id: "5" }, changes: { title: "…" } }` | `{ row }` |
 | DELETE | `/api/admin/db/tables/:table/rows` | `?key={"_id":"5"}` (URL-encoded JSON) | `204` |
 
+### Server
+
+| Method | Path | What it does |
+| --- | --- | --- |
+| GET | `/api/admin/server` | Runtime and hosting details, the environment checklist (set or missing, never values), cache report, collection sizes, scheduled jobs and what housekeeping would clear |
+| PUT | `/api/admin/server/settings` | Cache on/off and lifetime, and how long the two logs are kept |
+| POST | `/api/admin/server/cache/clear` | Empties one cache (`{ "group": "settings" }`) or all of them, on every instance |
+| POST | `/api/admin/server/storage` | Counts the photo bucket. Reads a listing of the whole bucket, so it is only done on request |
+| POST | `/api/admin/server/housekeeping` | Deletes activity-log and sent-message records older than the retention |
+| POST | `/api/admin/server/jobs/:name` | Runs a scheduled job now (`daily` or `expire`) |
+
+## Scheduled jobs
+
+Called by the hosting once a day with `Authorization: Bearer $CRON_SECRET` (Vercel Cron sends it automatically); the schedules are in `vercel.json`. Without `CRON_SECRET` they are refused, and check-in reminders, review invitations and scheduled offers never go out.
+
+| Method | Path | What it does |
+| --- | --- | --- |
+| GET | `/api/cron/daily` | Check-in reminders, review invitations, and starting or finishing scheduled offers |
+| GET | `/api/cron/expire` | Releases dates held by an unpaid checkout or an unanswered request |
+
+Every run is recorded and shown on **Control centre → Server**, whether it came from the scheduler or from **Run now**.
+
 ## Trying it from the command line
 
 Against the local emulators (`npm run emulators`, `npm run dev`), you can sign in by phone through the Auth emulator's REST API, then use the cookie:

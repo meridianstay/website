@@ -27,6 +27,8 @@ export const C = {
   pushSubscriptions: 'pushSubscriptions',
   /** Encrypted integration secrets (Razorpay, mail and SMS). Never listed in the admin Database screen. */
   secrets: 'secrets',
+  /** How the server itself is running: the cache counter, and when each scheduled job last ran. */
+  serverState: 'serverState',
 } as const
 
 export const col = (name: string) => firestore.collection(name)

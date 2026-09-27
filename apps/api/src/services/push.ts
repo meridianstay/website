@@ -95,14 +95,17 @@ export const pushService = {
   async sendDueCampaigns() {
     let campaigns = 0
     let sent = 0
+    let failed = 0
     for (const campaign of await campaignService.duePush()) {
       const result = await this.sendCampaign(campaign)
       if (result.skipped) continue
       await campaignService.markPushed(campaign.id, result.sent, result.failed)
       campaigns++
       sent += result.sent
+      // Reported as well as recorded: a run that reached nobody should be visible, not just logged.
+      failed += result.failed
     }
-    return { campaigns, sent }
+    return { campaigns, sent, failed }
   },
 
   /** A test notification to whoever asked for it, so the setup can be checked before going live. */

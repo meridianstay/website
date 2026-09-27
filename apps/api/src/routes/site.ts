@@ -9,7 +9,7 @@ import { body } from '../http/auth'
 import { AppError } from '../http/errors'
 import { campaignService } from '../services/campaigns'
 import { pushService } from '../services/push'
-import { translateDeep } from '@meridian/shared'
+import { publicSettings, translateDeep } from '@meridian/shared'
 
 // Public website content edited in the control center. Everything here is served in the language
 // the visitor asked for (`?lang=mr`), with anything not yet translated left in its original wording.
@@ -19,7 +19,7 @@ const wanted = (c: { req: { query: (k: string) => string | undefined } }) => str
 
 siteRoutes.get('/site', async (c) => {
   const [settings, payments, words] = await Promise.all([contentRepo.settings(), paymentConfigRepo.get(), contentRepo.translations(wanted(c))])
-  const translated = translateDeep(settings, words)
+  const translated = translateDeep(publicSettings(settings), words)
   return c.json({ ...translated, paymentsOnline: !!(payments?.enabled && payments.keyId && payments.keySecretEnc) })
 })
 

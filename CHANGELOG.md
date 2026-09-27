@@ -2,6 +2,35 @@
 
 Every change to Meridian Stay is recorded here, newest first. Each entry says what changed for the people using the platform, then the notable technical changes.
 
+## 0.33.0 — 2026-09-27
+
+### A Server page in the control centre
+- **Control centre → Server** answers the questions nobody could answer before: where the platform is running, what the hosting has actually given it, what it is holding in memory, how big the database has grown, and whether the scheduled jobs are running at all.
+- **Environment** lists every setting the platform reads, what each is for, and whether the hosting has it — **set or missing, never the value**, so the page is safe to look at with someone watching. Anything required and missing is called out at the top of the page, with the exact steps to fix it.
+- **Where it is running**: the region, the deployed commit and branch, the Node version, how long this instance has been up, the memory it is using, and the server's own clock and time zone — which is what every booking date is worked out from.
+- **How big it has grown**: how many records are in each part of the database, and, when you ask for it, how many photos are stored and how much space they take.
+
+### Scheduled jobs you can actually see
+- Check-in reminders, review invitations and scheduled offers all depend on something calling the platform once a day. Until now nothing was: the schedule was never set up, and there was no way to tell.
+- The two jobs are now **scheduled in the deployment itself** — daily messages at 08:00 IST, expiring lapsed bookings half an hour later.
+- **Server → Scheduled jobs** shows when each last ran, whether it was the scheduler or a person, and what it did in plain words ("2 check-in reminders, 1 offer started", or "nothing was due"). A run that fails is recorded as failed rather than passing quietly.
+- **Run now** runs one on the spot, which is how they get run at all until the scheduler is set up. If `CRON_SECRET` is missing the page says so, because without it the hosting's calls are refused.
+
+### The platform got faster
+- A handful of things are read on **every single page load** and change only when you change them: your settings, the translated wording, the homepage layout, the amenity list, the running offers. Site settings alone were being fetched three times over while answering one booking request.
+- These are now kept in memory for a minute, which removes almost all of the database reads behind an ordinary visit. On the About page — which counts across every listing and booking — a repeat view went from about 12ms to under half a millisecond.
+- **Nothing belonging to one person is ever kept**: a booking, a guest, a host's earnings and a property are always read fresh.
+- **Server → Cache** shows what is being held, how much of it, how old, and how much is being answered from memory rather than the database. You can switch it off, change how long an answer is reused, and clear any of it — though saving anything in the control centre already clears what it affects.
+- **Two thirds of what was sent to every visitor was none of their business.** The whole settings object went out with each page load, including all twelve notification messages, what hosts are charged for promotions and how their earnings are held. Visitors now get only what their browser needs: 9.9 KB down to 3.3 KB. Commission rates stay, because a host is shown Meridian's share before they list.
+
+### Housekeeping
+- Two records only ever grow: the activity log and the list of messages sent. **Server → Housekeeping** sets how long each is kept, shows how much is older than that, and clears it on request. Nothing is deleted until you press the button and confirm, and nothing else in the database is ever deleted because of its age.
+
+### Under the bonnet
+- The API runs as more than one instance, each with its own memory, so clearing one would leave the others serving what they already hold. Every clear bumps a counter the others watch and re-read every few seconds: an admin's own edit is immediate, and everyone else catches up within seconds.
+- Two requests arriving together share one load rather than both asking the database; a load that fails is not kept, so the next request tries again.
+- A test checks the schedules shown on the Server page against the ones in `vercel.json`, because a schedule that drifts is invisible until a message is missed.
+
 ## 0.32.0 — 2026-09-27
 
 ### Offers and announcements you write yourself

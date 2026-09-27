@@ -1,5 +1,5 @@
 import type { AuditEntry } from '@meridian/shared'
-import { C, col, nowISO } from '../store/db'
+import { C, col, firestore, nowISO } from '../store/db'
 
 // Collection: auditLog/{auto} — every action taken in the control center, plus automatic payment events (admin null).
 
@@ -9,6 +9,20 @@ export const auditLogRepo = {
       adminId: admin?.id ?? null, adminName: admin?.name ?? 'System', action, targetType, targetId: targetId === null ? null : String(targetId),
       details: JSON.parse(JSON.stringify(details)), createdAt: nowISO(),
     }),
+
+  /** How many entries are older than the cut-off, without reading them. */
+  async countBefore(cutoff: string): Promise<number> {
+    return (await col(C.audit).where('createdAt', '<', cutoff).count().get()).data().count
+  },
+
+  /** Deletes entries older than the cut-off. Returns how many went. */
+  async deleteBefore(cutoff: string): Promise<number> {
+    const snap = await col(C.audit).where('createdAt', '<', cutoff).limit(2000).get()
+    const writer = firestore.bulkWriter()
+    snap.docs.forEach((d) => writer.delete(d.ref))
+    await writer.close()
+    return snap.size
+  },
 
   async list(limit = 300): Promise<AuditEntry[]> {
     const snap = await col(C.audit).orderBy('createdAt', 'desc').limit(limit).get()

@@ -18,6 +18,8 @@ import { adminService } from '../services/admin'
 import { contentService } from '../services/content'
 import { reviewService } from '../services/reviews'
 import { explorerService } from '../services/explorer'
+import { serverService } from '../services/server'
+import { runJob } from '../services/jobs'
 import { body, currentUser, requireRole, type AppEnv } from '../http/auth'
 import { AppError } from '../http/errors'
 import { str } from '../http/validate'
@@ -230,6 +232,18 @@ const rowKey = (raw: string | undefined) => {
   }
   throw new AppError(400, 'Missing row key.')
 }
+
+// ─── Server: what it is running on, what it holds in memory, how big it has grown ────────────
+adminRoutes.get('/admin/server', async (c) => c.json({ ...(await serverService.report()), pending: await serverService.pending() }))
+adminRoutes.put('/admin/server/settings', async (c) => c.json({ settings: await serverService.saveSettings(admin(c), await body(c)) }))
+adminRoutes.post('/admin/server/cache/clear', async (c) => c.json({ cache: await serverService.clearCache(admin(c), str((await body(c)).group) || undefined) }))
+adminRoutes.post('/admin/server/storage', async (c) => c.json({ storage: await serverService.measureStorage(admin(c)) }))
+adminRoutes.post('/admin/server/housekeeping', async (c) => {
+  const done = await serverService.housekeeping(admin(c), str((await body(c)).what) || 'all')
+  return c.json({ ...done, pending: await serverService.pending() })
+})
+/** "Run now" beside a scheduled job, for when the hosting hasn't been set up to call it yet. */
+adminRoutes.post('/admin/server/jobs/:name', async (c) => c.json(await runJob(c.req.param('name'), 'admin', admin(c))))
 
 adminRoutes.get('/admin/db/tables', async (c) => c.json({ tables: await explorerService.listTables() }))
 adminRoutes.get('/admin/db/tables/:table', async (c) => {
