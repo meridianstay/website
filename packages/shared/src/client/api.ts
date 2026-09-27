@@ -96,6 +96,7 @@ export const api = {
     guests: number
     paymentMethod: PaymentMethod
     contactPhone: string
+    contactEmail: string
     specialRequests: string
     kind?: 'stay' | 'dayuse'
     startTime?: string

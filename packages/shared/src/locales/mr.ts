@@ -425,6 +425,11 @@ const mr: Dictionary = {
 
   // Host payouts
   'host.payouts': 'देयके',
+
+  // Checkout email
+  'booking.contactEmail': 'ईमेल पत्ता',
+  'checkout.emailWhy': 'तुमच्या बुकिंगची पुष्टी आणि होस्टची माहिती इथेच पाठवली जाईल.',
+  'checkout.badEmail': 'योग्य ईमेल पत्ता टाका, उदा. name@example.com.',
 }
 
 export default mr

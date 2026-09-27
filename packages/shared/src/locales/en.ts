@@ -445,6 +445,11 @@ const en: Dictionary = {
 
   // Host payouts
   'host.payouts': 'Payouts',
+
+  // Checkout email
+  'booking.contactEmail': 'Email address',
+  'checkout.emailWhy': 'We’ll send your booking confirmation and the host’s details here.',
+  'checkout.badEmail': 'Enter a valid email address, e.g. name@example.com.',
 }
 
 export default en

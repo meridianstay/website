@@ -7,7 +7,7 @@ import { couponsRepo, propertiesRepo, toPropertySummary } from '../repositories'
 import { appError, createLiveListing, createUser, day, resetDatabase } from './helpers'
 
 const request = (propertyId: number, extra: object = {}) =>
-  ({ propertyId, checkIn: day(10), checkOut: day(12), guests: 2, paymentMethod: 'upi', contactPhone: '+91 98765 43210', specialRequests: '', ...extra })
+  ({ propertyId, checkIn: day(10), checkOut: day(12), guests: 2, paymentMethod: 'upi', contactPhone: '+91 98765 43210', contactEmail: 'guest@example.com', specialRequests: '', ...extra })
 
 const coupon = (over: Partial<Coupon> = {}): Coupon => ({ ...blankCoupon, code: 'SAVE20', kind: 'percent', value: 20, maxDiscount: 0, ...over })
 

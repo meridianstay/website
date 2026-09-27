@@ -8,7 +8,7 @@ import { bookingsRepo, propertiesRepo, statsRepo } from '../repositories'
 import { appError, createLiveListing, createUser, day, listingInput, resetDatabase, today } from './helpers'
 
 const request = (propertyId: number, checkIn: string, checkOut: string, guests = 2) => ({
-  propertyId, checkIn, checkOut, guests, paymentMethod: 'upi', contactPhone: '+91 98765 43210', specialRequests: '',
+  propertyId, checkIn, checkOut, guests, paymentMethod: 'upi', contactPhone: '+91 98765 43210', contactEmail: 'guest@example.com', specialRequests: '',
 })
 
 describe('booking a stay (test mode, no payment keys)', () => {

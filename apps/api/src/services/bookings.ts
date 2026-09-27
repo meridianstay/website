@@ -9,7 +9,7 @@ import { nowISO } from '../store/db'
 import { AppError, notFound } from '../http/errors'
 import { notifyService } from './notify'
 import { siteOrigin } from '../http/origin'
-import { checkPhone, collect, str } from '../http/validate'
+import { checkEmail, checkPhone, collect, str } from '../http/validate'
 import { paymentGateway, paymentsService, type GatewayConfig, type GatewayPayment } from './payments'
 
 // Booking rules: valid dates, capacity, availability, server-side pricing, commission, and the two booking modes:
@@ -26,6 +26,8 @@ export const newBookingCode = () => `MS-${Array.from({ length: 6 }, () => ALPHAB
 export interface BookingRequest {
   propertyId: number; checkIn: string; checkOut: string; guests: number
   paymentMethod: string; contactPhone: string; specialRequests: string
+  /** Where the confirmation goes. Most guests sign in by phone, so this is often the only address we have. */
+  contactEmail: string
   /** stay (default) or dayuse. Day use books `hours` from `startTime` on `checkIn`. */
   kind?: string; startTime?: string; hours?: number; couponCode?: string
   adults?: number; children?: number; infants?: number; pets?: number
@@ -116,6 +118,7 @@ export const bookingService = {
     const today = todayISO()
     const kind = req.kind === 'dayuse' ? 'dayuse' : 'stay'
     const { checkIn, contactPhone, specialRequests } = req
+    const contactEmail = str(req.contactEmail).trim().toLowerCase()
     const party: GuestBreakdown = {
       adults: Number(req.adults ?? req.guests), children: Number(req.children ?? 0), infants: Number(req.infants ?? 0), pets: Number(req.pets ?? 0),
     }
@@ -127,6 +130,8 @@ export const bookingService = {
       pets: whole(party.pets, 0, 3) ? null : 'At most 3 pets.',
       paymentMethod: PAYMENT_METHODS.includes(req.paymentMethod as PaymentMethod) ? null : 'Choose a payment method.',
       contactPhone: checkPhone(contactPhone),
+      // Without this the confirmation has nowhere to go: phone sign-in leaves the account with no address.
+      contactEmail: checkEmail(contactEmail),
       specialRequests: specialRequests.length > 500 ? 'Keep special requests under 500 characters.' : null,
     })
 
@@ -201,6 +206,8 @@ export const bookingService = {
     const status = cfg ? 'AwaitingPayment' : instant ? 'Confirmed' : 'Requested'
     const code = newBookingCode()
     const [guestDoc, hostDoc] = await Promise.all([usersRepo.findByUid(uid), usersRepo.findById(property.hostId)])
+    // A guest who signed in by phone has no address on their account until now.
+    if (guestDoc && !guestDoc.email) await usersRepo.update(uid, { email: contactEmail }).catch(() => {})
     try {
       await bookingsRepo.create({
         code, propertyId: property.id, guestId: guest.id, checkIn, checkOut: slot.checkOut, nights: slot.nights, guests, currency: 'INR',
@@ -208,7 +215,7 @@ export const bookingService = {
         // For day use this is the extra hours; for stays, the extra-guest charge.
         extraGuestMinor: slot.extraMinor, serviceFeeMinor: 0, totalMinor,
         commissionPct: pct, cancellationFeePct: rates.cancellationFeePct, ...split({ commissionPct: pct }, totalMinor),
-        paymentMethod: req.paymentMethod as PaymentMethod, contactPhone, specialRequests: specialRequests || null,
+        paymentMethod: req.paymentMethod as PaymentMethod, contactPhone, contactEmail, specialRequests: specialRequests || null,
         status, paymentStatus: cfg ? 'created' : 'test',
         expiresAt: status === 'AwaitingPayment' ? inMinutes(PAYMENT_HOLD_MINUTES) : status === 'Requested' ? slot.deadline : null,
         couponCode, discountMinor,

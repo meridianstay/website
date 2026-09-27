@@ -48,7 +48,7 @@ class FakeRazorpay implements PaymentGateway {
 
 let rzp: FakeRazorpay
 const request = (propertyId: number) => ({
-  propertyId, checkIn: day(10), checkOut: day(12), guests: 2, paymentMethod: 'upi', contactPhone: '+91 98765 43210', specialRequests: '',
+  propertyId, checkIn: day(10), checkOut: day(12), guests: 2, paymentMethod: 'upi', contactPhone: '+91 98765 43210', contactEmail: 'guest@example.com', specialRequests: '',
 })
 const confirm = (guest: TestUser, code: string, r: ReturnType<FakeRazorpay['pay']>) =>
   bookingService.confirmPayment(guest.me, code, { orderId: r.razorpay_order_id, paymentId: r.razorpay_payment_id, signature: r.razorpay_signature })

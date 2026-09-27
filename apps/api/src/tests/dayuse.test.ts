@@ -8,7 +8,7 @@ import { dayUseConflict, stayClashesWithDayUse } from '../repositories/schedule'
 import { appError, createLiveListing, createUser, day, resetDatabase } from './helpers'
 
 const dayUse = { ...defaultDayUse, enabled: true, blockHours: 6, price: 3000, extraHourPrice: 500, opensAt: '08:00', closesAt: '22:00' }
-const base = { paymentMethod: 'upi', contactPhone: '+91 98765 43210', specialRequests: '', guests: 4 }
+const base = { paymentMethod: 'upi', contactPhone: '+91 98765 43210', contactEmail: 'guest@example.com', specialRequests: '', guests: 4 }
 const dayBooking = (propertyId: number, date: string, startTime: string, hours: number, extra: object = {}) =>
   ({ ...base, propertyId, kind: 'dayuse', checkIn: date, checkOut: '', startTime, hours, ...extra })
 const stay = (propertyId: number, checkIn: string, checkOut: string) => ({ ...base, guests: 2, propertyId, checkIn, checkOut })

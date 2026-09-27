@@ -5,7 +5,7 @@ import { notifyService } from '../services/notify'
 import { indianMobile } from '../services/delivery'
 import { bookingService } from '../services/bookings'
 import { adminService } from '../services/admin'
-import { contentRepo, notificationsRepo, propertiesRepo } from '../repositories'
+import { bookingsRepo, contentRepo, notificationsRepo, propertiesRepo, usersRepo } from '../repositories'
 import { appError, createLiveListing, createUser, day, insertBooking, listingInput, resetDatabase } from './helpers'
 import { listingService } from '../services/listings'
 
@@ -13,7 +13,7 @@ const body = (value: unknown) => value as Record<string, unknown>
 
 const request = (propertyId: number) => ({
   propertyId, checkIn: day(10), checkOut: day(12), guests: 2,
-  paymentMethod: 'upi', contactPhone: '+91 98765 43210', specialRequests: '',
+  paymentMethod: 'upi', contactPhone: '+91 98765 43210', contactEmail: 'guest@example.com', specialRequests: '',
 })
 
 describe('notifications', () => {
@@ -171,5 +171,53 @@ describe('the messages that depend on a date', () => {
     assert.equal(run.invites, 1)
     assert.ok((await notificationsRepo.recent('review.invite', null)).length > 0)
     assert.equal((await bookingService.sendDailyMessages()).invites, 0)
+  })
+})
+
+describe('the address a confirmation goes to', () => {
+  beforeEach(resetDatabase)
+
+  const request = (propertyId: number, contactEmail: string) => ({
+    propertyId, checkIn: day(10), checkOut: day(12), guests: 2,
+    paymentMethod: 'upi', contactPhone: '+91 98765 43210', contactEmail, specialRequests: '',
+  })
+
+  test('checkout asks for one, because phone sign-in leaves the account without it', async () => {
+    const host = await createUser('host')
+    const guest = await createUser()
+    // Signing in by phone leaves the account with no address at all.
+    await usersRepo.update(guest.uid, { email: null })
+    const id = await createLiveListing(host)
+
+    const err = await appError(() => bookingService.create(guest.me, guest.uid, request(id, '')))
+    assert.ok(err.fields.contactEmail)
+    assert.ok((await appError(() => bookingService.create(guest.me, guest.uid, request(id, 'not-an-address')))).fields.contactEmail)
+  })
+
+  test('the address is kept on the booking and on the account for next time', async () => {
+    const host = await createUser('host')
+    const guest = await createUser()
+    await usersRepo.update(guest.uid, { email: null })
+    const id = await createLiveListing(host)
+    const { booking } = await bookingService.create(guest.me, guest.uid, request(id, 'Asha@Example.COM'))
+
+    // Stored in one case, so it can't end up duplicated.
+    const stored = (await bookingsRepo.find(booking.code))!
+    assert.equal(stored.guest.email, 'asha@example.com')
+    assert.equal((await usersRepo.findByUid(guest.uid))!.email, 'asha@example.com')
+
+    // And the confirmation actually has somewhere to go.
+    const sent = await notificationsRepo.recent('booking.confirmed', null)
+    assert.ok(sent.some((e) => e.channel === 'email'), 'an email was attempted')
+  })
+
+  test('someone who already has an address on their account keeps it', async () => {
+    const host = await createUser('host')
+    const guest = await createUser()
+    await usersRepo.update(guest.uid, { email: 'existing@example.com' })
+    const id = await createLiveListing(host)
+    await bookingService.create(guest.me, guest.uid, request(id, 'different@example.com'))
+
+    assert.equal((await usersRepo.findByUid(guest.uid))!.email, 'existing@example.com', 'the account is not overwritten')
   })
 })

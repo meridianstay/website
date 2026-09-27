@@ -425,6 +425,11 @@ const gu: Dictionary = {
 
   // Host payouts
   'host.payouts': 'ચુકવણીઓ',
+
+  // Checkout email
+  'booking.contactEmail': 'ઇમેઇલ સરનામું',
+  'checkout.emailWhy': 'તમારા બુકિંગની પુષ્ટિ અને હોસ્ટની માહિતી અહીં જ મોકલાશે.',
+  'checkout.badEmail': 'સાચું ઇમેઇલ સરનામું દાખલ કરો, દા.ત. name@example.com.',
 }
 
 export default gu

@@ -27,7 +27,7 @@ export function Checkout() {
   const isDay = choice.kind === 'dayuse'
   const [property, setProperty] = useState<PropertyDetail | null>(null)
   const [loadError, setLoadError] = useState<string | null>(null)
-  const [form, setForm] = useState({ phone: user?.phone ?? '', requests: '', method: 'upi' as PaymentMethod, agreed: false })
+  const [form, setForm] = useState({ phone: user?.phone ?? '', email: user?.email ?? '', requests: '', method: 'upi' as PaymentMethod, agreed: false })
   const [fieldErrors, setFieldErrors] = useState<Record<string, string>>({})
   const [submitError, setSubmitError] = useState<string | null>(null)
   const [submitting, setSubmitting] = useState<null | 'booking' | 'paying' | 'verifying'>(null)
@@ -77,6 +77,7 @@ export function Checkout() {
     e.preventDefault()
     const errors: Record<string, string> = {}
     if (!/^\+?[\d\s-]{8,20}$/.test(form.phone.trim())) errors.contactPhone = t('checkout.badPhone')
+    if (!/^[^@\s]+@[^@\s.]+\.[^@\s]+$/.test(form.email.trim())) errors.contactEmail = t('checkout.badEmail')
     if (!form.agreed) errors.agreed = t('checkout.acceptTerms')
     setFieldErrors(errors)
     if (Object.keys(errors).length) return
@@ -87,7 +88,7 @@ export function Checkout() {
     try {
       const { booking, payment } = await api.createBooking({
         couponCode: coupon?.code,
-        propertyId: property.id, checkIn, checkOut: isDay ? '' : checkOut, guests, paymentMethod: form.method, contactPhone: form.phone.trim(), specialRequests: form.requests.trim(),
+        propertyId: property.id, checkIn, checkOut: isDay ? '' : checkOut, guests, paymentMethod: form.method, contactPhone: form.phone.trim(), contactEmail: form.email.trim(), specialRequests: form.requests.trim(),
         kind: choice.kind, startTime: isDay ? choice.startTime : undefined, hours: isDay ? choice.hours : undefined, ...party,
       })
       code = booking.code
@@ -172,6 +173,13 @@ export function Checkout() {
               <p id="phone-help" className={`text-xs mt-1 ${fieldErrors.contactPhone ? 'text-rose-600 font-semibold' : 'text-slate-400'}`}>{fieldErrors.contactPhone ?? t('checkout.phoneWhy')}</p>
             </div>
             <div>
+              <label htmlFor="email" className="block text-xs font-bold uppercase text-slate-500 mb-1">{t('booking.contactEmail')}</label>
+              <input id="email" type="email" autoComplete="email" inputMode="email" value={form.email}
+                onChange={(e) => setForm({ ...form, email: e.target.value })} placeholder="name@example.com"
+                aria-invalid={!!fieldErrors.contactEmail} aria-describedby="email-help" className={input} />
+              <p id="email-help" className={`text-xs mt-1 ${fieldErrors.contactEmail ? 'text-rose-600 font-semibold' : 'text-slate-400'}`}>{fieldErrors.contactEmail ?? t('checkout.emailWhy')}</p>
+            </div>
+            <div>
               <label htmlFor="requests" className="block text-xs font-bold uppercase text-slate-500 mb-1">{t('checkout.messageHost')}</label>
               <textarea id="requests" rows={3} maxLength={500} value={form.requests} onChange={(e) => setForm({ ...form, requests: e.target.value })} placeholder={t('checkout.requestsPlaceholder')} className={input} />
             </div>
@@ -219,7 +227,7 @@ export function Checkout() {
             </span>
           </label>
 
-          {submitError && !fieldErrors.contactPhone && <ErrorNote message={submitError} />}
+          {submitError && !fieldErrors.contactPhone && !fieldErrors.contactEmail && <ErrorNote message={submitError} />}
           {fieldErrors.checkIn && (
             <Link to={backToStay} className="text-sm font-bold text-brand-700 underline">{t('checkout.pickNewDates')}</Link>
           )}

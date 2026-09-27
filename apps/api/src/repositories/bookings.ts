@@ -36,7 +36,7 @@ export interface BookingDoc {
   refundPendingMinor?: number
   /** When an AwaitingPayment hold or a Requested booking lapses. */
   expiresAt: string | null
-  contactPhone: string; specialRequests: string | null
+  contactPhone: string; contactEmail?: string; specialRequests: string | null
   createdAt: string; confirmedAt: string | null; cancelledAt: string | null; decidedAt: string | null
   declineReason: string | null; reviewed: boolean
   /** When the check-in reminder and the review invitation were sent, so neither goes twice. */
@@ -130,7 +130,7 @@ const ref = (code: string) => col(C.bookings).doc(code)
 export type NewBooking = Pick<BookingDoc,
   'code' | 'propertyId' | 'guestId' | 'checkIn' | 'checkOut' | 'nights' | 'guests' | 'currency' | 'pricePerNightMinor' | 'baseMinor' |
   'extraGuestMinor' | 'serviceFeeMinor' | 'totalMinor' | 'commissionPct' | 'commissionMinor' | 'hostPayoutMinor' | 'paymentMethod' |
-  'contactPhone' | 'specialRequests' | 'status' | 'paymentStatus' | 'expiresAt' | 'kind' | 'startTime' | 'endTime' | 'hours' |
+  'contactPhone' | 'contactEmail' | 'specialRequests' | 'status' | 'paymentStatus' | 'expiresAt' | 'kind' | 'startTime' | 'endTime' | 'hours' |
   'guestBreakdown' | 'securityDepositMinor' | 'checkInTime' | 'checkOutTime' | 'couponCode' | 'discountMinor' | 'cancellationFeePct'>
 
 /** Frees a booking's nights, but only those it still owns (an expired hold may have been taken over). */
@@ -202,7 +202,7 @@ export const bookingsRepo = {
         const doc: BookingDoc = {
           ...input, id, hostId: property.hostId, management: property.management ?? 'self', instantBook: (property.management ?? 'self') === 'managed',
           property: { slug: property.slug, title: property.title, type: property.type, location: `${property.city}, ${property.region}`, image: property.coverImageUrl },
-          guest: { name: guest.name, email: guest.email, phone: guest.phone },
+          guest: { name: guest.name, email: input.contactEmail || guest.email, phone: guest.phone },
           host: { name: host?.name ?? 'Your host', email: host?.email ?? '', phone: host?.phone ?? '' },
           razorpayOrderId: null, razorpayPaymentId: null, refundedMinor: 0, address: property.address ?? '',
           createdAt: now, confirmedAt: input.status === 'Confirmed' ? now : null, cancelledAt: null, decidedAt: null, declineReason: null, reviewed: false,

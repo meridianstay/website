@@ -425,6 +425,11 @@ const hi: Dictionary = {
 
   // Host payouts
   'host.payouts': 'भुगतान',
+
+  // Checkout email
+  'booking.contactEmail': 'ईमेल पता',
+  'checkout.emailWhy': 'आपकी बुकिंग की पुष्टि और होस्ट की जानकारी यहीं भेजी जाएगी।',
+  'checkout.badEmail': 'सही ईमेल पता डालिए, जैसे name@example.com।',
 }
 
 export default hi

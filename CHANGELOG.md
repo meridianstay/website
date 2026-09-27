@@ -2,6 +2,13 @@
 
 Every change to Meridian Stay is recorded here, newest first. Each entry says what changed for the people using the platform, then the notable technical changes.
 
+## 0.31.0 — 2026-09-27
+
+### Checkout asks for an email address
+- Most guests sign in with a phone number, which leaves their account with **no email address at all** — so booking confirmations had nowhere to go. Checkout now asks for one, alongside the phone number, and says plainly why: the confirmation and the host's details are sent there.
+- It is **filled in already** for anyone who signed in with Google, and can still be changed for this booking.
+- The address is saved to the guest's account when there isn't one, so later bookings prefill and every other message reaches them too. An address already on the account is never overwritten by a one-off.
+
 ## 0.30.1 — 2026-09-27
 
 ### Fixes
