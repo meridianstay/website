@@ -48,7 +48,7 @@ const mr: ContentTranslations = {
   'List your property': 'तुमची मालमत्ता नोंदवा',
   'Your premium ecosystem for farmstays, boutique resorts, woodland cottages, and luxury villas.': 'फार्मस्टे, बुटीक रिसॉर्ट, जंगलातील कॉटेज आणि लक्झरी व्हिलासाठी तुमचं प्रीमियम ठिकाण.',
   '© {year} Meridian Stay Inc. All rights reserved.': '© {year} मेरिडियन स्टे इंक. सर्व हक्क राखीव.',
-  'Designed and developed by Digitech Miner': 'डिझाइन आणि विकास: डिजिटेक मायनर',
+  'Designed & Developed by Digitech Miner': 'डिझाइन आणि विकास: डिजिटेक मायनर',
   'About Meridian': 'मेरिडियनविषयी',
   'About us': 'आमच्याविषयी',
   'How it works': 'हे कसं चालतं',

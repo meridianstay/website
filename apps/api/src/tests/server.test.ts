@@ -248,3 +248,42 @@ describe('what leaves the API', () => {
     assert.ok('branding' in published && 'theme' in published && 'header' in published)
   })
 })
+
+describe('the footer credit', () => {
+  beforeEach(resetDatabase)
+
+  const storedLabel = async () =>
+    ((await col(C.settings).doc('footer').get()).data()?.value as { credit: { label: string } }).credit.label
+
+  test('the old wording is replaced on a site that had already saved its footer', async () => {
+    const footer = (await contentRepo.settings()).footer
+    await col(C.settings).doc('footer').set({
+      value: { ...footer, credit: { label: 'Designed and developed by Digitech Miner', url: 'https://digitechminer.in' } },
+      updatedAt: nowISO(), updatedBy: null,
+    })
+    await contentRepo.fixCreditWording()
+    assert.equal(await storedLabel(), 'Designed & Developed by Digitech Miner')
+    // The link the client set is theirs, and is not touched.
+    const stored = (await col(C.settings).doc('footer').get()).data()!.value as { credit: { url: string }; columns: unknown[] }
+    assert.equal(stored.credit.url, 'https://digitechminer.in')
+    assert.ok(stored.columns.length, 'the rest of the footer survives the fix')
+  })
+
+  test('a credit line someone wrote themselves is left alone', async () => {
+    const footer = (await contentRepo.settings()).footer
+    await col(C.settings).doc('footer').set({
+      value: { ...footer, credit: { label: 'Built by the in-house team', url: '' } },
+      updatedAt: nowISO(), updatedBy: null,
+    })
+    await contentRepo.fixCreditWording()
+    assert.equal(await storedLabel(), 'Built by the in-house team')
+  })
+
+  test('the translated wording is keyed by the new English line', async () => {
+    const { footer } = await contentRepo.settings()
+    for (const lang of ['hi', 'mr', 'gu']) {
+      const words = await contentRepo.translations(lang)
+      assert.ok(words[footer.credit.label], `${lang} has no translation for the credit line`)
+    }
+  })
+})

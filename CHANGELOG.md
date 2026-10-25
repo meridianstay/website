@@ -2,6 +2,11 @@
 
 Every change to Meridian Stay is recorded here, newest first. Each entry says what changed for the people using the platform, then the notable technical changes.
 
+## 0.33.1 — 2026-10-25
+
+### Fixes
+- **The footer credit now reads "Designed & Developed by Digitech Miner".** The line is stored with the rest of your footer, so the old wording would have stayed put even after an update — this replaces that exact wording wherever it is still saved, and leaves a credit line you have written yourself alone. The Hindi, Marathi and Gujarati wording follows it.
+
 ## 0.33.0 — 2026-09-27
 
 ### A Server page in the control centre

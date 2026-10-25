@@ -1,4 +1,4 @@
-import { defaultPages, defaultSiteSettings, withAboutDefaults, withHomeDefaults, type AboutPage, type ContentPage, type ContentTranslations, type HomeLayout, type SiteSettings, type TranslationBook } from '@meridian/shared'
+import { defaultFooter, defaultPages, defaultSiteSettings, withAboutDefaults, withHomeDefaults, type AboutPage, type ContentPage, type ContentTranslations, type HomeLayout, type SiteSettings, type TranslationBook } from '@meridian/shared'
 import { starterContent, withStarterContent } from '@meridian/shared/locales'
 import { C, all, col, nowISO } from '../store/db'
 import { cached, clear, configure } from '../store/cache'
@@ -124,6 +124,21 @@ export const contentRepo = {
     return true
   },
 
+  /**
+   * The footer credit was reworded in 0.33.1. Settings are written once and then belong to the
+   * control centre, so the old wording would have stayed on any site that had already saved its
+   * footer — which is every site, since the link was changed at launch. This replaces the previous
+   * wording and nothing else: a credit line someone has actually written themselves is left alone.
+   */
+  async fixCreditWording() {
+    const previous = 'Designed and developed by Digitech Miner'
+    const ref = col(C.settings).doc('footer')
+    const stored = (await ref.get()).data()?.value as { credit?: { label?: string } } | undefined
+    if (stored?.credit?.label !== previous) return
+    await ref.set({ value: { ...stored, credit: { ...stored.credit, label: defaultFooter.credit.label } } }, { merge: true })
+    await clear()
+  },
+
   /** Adds any missing default settings and pages. Never overwrites admin edits. */
   async ensureDefaults() {
     for (const [key, value] of Object.entries(defaultSiteSettings)) {
@@ -133,5 +148,6 @@ export const contentRepo = {
       await col(C.pages).doc(p.slug).create({ ...p, published: true, updatedAt: nowISO(), updatedBy: null }).catch(() => {})
     }
     await clear()
+    await this.fixCreditWording()
   },
 }

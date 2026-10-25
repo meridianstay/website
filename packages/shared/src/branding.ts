@@ -157,7 +157,7 @@ export const defaultFooter: FooterSettings = {
     { label: 'Sitemap', url: '/sitemap' },
   ],
   copyright: '© {year} Meridian Stay Inc. All rights reserved.',
-  credit: { label: 'Designed and developed by Digitech Miner', url: 'https://digitechminer.com' },
+  credit: { label: 'Designed & Developed by Digitech Miner', url: 'https://digitechminer.com' },
 }
 
 /** One tab in the bar along the bottom of a phone or tablet. */
