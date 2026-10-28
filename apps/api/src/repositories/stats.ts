@@ -1,4 +1,4 @@
-import { RENEWAL_WARNING_DAYS, daysLeft, defaultPayouts, payableUpTo, subscriptionActive, type AboutStats, type AdminStats, type HostStats } from '@meridian/shared'
+import { RENEWAL_WARNING_DAYS, daysLeft, defaultPayouts, payableUpTo, subscriptionActive, withPlanDefaults, type AboutStats, type AdminStats, type HostStats } from '@meridian/shared'
 import { C, all, col } from '../store/db'
 import { cached } from '../store/cache'
 import { promotionsRepo } from './promotions'
@@ -43,7 +43,7 @@ export const statsRepo = {
       subscriptionsRepo.list(),
       clientSitesRepo.list(),
       calendarFeedsRepo.list(),
-      contentRepo.settings().then((s) => s.subscriptions?.plans ?? []),
+      contentRepo.settings().then((s) => withPlanDefaults(s.subscriptions?.plans)),
       payoutsRepo.list(),
       contentRepo.settings().then((s) => s.payouts ?? defaultPayouts),
     ])

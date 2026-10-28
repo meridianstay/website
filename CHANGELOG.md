@@ -2,6 +2,15 @@
 
 Every change to Meridian Stay is recorded here, newest first. Each entry says what changed for the people using the platform, then the notable technical changes.
 
+## 0.40.1 — 2026-10-28
+
+### A client's page opens with their photos
+- The top of a client's website is now a **slideshow of the stay's own photos**, moving by itself, with the stay's name, the facts a guest decides on — how many it sleeps, bedrooms, bathrooms, its rating — and the nightly price over them. Arrows, dots and a counter for anyone who wants to look through at their own pace; it pauses while the pointer is on it, and sits still for anyone who has asked for less motion.
+- One photo means no slideshow, and **a client with only one stay sees no "other stays" section at all** rather than an empty heading.
+
+### Fixes
+- **Paid clients would have lost their custom domains on deploy.** Plan settings are stored once and a stored list replaces the default list whole, so a site set up before today would still hold the old three plans — none of which carried the new "may use their own domain" flag, which reads as "no". Stored plans are now filled in from the defaults: prices, names and wording stay yours, while what each plan unlocks always comes from the platform. Free also appears on sites that were set up before it existed.
+
 ## 0.40.0 — 2026-10-28
 
 ### Every client gets a website, free

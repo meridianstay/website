@@ -1,5 +1,6 @@
 import {
-  FREE_PLAN_ID, RENEWAL_WARNING_DAYS, daysLeft, defaultSubscriptionSettings, entitlements, freePlan, nextExpiry, planById,
+  FREE_PLAN_ID, RENEWAL_WARNING_DAYS, daysLeft, defaultSubscriptionSettings, entitlements, freePlan, nextExpiry,
+  planById, withPlanDefaults,
   subscriptionActive, type ClientPlan, type Me, type PlanId, type SubscriptionSettings, type SubscriptionTerm,
 } from '@meridian/shared'
 import { auditLogRepo, contentRepo, subscriptionsRepo, usersRepo } from '../repositories'
@@ -15,7 +16,10 @@ import { collect, str } from '../http/validate'
 
 export const subscriptionSettings = async (): Promise<SubscriptionSettings> => {
   const { subscriptions } = await contentRepo.settings()
-  return subscriptions ?? defaultSubscriptionSettings
+  return {
+    required: subscriptions?.required ?? defaultSubscriptionSettings.required,
+    plans: withPlanDefaults(subscriptions?.plans),
+  }
 }
 
 const planOrFail = (plans: ClientPlan[], id: string): ClientPlan => {

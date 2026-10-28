@@ -86,6 +86,21 @@ export const defaultClientPlans: ClientPlan[] = [
   },
 ]
 
+/**
+ * Stored plans filled in from the defaults. Settings are written once and then belong to the
+ * control centre, and a stored list replaces the default list whole — so a site set up before a
+ * plan existed would never see it, and one set up before a feature existed would have that feature
+ * read as `undefined`, which is the same as off. The prices, names and wording stay the client's;
+ * what each plan *unlocks* always comes from here, because the platform decides entitlements from it.
+ */
+export function withPlanDefaults(stored: ClientPlan[] | undefined | null): ClientPlan[] {
+  const saved = Array.isArray(stored) ? stored : []
+  return defaultClientPlans.map((def) => {
+    const mine = saved.find((p) => p.id === def.id)
+    return mine ? { ...def, ...mine, id: def.id, features: def.features } : def
+  })
+}
+
 /** The plan everybody has without paying. Never sold, never expires. */
 export const FREE_PLAN_ID: PlanId = 'free'
 

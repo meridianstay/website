@@ -93,7 +93,7 @@ export function ClientLanding({ site }: { site: ClientSiteView }) {
 
   return (
     <div className="bg-slate-50">
-      <Hero site={site} stay={featured} design={design} />
+      <Hero site={site} stay={featured} property={property} design={design} />
 
       <div className="max-w-[1180px] mx-auto px-5 py-10">
         {!featured ? (
@@ -133,18 +133,73 @@ export function ClientLanding({ site }: { site: ClientSiteView }) {
 /** A client's own heading for a section, or the one the page would have used. */
 const heading = (section: ClientSection, fallback: string) => section.title || fallback
 
-function Hero({ site, stay, design }: { site: ClientSiteView; stay: ClientStay | undefined; design: { heroStyle: 'photo' | 'plain' } }) {
+/**
+ * The top of a client's site: their stay's photos running as a slideshow, with the name, the facts
+ * a guest decides on and the price over them. One photo is all it needs — the slideshow only
+ * appears when there is more than one to show.
+ */
+function Hero({ site, stay, property, design }: {
+  site: ClientSiteView
+  stay: ClientStay | undefined
+  property: PropertyDetail | null
+  design: { heroStyle: 'photo' | 'plain' }
+}) {
+  // Starts with the card photo so the first frame is never empty, then fills out once the stay loads.
+  const photos = property ? [property.image, ...property.gallery] : stay ? [stay.image] : []
+  const [index, setIndex] = useState(0)
+  const [paused, setPaused] = useState(false)
+  const slides = design.heroStyle === 'photo' ? photos : []
+
+  useEffect(() => { setIndex(0) }, [stay?.id])
+
+  useEffect(() => {
+    if (slides.length < 2 || paused) return
+    // Someone who has asked for less motion gets the first photo and nothing moving.
+    if (window.matchMedia('(prefers-reduced-motion: reduce)').matches) return
+    const timer = setInterval(() => setIndex((i) => (i + 1) % slides.length), 6000)
+    return () => clearInterval(timer)
+  }, [slides.length, paused])
+
+  const go = (to: number) => setIndex((to + slides.length) % slides.length)
+
   return (
-    <section className="relative bg-slate-900 text-white">
-      {stay && design.heroStyle === 'photo' && <img src={stay.image} alt="" className="absolute inset-0 w-full h-full object-cover opacity-45" />}
-      <div className="relative max-w-[1180px] mx-auto px-5 py-16 sm:py-24">
+    <section
+      className="relative bg-slate-900 text-white overflow-hidden"
+      onMouseEnter={() => setPaused(true)}
+      onMouseLeave={() => setPaused(false)}
+    >
+      {slides.map((src, i) => (
+        <img
+          key={src}
+          src={src}
+          alt=""
+          aria-hidden="true"
+          className={`absolute inset-0 w-full h-full object-cover transition-opacity duration-1000 ${i === index ? 'opacity-45' : 'opacity-0'}`}
+        />
+      ))}
+      {/* A wash under the words, so they stay readable over any photo. */}
+      <div className="absolute inset-0 bg-gradient-to-t from-slate-900 via-slate-900/40 to-slate-900/20" aria-hidden="true" />
+
+      <div className="relative max-w-[1180px] mx-auto px-5 py-16 sm:py-24 lg:py-28">
         <p className="text-[11px] font-bold uppercase tracking-widest text-brand-yellow-400 mb-3">
           {stay ? `${stay.type} · ${stay.city}, ${stay.region}` : site.tagline}
         </p>
-        <h1 className="text-3xl sm:text-5xl font-extrabold tracking-tight text-balance max-w-3xl">
+        <h1 className="text-3xl sm:text-5xl lg:text-6xl font-extrabold tracking-tight text-balance max-w-3xl">
           {stay ? stay.title : site.businessName}
         </h1>
         {site.tagline && stay && <p className="mt-4 text-white/80 max-w-2xl text-lg">{site.tagline}</p>}
+
+        {stay && (
+          <ul className="mt-6 flex flex-wrap items-center gap-x-5 gap-y-2 text-sm text-white/85">
+            <li><i className="fa-solid fa-user-group mr-2 text-white/50" aria-hidden="true"></i>Sleeps {stay.maxGuests}</li>
+            <li><i className="fa-solid fa-bed mr-2 text-white/50" aria-hidden="true"></i>{stay.beds} {stay.beds === 1 ? 'bedroom' : 'bedrooms'}</li>
+            <li><i className="fa-solid fa-water-ladder mr-2 text-white/50" aria-hidden="true"></i>{stay.baths} {stay.baths === 1 ? 'bathroom' : 'bathrooms'}</li>
+            {stay.reviewCount > 0 && (
+              <li><i className="fa-solid fa-star mr-2 text-brand-yellow-400" aria-hidden="true"></i>{stay.rating} · {stay.reviewCount} reviews</li>
+            )}
+          </ul>
+        )}
+
         <div className="mt-8 flex flex-wrap items-center gap-4">
           <a href="#book" className="bg-brand-600 hover:bg-brand-700 text-white font-bold py-3.5 px-8 rounded-full transition">Check availability</a>
           {stay && (
@@ -153,6 +208,33 @@ function Hero({ site, stay, design }: { site: ClientSiteView; stay: ClientStay |
             </span>
           )}
         </div>
+
+        {slides.length > 1 && (
+          <div className="mt-10 flex items-center gap-3">
+            <button type="button" onClick={() => go(index - 1)} aria-label="Previous photo"
+              className="w-9 h-9 rounded-full bg-white/15 hover:bg-white/25 transition flex items-center justify-center">
+              <i className="fa-solid fa-chevron-left text-xs" aria-hidden="true"></i>
+            </button>
+            <button type="button" onClick={() => go(index + 1)} aria-label="Next photo"
+              className="w-9 h-9 rounded-full bg-white/15 hover:bg-white/25 transition flex items-center justify-center">
+              <i className="fa-solid fa-chevron-right text-xs" aria-hidden="true"></i>
+            </button>
+            <span className="flex items-center gap-1.5 ml-2" role="tablist" aria-label="Photos">
+              {slides.map((src, i) => (
+                <button
+                  key={src}
+                  type="button"
+                  role="tab"
+                  aria-selected={i === index}
+                  aria-label={`Photo ${i + 1}`}
+                  onClick={() => setIndex(i)}
+                  className={`h-1.5 rounded-full transition-all ${i === index ? 'w-7 bg-white' : 'w-1.5 bg-white/40 hover:bg-white/70'}`}
+                />
+              ))}
+            </span>
+            <span className="ml-2 text-xs text-white/60 tabular-nums">{index + 1} / {slides.length}</span>
+          </div>
+        )}
       </div>
     </section>
   )
