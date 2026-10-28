@@ -287,6 +287,25 @@ export interface HostStats {
   rated: number
   avgRating: number | null
   upcoming: number
+  /** Listings sent back by the Meridian team, waiting on the host. */
+  rejected: number
+  /** Nights booked across the next 30 days, and how many there were to sell. */
+  nights: { booked: number; available: number }
+  /** What Meridian owes this host. */
+  payouts: { due: number; pending: number; processing: number; paidToDate: number }
+  /** Their own website. */
+  site: {
+    status: 'none' | 'Draft' | 'Pending' | 'Approved' | 'Rejected'
+    /** Where it answers, once there is something to answer. */
+    address: string
+    live: boolean
+    /** Edited since the copy visitors see. */
+    unpublished: boolean
+  }
+  /** What they are paying Meridian, or Free. */
+  plan: { id: string; name: string; active: boolean; daysLeft: number | null; maxStaysOnSite: number; customDomain: boolean; commissionFree: boolean }
+  /** Calendars kept in step with other platforms. */
+  calendars: { feeds: number; failing: number; clashes: number }
 }
 
 export interface HostCalendar {

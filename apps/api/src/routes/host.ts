@@ -1,6 +1,6 @@
 import { Hono } from 'hono'
 import { todayISO } from '@meridian/shared'
-import { amenitiesRepo, promotionsRepo, propertiesRepo, statsRepo } from '../repositories'
+import { amenitiesRepo, promotionsRepo, propertiesRepo } from '../repositories'
 import { bookingService } from '../services/bookings'
 import { promotionService } from '../services/promotions'
 import { listingService, parseListing } from '../services/listings'
@@ -10,6 +10,7 @@ import { body, currentUid, currentUser, requireUser, type AppEnv } from '../http
 import { str } from '../http/validate'
 import { rateLimit } from '../http/rateLimit'
 import { clientSiteService } from '../services/clientSites'
+import { hostDashboard } from '../services/host'
 import { subscriptionService } from '../services/subscriptions'
 import { calendarSyncService } from '../services/calendarSync'
 
@@ -51,7 +52,7 @@ hostRoutes.put('/host/payout-account', async (c) => {
 
 hostRoutes.get('/host/stats', async (c) => {
   await bookingService.sweepSoon()
-  return c.json(await statsRepo.forHost(currentUser(c).id, todayISO()))
+  return c.json(await hostDashboard.stats(currentUser(c)))
 })
 hostRoutes.get('/host/listings', async (c) =>
   c.json({ listings: await propertiesRepo.listForHost(currentUser(c).id, await promotionsRepo.livePropertyIds(todayISO())) }))

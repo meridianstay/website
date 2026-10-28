@@ -7,8 +7,9 @@ import {
 import { clientSiteService } from '../services/clientSites'
 import { contentService } from '../services/content'
 import { subscriptionService } from '../services/subscriptions'
-import { clientSitesRepo, contentRepo, subscriptionsRepo } from '../repositories'
-import { appError, createLiveListing, createUser, resetDatabase, type TestUser } from './helpers'
+import { bookingsRepo, clientSitesRepo, contentRepo, subscriptionsRepo } from '../repositories'
+import { bookingService } from '../services/bookings'
+import { appError, createLiveListing, createUser, day, resetDatabase, type TestUser } from './helpers'
 
 // A client's own website, and the plan that pays for it.
 
@@ -187,7 +188,7 @@ describe('what each plan is worth', () => {
 
     await subscriptionService.grantByAdmin(admin.me, host.me.id, 'pro', '')
     assert.deepEqual(await subscriptionService.require(host.me.id, 'pageEditor'),
-      { ownWebsite: true, maxStaysOnSite: 0, pageEditor: true, customDomain: true })
+      { ownWebsite: true, maxStaysOnSite: 0, pageEditor: true, customDomain: true, commissionFree: true })
   })
 
   test('a plan running out drops them to Free rather than taking the site away', async () => {
@@ -210,8 +211,10 @@ describe('what each plan is worth', () => {
     const settings = await contentRepo.settings()
     await contentRepo.saveSetting('subscriptions', { ...settings.subscriptions, required: false }, admin.me.id)
     const host = await createUser('host')
+    // Switching the requirement off opens every feature, but commission is a billing decision:
+    // it keeps being taken until a client actually pays for a plan.
     assert.deepEqual(await subscriptionService.entitlementsOf(host.me.id),
-      { ownWebsite: true, maxStaysOnSite: 0, pageEditor: true, customDomain: true })
+      { ownWebsite: true, maxStaysOnSite: 0, pageEditor: true, customDomain: true, commissionFree: false })
   })
 
   test('the plan rules themselves', () => {
@@ -307,5 +310,48 @@ describe('the plans your team sets', () => {
     const host = await createUser('host')
     assert.equal((await subscriptionService.mine(host.me)).required, false)
     assert.equal((await subscriptionService.entitlementsOf(host.me.id)).ownWebsite, true)
+  })
+})
+
+describe('what a paid plan does to commission', () => {
+  beforeEach(resetDatabase)
+
+  const bookingInput = (propertyId: number) => ({
+    propertyId, checkIn: day(10), checkOut: day(13), guests: 2, paymentMethod: 'upi',
+    contactPhone: '+91 98765 43210', contactEmail: 'guest@example.com', specialRequests: '',
+  })
+
+  test('Free keeps the commission; a paid plan removes it', async () => {
+    const admin = await createUser('admin')
+    const free = await createUser('host')
+    const paid = await clientOn('single')
+    const guest = await createUser('guest')
+
+    const freeStay = await createLiveListing(free, { title: 'Free Plan Cottage', price: 100 })
+    const paidStay = await createLiveListing(paid, { title: 'Paid Plan Cottage', price: 100 })
+
+    const a = (await bookingService.create(guest.me, guest.uid, bookingInput(freeStay))).booking
+    const b = (await bookingService.create(guest.me, guest.uid, bookingInput(paidStay))).booking
+
+    const onFree = (await bookingsRepo.find(a.code))!
+    const onPaid = (await bookingsRepo.find(b.code))!
+    assert.ok(onFree.commissionMinor > 0, 'a client on Free pays commission as before')
+    assert.equal(onPaid.commissionMinor, 0, 'a client who has paid for the year pays no commission')
+    assert.equal(onPaid.hostPayoutMinor, onPaid.totalMinor, 'so the whole booking is theirs')
+    void admin
+  })
+
+  test('a booking keeps the rate it was made under, whatever happens to the plan later', async () => {
+    const admin = await createUser('admin')
+    const host = await clientOn('single')
+    const guest = await createUser('guest')
+    const stay = await createLiveListing(host, { price: 100 })
+
+    const made = (await bookingService.create(guest.me, guest.uid, bookingInput(stay))).booking
+    assert.equal((await bookingsRepo.find(made.code))!.commissionMinor, 0)
+
+    // The plan ends. The booking already made is not reached back into.
+    await subscriptionService.cancel(admin.me, host.me.id)
+    assert.equal((await bookingsRepo.find(made.code))!.commissionMinor, 0)
   })
 })

@@ -2,6 +2,19 @@
 
 Every change to Meridian Stay is recorded here, newest first. Each entry says what changed for the people using the platform, then the notable technical changes.
 
+## 0.41.0 — 2026-10-28
+
+### A plan is bought instead of the commission, not as well as it
+- **Free clients pay commission on each booking, exactly as before.** Nothing changes for anyone who hasn't subscribed.
+- **A client on any paid plan pays no commission at all** while their year runs — they keep the whole booking value. The yearly fee replaces Meridian's cut rather than sitting on top of it.
+- **The rate is written onto each booking as it stands that day.** A plan that lapses later never reaches back into a booking already made, and one bought today doesn't refund yesterday's commission.
+
+### A client dashboard that says what to do
+- The first screen of the client portal now opens with **what needs them**: requests about to expire, a night sold twice on another platform, a listing sent back, a calendar that stopped reading, a plan running out.
+- **Their money, broken out properly**: ready to be paid, still on hold, on its way, and paid to date — with a line saying plainly whether commission is being taken and what a plan would do about it.
+- **How full the next 30 nights are**, as a percentage of what there was to sell, beside upcoming stays, listings and rating.
+- Two new panels: **their website** — where it answers, and whether anything is waiting to be checked — and **their plan**, with a tick or a dash against each thing it includes.
+
 ## 0.40.1 — 2026-10-28
 
 ### A client's page opens with their photos

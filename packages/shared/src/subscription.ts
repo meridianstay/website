@@ -18,6 +18,11 @@ export interface PlanFeatures {
   pageEditor: boolean
   /** Whether they may point their own domain at it. Free sites live on the Meridian subdomain. */
   customDomain: boolean
+  /**
+   * Whether Meridian takes no commission on their bookings. A paid plan is bought instead of the
+   * commission, not as well as it; Free clients pay per booking as they always have.
+   */
+  commissionFree: boolean
 }
 
 export interface ClientPlan {
@@ -37,22 +42,23 @@ export const defaultClientPlans: ClientPlan[] = [
     name: 'Free',
     pricePerYear: 0,
     tagline: 'A website on us, from the day you join.',
-    features: { maxStaysOnSite: 1, pageEditor: false, customDomain: false },
+    features: { maxStaysOnSite: 1, pageEditor: false, customDomain: false, commissionFree: false },
     perks: [
       'Your stay listed on the Meridian marketplace',
       'Your own website at your-business-name.meridianstay.com',
       'Bookings, calendar, guests and payouts in your portal',
-      'Nothing to pay, and nothing to set up',
+      'Meridian’s commission is taken from each booking, as it always has been',
     ],
   },
   {
     id: 'single',
     name: 'Single stay',
     pricePerYear: 999,
-    tagline: 'The same website, at your own address.',
-    features: { maxStaysOnSite: 1, pageEditor: false, customDomain: true },
+    tagline: 'Keep your commission. Keep your address.',
+    features: { maxStaysOnSite: 1, pageEditor: false, customDomain: true, commissionFree: true },
     perks: [
       'Everything in Free',
+      'No commission on your bookings — you keep the whole booking value',
       'Your own domain — yourbusiness.com instead of our subdomain',
       'A secure certificate, issued and renewed for you',
       'Your name on the address guests remember',
@@ -63,7 +69,7 @@ export const defaultClientPlans: ClientPlan[] = [
     name: 'Multiple stays',
     pricePerYear: 1999,
     tagline: 'Every branch on the same website.',
-    features: { maxStaysOnSite: 0, pageEditor: false, customDomain: true },
+    features: { maxStaysOnSite: 0, pageEditor: false, customDomain: true, commissionFree: true },
     perks: [
       'Everything in Single stay',
       'All your stays and branches on one website',
@@ -76,7 +82,7 @@ export const defaultClientPlans: ClientPlan[] = [
     name: 'Everything',
     pricePerYear: 4999,
     tagline: 'Your website, arranged your way.',
-    features: { maxStaysOnSite: 0, pageEditor: true, customDomain: true },
+    features: { maxStaysOnSite: 0, pageEditor: true, customDomain: true, commissionFree: true },
     perks: [
       'Everything in Multiple stays',
       'Rearrange your landing page yourself — drag the sections into the order you want',
@@ -173,6 +179,7 @@ export function entitlements(plans: ClientPlan[], s: Pick<Subscription, 'status'
     maxStaysOnSite: plan.features.maxStaysOnSite,
     pageEditor: plan.features.pageEditor,
     customDomain: plan.features.customDomain,
+    commissionFree: plan.features.commissionFree,
   }
 }
 

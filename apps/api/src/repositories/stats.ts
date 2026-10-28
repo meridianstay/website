@@ -1,4 +1,5 @@
-import { RENEWAL_WARNING_DAYS, daysLeft, defaultPayouts, payableUpTo, subscriptionActive, withPlanDefaults, type AboutStats, type AdminStats, type HostStats } from '@meridian/shared'
+import type { HostStats } from '@meridian/shared'
+import { RENEWAL_WARNING_DAYS, daysLeft, defaultPayouts, payableUpTo, subscriptionActive, withPlanDefaults, type AboutStats, type AdminStats } from '@meridian/shared'
 import { C, all, col } from '../store/db'
 import { cached } from '../store/cache'
 import { promotionsRepo } from './promotions'
@@ -13,8 +14,11 @@ import type { UserDoc } from './users'
 
 // Dashboard figures, computed from the collections.
 
+/** The part of a host's figures that comes straight from the collections; services add the rest. */
+export type HostBaseStats = Pick<HostStats, 'earnings' | 'requests' | 'listings' | 'live' | 'rated' | 'avgRating' | 'upcoming'>
+
 export const statsRepo = {
-  async forHost(hostId: number, today: string): Promise<HostStats> {
+  async forHost(hostId: number, today: string): Promise<HostBaseStats> {
     const [listings, bookings] = await Promise.all([
       all<PropertyDoc>(col(C.properties).where('hostId', '==', hostId)),
       all<BookingDoc>(col(C.bookings).where('hostId', '==', hostId)).then((r) => r.map(withDefaults)),

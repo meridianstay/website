@@ -11,6 +11,7 @@ import { notifyService } from './notify'
 import { siteOrigin } from '../http/origin'
 import { checkEmail, checkPhone, collect, str } from '../http/validate'
 import { paymentGateway, paymentsService, type GatewayConfig, type GatewayPayment } from './payments'
+import { subscriptionService } from './subscriptions'
 
 // Booking rules: valid dates, capacity, availability, server-side pricing, commission, and the two booking modes:
 //   managed listings book instantly (paid in full at checkout);
@@ -201,7 +202,11 @@ export const bookingService = {
     const totalMinor = slot.totalMinor - discountMinor
     const instant = (property.management ?? 'self') === 'managed'
     const rates = (await contentRepo.settings()).commission
-    const pct = commissionPct(property.management ?? 'self', rates)
+    // A client on a paid plan has already paid Meridian for the year, so their bookings carry no
+    // commission. Free clients pay per booking as they always have. The rate is written onto the
+    // booking as it stands today, so a plan that lapses later never reaches back into one already made.
+    const waived = (await subscriptionService.entitlementsOf(property.hostId)).commissionFree
+    const pct = waived ? 0 : commissionPct(property.management ?? 'self', rates)
     const cfg = await paymentsService.activeConfig()
     const status = cfg ? 'AwaitingPayment' : instant ? 'Confirmed' : 'Requested'
     const code = newBookingCode()

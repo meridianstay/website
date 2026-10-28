@@ -52,7 +52,7 @@ export const subscriptionService = {
   async entitlementsOf(hostId: number) {
     const [settings, subscription] = await Promise.all([subscriptionSettings(), subscriptionsRepo.get(hostId)])
     // With the requirement switched off, everyone gets everything: that is what it is for.
-    if (!settings.required) return { ownWebsite: true, maxStaysOnSite: 0, pageEditor: true, customDomain: true }
+    if (!settings.required) return { ownWebsite: true, maxStaysOnSite: 0, pageEditor: true, customDomain: true, commissionFree: false }
     return entitlements(settings.plans, subscription)
   },
 
