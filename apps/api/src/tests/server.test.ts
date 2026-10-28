@@ -172,6 +172,18 @@ describe('scheduled jobs', () => {
     }
   })
 
+  test('no schedule asks for more than one run a day', async () => {
+    interface Cron { path: string; schedule: string }
+    const vercel = JSON.parse(readFileSync(join(import.meta.dirname, '../../../../vercel.json'), 'utf8')) as { crons?: Cron[] }
+    // A cron that would run more than once a day fails the whole deployment on Vercel's Hobby plan,
+    // which is a confusing way to find out. The minute and hour fields must both name one time.
+    for (const cron of vercel.crons ?? []) {
+      const [minute, hour] = cron.schedule.split(' ')
+      assert.match(minute, /^\d+$/, `${cron.path} runs more than once an hour (${cron.schedule})`)
+      assert.match(hour, /^\d+$/, `${cron.path} runs more than once a day (${cron.schedule}), which Vercel's Hobby plan refuses to deploy`)
+    }
+  })
+
   test('running one by hand is remembered, and shows on the page', async () => {
     const admin = await createUser('admin')
     const before = await serverService.report()

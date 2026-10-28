@@ -4,7 +4,7 @@
 
 import type { BrandApp } from './branding'
 
-export const PLATFORM_VERSION = '0.39.0'
+export const PLATFORM_VERSION = '0.39.1'
 
 export const APP_VERSIONS: Record<BrandApp, string> = {
   website: '0.37.0',

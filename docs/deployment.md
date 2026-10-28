@@ -85,10 +85,22 @@ You can delete the old `DATABASE_URL` variable (from the earlier Postgres versio
 
 | Job | When (UTC) | What it does |
 | --- | --- | --- |
+| `/api/cron/calendars` | 01:00 | Reads the calendars of Airbnb and anywhere else a stay is listed |
 | `/api/cron/daily` | 02:30 (08:00 IST) | Check-in reminders, review invitations, and starting or finishing scheduled offers |
 | `/api/cron/expire` | 03:00 | Releases dates held by an unpaid checkout or an unanswered request |
 
-Vercel's Hobby plan allows two cron jobs, run once a day; more frequent schedules need Pro. Each run is recorded, and **Server → Scheduled jobs** shows when each last ran and what it did — plus a **Run now** button for when the schedule isn't set up yet.
+**Every schedule here runs once a day, and on a Hobby plan it has to.** Vercel allows 100 cron jobs on any
+plan, but a Hobby project refuses to deploy at all if any expression would run more than once a day — `0 * * * *`
+fails the build with *"Hobby accounts are limited to daily cron jobs"*. Hobby timing is also approximate: a job
+set for 01:00 runs some time before 02:00. Per-minute schedules need Pro.
+
+Calendar sync does not depend on its schedule to stay current: a stay's calendars are read again whenever a
+guest opens it, if they haven't been read in the last 15 minutes. The daily run is the safety net for stays
+nobody is looking at. On Pro you can tighten it to `0 */2 * * *` and the test that guards this will need
+loosening with it.
+
+Each run is recorded, and **Server → Scheduled jobs** shows when each last ran and what it did — plus a **Run
+now** button for when the schedule isn't set up yet.
 
 ## 3. Razorpay (payments)
 

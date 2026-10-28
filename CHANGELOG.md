@@ -2,6 +2,13 @@
 
 Every change to Meridian Stay is recorded here, newest first. Each entry says what changed for the people using the platform, then the notable technical changes.
 
+## 0.39.1 — 2026-10-28
+
+### Fixes
+- **Deployments were failing.** The calendar sync was scheduled hourly, and a Vercel Hobby project refuses to deploy at all when any schedule would run more than once a day — it stops the build with *"Hobby accounts are limited to daily cron jobs"*. It now runs once a day, like the other two.
+- Nothing is lost by the slower schedule: a stay's calendars are read again whenever a guest opens it, which is what keeps the dates a guest actually sees current. The daily run is the safety net for stays nobody is looking at.
+- A test now refuses any schedule that would run more than once a day, so this cannot reach a deployment again. The deployment guide had the plan limits wrong as well — Vercel allows 100 cron jobs on every plan; it is the frequency that Hobby restricts, not the count.
+
 ## 0.39.0 — 2026-10-28
 
 ### A page for each person
