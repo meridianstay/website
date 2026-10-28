@@ -31,6 +31,8 @@ export const C = {
   serverState: 'serverState',
   /** One per client: their own website — branding, wording, policies and domain. */
   clientSites: 'clientSites',
+  /** What each client pays Meridian for, and until when. */
+  subscriptions: 'subscriptions',
 } as const
 
 export const col = (name: string) => firestore.collection(name)

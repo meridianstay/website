@@ -4,7 +4,8 @@
  */
 export class AppError extends Error {
   constructor(
-    public status: 400 | 401 | 403 | 404 | 409 | 429 | 502 | 503,
+    /** 402 is 'you need a plan for that': the client is signed in, but hasn't paid for this part. */
+    public status: 400 | 401 | 402 | 403 | 404 | 409 | 429 | 502 | 503,
     message: string,
     public fields: Record<string, string> = {},
   ) {

@@ -14,6 +14,7 @@ import type { AdCampaign, AdPlacement, PromotionPlan, PromotionSettings } from '
 import type { Campaign, CampaignContent } from '../campaigns'
 import type { CacheReport, CronRun, ServerReport, ServerSettings, StorageUsage } from '../server'
 import type { ClientSite, ClientSiteView } from '../clientSite'
+import type { ClientPlan, PlanId, Subscription } from '../subscription'
 
 /** A plan as a host sees it: what it costs, and how much room is left over their dates. */
 export interface PlanOnOffer extends PromotionPlan {
@@ -170,6 +171,17 @@ export const hostApi = {
   removeBlock: (id: number, blockId: number) => request<void>(`/host/listings/${id}/blocks/${blockId}`, { method: 'DELETE' }),
   promotions: () => request<{ campaigns: AdCampaign[]; settings: PromotionSettings }>('/host/promotions'),
 
+  subscription: () => request<{
+    subscription: Subscription; plans: ClientPlan[]; required: boolean; active: boolean
+    entitlements: { ownWebsite: boolean; maxStaysOnSite: number; pageEditor: boolean }
+    daysLeft: number | null; renewSoon: boolean
+  }>('/host/subscription'),
+  startSubscription: (planId: PlanId) => request<{
+    testMode: boolean; orderId?: string; keyId?: string; amount?: number; planName?: string; renewal?: boolean
+  }>('/host/subscription/checkout', { method: 'POST', json: { planId } }),
+  confirmSubscription: (value: { orderId: string; paymentId: string; signature: string; planId: PlanId }) =>
+    request<{ subscription: Subscription }>('/host/subscription/confirm', { method: 'POST', json: value }),
+
   website: () => request<{ site: ClientSite; baseDomain: string }>('/host/website'),
   saveWebsite: (value: Partial<ClientSite['content']>) => request<{ site: ClientSite }>('/host/website', { method: 'PUT', json: value }),
   submitWebsite: () => request<{ site: ClientSite }>('/host/website/submit', { method: 'POST' }),
@@ -278,6 +290,14 @@ export const adminApi = {
   deleteCoupon: (code: string) => request<void>(`/admin/coupons/${encodeURIComponent(code)}`, { method: 'DELETE' }),
 
   audit: () => request<{ entries: AuditEntry[] }>('/admin/audit'),
+
+  subscriptions: () => request<{
+    subscriptions: (Subscription & { hostName: string; hostEmail: string; active: boolean; daysLeft: number | null })[]
+    plans: ClientPlan[]; required: boolean
+  }>('/admin/subscriptions'),
+  grantSubscription: (hostId: number, planId: PlanId, note = '') =>
+    request<{ subscription: Subscription }>(`/admin/subscriptions/${hostId}/grant`, { method: 'POST', json: { planId, note } }),
+  cancelSubscription: (hostId: number) => request<{ subscription: Subscription }>(`/admin/subscriptions/${hostId}/cancel`, { method: 'POST' }),
 
   clientSites: () => request<{ sites: ClientSite[]; baseDomain: string }>('/admin/client-sites'),
   approveClientSite: (hostId: number) => request<{ site: ClientSite }>(`/admin/client-sites/${hostId}/approve`, { method: 'POST' }),

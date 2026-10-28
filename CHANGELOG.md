@@ -2,6 +2,22 @@
 
 Every change to Meridian Stay is recorded here, newest first. Each entry says what changed for the people using the platform, then the notable technical changes.
 
+## 0.35.0 — 2026-10-28
+
+### Clients pay to be here
+- Meridian now sells clients a yearly subscription, taken through the same Razorpay account their guests' bookings go through. Three plans, set in the control centre:
+  - **Single stay, ₹999 a year** — the portal, the marketplace listing, and one stay's own website.
+  - **Multiple stays, ₹1,999 a year** — every branch they run on that one website.
+  - **Everything, ₹4,999 a year** — the above, plus rearranging their landing page themselves.
+- **Host portal → My plan** shows the three plans, what each includes, and what they have paid so far. Paying opens Razorpay; nothing is given on an unfinished payment, and a payment that is confirmed twice is only counted once.
+- **Renewing adds a year onto what is left** rather than replacing it, so nobody loses the months they have already paid for.
+- A plan that runs out is marked by the daily job, and the client's website stops being served until they renew. **Their listings, bookings and payouts keep working throughout** — a client is never locked away from guests who have already booked.
+- **Control centre → Subscriptions** lists who is on what, how long they have left, and lets your team record a year paid another way or end one.
+- Your team can switch the requirement off entirely while onboarding the first clients.
+
+### The marketplace sends guests to the client
+- A stay whose client has a website of their own now shows that business's name on its card and **opens their site in a new tab**, leaving the search results where they were.
+
 ## 0.34.0 — 2026-10-28
 
 ### Every client gets their own website

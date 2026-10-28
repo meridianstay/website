@@ -21,6 +21,7 @@ import { explorerService } from '../services/explorer'
 import { serverService } from '../services/server'
 import { runJob } from '../services/jobs'
 import { clientSiteService } from '../services/clientSites'
+import { subscriptionService } from '../services/subscriptions'
 import { body, currentUser, requireRole, type AppEnv } from '../http/auth'
 import { AppError } from '../http/errors'
 import { str } from '../http/validate'
@@ -233,6 +234,15 @@ const rowKey = (raw: string | undefined) => {
   }
   throw new AppError(400, 'Missing row key.')
 }
+
+// ─── Subscriptions ───────────────────────────────────────────────────────────
+adminRoutes.get('/admin/subscriptions', async (c) => c.json(await subscriptionService.list()))
+adminRoutes.post('/admin/subscriptions/:hostId/grant', async (c) => {
+  const b = await body(c)
+  return c.json({ subscription: await subscriptionService.grantByAdmin(admin(c), Number(c.req.param('hostId')), str(b.planId), str(b.note)) })
+})
+adminRoutes.post('/admin/subscriptions/:hostId/cancel', async (c) =>
+  c.json({ subscription: await subscriptionService.cancel(admin(c), Number(c.req.param('hostId'))) }))
 
 // ─── Client websites ─────────────────────────────────────────────────────────
 adminRoutes.get('/admin/client-sites', async (c) =>

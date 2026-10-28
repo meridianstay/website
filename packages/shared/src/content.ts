@@ -6,6 +6,7 @@ import { defaultLanguages, type LanguageSettings } from './i18n'
 import { defaultNotifications, type NotificationSettings } from './notifications'
 import { defaultPayouts, type PayoutSettings } from './payouts'
 import { defaultServerSettings, type ServerSettings } from './server'
+import { defaultSubscriptionSettings, type SubscriptionSettings } from './subscription'
 // Default website content. The API copies it into the database on first start; after that
 // the admin control center edits it. Legal pages start as drafts for a lawyer to review.
 
@@ -76,6 +77,8 @@ export interface SiteSettings {
   footer: FooterSettings
   /** How the API caches and how long the logs are kept. Nothing a visitor ever sees. */
   server: ServerSettings
+  /** What clients pay to be here, and what each plan lets them do. */
+  subscriptions: SubscriptionSettings
 }
 
 export const defaultSiteSettings: SiteSettings = {
@@ -106,6 +109,7 @@ export const defaultSiteSettings: SiteSettings = {
   header: structuredClone(defaultHeader),
   footer: structuredClone(defaultFooter),
   server: structuredClone(defaultServerSettings),
+  subscriptions: structuredClone(defaultSubscriptionSettings),
 }
 
 type DefaultPage = Omit<ContentPage, 'slug' | 'draft'> & { draft?: boolean }
@@ -230,7 +234,7 @@ export const defaultPages: ContentPage[] = Object.entries(pages).map(([slug, p])
  * Commission rates stay public on purpose: a host is shown what Meridian's share will be before
  * they list a property.
  */
-export const PRIVATE_SETTING_KEYS = ['notifications', 'payouts', 'promotions', 'server'] as const
+export const PRIVATE_SETTING_KEYS = ['notifications', 'payouts', 'promotions', 'server', 'subscriptions'] as const
 
 /** What GET /api/site returns: the public settings plus whether online payment (Razorpay) is on. */
 export type PublicSite = Omit<SiteSettings, (typeof PRIVATE_SETTING_KEYS)[number]> & { paymentsOnline: boolean }

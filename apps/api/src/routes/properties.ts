@@ -38,7 +38,7 @@ propertyRoutes.get('/properties', async (c) => {
     lng: Number.isFinite(Number(q.lng)) && q.lng ? Number(q.lng) : undefined,
     limit: Math.min(intOrUndefined(q.limit) ?? 50, 100),
   })
-  return c.json({ properties })
+  return c.json({ properties: await clientSiteService.withBrands(properties) })
 })
 
 /** Promoted listings for a placement, e.g. /api/promoted?placement=search&where=Kerala. */
@@ -86,7 +86,8 @@ propertyRoutes.get('/properties/:slug', async (c) => {
   const revealed = !!canPreview || hasPaidStay
   return c.json({
     property: {
-      ...toPropertySummary(p), revealed, gallery: p.photos, amenities, reviews, bookedRanges, reviewableBookingCode, status: p.status, ratingBreakdown, similar, promoted: promotedIds.has(p.id), videoUrl: p.videoUrl ?? '',
+      ...toPropertySummary(p), revealed, gallery: p.photos, amenities, reviews, bookedRanges, reviewableBookingCode, status: p.status, ratingBreakdown,
+      similar: await clientSiteService.withBrands(similar), promoted: promotedIds.has(p.id), videoUrl: p.videoUrl ?? '',
       areaSqft: p.areaSqft, gatheringCapacity: p.gatheringCapacity, checkInTime: p.checkInTime, checkOutTime: p.checkOutTime,
       houseRules: p.houseRules, securityDeposit: p.securityDepositMinor / 100,
       dayUseSettings: p.dayUse.enabled ? {

@@ -17,6 +17,8 @@ export interface Me {
 
 export interface PropertySummary {
   id: number
+  /** Which client runs it, so their own website can be linked to from the marketplace. */
+  hostId: number
   slug: string
   title: string
   type: PropertyType
@@ -41,6 +43,11 @@ export interface PropertySummary {
   assured: boolean
   /** Host discount in percent; `price` is before it, `priceNow` after. */
   discountPct: number
+  /**
+   * The client's own website, when they have one. The marketplace links to it, opening it in its
+   * own tab: the guest came through Meridian but finishes on the client's site.
+   */
+  site: { businessName: string; url: string } | null
   priceNow: number
   /** Went live in the last 30 days. */
   isNew: boolean

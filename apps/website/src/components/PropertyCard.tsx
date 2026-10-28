@@ -22,6 +22,9 @@ export function PropertyCard({ property, linkSearch = '', onHover, index = 0, pr
   const { place, distanceTo } = usePlace()
   const saved = has(property.id)
   const href = `/stays/${property.slug}${linkSearch}`
+  // A client who has their own website owns the booking from here: their page opens in its own tab,
+  // so the guest keeps this list of search results behind them.
+  const ownSite = property.site
 
   return (
     <article
@@ -39,6 +42,12 @@ export function PropertyCard({ property, linkSearch = '', onHover, index = 0, pr
           className="w-full h-full object-cover group-hover:scale-105 transition duration-500"
           onError={(e) => { e.currentTarget.src = fallbackImage }}
         />
+        {ownSite && (
+          <span className="absolute bottom-4 left-4 bg-white/95 text-slate-800 px-2.5 py-1 rounded-full text-[11px] font-bold shadow-sm max-w-[75%] truncate">
+            {ownSite.businessName}
+            <i className="fa-solid fa-arrow-up-right-from-square ml-1.5 text-[9px] text-slate-400" aria-hidden="true"></i>
+          </span>
+        )}
         {property.discountPct > 0 && (
           <span className="absolute top-4 right-16 bg-rose-600 text-white px-2.5 py-1 rounded-full text-[11px] font-extrabold shadow-sm">{property.discountPct}% off</span>
         )}
@@ -85,7 +94,9 @@ export function PropertyCard({ property, linkSearch = '', onHover, index = 0, pr
           </div>
           <h3 className="text-base font-bold text-slate-900 group-hover:text-brand-600 transition">
             {/* Stretched link: the whole card opens the stay */}
-            <Link to={href} className="after:absolute after:inset-0 after:content-['']">{property.title}</Link>
+            {ownSite
+              ? <a href={`${ownSite.url}/stays/${property.slug}`} target="_blank" rel="noopener" className="after:absolute after:inset-0 after:content-['']">{property.title}</a>
+              : <Link to={href} className="after:absolute after:inset-0 after:content-['']">{property.title}</Link>}
           </h3>
           <p className="text-xs text-slate-500 line-clamp-2 mt-1">{property.description}</p>
         </div>

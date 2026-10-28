@@ -10,6 +10,7 @@ import { body, currentUid, currentUser, requireUser, type AppEnv } from '../http
 import { str } from '../http/validate'
 import { rateLimit } from '../http/rateLimit'
 import { clientSiteService } from '../services/clientSites'
+import { subscriptionService } from '../services/subscriptions'
 
 // Anyone signed in can host: creating a first listing turns a guest into a host.
 export const hostRoutes = new Hono<AppEnv>()
@@ -110,3 +111,10 @@ hostRoutes.put('/host/website', async (c) => c.json({ site: await clientSiteServ
 hostRoutes.post('/host/website/submit', async (c) => c.json({ site: await clientSiteService.submit(currentUser(c)) }))
 hostRoutes.put('/host/website/domain', async (c) =>
   c.json({ site: await clientSiteService.setDomain(currentUser(c), str((await body(c)).domain)) }))
+
+// ─── The client's subscription ───────────────────────────────────────────────
+hostRoutes.get('/host/subscription', async (c) => c.json(await subscriptionService.mine(currentUser(c))))
+hostRoutes.post('/host/subscription/checkout', async (c) =>
+  c.json(await subscriptionService.startCheckout(currentUser(c), str((await body(c)).planId))))
+hostRoutes.post('/host/subscription/confirm', async (c) =>
+  c.json({ subscription: await subscriptionService.confirm(currentUser(c), await body(c)) }))

@@ -47,7 +47,7 @@ const approx = (n: number) => Math.round(n * 100) / 100
 
 /** Money leaves the data layer in major units (rupees); documents store minor units (paise). */
 export const toPropertySummary = (p: PropertyDoc): PropertySummary => ({
-  id: p.id, slug: p.slug, title: p.title, type: p.type, location: `${p.city}, ${p.region}`, price: p.pricePerNightMinor / 100,
+  id: p.id, hostId: p.hostId, site: null, slug: p.slug, title: p.title, type: p.type, location: `${p.city}, ${p.region}`, price: p.pricePerNightMinor / 100,
   rating: p.ratingAvg, reviewCount: p.reviewCount, beds: p.bedrooms, baths: p.bathrooms, maxGuests: p.maxGuests,
   image: p.coverImageUrl, description: p.description, lat: approx(p.lat), lng: approx(p.lng), management: p.management ?? 'self',
   overnight: p.overnight ?? true,

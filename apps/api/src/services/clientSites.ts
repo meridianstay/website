@@ -4,6 +4,7 @@ import {
   type ClientSite, type ClientSiteContent, type ClientSiteView, type ClientStay, type Me,
 } from '@meridian/shared'
 import { auditLogRepo, clientSitesRepo, propertiesRepo } from '../repositories'
+import { subscriptionService } from './subscriptions'
 import { AppError, notFound } from '../http/errors'
 import { collect, isImageUrl, str } from '../http/validate'
 
@@ -79,10 +80,13 @@ async function staysOf(hostId: number, featuredId: number | null): Promise<Clien
 
 const viewOf = async (site: ClientSite): Promise<ClientSiteView> => {
   const content = site.published!
+  const allowed = await subscriptionService.entitlementsOf(site.hostId)
+  const stays = await staysOf(site.hostId, content.featuredPropertyId)
   return {
     ...content,
     address: siteAddress(content.slug, site.domain, baseDomain()),
-    stays: await staysOf(site.hostId, content.featuredPropertyId),
+    // On the single-stay plan the website shows one stay; the others need the plan that covers them.
+    stays: allowed.maxStaysOnSite > 0 ? stays.slice(0, allowed.maxStaysOnSite) : stays,
   }
 }
 
@@ -111,6 +115,7 @@ export const clientSiteService = {
 
   /** Saves what the client has written. The live copy, if there is one, keeps being served. */
   async save(host: Me, body: Record<string, unknown>) {
+    await subscriptionService.require(host.id, 'ownWebsite')
     const current = await this.mine(host)
     const content = parse(body, current.content)
     const taken = await clientSitesRepo.taken(host.id, content.slug, current.domain.name)
@@ -206,13 +211,31 @@ export const clientSiteService = {
   /** The site answering on this address, or nothing — in which case the marketplace is served. */
   async forAddress(hostname: string): Promise<ClientSiteView | null> {
     const site = await clientSitesRepo.byAddress(hostname, baseDomain())
-    return site ? viewOf(site) : null
+    return site && (await subscriptionService.entitlementsOf(site.hostId)).ownWebsite ? viewOf(site) : null
   },
 
   /** The same page by its address name, so a client can see it before DNS is set up. */
   async forSlug(slug: string): Promise<ClientSiteView | null> {
     const site = await clientSitesRepo.bySlug(slug)
-    return site ? viewOf(site) : null
+    return site && (await subscriptionService.entitlementsOf(site.hostId)).ownWebsite ? viewOf(site) : null
+  },
+
+  /**
+   * Fills in each stay's client website, where there is one. Done in one pass over the cached list
+   * rather than a lookup per stay, so a page of search results costs nothing extra.
+   */
+  async withBrands<T extends { hostId: number; site: unknown }>(stays: T[]): Promise<T[]> {
+    if (!stays.length) return stays
+    const sites = (await clientSitesRepo.list()).filter((s) => !!s.published)
+    if (!sites.length) return stays
+    const allowed = await Promise.all(sites.map(async (s) => ((await subscriptionService.entitlementsOf(s.hostId)).ownWebsite ? s : null)))
+    const byHost = new Map(allowed.filter(Boolean).map((s) => [s!.hostId, s!]))
+    return stays.map((stay) => {
+      const site = byHost.get(stay.hostId)
+      return site
+        ? { ...stay, site: { businessName: site.published!.businessName, url: `https://${siteAddress(site.published!.slug, site.domain, baseDomain())}` } }
+        : stay
+    })
   },
 
   /**
@@ -221,7 +244,7 @@ export const clientSiteService = {
    */
   async brandOf(hostId: number) {
     const site = await clientSitesRepo.find(hostId)
-    if (!site?.published) return null
+    if (!site?.published || !(await subscriptionService.entitlementsOf(hostId)).ownWebsite) return null
     const { businessName, slug, logoUrl } = site.published
     return { businessName, logoUrl, url: `https://${siteAddress(slug, site.domain, baseDomain())}` }
   },

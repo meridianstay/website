@@ -3,6 +3,7 @@ import { auditLogRepo, serverStateRepo } from '../repositories'
 import { bookingService } from './bookings'
 import { campaignService } from './campaigns'
 import { pushService } from './push'
+import { subscriptionService } from './subscriptions'
 import { AppError } from '../http/errors'
 
 // The work that happens on a clock rather than because someone did something. The hosting calls
@@ -15,10 +16,11 @@ const plural = (n: number, one: string, many = `${one}s`) => `${n} ${n === 1 ? o
 
 const JOBS: Record<string, () => Promise<{ result: Record<string, unknown>; summary: string }>> = {
   async daily() {
-    const [messages, schedule, pushed] = await Promise.all([
+    const [messages, schedule, pushed, subs] = await Promise.all([
       bookingService.sendDailyMessages(),
       campaignService.refreshSchedule(),
       pushService.sendDueCampaigns(),
+      subscriptionService.expireLapsed(),
     ])
     // Only what actually happened is worth reporting: a run that did nothing should say so plainly
     // rather than listing five zeroes.
@@ -29,9 +31,10 @@ const JOBS: Record<string, () => Promise<{ result: Record<string, unknown>; summ
       schedule.finished && `${schedule.finished} ${schedule.finished === 1 ? 'offer' : 'offers'} finished`,
       pushed.sent && plural(pushed.sent, 'push notification'),
       pushed.failed && `${pushed.failed} failed to send`,
+      subs.expired && `${subs.expired} ${subs.expired === 1 ? 'subscription' : 'subscriptions'} ran out`,
     ].filter(Boolean)
     return {
-      result: { ...messages, campaigns: { ...schedule, ...pushed } },
+      result: { ...messages, campaigns: { ...schedule, ...pushed }, subscriptions: subs },
       summary: parts.length ? parts.join(', ') : 'nothing was due',
     }
   },
