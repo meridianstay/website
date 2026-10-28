@@ -13,7 +13,7 @@ import type { Coupon } from '../offers'
 import type { AdCampaign, AdPlacement, PromotionPlan, PromotionSettings } from '../promotions'
 import type { Campaign, CampaignContent } from '../campaigns'
 import type { CacheReport, CronRun, ServerReport, ServerSettings, StorageUsage } from '../server'
-import type { ClientSite, ClientSiteView, DnsTarget } from '../clientSite'
+import type { ClientSite, ClientSiteView, DnsTarget, DomainCheck } from '../clientSite'
 import type { ClientPageDesign } from '../clientPage'
 import type { ClientPlan, PlanId, Subscription, SubscriptionSettings } from '../subscription'
 import type { CalendarFeed, PropertySync, SyncPlatform } from '../calendarSync'
@@ -196,6 +196,7 @@ export const hostApi = {
   saveWebsiteDesign: (design: ClientPageDesign) => request<{ site: ClientSite }>('/host/website/design', { method: 'PUT', json: { design } }),
   resetWebsiteDesign: () => request<{ site: ClientSite }>('/host/website/design/reset', { method: 'POST' }),
   saveWebsiteDomain: (domain: string) => request<{ site: ClientSite }>('/host/website/domain', { method: 'PUT', json: { domain } }),
+  checkWebsiteDomain: () => request<{ check: DomainCheck; site: ClientSite }>('/host/website/domain/check', { method: 'POST' }),
   createPromotion: (data: { propertyId: number; planId: string; startDate: string; days: number }) =>
     request<{ campaign: AdCampaign; payment: PaymentRequest | null }>('/host/promotions', { method: 'POST', json: data }),
   payPromotion: (id: number, result: { razorpay_order_id: string; razorpay_payment_id: string; razorpay_signature: string }) =>
@@ -314,6 +315,7 @@ export const adminApi = {
   approveClientSite: (hostId: number) => request<{ site: ClientSite }>(`/admin/client-sites/${hostId}/approve`, { method: 'POST' }),
   rejectClientSite: (hostId: number, reason: string) => request<{ site: ClientSite }>(`/admin/client-sites/${hostId}/reject`, { method: 'POST', json: { reason } }),
   unpublishClientSite: (hostId: number) => request<{ site: ClientSite }>(`/admin/client-sites/${hostId}/unpublish`, { method: 'POST' }),
+  checkClientDomain: (hostId: number) => request<{ check: DomainCheck; site: ClientSite }>(`/admin/client-sites/${hostId}/domain/check`, { method: 'POST' }),
   setClientDomain: (hostId: number, status: string, note = '') =>
     request<{ site: ClientSite }>(`/admin/client-sites/${hostId}/domain`, { method: 'PUT', json: { status, note } }),
 

@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react'
 import { ErrorNote, PageHeader, Panel, Spinner } from '@meridian/ui'
-import { hasUnpublishedChanges, siteAddress, type ClientSite, type DomainStatus } from '@meridian/shared'
+import { hasUnpublishedChanges, siteAddress, type ClientSite, type DomainCheck, type DomainStatus } from '@meridian/shared'
 import { adminApi } from '@meridian/shared/client'
 
 // The websites clients have written for themselves, waiting for someone here to look at them. A page
@@ -78,6 +78,7 @@ export function ClientSites() {
 
 function SiteCard({ site, base, onChanged }: { site: ClientSite; base: string; onChanged: () => void }) {
   const [busy, setBusy] = useState<string | null>(null)
+  const [check, setCheck] = useState<DomainCheck | null>(null)
   const [rejecting, setRejecting] = useState(false)
   const [reason, setReason] = useState('')
   const [note, setNote] = useState('')
@@ -202,20 +203,42 @@ function SiteCard({ site, base, onChanged }: { site: ClientSite; base: string; o
           <>
             <p className="text-xs text-slate-500 mt-2">
               Add <span className="font-mono">{site.domain.name}</span> to this Vercel project under Settings → Domains, and to Firebase's authorized
-              domains, before marking it live. {site.domain.checkedAt && <>Last changed {when(site.domain.checkedAt)}.</>}
+              domains. The secure certificate is then issued automatically and free. <span className="font-semibold">Check DNS</span> switches the domain
+              on by itself once it reaches us. {site.domain.checkedAt && <>Last checked {when(site.domain.checkedAt)}.</>}
             </p>
             <div className="flex flex-wrap items-center gap-3 mt-3">
-              <input value={note} onChange={(e) => setNote(e.target.value)} placeholder="A note for the client (optional)"
-                className="flex-1 min-w-[200px] bg-slate-50 border border-slate-200 rounded-xl p-2.5 text-sm" />
-              <button type="button" disabled={!!busy} onClick={() => act('live', () => adminApi.setClientDomain(site.hostId, 'live', note))}
+              <button type="button" disabled={!!busy}
+                onClick={() => act('check', async () => { const r = await adminApi.checkClientDomain(site.hostId); setCheck(r.check) })}
                 className="bg-slate-900 disabled:bg-slate-400 text-white font-bold py-2 px-5 rounded-xl text-xs">
-                {busy === 'live' ? 'Saving…' : 'Mark live'}
+                <i className="fa-solid fa-rotate mr-1.5" aria-hidden="true"></i>{busy === 'check' ? 'Checking…' : 'Check DNS'}
               </button>
-              <button type="button" disabled={!!busy} onClick={() => act('failed', () => adminApi.setClientDomain(site.hostId, 'failed', note))}
+              <a href={`https://${site.domain.name}`} target="_blank" rel="noopener noreferrer"
                 className="bg-slate-100 hover:bg-slate-200 text-slate-800 font-bold py-2 px-5 rounded-xl text-xs">
-                Not working
-              </button>
+                <i className="fa-solid fa-arrow-up-right-from-square mr-1.5" aria-hidden="true"></i>Visit
+              </a>
+              <input value={note} onChange={(e) => setNote(e.target.value)} placeholder="A note for the client (optional)"
+                className="flex-1 min-w-[160px] bg-slate-50 border border-slate-200 rounded-xl p-2.5 text-sm" />
+              <button type="button" disabled={!!busy} onClick={() => act('live', () => adminApi.setClientDomain(site.hostId, 'live', note))}
+                className="text-xs font-bold text-brand-700">Mark live by hand</button>
+              <button type="button" disabled={!!busy} onClick={() => act('failed', () => adminApi.setClientDomain(site.hostId, 'failed', note))}
+                className="text-xs font-bold text-slate-500 hover:text-rose-600">Not working</button>
             </div>
+            {check && (
+              <div className={`mt-3 rounded-xl p-3 text-xs ${check.reachable ? 'bg-brand-50 text-brand-800' : 'bg-amber-50 text-amber-900'}`}>
+                <p className="font-bold">
+                  {check.reachable ? 'Working — it serves this platform over HTTPS, so it has been switched on.' : 'Not reaching us yet'}
+                </p>
+                {check.detail && <p className="mt-1">{check.detail}</p>}
+                <ul className="mt-2 space-y-1 font-mono">
+                  {check.records.map((r) => (
+                    <li key={r.type + r.name}>
+                      <i className={`fa-solid ${r.ok ? 'fa-circle-check text-brand-600' : 'fa-circle-xmark text-slate-400'} mr-1.5`} aria-hidden="true"></i>
+                      {r.type} {r.name} → {r.ok ? r.expected : `want ${r.expected}${r.found.length ? `, got ${r.found.join(', ')}` : ', nothing yet'}`}
+                    </li>
+                  ))}
+                </ul>
+              </div>
+            )}
             {site.domain.note && <p className="text-xs text-slate-500 mt-2">Your note: {site.domain.note}</p>}
           </>
         ) : (

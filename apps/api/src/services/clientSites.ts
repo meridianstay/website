@@ -1,8 +1,9 @@
+import dns from 'node:dns/promises'
 import {
   CLIENT_SECTIONS, CLIENT_SITE_LIMITS, DEFAULT_APEX_IP, DEFAULT_DNS_CNAME, DEFAULT_SITE_DOMAIN, RESERVED_SLUGS, blankClientSite, blankContent,
-  cleanDomain, defaultPageDesign, looksLikeDomain, newSection, siteAddress, siteSlug, starterPolicies, withPageDefaults,
+  cleanDomain, defaultPageDesign, dnsRecords, looksLikeDomain, newSection, siteAddress, siteSlug, starterPolicies, withPageDefaults,
   type ClientPageDesign, type ClientSection, type ClientSectionType, type ClientSite, type ClientSiteContent,
-  type ClientSiteView, type ClientStay, type DnsTarget, type Me,
+  type ClientSiteView, type ClientStay, type DnsTarget, type DomainCheck, type Me,
 } from '@meridian/shared'
 import { auditLogRepo, clientSitesRepo, propertiesRepo } from '../repositories'
 import { subscriptionService } from './subscriptions'
@@ -149,9 +150,76 @@ const viewOf = async (site: ClientSite): Promise<ClientSiteView> => {
   }
 }
 
+/**
+ * Looks up what a domain actually publishes, and whether it reaches us. Vercel issues a free
+ * certificate for a client's own domain on its own once DNS points here (Let's Encrypt over the
+ * HTTP-01 challenge), so reaching us over HTTPS is the whole proof: DNS, routing and certificate.
+ */
+async function checkDomain(domain: string, target: DnsTarget): Promise<DomainCheck> {
+  const wanted = dnsRecords(domain, target)
+  const apex = domain.split('.').length <= 2
+
+  const records = await Promise.all(wanted.map(async (want) => {
+    // The apex is looked up as itself; a named record as that name in front of the domain.
+    const host = want.name === '@' ? domain : apex ? `${want.name}.${domain}` : domain
+    let found: string[] = []
+    try {
+      found = want.type === 'A' ? await dns.resolve4(host) : await dns.resolveCname(host)
+    } catch {
+      // No such record published yet, which is the ordinary answer while they are setting it up.
+      found = []
+    }
+    const expected = want.value.replace(/\.$/, '')
+    return { type: want.type, name: want.name, expected, found, ok: found.some((v) => v.replace(/\.$/, '') === expected) }
+  }))
+
+  // The www CNAME is a convenience, not a requirement: an apex that resolves is enough.
+  const required = apex ? records.filter((r) => r.type === 'A') : records
+  const dnsOk = required.every((r) => r.ok)
+
+  let reachable = false
+  let detail = ''
+  try {
+    const res = await fetch(`https://${domain}/api/health`, {
+      redirect: 'follow',
+      signal: AbortSignal.timeout(8000),
+      headers: { Accept: 'application/json' },
+    })
+    const body = (await res.json().catch(() => null)) as { ok?: boolean } | null
+    reachable = res.ok && body?.ok === true
+    if (!reachable) detail = `The domain answered ${res.status}, but not as this platform. Check it is added to the hosting.`
+  } catch (err) {
+    detail = dnsOk
+      ? 'The records are right, but the domain does not reach us yet. It usually needs adding to the hosting, and a certificate takes a few minutes after that.'
+      : 'The records are not published yet. They can take anything from a few minutes to a day to spread.'
+    // The message from fetch itself is rarely useful to a client, so it is left out.
+    void err
+  }
+
+  return { domain, records, dnsOk, reachable, detail: reachable ? '' : detail, checkedAt: new Date().toISOString() }
+}
+
 export const clientSiteService = {
   baseDomain,
   dnsTarget,
+
+  /**
+   * Checks a client's domain and, when it plainly works, switches it on without waiting for anyone:
+   * a domain that serves this platform over HTTPS has already been added to the hosting and has its
+   * certificate, so there is nothing left for a person to decide.
+   */
+  async checkDomain(hostId: number): Promise<{ check: DomainCheck; site: ClientSite }> {
+    const site = await this.get(hostId)
+    if (!site.domain.name) throw new AppError(400, 'There is no domain to check yet.')
+    const check = await checkDomain(site.domain.name, dnsTarget())
+
+    const status: ClientSite['domain']['status'] = check.reachable ? 'live' : site.domain.status === 'live' ? 'live' : 'pending'
+    const next = await clientSitesRepo.save(hostId, {
+      ...site,
+      domain: { ...site.domain, status, note: check.reachable ? '' : check.detail, checkedAt: check.checkedAt },
+    })
+    return { check, site: next }
+  },
 
   /** The client's own site, started from a blank one the first time they open the page. */
   async mine(host: Me): Promise<ClientSite> {

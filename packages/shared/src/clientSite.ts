@@ -156,6 +156,20 @@ export function dnsRecords(domain: string, target: DnsTarget = { apexIp: DEFAULT
     : [{ type: 'CNAME', name: domain.split('.')[0], value: target.cname }]
 }
 
+/** What a live check of a client's domain found. */
+export interface DomainCheck {
+  domain: string
+  /** Each record we asked them to add, and what is actually published now. */
+  records: { type: 'A' | 'CNAME'; name: string; expected: string; found: string[]; ok: boolean }[]
+  /** Every record is in place. */
+  dnsOk: boolean
+  /** Whether the domain actually reaches this platform over HTTPS, certificate and all. */
+  reachable: boolean
+  /** What went wrong, in words the client can act on. */
+  detail: string
+  checkedAt: string
+}
+
 export const blankContent = (): ClientSiteContent => ({
   businessName: '',
   slug: '',

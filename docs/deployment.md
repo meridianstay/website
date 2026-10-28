@@ -222,6 +222,24 @@ Both are optional and both have sensible fallbacks, but if the Domains page show
 from `cname.vercel-dns.com`, set `CLIENT_DNS_CNAME` or your clients will be given a value that does
 not resolve. Copy the exact values from Vercel → Settings → Domains.
 
+### HTTPS is free and automatic
+
+Vercel asks Let's Encrypt for a certificate for every domain added to the project, and renews it 14 to 30 days
+before it expires. Nothing to buy, install or remember, and no per-client cost.
+
+A client's own domain is the easy case: it is validated over HTTP, so the certificate appears by itself within a
+few minutes of DNS pointing here — no nameserver change needed. **The wildcard is the only hard one**, because a
+`*` certificate has to be validated over DNS, which is exactly why §5 asks for Vercel's nameservers or the
+delegated `_acme-challenge`.
+
+Two things can stop a certificate being issued: a `CAA` record on the client's domain that doesn't authorise
+Let's Encrypt, and a proxy in front (Cloudflare's orange cloud) that intercepts the validation request.
+
+**Host portal → My website → Check now** does the whole check for them: it looks up what their domain publishes,
+compares it with what they were told to add, and then asks their domain for this platform's health endpoint. If
+that answers, the domain is proven end to end — DNS, routing and certificate — and it is switched on
+automatically, with no step left for your team. The same button is on the control centre's card.
+
 ### How many you can have
 
 A Hobby project allows **50 custom domains**, and every client's own domain counts against that; the

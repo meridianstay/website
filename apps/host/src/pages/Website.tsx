@@ -2,7 +2,7 @@ import { useEffect, useState } from 'react'
 import { ErrorNote, PageHeader, Panel, PhotoUpload, Spinner } from '@meridian/ui'
 import {
   CLIENT_SITE_LIMITS, cleanDomain, dnsRecords, hasUnpublishedChanges, siteAddress, siteSlug,
-  type ClientSite, type ClientSiteContent, type DnsTarget,
+  type ClientSite, type ClientSiteContent, type DnsTarget, type DomainCheck,
 } from '@meridian/shared'
 import { ApiError, hostApi } from '@meridian/shared/client'
 
@@ -276,27 +276,46 @@ function PoliciesForm({ site, onSaved }: { site: ClientSite; onSaved: (s: Client
 
 function DomainPanel({ site, base, dns, onSaved }: { site: ClientSite; base: string; dns?: DnsTarget; onSaved: (s: ClientSite) => void }) {
   const [domain, setDomain] = useState(site.domain.name)
-  const [busy, setBusy] = useState(false)
+  const [busy, setBusy] = useState<'save' | 'check' | null>(null)
   const [error, setError] = useState<string | null>(null)
   const [message, setMessage] = useState<string | null>(null)
+  const [check, setCheck] = useState<DomainCheck | null>(null)
   const cleaned = cleanDomain(domain)
   const subdomain = `${site.published?.slug || site.content.slug || 'your-name'}.${base}`
 
   const save = async (e: React.FormEvent) => {
     e.preventDefault()
-    setBusy(true)
+    setBusy('save')
     setError(null)
     setMessage(null)
+    setCheck(null)
     try {
       const { site: next } = await hostApi.saveWebsiteDomain(cleaned)
       onSaved(next)
       setDomain(next.domain.name)
-      setMessage(next.domain.name ? 'Saved. Add the records below, then our team will switch it on.' : 'Removed. Your Meridian address keeps working.')
+      setMessage(next.domain.name ? 'Saved. Add the records below, then press Check now.' : 'Removed. Your Meridian address keeps working.')
     } catch (err) {
       const fields = (err as ApiError).fields ?? {}
       setError(Object.values(fields)[0] ?? (err as Error).message)
     } finally {
-      setBusy(false)
+      setBusy(null)
+    }
+  }
+
+  /** Looks up what the domain publishes now, and whether it reaches us with its certificate. */
+  const runCheck = async () => {
+    setBusy('check')
+    setError(null)
+    setMessage(null)
+    try {
+      const r = await hostApi.checkWebsiteDomain()
+      setCheck(r.check)
+      onSaved(r.site)
+      if (r.check.reachable) setMessage('Your domain is working. It is live now.')
+    } catch (err) {
+      setError((err as Error).message)
+    } finally {
+      setBusy(null)
     }
   }
 
@@ -321,10 +340,26 @@ function DomainPanel({ site, base, dns, onSaved }: { site: ClientSite; base: str
           <input id="own-domain" value={domain} onChange={(e) => setDomain(e.target.value)} className={`${field} font-mono`} placeholder="greenvalleystays.com" />
           {error && <p role="alert" className="text-xs text-rose-600 font-semibold">{error}</p>}
           {message && <p role="status" className="text-xs text-brand-700 font-semibold">{message}</p>}
-          <button type="submit" disabled={busy} className="bg-slate-900 disabled:bg-slate-400 text-white font-bold py-2.5 px-6 rounded-2xl text-sm">
-            {busy ? 'Saving…' : site.domain.name ? 'Update domain' : 'Use my domain'}
-          </button>
+          <div className="flex flex-wrap items-center gap-3">
+            <button type="submit" disabled={!!busy} className="bg-slate-900 disabled:bg-slate-400 text-white font-bold py-2.5 px-6 rounded-2xl text-sm">
+              {busy === 'save' ? 'Saving…' : site.domain.name ? 'Update domain' : 'Use my domain'}
+            </button>
+            {site.domain.name && (
+              <>
+                <button type="button" onClick={runCheck} disabled={!!busy}
+                  className="bg-slate-100 hover:bg-slate-200 disabled:opacity-50 text-slate-800 font-bold py-2.5 px-5 rounded-2xl text-sm">
+                  <i className="fa-solid fa-rotate mr-1.5" aria-hidden="true"></i>{busy === 'check' ? 'Checking…' : 'Check now'}
+                </button>
+                <a href={`https://${site.domain.status === 'live' ? site.domain.name : subdomain}`} target="_blank" rel="noopener noreferrer"
+                  className="bg-brand-600 hover:bg-brand-700 text-white font-bold py-2.5 px-5 rounded-2xl text-sm">
+                  <i className="fa-solid fa-arrow-up-right-from-square mr-1.5" aria-hidden="true"></i>Visit my site
+                </a>
+              </>
+            )}
+          </div>
         </form>
+
+        {check && <CheckResult check={check} />}
 
         {site.domain.name && site.domain.status !== 'live' && (
           <div className="border-t border-slate-100 pt-4">
@@ -353,5 +388,31 @@ function DomainPanel({ site, base, dns, onSaved }: { site: ClientSite; base: str
         )}
       </div>
     </Panel>
+  )
+}
+
+/** What the last check found, record by record, so a client can see which one is missing. */
+function CheckResult({ check }: { check: DomainCheck }) {
+  return (
+    <div className={`rounded-2xl p-4 text-sm ${check.reachable ? 'bg-brand-50 text-brand-800' : 'bg-amber-50 text-amber-900'}`}>
+      <p className="font-bold">
+        <i className={`fa-solid ${check.reachable ? 'fa-circle-check' : 'fa-hourglass-half'} mr-2`} aria-hidden="true"></i>
+        {check.reachable ? 'Working — your domain is serving your website over a secure connection.' : 'Not working yet'}
+      </p>
+      {check.detail && <p className="mt-1">{check.detail}</p>}
+      <ul className="mt-3 space-y-1.5 text-xs">
+        {check.records.map((r) => (
+          <li key={r.type + r.name} className="flex items-start gap-2">
+            <i className={`fa-solid ${r.ok ? 'fa-circle-check text-brand-600' : 'fa-circle-xmark text-slate-400'} mt-0.5`} aria-hidden="true"></i>
+            <span className="font-mono break-all">
+              {r.type} {r.name} → {r.ok ? r.expected : `expected ${r.expected}${r.found.length ? `, found ${r.found.join(', ')}` : ', nothing published yet'}`}
+            </span>
+          </li>
+        ))}
+      </ul>
+      <p className="text-xs mt-3 opacity-80">
+        The secure certificate is issued automatically and renews itself — there is nothing to buy or install.
+      </p>
+    </div>
   )
 }

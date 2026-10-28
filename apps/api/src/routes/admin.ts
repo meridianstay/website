@@ -253,6 +253,8 @@ adminRoutes.post('/admin/client-sites/:hostId/reject', async (c) =>
   c.json({ site: await clientSiteService.reject(admin(c), Number(c.req.param('hostId')), str((await body(c)).reason)) }))
 adminRoutes.post('/admin/client-sites/:hostId/unpublish', async (c) =>
   c.json({ site: await clientSiteService.unpublish(admin(c), Number(c.req.param('hostId'))) }))
+adminRoutes.post('/admin/client-sites/:hostId/domain/check', async (c) =>
+  c.json(await clientSiteService.checkDomain(Number(c.req.param('hostId')))))
 adminRoutes.put('/admin/client-sites/:hostId/domain', async (c) => {
   const b = await body(c)
   return c.json({ site: await clientSiteService.setDomainStatus(admin(c), Number(c.req.param('hostId')), str(b.status), str(b.note)) })
