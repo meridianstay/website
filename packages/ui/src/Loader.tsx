@@ -1,9 +1,14 @@
 import { useEffect } from 'react'
 
 /** The seedling mark that "grows" while something loads. Same design as the page preloader. */
+/**
+ * Shown while a page or its data arrives. It sits in the middle of the space it is given rather
+ * than at the top of it: a mark floating under the header reads as a half-drawn page, where one in
+ * the centre reads as a page on its way.
+ */
 export function BrandLoader({ label = 'Loading…', fullPage = false }: { label?: string; fullPage?: boolean }) {
   return (
-    <div role="status" className={`flex flex-col items-center justify-center gap-4 text-slate-400 text-sm animate-fade-in ${fullPage ? 'min-h-screen bg-slate-50' : 'py-16'}`}>
+    <div role="status" className={`flex flex-col items-center justify-center gap-4 text-slate-400 text-sm animate-fade-in ${fullPage ? 'min-h-screen bg-slate-50' : 'min-h-[60vh] py-16'}`}>
       <div className="ms-loader-mark" aria-hidden="true">
         <SeedlingPath />
       </div>

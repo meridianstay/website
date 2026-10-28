@@ -2,6 +2,14 @@
 
 Every change to Meridian Stay is recorded here, newest first. Each entry says what changed for the people using the platform, then the notable technical changes.
 
+## 0.42.0 — 2026-10-28
+
+### Charts, a map, and decisions you can take where you see them
+- **Trading** on the control centre's first screen: twelve months of guest payments or commission as a line, with bookings taken as bars behind it. Hover any month for its figures. Drawn in the page itself, so it costs nothing to load.
+- **Where the stays are**: every live stay on a map of India, drawn larger where more has been booked and marked where the client has a website of their own. It arrives only with this page, so no other screen carries its weight.
+- **Approve or send back a listing from the dashboard** — the decision sits on the row, with the reason box opening in place. No page in between.
+- The preloader now sits in the middle of the space it is given rather than near the top, so a page arriving reads as a page on its way.
+
 ## 0.41.0 — 2026-10-28
 
 ### A plan is bought instead of the commission, not as well as it

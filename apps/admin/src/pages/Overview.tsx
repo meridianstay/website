@@ -1,8 +1,12 @@
-import { useEffect, useState } from 'react'
+import { lazy, Suspense, useEffect, useState } from 'react'
 import { Link } from 'react-router'
 import { ErrorNote, PageHeader, Panel, Spinner, StatusBadge } from '@meridian/ui'
 import { formatDateRange, formatPrice } from '@meridian/shared'
 import { adminApi, type AdminBooking, type AdminListing, type AdminStats } from '@meridian/shared/client'
+import { TradeChart } from '../components/TradeChart'
+
+// The map carries Leaflet with it, so it arrives only when this page does.
+const StaysMap = lazy(() => import('../components/StaysMap'))
 
 // The control centre's first screen. An operator opens it to find out what is blocked, so the
 // queues come first and the figures after: what the platform earned, then what it is made of.
@@ -106,22 +110,22 @@ export function Overview() {
         </dl>
       </section>
 
+      <div className="grid grid-cols-1 xl:grid-cols-2 gap-8 mb-8">
+        <Panel title="Trading" action={<Link to="/bookings" className="text-xs font-bold text-brand-600">All bookings →</Link>}>
+          <TradeChart trend={stats.trend} />
+        </Panel>
+        <Panel title="Where the stays are" action={<Link to="/listings" className="text-xs font-bold text-brand-600">Open listings →</Link>}>
+          <Suspense fallback={<div className="h-80 rounded-2xl bg-slate-100 animate-pulse" />}>
+            <StaysMap points={stats.map} />
+          </Suspense>
+        </Panel>
+      </div>
+
       <div className="grid grid-cols-1 xl:grid-cols-2 gap-8">
         <Panel title="Waiting for review" action={<Link to="/listings" className="text-xs font-bold text-brand-600">Open listings →</Link>}>
           {data.pending.length === 0 ? <p className="text-sm text-slate-500">Nothing to review.</p> : (
             <ul className="divide-y divide-slate-100">
-              {data.pending.map((p) => (
-                <li key={p.id} className="py-3 flex items-center justify-between gap-4">
-                  <div className="flex items-center space-x-3 min-w-0">
-                    <img src={p.image} alt="" className="w-12 h-12 rounded-xl object-cover" />
-                    <div className="min-w-0">
-                      <p className="font-bold text-sm text-slate-900 truncate">{p.title}</p>
-                      <p className="text-xs text-slate-500 truncate">{p.type} · {p.location} · by {p.hostName}</p>
-                    </div>
-                  </div>
-                  <StatusBadge status={p.status} />
-                </li>
-              ))}
+              {data.pending.map((p) => <PendingRow key={p.id} listing={p} onDone={load} />)}
             </ul>
           )}
         </Panel>
@@ -172,5 +176,60 @@ function Tile({ label, value, hint, to }: { label: string; value: number; hint: 
       <dd className="text-xl font-extrabold text-slate-900 tabular-nums mt-0.5">{value}</dd>
       <dd className="text-[11px] text-slate-500 truncate">{hint}</dd>
     </Link>
+  )
+}
+
+/** A listing waiting on your team, with the decision on the row rather than a page away. */
+function PendingRow({ listing, onDone }: { listing: AdminListing; onDone: () => void }) {
+  const [busy, setBusy] = useState<'approve' | 'reject' | null>(null)
+  const [rejecting, setRejecting] = useState(false)
+  const [reason, setReason] = useState('')
+  const [error, setError] = useState<string | null>(null)
+
+  const act = async (what: 'approve' | 'reject', run: () => Promise<unknown>) => {
+    setBusy(what)
+    setError(null)
+    try {
+      await run()
+      onDone()
+    } catch (e) {
+      setError((e as Error).message)
+      setBusy(null)
+    }
+  }
+
+  return (
+    <li className="py-3">
+      <div className="flex items-center justify-between gap-4">
+        <div className="flex items-center space-x-3 min-w-0">
+          <img src={listing.image} alt="" className="w-12 h-12 rounded-xl object-cover" />
+          <div className="min-w-0">
+            <p className="font-bold text-sm text-slate-900 truncate">{listing.title}</p>
+            <p className="text-xs text-slate-500 truncate">{listing.type} · {listing.location} · by {listing.hostName}</p>
+          </div>
+        </div>
+        <div className="flex items-center gap-2 shrink-0">
+          <button type="button" disabled={!!busy} onClick={() => act('approve', () => adminApi.approve(listing.id))}
+            className="bg-brand-600 hover:bg-brand-700 disabled:bg-slate-300 text-white font-bold py-1.5 px-3.5 rounded-lg text-xs">
+            {busy === 'approve' ? 'Approving…' : 'Approve'}
+          </button>
+          <button type="button" disabled={!!busy} onClick={() => setRejecting(!rejecting)}
+            className="bg-slate-100 hover:bg-slate-200 text-slate-700 font-bold py-1.5 px-3.5 rounded-lg text-xs">
+            Send back
+          </button>
+        </div>
+      </div>
+      {rejecting && (
+        <div className="flex flex-wrap items-center gap-2 mt-2.5">
+          <input value={reason} onChange={(e) => setReason(e.target.value)} placeholder="What needs changing?"
+            className="flex-1 min-w-[180px] bg-slate-50 border border-slate-200 rounded-xl p-2 text-sm" />
+          <button type="button" disabled={!reason.trim() || !!busy} onClick={() => act('reject', () => adminApi.reject(listing.id, reason))}
+            className="bg-rose-600 disabled:bg-slate-300 text-white font-bold py-2 px-4 rounded-xl text-xs">
+            {busy === 'reject' ? 'Sending…' : 'Send back'}
+          </button>
+        </div>
+      )}
+      {error && <p role="alert" className="text-xs text-rose-600 font-semibold mt-2">{error}</p>}
+    </li>
   )
 }

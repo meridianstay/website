@@ -378,6 +378,35 @@ export interface AdminStats {
   }
   /** Host earnings past their hold period, waiting to be sent. */
   payoutsOwed: number
+  /** The last twelve months, oldest first, for the chart. */
+  trend: MonthPoint[]
+  /** Live stays with a position, for the map. */
+  map: MapPoint[]
+}
+
+/** One month of the platform's trading. */
+export interface MonthPoint {
+  /** YYYY-MM. */
+  month: string
+  bookings: number
+  /** Paid by guests that month, after refunds. */
+  gbv: number
+  /** Meridian's share of it. */
+  commission: number
+}
+
+export interface MapPoint {
+  id: number
+  title: string
+  city: string
+  region: string
+  lat: number
+  lng: number
+  price: number
+  /** Bookings taken at this stay, so the busy places stand out. */
+  bookings: number
+  /** Whether the client running it has a website of their own. */
+  hasSite: boolean
 }
 
 export type AdminUser = Me & { suspended: boolean; listings: number; bookings: number }

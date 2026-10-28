@@ -66,6 +66,39 @@ export const statsRepo = {
       .reduce((sum, b) => sum + b.hostPayoutMinor, 0) / 100
     const alreadyPaid = payouts.filter((p) => p.status !== 'Failed').reduce((sum, p) => sum + p.net, 0)
     const payoutsOwed = Math.max(0, Math.round((earned - alreadyPaid) * 100) / 100)
+
+    // Twelve months ending with this one, so the chart always has the same shape even when a month
+    // saw no trade at all. Counted by when the booking was made, not when the stay happens.
+    const months: string[] = []
+    const start = new Date(`${today.slice(0, 7)}-01T00:00:00Z`)
+    for (let i = 11; i >= 0; i--) {
+      const d = new Date(start)
+      d.setUTCMonth(d.getUTCMonth() - i)
+      months.push(d.toISOString().slice(0, 7))
+    }
+    const trend = months.map((month) => {
+      const made = bookings.filter((b) => b.createdAt.slice(0, 7) === month)
+      const kept = made.filter((b) => keptMinor(b) > 0)
+      return {
+        month,
+        bookings: made.filter((b) => b.status === 'Confirmed').length,
+        gbv: Math.round(kept.reduce((sum, b) => sum + keptMinor(b), 0)) / 100,
+        commission: Math.round(kept.reduce((sum, b) => sum + b.commissionMinor, 0)) / 100,
+      }
+    })
+
+    // Where the live stays are. A stay with no position yet is simply not on the map.
+    const bookingsPer = new Map<number, number>()
+    for (const b of bookings) if (b.status === 'Confirmed') {
+      bookingsPer.set(b.propertyId, (bookingsPer.get(b.propertyId) ?? 0) + 1)
+    }
+    const withSites = new Set(sites.filter((s) => !!s.published).map((s) => s.hostId))
+    const map = properties
+      .filter((p) => p.status === 'Approved' && Number.isFinite(p.lat) && Number.isFinite(p.lng) && (p.lat !== 0 || p.lng !== 0))
+      .map((p) => ({
+        id: p.id, title: p.title, city: p.city, region: p.region, lat: p.lat, lng: p.lng,
+        price: p.pricePerNightMinor / 100, bookings: bookingsPer.get(p.id) ?? 0, hasSite: withSites.has(p.hostId),
+      }))
     const confirmed = bookings.filter((b) => b.status === 'Confirmed')
     return {
       listings: properties.length,
@@ -102,6 +135,8 @@ export const statsRepo = {
         clashes: liveFeeds.reduce((n, f) => n + (f.clashes?.length ?? 0), 0),
       },
       payoutsOwed,
+      trend,
+      map,
     }
   },
 
