@@ -1,4 +1,4 @@
-import { addDays, defaultDayUse, defaultHouseRules, discountedPrice, distanceKm, parsePropertyCode, placeSlug, publicTitle, type Destination, type Amenity, type HouseRules, type Management, type DateRange, type ListingInput, type ListingStatus, type PropertySummary, type PropertyType, type SearchQuery } from '@meridian/shared'
+import { addDays, defaultDayUse, defaultHouseRules, discountedPrice, distanceKm, parsePropertyCode, placeSlug, type Destination, type Amenity, type HouseRules, type Management, type DateRange, type ListingInput, type ListingStatus, type PropertySummary, type PropertyType, type SearchQuery } from '@meridian/shared'
 import type { Transaction } from 'firebase-admin/firestore'
 import { C, all, col, daysOf, firestore, nextId, nightsOf, nowISO } from '../store/db'
 import { busyPeriods, type DaySlot, type NightLock } from './schedule'
@@ -46,9 +46,8 @@ const readProps = async (q: FirebaseFirestore.Query): Promise<PropertyDoc[]> => 
 const approx = (n: number) => Math.round(n * 100) / 100
 
 /** Money leaves the data layer in major units (rupees); documents store minor units (paise). */
-/** `reveal` is only for the host who owns it, our team, and guests who have paid for a stay there. */
-export const toPropertySummary = (p: PropertyDoc, reveal = false): PropertySummary => ({
-  id: p.id, slug: p.slug, title: reveal ? p.title : publicTitle({ id: p.id, type: p.type, city: p.city }), type: p.type, location: `${p.city}, ${p.region}`, price: p.pricePerNightMinor / 100,
+export const toPropertySummary = (p: PropertyDoc): PropertySummary => ({
+  id: p.id, slug: p.slug, title: p.title, type: p.type, location: `${p.city}, ${p.region}`, price: p.pricePerNightMinor / 100,
   rating: p.ratingAvg, reviewCount: p.reviewCount, beds: p.bedrooms, baths: p.bathrooms, maxGuests: p.maxGuests,
   image: p.coverImageUrl, description: p.description, lat: approx(p.lat), lng: approx(p.lng), management: p.management ?? 'self',
   overnight: p.overnight ?? true,
@@ -221,7 +220,7 @@ export const propertiesRepo = {
   async listForHost(hostId: number, promotedIds = new Set<number>()): Promise<HostListing[]> {
     const rows = await readProps(col(C.properties).where('hostId', '==', hostId))
     return rows.sort((a, b) => b.createdAt.localeCompare(a.createdAt))
-      .map((p) => ({ ...toPropertySummary(p, true), status: p.status, rejectionReason: p.rejectionReason, promoted: promotedIds.has(p.id) }))
+      .map((p) => ({ ...toPropertySummary(p), status: p.status, rejectionReason: p.rejectionReason, promoted: promotedIds.has(p.id) }))
   },
 
   async ownedBy(id: number, hostId: number) {
@@ -290,7 +289,7 @@ export const propertiesRepo = {
     if (q) rows = rows.filter((p) => [p.title, p.city, hosts.get(p.hostId)?.name, hosts.get(p.hostId)?.email].some((v) => v?.toLowerCase().includes(q)))
     rows.sort((a, b) => Number(b.status === 'Pending') - Number(a.status === 'Pending') || b.createdAt.localeCompare(a.createdAt))
     return rows.map((p) => ({
-      ...toPropertySummary(p, true), status: p.status, rejectionReason: p.rejectionReason, featuredRank: p.featuredRank, promoted: promotedIds.has(p.id),
+      ...toPropertySummary(p), status: p.status, rejectionReason: p.rejectionReason, featuredRank: p.featuredRank, promoted: promotedIds.has(p.id),
       hostName: hosts.get(p.hostId)?.name ?? 'Unknown', hostEmail: hosts.get(p.hostId)?.email ?? hosts.get(p.hostId)?.phone ?? '',
       createdAt: p.createdAt,
     }))

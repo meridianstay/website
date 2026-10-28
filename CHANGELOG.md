@@ -2,6 +2,24 @@
 
 Every change to Meridian Stay is recorded here, newest first. Each entry says what changed for the people using the platform, then the notable technical changes.
 
+## 0.34.0 — 2026-10-28
+
+### Every client gets their own website
+- A client's stays now have a website of their own, carrying **their** logo and their words, with Meridian credited beside it as "in association with". It works straight away at `their-business-name.meridianstay.com`, and at their own domain once that is pointed at us.
+- The page is a whole small website on one screen: the stay with its photos, a booking box that takes real bookings, who the client is, their other branches, their property terms, payment and cancellation policies, and how to reach them.
+- **A client with more than one stay** shows the rest below, in the same place the marketplace shows nearby stays. Each one opens as the same branded page for that branch.
+- **Host portal → My website** is where a client writes all of it: logo, name, the line under it, about, contact details and the three policies. They press **Send for checking** and your team approves it.
+- **Nothing goes public until your team approves it**, and an edit afterwards never takes their site down — the approved copy keeps being served until the new one is approved in its turn.
+- **Their own domain**: the client enters it and is shown exactly which DNS records to add at their registrar. Your team adds it to the hosting and marks it live. Until then their Meridian address keeps working.
+
+### Stays are named now
+- The platform used to hide a stay's real name, its owner and the address until a booking was paid for, so enquiries could not go around Meridian. A client's own website makes no sense under those rules, so **stays and the businesses behind them are named everywhere**, marketplace included, and a new listing's web address carries its name.
+- **The owner's phone, email and the exact address still wait for a paid booking** on the marketplace. A client's own website gives its own contact details, because being contacted is what it is for.
+
+### Under the bonnet
+- Which client a web address belongs to is worked out once per address and held in memory with the rest of the site's settings, so a visit to a client's site costs no more than a visit to the marketplace.
+- A client can see their page at `/c/<their-name>` before any DNS exists, which is also how your team reviews it.
+
 ## 0.33.1 — 2026-10-25
 
 ### Fixes

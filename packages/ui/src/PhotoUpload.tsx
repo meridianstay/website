@@ -5,7 +5,7 @@ import { cropToShape } from './cropImage'
 import { loadSite } from './brand'
 
 interface Props {
-  purpose: 'listing' | 'avatar' | 'content'
+  purpose: 'listing' | 'avatar' | 'brand' | 'content'
   /** Called with the uploaded photo's link. */
   onUploaded: (url: string) => void
   label?: string
@@ -38,7 +38,7 @@ export function PhotoUpload({ purpose, onUploaded, onShape, label = 'Upload phot
       // Listing photos become landscape or portrait; profile photos become square. Website content is left alone.
       let send = file
       if (purpose !== 'content') {
-        const cropped = await cropToShape(file, purpose === 'avatar' ? 'square' : undefined)
+        const cropped = await cropToShape(file, purpose === 'avatar' || purpose === 'brand' ? 'square' : undefined)
         send = cropped.file
         onShape?.(cropped.shape)
       }

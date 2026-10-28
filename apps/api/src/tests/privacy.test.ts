@@ -1,20 +1,21 @@
 import { beforeEach, describe, test } from 'node:test'
 import assert from 'node:assert/strict'
-import { dayUseRefundMinor, guestRefundMinor, publicTitle } from '@meridian/shared'
+import { dayUseRefundMinor, guestRefundMinor } from '@meridian/shared'
 import { bookingsRepo, propertiesRepo, toPropertySummary } from '../repositories'
 import { createLiveListing, createUser, insertBooking, resetDatabase } from './helpers'
 
 describe('what guests may see', () => {
   beforeEach(resetDatabase)
 
-  test('a listing shows what it is and where, never its name', async () => {
+  // Stays are named everywhere now: a client's own website is their shopfront, and a name that only
+  // appeared after payment would make nonsense of it. What still waits for a paid booking is the
+  // owner's direct line and the exact address.
+  test('a listing is shown under its real name, in its web address too', async () => {
     const host = await createUser('host')
     const id = await createLiveListing(host, { title: 'Green Valley Organic Farmstay', type: 'Farmstay', city: 'Coorg', region: 'Karnataka' })
     const p = (await propertiesRepo.get(id))!
-    assert.equal(toPropertySummary(p).title, publicTitle({ id, type: 'Farmstay', city: 'Coorg' }))
-    assert.ok(!toPropertySummary(p).title.includes('Green Valley'))
-    assert.equal(toPropertySummary(p, true).title, 'Green Valley Organic Farmstay')
-    assert.ok(!p.slug.includes('green-valley'), `the web address gives it away: ${p.slug}`)
+    assert.equal(toPropertySummary(p).title, 'Green Valley Organic Farmstay')
+    assert.ok(p.slug.includes('green-valley'), `the web address should carry the name: ${p.slug}`)
   })
 
   test('hosts and our team always see the real name', async () => {
@@ -25,7 +26,7 @@ describe('what guests may see', () => {
     assert.equal(forAdmin.find((l) => l.id === id)!.title, 'Green Valley Organic Farmstay')
   })
 
-  test('the name, owner and address appear once the booking is paid', async () => {
+  test('the owner and the exact address appear once the booking is paid', async () => {
     const host = await createUser('host')
     const guest = await createUser('guest')
     const id = await createLiveListing(host, { title: 'Green Valley Organic Farmstay', address: '12 Estate Road, Coorg' })
@@ -36,10 +37,10 @@ describe('what guests may see', () => {
     assert.equal(paid.address, '12 Estate Road, Coorg')
     assert.equal(paid.host?.name, host.me.name)
 
-    // The same booking before the money arrives gives nothing away.
+    // Before the money arrives the stay is still named, but there is no way to go around Meridian.
     await bookingsRepo.setFields(code, { status: 'AwaitingPayment', paymentStatus: 'created' })
     const held = (await bookingsRepo.listForGuest(guest.me.id, '2026-01-01')).find((b) => b.code === code)!
-    assert.ok(!held.property.title.includes('Green Valley'))
+    assert.equal(held.property.title, 'Green Valley Organic Farmstay')
     assert.equal(held.address, null)
     assert.equal(held.host, null)
   })

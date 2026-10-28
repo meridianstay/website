@@ -1,4 +1,4 @@
-import { addDays, commissionMinor, defaultDayUse, defaultHouseRules, publicTitle, quoteStay, todayISO, type ListingInput, type Management, type Me, type UserRole } from '@meridian/shared'
+import { addDays, commissionMinor, defaultDayUse, defaultHouseRules, quoteStay, todayISO, type ListingInput, type Management, type Me, type UserRole } from '@meridian/shared'
 import { col, nextId, nowISO, C } from '../store/db'
 import { projectId } from '../store/firebase'
 import { bookingsRepo, contentRepo, propertiesRepo, toMe, usersRepo, type UserDoc } from '../repositories'
@@ -50,8 +50,8 @@ export async function createLiveListing(host: TestUser, overrides: Partial<Listi
   return id
 }
 
-/** The name guests see for a listing: its real name stays private until they book and pay. */
-export const shownTitle = async (id: number) => publicTitle((await propertiesRepo.get(id))!)
+/** The name guests see for a listing, which is now simply its name. */
+export const shownTitle = async (id: number) => (await propertiesRepo.get(id))!.title
 
 /** Writes a booking directly (e.g. one in the past, which the booking service would refuse). */
 export async function insertBooking(propertyId: number, guest: TestUser, checkIn: string, checkOut: string) {

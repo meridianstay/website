@@ -9,6 +9,7 @@ import { payoutService } from '../services/payouts'
 import { body, currentUid, currentUser, requireUser, type AppEnv } from '../http/auth'
 import { str } from '../http/validate'
 import { rateLimit } from '../http/rateLimit'
+import { clientSiteService } from '../services/clientSites'
 
 // Anyone signed in can host: creating a first listing turns a guest into a host.
 export const hostRoutes = new Hono<AppEnv>()
@@ -99,3 +100,13 @@ hostRoutes.delete('/host/listings/:id/blocks/:blockId', async (c) => {
   await listingService.removeBlock(currentUser(c), id(c), id(c, 'blockId'))
   return c.body(null, 204)
 })
+
+// ─── The client's own website ────────────────────────────────────────────────
+hostRoutes.get('/host/website', async (c) => {
+  const host = currentUser(c)
+  return c.json({ site: await clientSiteService.mine(host), baseDomain: clientSiteService.baseDomain() })
+})
+hostRoutes.put('/host/website', async (c) => c.json({ site: await clientSiteService.save(currentUser(c), await body(c)) }))
+hostRoutes.post('/host/website/submit', async (c) => c.json({ site: await clientSiteService.submit(currentUser(c)) }))
+hostRoutes.put('/host/website/domain', async (c) =>
+  c.json({ site: await clientSiteService.setDomain(currentUser(c), str((await body(c)).domain)) }))

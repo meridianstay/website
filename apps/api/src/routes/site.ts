@@ -8,6 +8,7 @@ import { str } from '../http/validate'
 import { body } from '../http/auth'
 import { AppError } from '../http/errors'
 import { campaignService } from '../services/campaigns'
+import { clientSiteService } from '../services/clientSites'
 import { pushService } from '../services/push'
 import { publicSettings, translateDeep } from '@meridian/shared'
 
@@ -31,6 +32,17 @@ siteRoutes.get('/home', async (c) => {
 siteRoutes.get('/about', async (c) => {
   const [page, stats, words] = await Promise.all([contentRepo.about(), statsRepo.forAbout(), contentRepo.translations(wanted(c))])
   return c.json({ page: translateDeep(page, words), stats })
+})
+
+/**
+ * Which client's website this is, if any. The browser asks with the address it is on; a `slug` is
+ * accepted too, so a client can see their page at /c/<name> before their domain is set up.
+ */
+siteRoutes.get('/client-site', async (c) => {
+  const slug = str(c.req.query('slug'))
+  const hostname = str(c.req.query('host')) || c.req.header('host') || ''
+  const site = slug ? await clientSiteService.forSlug(slug) : await clientSiteService.forAddress(hostname)
+  return c.json({ site, baseDomain: clientSiteService.baseDomain() })
 })
 
 /** The one popup this visitor should see, if any. */

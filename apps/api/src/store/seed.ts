@@ -1,5 +1,5 @@
 import { fileURLToPath } from 'node:url'
-import { addDays, commissionMinor, defaultCommission, defaultPromotions, galleryImages as g, images, publicSlugBase, quoteStay, REQUEST_HOURS, todayISO } from '@meridian/shared'
+import { addDays, commissionMinor, defaultCommission, defaultPromotions, galleryImages as g, images, slugBase, quoteStay, REQUEST_HOURS, todayISO } from '@meridian/shared'
 import { auth } from './firebase'
 import { C, col, datesOf, daysOf, firestore, nightsOf } from './seedHelpers'
 import { newBookingCode } from '../services/bookings'
@@ -318,7 +318,7 @@ export async function seed(log = console.log, force = false): Promise<boolean> {
   // Web addresses never give the property's name away: "farmstay-in-coorg", "farmstay-in-coorg-2"…
   const taken = new Map<string, number>()
   const webSlug = (p: SeedProperty) => {
-    const base = publicSlugBase(p).toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-+|-+$/g, '')
+    const base = slugBase(p).toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-+|-+$/g, '')
     const n = (taken.get(base) ?? 0) + 1
     taken.set(base, n)
     return n === 1 ? base : `${base}-${n}`

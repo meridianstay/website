@@ -29,6 +29,8 @@ export const C = {
   secrets: 'secrets',
   /** How the server itself is running: the cache counter, and when each scheduled job last ran. */
   serverState: 'serverState',
+  /** One per client: their own website — branding, wording, policies and domain. */
+  clientSites: 'clientSites',
 } as const
 
 export const col = (name: string) => firestore.collection(name)

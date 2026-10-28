@@ -11,8 +11,8 @@ import { AppError } from '../http/errors'
 // which keeps the site light and the storage bill small.
 
 const TYPES: Record<string, string> = { 'image/jpeg': 'jpg', 'image/png': 'png', 'image/webp': 'webp' }
-/** listing: host photos. avatar: profile photos. content: website pages (admins only). */
-export type UploadPurpose = 'listing' | 'avatar' | 'content'
+/** listing: host photos. avatar: profile photos. brand: a client's own logo. content: website pages (admins only). */
+export type UploadPurpose = 'listing' | 'avatar' | 'brand' | 'content'
 
 function downloadUrl(path: string, token: string) {
   const base = emulated ? `http://${process.env.FIREBASE_STORAGE_EMULATOR_HOST}` : 'https://firebasestorage.googleapis.com'
@@ -27,7 +27,7 @@ export const uploadService = {
     if (file.size > uploads.maxMb * 1024 * 1024) throw new AppError(400, `Photos can be at most ${uploads.maxMb} MB.`)
 
     if (purpose === 'content' && user.role !== 'admin') throw new AppError(403, 'Only admins can upload website photos.')
-    const folder = { avatar: 'avatars', listing: 'listings', content: 'site' }[purpose]
+    const folder = { avatar: 'avatars', listing: 'listings', brand: 'brands', content: 'site' }[purpose]
     const path = `${folder}/${user.id}/${Date.now()}-${randomUUID().slice(0, 8)}.${ext}`
     const token = randomUUID()
     await bucket.file(path).save(Buffer.from(await file.arrayBuffer()), {

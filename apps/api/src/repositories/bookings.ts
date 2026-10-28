@@ -1,4 +1,4 @@
-import { addDays, bookingUnlocked, commissionMinor, dayUseRefundMinor, defaultCommission, guestRefundMinor, publicTitle, type BookingDetail, type GuestBreakdown, type BookingState, type HostBooking, type Management, type PaymentMethod, type PaymentState, type PropertyType } from '@meridian/shared'
+import { addDays, bookingUnlocked, commissionMinor, dayUseRefundMinor, defaultCommission, guestRefundMinor, type BookingDetail, type GuestBreakdown, type BookingState, type HostBooking, type Management, type PaymentMethod, type PaymentState, type PropertyType } from '@meridian/shared'
 import type { Transaction } from 'firebase-admin/firestore'
 import { C, all, col, daysOf, firestore, nightsOf, nowISO } from '../store/db'
 import { dayUseConflict, isLive, stayClashesWithDayUse, type DaySlot, type NightLock } from './schedule'
@@ -89,10 +89,9 @@ export const keptMinor = (b: BookingDoc) => (b.confirmedAt && (b.status === 'Con
 
 export function toBooking(b: BookingDoc, today: string): BookingDetail {
   const status: BookingState = b.status === 'Confirmed' && b.checkOut <= today ? 'Completed' : b.status
-  // The name of the property and who owns it are only shared once the booking is paid for.
+  // Stays are named everywhere now; what waits for payment is the owner's own contact details.
   const open = bookingUnlocked({ status, paymentStatus: b.paymentStatus })
-  const property = open ? b.property
-    : { ...b.property, title: publicTitle({ id: b.propertyId, type: b.property.type, city: b.property.location.split(',')[0].trim() }) }
+  const property = b.property
   const refundIfCancelled = status === 'Confirmed'
     ? (b.kind === 'dayuse'
       ? dayUseRefundMinor(b.totalMinor, b.checkIn, b.startTime ?? '12:00', b.cancellationFeePct)

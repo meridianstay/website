@@ -20,6 +20,7 @@ import { reviewService } from '../services/reviews'
 import { explorerService } from '../services/explorer'
 import { serverService } from '../services/server'
 import { runJob } from '../services/jobs'
+import { clientSiteService } from '../services/clientSites'
 import { body, currentUser, requireRole, type AppEnv } from '../http/auth'
 import { AppError } from '../http/errors'
 import { str } from '../http/validate'
@@ -232,6 +233,20 @@ const rowKey = (raw: string | undefined) => {
   }
   throw new AppError(400, 'Missing row key.')
 }
+
+// ─── Client websites ─────────────────────────────────────────────────────────
+adminRoutes.get('/admin/client-sites', async (c) =>
+  c.json({ sites: await clientSiteService.list(), baseDomain: clientSiteService.baseDomain() }))
+adminRoutes.post('/admin/client-sites/:hostId/approve', async (c) =>
+  c.json({ site: await clientSiteService.approve(admin(c), Number(c.req.param('hostId'))) }))
+adminRoutes.post('/admin/client-sites/:hostId/reject', async (c) =>
+  c.json({ site: await clientSiteService.reject(admin(c), Number(c.req.param('hostId')), str((await body(c)).reason)) }))
+adminRoutes.post('/admin/client-sites/:hostId/unpublish', async (c) =>
+  c.json({ site: await clientSiteService.unpublish(admin(c), Number(c.req.param('hostId'))) }))
+adminRoutes.put('/admin/client-sites/:hostId/domain', async (c) => {
+  const b = await body(c)
+  return c.json({ site: await clientSiteService.setDomainStatus(admin(c), Number(c.req.param('hostId')), str(b.status), str(b.note)) })
+})
 
 // ─── Server: what it is running on, what it holds in memory, how big it has grown ────────────
 adminRoutes.get('/admin/server', async (c) => c.json({ ...(await serverService.report()), pending: await serverService.pending() }))

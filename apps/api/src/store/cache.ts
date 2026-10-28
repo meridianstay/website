@@ -11,7 +11,7 @@ import { projectId } from './firebase'
 // Nothing that belongs to one person is ever cached: a booking, a guest, a host's earnings and a
 // property are always read fresh.
 
-export type CacheGroup = 'settings' | 'translations' | 'content' | 'amenities' | 'campaigns' | 'stats'
+export type CacheGroup = 'settings' | 'translations' | 'content' | 'amenities' | 'campaigns' | 'stats' | 'clientSites'
 
 export const CACHE_GROUPS: { name: CacheGroup; label: string; explain: string }[] = [
   { name: 'settings', label: 'Site settings', explain: 'Everything on the Settings pages: commission, theme, logos, notification wording. Read on every request.' },
@@ -20,6 +20,7 @@ export const CACHE_GROUPS: { name: CacheGroup; label: string; explain: string }[
   { name: 'amenities', label: 'Amenity list', explain: 'The list every listing and search filter is built from.' },
   { name: 'campaigns', label: 'Offers & alerts', explain: 'Running campaigns, so deciding whether to show a popup costs nothing.' },
   { name: 'stats', label: 'About-page figures', explain: 'How many stays, hosts and guest nights — counted across every listing and booking.' },
+  { name: 'clientSites', label: 'Client websites', explain: 'Which client a domain belongs to. Looked up before anything else on every visit to a client site.' },
 ]
 
 interface Entry {

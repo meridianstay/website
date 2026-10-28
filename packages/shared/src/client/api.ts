@@ -13,6 +13,7 @@ import type { Coupon } from '../offers'
 import type { AdCampaign, AdPlacement, PromotionPlan, PromotionSettings } from '../promotions'
 import type { Campaign, CampaignContent } from '../campaigns'
 import type { CacheReport, CronRun, ServerReport, ServerSettings, StorageUsage } from '../server'
+import type { ClientSite, ClientSiteView } from '../clientSite'
 
 /** A plan as a host sees it: what it costs, and how much room is left over their dates. */
 export interface PlanOnOffer extends PromotionPlan {
@@ -63,7 +64,7 @@ export const api = {
   updateMe: (data: { name: string; phone: string }) => request<{ user: Me }>('/me', { method: 'PATCH', json: data }),
 
   /** Uploads a photo to Firebase Storage and returns its link. */
-  upload: (file: File, purpose: 'listing' | 'avatar' | 'content') => {
+  upload: (file: File, purpose: 'listing' | 'avatar' | 'brand' | 'content') => {
     const form = new FormData()
     form.append('file', file)
     form.append('purpose', purpose)
@@ -71,6 +72,9 @@ export const api = {
   },
 
   site: (lang?: string) => request<PublicSite>(`/site${qs({ lang })}`),
+  /** Which client's website this address is, if any. `slug` previews one before its domain is set up. */
+  clientSite: (params: { host?: string; slug?: string } = {}) =>
+    request<{ site: ClientSiteView | null; baseDomain: string }>(`/client-site${qs(params)}`),
   /** The homepage layout and the stays for each switched-on "Stays" section. */
   home: (lang?: string) => request<{ layout: HomeLayout; stays: Record<string, PropertySummary[]> }>(`/home${qs({ lang })}`),
   about: (lang?: string) => request<{ page: AboutPage; stats: AboutStats }>(`/about${qs({ lang })}`),
@@ -165,6 +169,11 @@ export const hostApi = {
     request<void>(`/host/listings/${id}/blocks`, { method: 'POST', json: data }),
   removeBlock: (id: number, blockId: number) => request<void>(`/host/listings/${id}/blocks/${blockId}`, { method: 'DELETE' }),
   promotions: () => request<{ campaigns: AdCampaign[]; settings: PromotionSettings }>('/host/promotions'),
+
+  website: () => request<{ site: ClientSite; baseDomain: string }>('/host/website'),
+  saveWebsite: (value: Partial<ClientSite['content']>) => request<{ site: ClientSite }>('/host/website', { method: 'PUT', json: value }),
+  submitWebsite: () => request<{ site: ClientSite }>('/host/website/submit', { method: 'POST' }),
+  saveWebsiteDomain: (domain: string) => request<{ site: ClientSite }>('/host/website/domain', { method: 'PUT', json: { domain } }),
   createPromotion: (data: { propertyId: number; planId: string; startDate: string; days: number }) =>
     request<{ campaign: AdCampaign; payment: PaymentRequest | null }>('/host/promotions', { method: 'POST', json: data }),
   payPromotion: (id: number, result: { razorpay_order_id: string; razorpay_payment_id: string; razorpay_signature: string }) =>
@@ -269,6 +278,13 @@ export const adminApi = {
   deleteCoupon: (code: string) => request<void>(`/admin/coupons/${encodeURIComponent(code)}`, { method: 'DELETE' }),
 
   audit: () => request<{ entries: AuditEntry[] }>('/admin/audit'),
+
+  clientSites: () => request<{ sites: ClientSite[]; baseDomain: string }>('/admin/client-sites'),
+  approveClientSite: (hostId: number) => request<{ site: ClientSite }>(`/admin/client-sites/${hostId}/approve`, { method: 'POST' }),
+  rejectClientSite: (hostId: number, reason: string) => request<{ site: ClientSite }>(`/admin/client-sites/${hostId}/reject`, { method: 'POST', json: { reason } }),
+  unpublishClientSite: (hostId: number) => request<{ site: ClientSite }>(`/admin/client-sites/${hostId}/unpublish`, { method: 'POST' }),
+  setClientDomain: (hostId: number, status: string, note = '') =>
+    request<{ site: ClientSite }>(`/admin/client-sites/${hostId}/domain`, { method: 'PUT', json: { status, note } }),
 
   /** The Server page: runtime, environment, caches, collection sizes and scheduled jobs. */
   server: () => request<ServerReport & { pending: HousekeepingPending }>('/admin/server'),

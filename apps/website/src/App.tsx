@@ -2,6 +2,8 @@ import { lazy, Suspense } from 'react'
 import { Navigate, Route, Routes, useLocation } from 'react-router'
 import { BrandLoader, RequireAuth, useHideSplash } from '@meridian/ui'
 import { Layout } from './components/Layout'
+import { ClientApp } from './ClientApp'
+import { useClientSite } from './lib/clientSite'
 import { Home } from './pages/Home'
 import { Search } from './pages/Search'
 import { Property } from './pages/Property'
@@ -23,6 +25,11 @@ const page = (node: React.ReactNode) => <Suspense fallback={<BrandLoader />}>{no
 
 export default function App() {
   useHideSplash()
+  const { site, loading } = useClientSite()
+  // Until we know whose address this is, nothing is drawn: a client's customer should never be
+  // shown the marketplace for a moment first.
+  if (loading) return <BrandLoader />
+  if (site) return <ClientApp site={site} />
   return (
     <Routes>
       <Route element={<Layout />}>

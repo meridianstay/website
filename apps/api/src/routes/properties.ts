@@ -6,6 +6,7 @@ import { promotionService } from '../services/promotions'
 import { promotionsRepo } from '../repositories'
 import { reviewService } from '../services/reviews'
 import { PROPERTY_TYPES } from '../services/listings'
+import { clientSiteService } from '../services/clientSites'
 import { body, currentUser, requireUser, type AppEnv } from '../http/auth'
 import { AppError, notFound } from '../http/errors'
 import { str } from '../http/validate'
@@ -80,11 +81,12 @@ propertyRoutes.get('/properties/:slug', async (c) => {
     promotionsRepo.livePropertyIds(todayISO()),
     user ? bookingService.hasPaidBooking(p.id, user.id) : false,
   ])
-  // The real name, the owner and the exact address are only for our team, the owner, and guests who have paid.
+  // Stays and the businesses behind them are named for everyone. What still waits for a paid
+  // booking is the owner's direct line and the exact address — a client's own site gives its own.
   const revealed = !!canPreview || hasPaidStay
   return c.json({
     property: {
-      ...toPropertySummary(p, revealed), revealed, gallery: p.photos, amenities, reviews, bookedRanges, reviewableBookingCode, status: p.status, ratingBreakdown, similar, promoted: promotedIds.has(p.id), videoUrl: p.videoUrl ?? '',
+      ...toPropertySummary(p), revealed, gallery: p.photos, amenities, reviews, bookedRanges, reviewableBookingCode, status: p.status, ratingBreakdown, similar, promoted: promotedIds.has(p.id), videoUrl: p.videoUrl ?? '',
       areaSqft: p.areaSqft, gatheringCapacity: p.gatheringCapacity, checkInTime: p.checkInTime, checkOutTime: p.checkOutTime,
       houseRules: p.houseRules, securityDeposit: p.securityDepositMinor / 100,
       dayUseSettings: p.dayUse.enabled ? {
@@ -92,9 +94,14 @@ propertyRoutes.get('/properties/:slug', async (c) => {
         opensAt: p.dayUse.opensAt, closesAt: p.dayUse.closesAt,
       } : null,
       dayUseFullPrice: p.dayUse.enabled && p.discountPct > 0 ? p.dayUse.priceMinor / 100 : null,
-      host: revealed
-        ? { name: host?.name ?? 'Your host', joinedAt: host?.createdAt ?? p.createdAt, avatar: host?.avatarUrl ?? null, phone: host?.phone ?? '', email: host?.email ?? '' }
-        : { name: 'Meridian verified host', joinedAt: host?.createdAt ?? p.createdAt, avatar: null, phone: null, email: null },
+      host: {
+        name: host?.name ?? 'Your host',
+        joinedAt: host?.createdAt ?? p.createdAt,
+        avatar: host?.avatarUrl ?? null,
+        phone: revealed ? host?.phone ?? '' : null,
+        email: revealed ? host?.email ?? '' : null,
+      },
+      brand: await clientSiteService.brandOf(p.hostId),
     },
   })
 })
