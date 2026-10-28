@@ -2,6 +2,13 @@
 
 Every change to Meridian Stay is recorded here, newest first. Each entry says what changed for the people using the platform, then the notable technical changes.
 
+## 0.38.1 — 2026-10-28
+
+### The control centre menu is grouped
+- Eighteen pages in one list had become a lot to read. They now sit under four headings — **Marketplace**, **Clients**, **Website & marketing** and **System** — with Overview above them all. Nothing moved anywhere else and no address changed; it is the same menu, easier to look down.
+- On a phone or tablet, where the menu is one scrolling row, the headings would be in the way, so the groups are marked with a hairline instead.
+- Panels that don't group their menu, like the host portal, look exactly as they did.
+
 ## 0.38.0 — 2026-10-28
 
 ### The control centre catches up with the client portal

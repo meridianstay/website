@@ -33,23 +33,27 @@ const Subscriptions = lazy(() => import('./pages/Subscriptions').then((m) => ({ 
 
 const nav: NavItem[] = [
   { to: '/', label: 'Overview', icon: 'gauge-high', end: true },
-  { to: '/listings', label: 'Listings', icon: 'house-circle-check' },
-  { to: '/bookings', label: 'Bookings', icon: 'calendar-check' },
-  { to: '/users', label: 'Users', icon: 'users' },
-  { to: '/reviews', label: 'Reviews', icon: 'star' },
-  { to: '/coupons', label: 'Coupons', icon: 'ticket' },
-  { to: '/promotions', label: 'Promotions', icon: 'bullhorn' },
-  { to: '/payouts', label: 'Payouts', icon: 'indian-rupee-sign' },
-  { to: '/client-sites', label: 'Client websites', icon: 'globe' },
-  { to: '/subscriptions', label: 'Subscriptions', icon: 'wallet' },
-  { to: '/messages', label: 'Messages', icon: 'envelope' },
-  { to: '/website', label: 'Website content', icon: 'pen-to-square' },
-  { to: '/activity', label: 'Activity log', icon: 'clock-rotate-left' },
-  { to: '/database', label: 'Database', icon: 'database' },
-  { to: '/notifications', label: 'Notifications', icon: 'bell' },
-  { to: '/campaigns', label: 'Offers & alerts', icon: 'bullhorn' },
-  { to: '/settings', label: 'Settings', icon: 'gear' },
-  { to: '/server', label: 'Server', icon: 'screwdriver-wrench' },
+
+  { group: 'Marketplace', to: '/listings', label: 'Listings', icon: 'house-circle-check' },
+  { group: 'Marketplace', to: '/bookings', label: 'Bookings', icon: 'calendar-check' },
+  { group: 'Marketplace', to: '/reviews', label: 'Reviews', icon: 'star' },
+  { group: 'Marketplace', to: '/users', label: 'Users', icon: 'users' },
+  { group: 'Marketplace', to: '/messages', label: 'Messages', icon: 'envelope' },
+
+  { group: 'Clients', to: '/client-sites', label: 'Client websites', icon: 'globe' },
+  { group: 'Clients', to: '/subscriptions', label: 'Subscriptions', icon: 'wallet' },
+  { group: 'Clients', to: '/payouts', label: 'Payouts', icon: 'indian-rupee-sign' },
+
+  { group: 'Website & marketing', to: '/website', label: 'Website content', icon: 'pen-to-square' },
+  { group: 'Website & marketing', to: '/campaigns', label: 'Offers & alerts', icon: 'bullhorn' },
+  { group: 'Website & marketing', to: '/notifications', label: 'Notifications', icon: 'bell' },
+  { group: 'Website & marketing', to: '/promotions', label: 'Promotions', icon: 'bullhorn' },
+  { group: 'Website & marketing', to: '/coupons', label: 'Coupons', icon: 'ticket' },
+
+  { group: 'System', to: '/settings', label: 'Settings', icon: 'gear' },
+  { group: 'System', to: '/server', label: 'Server', icon: 'screwdriver-wrench' },
+  { group: 'System', to: '/activity', label: 'Activity log', icon: 'clock-rotate-left' },
+  { group: 'System', to: '/database', label: 'Database', icon: 'database' },
 ]
 
 export default function App() {

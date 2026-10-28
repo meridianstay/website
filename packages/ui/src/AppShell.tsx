@@ -1,4 +1,4 @@
-import { useState, type ReactNode } from 'react'
+import { Fragment, useState, type ReactNode } from 'react'
 import { NavLink, useLocation } from 'react-router'
 import { appLink } from '@meridian/shared/client'
 import { versionLabel, type BrandApp } from '@meridian/shared'
@@ -12,11 +12,17 @@ import { useCredit } from './brand'
 
 export interface NavItem {
   to: string
+  /** A translation key such as `host.bookings` when there is one; otherwise the English wording. */
   label: string
   /** Font Awesome icon name without the prefix, e.g. "gauge-high". */
-  /** A translation key such as `host.bookings` when there is one; otherwise the English wording. */
   icon: string
   end?: boolean
+  /**
+   * The heading this item sits under in the sidebar. Items are drawn in the order given and a
+   * heading appears wherever the group changes, so grouping is a matter of ordering the list.
+   * Anything without one sits at the top, under no heading. A panel that sets none looks as it did.
+   */
+  group?: string
 }
 
 interface AppShellProps {
@@ -53,11 +59,18 @@ export function AppShell({ subtitle, nav, app, children }: AppShellProps) {
           <Logo subtitle={subtitle} href={appLink('website', '/')} />
         </div>
         <nav className="flex-1 p-4 space-y-1 overflow-y-auto" aria-label="Main">
-          {nav.map((item) => (
-            <NavLink key={item.to} to={item.to} end={item.end} className={linkClass}>
-              <i className={`fa-solid fa-${item.icon} w-4 text-center`} aria-hidden="true"></i>
-              <span>{t(item.label)}</span>
-            </NavLink>
+          {nav.map((item, i) => (
+            <Fragment key={item.to}>
+              {item.group && item.group !== nav[i - 1]?.group && (
+                <p className="px-4 pt-5 pb-1.5 text-[10px] font-bold uppercase tracking-wider text-slate-400 first:pt-0">
+                  {t(item.group)}
+                </p>
+              )}
+              <NavLink to={item.to} end={item.end} className={linkClass}>
+                <i className={`fa-solid fa-${item.icon} w-4 text-center`} aria-hidden="true"></i>
+                <span>{t(item.label)}</span>
+              </NavLink>
+            </Fragment>
           ))}
         </nav>
         <div className="p-4 border-t border-slate-100 space-y-3">
@@ -89,12 +102,17 @@ export function AppShell({ subtitle, nav, app, children }: AppShellProps) {
             </div>
           </div>
           {/* A phone scrolls this sideways; a tablet has room to wrap it, so nothing hides off-screen. */}
-          <nav className="px-3 pb-3 flex gap-1 overflow-x-auto md:flex-wrap md:overflow-x-visible" aria-label="Main">
-            {nav.map((item) => (
-              <NavLink key={item.to} to={item.to} end={item.end} className={linkClass}>
-                <i className={`fa-solid fa-${item.icon}`} aria-hidden="true"></i>
-                <span>{t(item.label)}</span>
-              </NavLink>
+          <nav className="px-3 pb-3 flex items-center gap-1 overflow-x-auto md:flex-wrap md:overflow-x-visible" aria-label="Main">
+            {nav.map((item, i) => (
+              <Fragment key={item.to}>
+                {item.group && i > 0 && item.group !== nav[i - 1]?.group && (
+                  <span className="self-stretch w-px bg-slate-200 shrink-0 mx-1" aria-hidden="true" />
+                )}
+                <NavLink to={item.to} end={item.end} className={linkClass}>
+                  <i className={`fa-solid fa-${item.icon}`} aria-hidden="true"></i>
+                  <span>{t(item.label)}</span>
+                </NavLink>
+              </Fragment>
             ))}
           </nav>
         </header>
