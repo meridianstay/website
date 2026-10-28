@@ -2,6 +2,17 @@
 
 Every change to Meridian Stay is recorded here, newest first. Each entry says what changed for the people using the platform, then the notable technical changes.
 
+## 0.39.0 — 2026-10-28
+
+### A page for each person
+- Clicking a name in **Users** now opens that person's own page, where everything about them sits together: who they are, how many listings they run and how many are live, what they have spent as a guest, what has been booked at their stays, what they have paid us.
+- **The things you would want to do to them are on it.** Approve or send back their website, check their domain, record a year of their plan or end it, make a guest a host, suspend or reinstate — without going to four other pages first. Each panel still links to the full page for that job.
+
+### Checking a client's domain
+- A client who has added their own domain can press **Check now** in their portal and be told, record by record, what their domain actually publishes against what they were asked to add — and then whether it reaches Meridian over a secure connection at all.
+- **A domain that answers is switched on by itself.** Reaching us over HTTPS proves the records, the hosting and the certificate in one go, so there is nothing left for your team to decide. The same button is on the control centre's card, next to a **Visit** button.
+- **HTTPS costs nothing and needs nobody.** A certificate is issued for every client domain automatically and renews itself — the deployment guide now says so, along with the two things that can block it (a `CAA` record that doesn't allow Let's Encrypt, and a proxy sitting in front).
+
 ## 0.38.1 — 2026-10-28
 
 ### The control centre menu is grouped

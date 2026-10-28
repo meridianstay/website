@@ -30,6 +30,7 @@ const Settings = lazy(() => import('./pages/Settings').then((m) => ({ default: m
 const Server = lazy(() => import('./pages/Server').then((m) => ({ default: m.Server })))
 const ClientSites = lazy(() => import('./pages/ClientSites').then((m) => ({ default: m.ClientSites })))
 const Subscriptions = lazy(() => import('./pages/Subscriptions').then((m) => ({ default: m.Subscriptions })))
+const UserDetail = lazy(() => import('./pages/UserDetail').then((m) => ({ default: m.UserDetail })))
 
 const nav: NavItem[] = [
   { to: '/', label: 'Overview', icon: 'gauge-high', end: true },
@@ -72,6 +73,7 @@ export default function App() {
                   <Route path="listings" element={<Suspense fallback={<BrandLoader />}><Listings /></Suspense>} />
                   <Route path="bookings" element={<Suspense fallback={<BrandLoader />}><Bookings /></Suspense>} />
                   <Route path="users" element={<Suspense fallback={<BrandLoader />}><Users /></Suspense>} />
+                  <Route path="users/:id" element={<Suspense fallback={<BrandLoader />}><UserDetail /></Suspense>} />
                   <Route path="reviews" element={<Suspense fallback={<BrandLoader />}><Reviews /></Suspense>} />
                   <Route path="coupons" element={<Suspense fallback={<BrandLoader />}><Coupons /></Suspense>} />
                   <Route path="promotions" element={<Suspense fallback={<BrandLoader />}><Promotions /></Suspense>} />

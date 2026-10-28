@@ -208,6 +208,22 @@ export const hostApi = {
 
 // ─── Admin panel ──────────────────────────────────────────────────────────────
 
+/** Everything the control centre shows about one person on their own page. */
+export interface AdminUserDetail {
+  user: Me & { suspended: boolean }
+  listings: HostListing[]
+  bookings: { asGuest: BookingDetail[]; asHost: HostBooking[] }
+  spent: number
+  subscription: {
+    planId: string | null; status: string; expiresAt: string | null
+    active: boolean; daysLeft: number | null; planName: string | null; paid: number
+  } | null
+  site: {
+    businessName: string; slug: string; status: ClientSite['status']
+    domain: ClientSite['domain']; published: boolean; updatedAt: string
+  } | null
+}
+
 /** How much of each log Housekeeping would clear right now. */
 export interface HousekeepingPending {
   audit: number
@@ -310,6 +326,8 @@ export const adminApi = {
     request<{ subscription: Subscription }>(`/admin/subscriptions/${hostId}/grant`, { method: 'POST', json: { planId, note } }),
   cancelSubscription: (hostId: number) => request<{ subscription: Subscription }>(`/admin/subscriptions/${hostId}/cancel`, { method: 'POST' }),
   saveSubscriptionSettings: (value: SubscriptionSettings) => request<void>('/admin/settings/subscriptions', { method: 'PUT', json: value }),
+
+  user: (id: number) => request<AdminUserDetail>(`/admin/users/${id}`),
 
   clientSites: () => request<{ sites: ClientSite[]; baseDomain: string }>('/admin/client-sites'),
   approveClientSite: (hostId: number) => request<{ site: ClientSite }>(`/admin/client-sites/${hostId}/approve`, { method: 'POST' }),

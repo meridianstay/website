@@ -1,4 +1,5 @@
 import { useCallback, useEffect, useState } from 'react'
+import { Link } from 'react-router'
 import { ErrorNote, PageHeader, Panel, Spinner, useAuth } from '@meridian/ui'
 import { formatDate, type UserRole } from '@meridian/shared'
 import { adminApi, type AdminUser } from '@meridian/shared/client'
@@ -47,7 +48,11 @@ export function Users() {
                   const self = u.id === me?.id
                   return (
                     <tr key={u.id} className={u.suspended ? 'bg-rose-50/40' : ''}>
-                      <td className="p-3"><span className="font-semibold text-slate-900">{u.name}</span>{self && <span className="text-slate-400"> (you)</span>}<br /><span className="text-slate-400">{[u.email, u.phone].filter(Boolean).join(' · ')}</span></td>
+                      <td className="p-3">
+                        <Link to={`/users/${u.id}`} className="font-semibold text-slate-900 hover:text-brand-700 underline decoration-slate-200">{u.name}</Link>
+                        {self && <span className="text-slate-400"> (you)</span>}
+                        <br /><span className="text-slate-400">{[u.email, u.phone].filter(Boolean).join(' · ')}</span>
+                      </td>
                       <td className="p-3">
                         <label className="sr-only" htmlFor={`role-${u.id}`}>Role for {u.name}</label>
                         <select id={`role-${u.id}`} value={u.role} disabled={self} onChange={(e) => update(u.id, { role: e.target.value as UserRole })} className="bg-slate-50 border border-slate-200 rounded-lg px-2 py-1 font-semibold disabled:opacity-50">

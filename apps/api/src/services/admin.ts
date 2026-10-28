@@ -1,7 +1,8 @@
 import { todayISO, type ListingStatus, type Management, type Me, type UserRole } from '@meridian/shared'
 import { auth } from '../store/firebase'
 import { nowISO } from '../store/db'
-import { auditLogRepo, bookingsRepo, messagesRepo, promotionsRepo, propertiesRepo, usersRepo, type MessageStatus } from '../repositories'
+import { auditLogRepo, bookingsRepo, clientSitesRepo, messagesRepo, promotionsRepo, propertiesRepo, toMe, usersRepo, type MessageStatus } from '../repositories'
+import { subscriptionService } from './subscriptions'
 import { AppError, notFound } from '../http/errors'
 import { checkLength, collect } from '../http/validate'
 import { notifyService } from './notify'
@@ -100,4 +101,50 @@ export const adminService = {
     if (!(await messagesRepo.setStatus(id, status as MessageStatus))) throw notFound('message')
     await auditLogRepo.record(admin, 'message.status', 'message', id, { status })
   },
+
+  /**
+   * Everything about one person in a single answer: who they are, what they run, what they have
+   * booked, what they pay and what their website is doing. The control centre's user page is built
+   * from this, so no part of a person's standing has to be hunted for across five screens.
+   */
+  async userDetail(id: number) {
+    const user = await usersRepo.findById(id)
+    if (!user) throw notFound('user')
+    const today = todayISO()
+
+    const [listings, asGuest, asHost, subscription, site] = await Promise.all([
+      propertiesRepo.listForHost(id),
+      bookingsRepo.listForGuest(id, today),
+      bookingsRepo.listForHost(id, today).catch(() => []),
+      subscriptionService.mine(toMe(user)).catch(() => null),
+      clientSitesRepo.find(id),
+
+    ])
+
+    const spent = asGuest.reduce((sum, b) => sum + (b.status === 'Confirmed' || b.status === 'Completed' ? b.total : 0), 0)
+    return {
+      user: { ...toMe(user), suspended: !!user.suspendedAt, createdAt: user.createdAt },
+      listings,
+      bookings: { asGuest, asHost },
+      spent,
+      subscription: subscription && {
+        planId: subscription.subscription.planId,
+        status: subscription.subscription.status,
+        expiresAt: subscription.subscription.expiresAt,
+        active: subscription.active,
+        daysLeft: subscription.daysLeft,
+        planName: subscription.plans.find((p) => p.id === subscription.subscription.planId)?.name ?? null,
+        paid: subscription.subscription.terms.reduce((sum, t) => sum + t.amount, 0),
+      },
+      site: site && {
+        businessName: site.content.businessName,
+        slug: site.published?.slug || site.content.slug,
+        status: site.status,
+        domain: site.domain,
+        published: !!site.published,
+        updatedAt: site.updatedAt,
+      },
+    }
+  },
+
 }

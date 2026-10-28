@@ -77,6 +77,8 @@ adminRoutes.delete('/admin/coupons/:code', async (c) => (await couponService.rem
 // ─── Users ───────────────────────────────────────────────────────────────────
 adminRoutes.get('/admin/users', async (c) =>
   c.json({ users: await usersRepo.list({ q: q(c.req.query('q')), role: oneOf<UserRole>(c.req.query('role'), ['guest', 'host', 'admin']) }) }))
+/** Everything about one person, so nothing has to be hunted across five screens. */
+adminRoutes.get('/admin/users/:id', async (c) => c.json(await adminService.userDetail(Number(c.req.param('id')))))
 adminRoutes.patch('/admin/users/:id', async (c) => {
   const b = await body(c)
   await adminService.updateUser(admin(c), Number(c.req.param('id')), {
