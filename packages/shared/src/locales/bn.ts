@@ -114,6 +114,7 @@ const bn: Dictionary = {
   'account.trips': 'আপনার ভ্রমণ',
   'account.noTrips': 'এখনো কোনো ভ্রমণ নেই। বুক করলে এখানে দেখা যাবে।',
   'account.noWishlist': 'এখনো কিছু সংরক্ষণ করা হয়নি। কোনো জায়গার হৃদয় চিহ্নে চাপ দিয়ে এখানে রাখুন।',
+  'account.invoice': 'ইনভয়েস',
   'account.viewBooking': 'বুকিং দেখুন',
   'account.writeReview': 'পর্যালোচনা লিখুন',
   'account.finishPayment': 'পেমেন্ট শেষ করুন',

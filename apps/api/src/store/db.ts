@@ -35,6 +35,8 @@ export const C = {
   subscriptions: 'subscriptions',
   /** Calendars on other platforms that a stay's dates are kept in step with. */
   calendarFeeds: 'calendarFeeds',
+  /** Tax invoices and credit notes, written once and never changed. */
+  invoices: 'invoices',
 } as const
 
 export const col = (name: string) => firestore.collection(name)

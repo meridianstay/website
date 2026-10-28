@@ -114,6 +114,7 @@ const ml: Dictionary = {
   'account.trips': 'നിങ്ങളുടെ യാത്രകൾ',
   'account.noTrips': 'ഇതുവരെ യാത്രകളില്ല. ബുക്ക് ചെയ്യുമ്പോൾ ഇവിടെ കാണാം.',
   'account.noWishlist': 'ഇതുവരെ ഒന്നും സൂക്ഷിച്ചിട്ടില്ല. ഏതെങ്കിലും സ്ഥലത്തിന്റെ ഹൃദയ ചിഹ്നം അമർത്തി ഇവിടെ സൂക്ഷിക്കുക.',
+  'account.invoice': 'ഇൻവോയ്‌സ്',
   'account.viewBooking': 'ബുക്കിംഗ് കാണുക',
   'account.writeReview': 'അവലോകനം എഴുതുക',
   'account.finishPayment': 'പേയ്‌മെന്റ് പൂർത്തിയാക്കുക',

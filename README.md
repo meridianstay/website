@@ -133,6 +133,20 @@ Two ways, and a client is on one or the other — never both.
 - **Host promotions**: hosts pay by the day to have a listing promoted in search, on the homepage or on a destination page. Approved by the team, labelled "Promoted" to guests.
 - Guests pay **no booking fee**, on any plan.
 
+## Tax invoices
+
+Once your GST registration is entered in **Admin → Tax invoices** and switched on, every paid booking raises a
+tax invoice and every refund a credit note. The guest gets theirs under their trip, and the same page prints or
+saves as a PDF. The register on that page totals taxable value, CGST, SGST and IGST by month.
+
+The tax is taken *out of* what the guest paid rather than added on top, so nothing about prices changes. The rate
+follows what a night costs; the split follows where the property is. Documents are immutable — changing a rate
+never alters one already raised — and numbers run gaplessly from one each financial year.
+
+**Two things are for your accountant, not the software:** the rates (set up as 5% up to ₹7,500 a night and 18%
+above, the structure from 22 September 2025, editable because rates move) and whether Meridian or the host is
+the supplier in law. Both are settings.
+
 ## Keeping dates in step with other platforms
 
 A stay listed on Airbnb, Booking.com, Vrbo, Agoda or MakeMyTrip as well can keep every calendar in step from **Host portal → Calendar sync**. It takes two links per stay: the client pastes each platform's export link in, and pastes Meridian's own link into those platforms. Built on iCalendar, which is what all of them support — there is no public Airbnb booking API. Read hourly, and again whenever a guest opens the stay, so the dates somebody is looking at are current. A night sold on both sides is reported as a clash for a person to settle rather than quietly cancelling anyone.

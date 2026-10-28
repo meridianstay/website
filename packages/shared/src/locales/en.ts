@@ -128,6 +128,7 @@ const en: Dictionary = {
   'account.trips': 'Your trips',
   'account.noTrips': 'No trips yet. When you book a stay it shows up here.',
   'account.noWishlist': 'Nothing saved yet. Tap the heart on a stay to keep it here.',
+  'account.invoice': 'Invoice',
   'account.viewBooking': 'View booking',
   'account.writeReview': 'Write a review',
   'account.finishPayment': 'Finish payment',

@@ -2,6 +2,20 @@
 
 Every change to Meridian Stay is recorded here, newest first. Each entry says what changed for the people using the platform, then the notable technical changes.
 
+## 0.45.0 — 2026-10-28
+
+### GST invoices
+- **Every paid booking now gets a tax invoice**, and every refund a credit note. The guest finds it under their trip; the host and your team can see it too; nobody else can.
+- **Control centre → Tax invoices** is the register your accountant files from: every document raised, by month, with taxable value, CGST, SGST and IGST added up and credit notes subtracted.
+- **The tax is worked out of the price, not added to it.** A guest pays exactly what they were quoted — the invoice shows what that total was worth and what tax was inside it. Nothing about what guests pay changes.
+- **The rate follows what a night costs**, and the split follows where the stay is: a stay in your own state is CGST and SGST, one anywhere else is IGST. Place of supply is taken from the listing's state.
+- **An invoice is written once and never touched again.** Change a rate tomorrow and last month's documents are untouched — which is the point of them. Numbers run from one each financial year with no gaps, taken inside a transaction so two bookings paid at the same instant can never share one.
+- Nothing is raised until you fill in your registration and switch it on, and **nothing can be backdated**: bookings taken before that have no invoice, because one cannot honestly be given a number from a month that has closed.
+
+### Two things only your accountant can settle
+- **The rates.** It is set up with 5% up to ₹7,500 a night and 18% above, the structure in force since 22 September 2025 — but rates move, and the slabs are editable for exactly that reason. Confirm them before switching invoicing on.
+- **Who the law says is supplying the stay** — Meridian as the platform, or the host. It is recorded as a setting and the default is the platform, which matches how the money actually flows here, but it depends on whether a given host is registered and it changes who pays what. There is a setting for it; there is no way for software to decide it for you.
+
 ## 0.44.0 — 2026-10-28
 
 ### Things any live site needs, which this one didn't have

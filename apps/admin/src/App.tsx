@@ -32,6 +32,7 @@ const ClientSites = lazy(() => import('./pages/ClientSites').then((m) => ({ defa
 const Subscriptions = lazy(() => import('./pages/Subscriptions').then((m) => ({ default: m.Subscriptions })))
 const UserDetail = lazy(() => import('./pages/UserDetail').then((m) => ({ default: m.UserDetail })))
 const BookingDetail = lazy(() => import('./pages/BookingDetail').then((m) => ({ default: m.BookingDetail })))
+const Invoices = lazy(() => import('./pages/Invoices').then((m) => ({ default: m.Invoices })))
 
 const nav: NavItem[] = [
   { to: '/', label: 'Overview', icon: 'gauge-high', end: true },
@@ -45,6 +46,7 @@ const nav: NavItem[] = [
   { group: 'Clients', to: '/client-sites', label: 'Client websites', icon: 'globe' },
   { group: 'Clients', to: '/subscriptions', label: 'Subscriptions', icon: 'wallet' },
   { group: 'Clients', to: '/payouts', label: 'Payouts', icon: 'indian-rupee-sign' },
+  { group: 'Clients', to: '/invoices', label: 'Tax invoices', icon: 'book-open' },
 
   { group: 'Website & marketing', to: '/website', label: 'Website content', icon: 'pen-to-square' },
   { group: 'Website & marketing', to: '/campaigns', label: 'Offers & alerts', icon: 'bullhorn' },
@@ -74,6 +76,7 @@ export default function App() {
                   <Route path="listings" element={<Suspense fallback={<BrandLoader />}><Listings /></Suspense>} />
                   <Route path="bookings" element={<Suspense fallback={<BrandLoader />}><Bookings /></Suspense>} />
                   <Route path="bookings/:code" element={<Suspense fallback={<BrandLoader />}><BookingDetail /></Suspense>} />
+                  <Route path="invoices" element={<Suspense fallback={<BrandLoader />}><Invoices /></Suspense>} />
                   <Route path="users" element={<Suspense fallback={<BrandLoader />}><Users /></Suspense>} />
                   <Route path="users/:id" element={<Suspense fallback={<BrandLoader />}><UserDetail /></Suspense>} />
                   <Route path="reviews" element={<Suspense fallback={<BrandLoader />}><Reviews /></Suspense>} />

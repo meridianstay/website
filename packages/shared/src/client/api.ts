@@ -13,6 +13,7 @@ import type { Coupon } from '../offers'
 import type { AdCampaign, AdPlacement, PromotionPlan, PromotionSettings } from '../promotions'
 import type { Campaign, CampaignContent } from '../campaigns'
 import type { CacheReport, CronRun, ServerReport, ServerSettings, StorageUsage } from '../server'
+import type { GstSettings, Invoice } from '../gst'
 import type { ClientSite, ClientSiteView, DnsTarget, DomainCheck } from '../clientSite'
 import type { ClientPageDesign } from '../clientPage'
 import type { ClientPlan, PlanId, Subscription, SubscriptionSettings } from '../subscription'
@@ -91,6 +92,9 @@ export const api = {
   livePopup: (params: { page: string; installed: boolean; place?: string }) =>
     request<{ popup: { id: number; content: CampaignContent; afterSeconds: number; frequency: 'once' | 'daily' | 'always' } | null }>(
       `/campaigns/popup${qs({ page: params.page, installed: params.installed ? 1 : undefined, place: params.place })}`),
+  invoices: (bookingCode: string) => request<{ invoices: Invoice[] }>(`/bookings/${encodeURIComponent(bookingCode)}/invoices`),
+  invoice: (number: string) => request<{ invoice: Invoice }>(`/invoices/${number.split('/').map(encodeURIComponent).join('/')}`),
+
   countCampaign: (id: number, event: 'shown' | 'clicked' | 'dismissed') =>
     request<void>(`/campaigns/${id}/${event}`, { method: 'POST' }),
   pushKey: () => request<{ publicKey: string }>('/push/key'),
@@ -271,6 +275,7 @@ export const adminApi = {
   saveAnnouncement: (value: AnnouncementSettings) => request<void>('/admin/settings/announcement', { method: 'PUT', json: value }),
   saveSignIn: (value: SignInSettings) => request<void>('/admin/settings/signIn', { method: 'PUT', json: value }),
   saveUploads: (value: UploadSettings) => request<void>('/admin/settings/uploads', { method: 'PUT', json: value }),
+  saveGst: (value: GstSettings) => request<void>('/admin/settings/gst', { method: 'PUT', json: value }),
   saveCommission: (value: CommissionRates) => request<void>('/admin/settings/commission', { method: 'PUT', json: value }),
   integrations: () => request<IntegrationStatus>('/admin/integrations'),
   payments: () => request<PaymentSettingsView>('/admin/payments'),
@@ -342,6 +347,9 @@ export const adminApi = {
 
   user: (id: number) => request<AdminUserDetail>(`/admin/users/${id}`),
   booking: (code: string) => request<AdminBookingDetail>(`/admin/bookings/${encodeURIComponent(code)}`),
+
+  invoiceRegister: (params: { year?: string; month?: string } = {}) =>
+    request<{ invoices: Invoice[]; ready: boolean; totals: { count: number; credits: number; taxable: number; cgst: number; sgst: number; igst: number; total: number } }>(`/admin/invoices${qs(params)}`),
 
   clientSites: () => request<{ sites: ClientSite[]; baseDomain: string }>('/admin/client-sites'),
   approveClientSite: (hostId: number) => request<{ site: ClientSite }>(`/admin/client-sites/${hostId}/approve`, { method: 'POST' }),

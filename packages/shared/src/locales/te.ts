@@ -114,6 +114,7 @@ const te: Dictionary = {
   'account.trips': 'మీ ప్రయాణాలు',
   'account.noTrips': 'ఇంకా ప్రయాణాలు లేవు. మీరు బుక్ చేసినప్పుడు ఇక్కడ కనిపిస్తుంది.',
   'account.noWishlist': 'ఇంకా ఏమీ భద్రపరచలేదు. ఏదైనా ప్రదేశంపై గుండె గుర్తును నొక్కి ఇక్కడ ఉంచండి.',
+  'account.invoice': 'ఇన్వాయిస్',
   'account.viewBooking': 'బుకింగ్ చూడండి',
   'account.writeReview': 'సమీక్ష రాయండి',
   'account.finishPayment': 'చెల్లింపు పూర్తి చేయండి',

@@ -114,6 +114,7 @@ const gu: Dictionary = {
   'account.trips': 'તમારા પ્રવાસ',
   'account.noTrips': 'હજી કોઈ પ્રવાસ નથી. તમે બુક કરશો ત્યારે તે અહીં દેખાશે.',
   'account.noWishlist': 'હજી કંઈ સાચવ્યું નથી. કોઈ જગ્યા પરના હૃદયના નિશાનને દબાવીને તેને અહીં રાખો.',
+  'account.invoice': 'ઇન્વોઇસ',
   'account.viewBooking': 'બુકિંગ જુઓ',
   'account.writeReview': 'સમીક્ષા લખો',
   'account.finishPayment': 'ચુકવણી પૂરી કરો',

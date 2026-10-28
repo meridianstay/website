@@ -22,6 +22,7 @@ import { serverService } from '../services/server'
 import { runJob } from '../services/jobs'
 import { clientSiteService } from '../services/clientSites'
 import { subscriptionService } from '../services/subscriptions'
+import { invoiceService } from '../services/invoices'
 import { body, currentUser, requireRole, type AppEnv } from '../http/auth'
 import { AppError } from '../http/errors'
 import { str } from '../http/validate'
@@ -237,6 +238,10 @@ const rowKey = (raw: string | undefined) => {
   }
   throw new AppError(400, 'Missing row key.')
 }
+
+// ─── Tax invoices ────────────────────────────────────────────────────────────
+adminRoutes.get('/admin/invoices', async (c) =>
+  c.json(await invoiceService.register({ financialYear: q(c.req.query('year')) ?? undefined, month: q(c.req.query('month')) ?? undefined })))
 
 // ─── Subscriptions ───────────────────────────────────────────────────────────
 adminRoutes.get('/admin/subscriptions', async (c) => c.json(await subscriptionService.list()))

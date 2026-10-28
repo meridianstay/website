@@ -114,6 +114,7 @@ const pa: Dictionary = {
   'account.trips': 'ਤੁਹਾਡੇ ਸਫ਼ਰ',
   'account.noTrips': 'ਅਜੇ ਕੋਈ ਸਫ਼ਰ ਨਹੀਂ। ਜਦੋਂ ਤੁਸੀਂ ਬੁੱਕ ਕਰੋਗੇ, ਉਹ ਇੱਥੇ ਦਿਸੇਗਾ।',
   'account.noWishlist': 'ਅਜੇ ਕੁਝ ਸੰਭਾਲਿਆ ਨਹੀਂ। ਕਿਸੇ ਥਾਂ ਉੱਤੇ ਦਿਲ ਦੇ ਨਿਸ਼ਾਨ ਨੂੰ ਦੱਬ ਕੇ ਉਸਨੂੰ ਇੱਥੇ ਰੱਖੋ।',
+  'account.invoice': 'ਇਨਵਾਇਸ',
   'account.viewBooking': 'ਬੁਕਿੰਗ ਵੇਖੋ',
   'account.writeReview': 'ਸਮੀਖਿਆ ਲਿਖੋ',
   'account.finishPayment': 'ਅਦਾਇਗੀ ਪੂਰੀ ਕਰੋ',

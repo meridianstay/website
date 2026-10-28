@@ -114,6 +114,7 @@ const or: Dictionary = {
   'account.trips': 'ଆପଣଙ୍କ ଯାତ୍ରା',
   'account.noTrips': 'ଏପର୍ଯ୍ୟନ୍ତ କୌଣସି ଯାତ୍ରା ନାହିଁ। ଆପଣ ବୁକ୍ କଲେ ତାହା ଏଠାରେ ଦେଖାଯିବ।',
   'account.noWishlist': 'ଏପର୍ଯ୍ୟନ୍ତ କିଛି ସାଇତା ହୋଇନାହିଁ। କୌଣସି ସ୍ଥାନର ହୃଦୟ ଚିହ୍ନ ଦବାଇ ତାହାକୁ ଏଠାରେ ରଖନ୍ତୁ।',
+  'account.invoice': 'ଇନଭଏସ',
   'account.viewBooking': 'ବୁକିଂ ଦେଖନ୍ତୁ',
   'account.writeReview': 'ସମୀକ୍ଷା ଲେଖନ୍ତୁ',
   'account.finishPayment': 'ଦେୟ ସମ୍ପୂର୍ଣ୍ଣ କରନ୍ତୁ',

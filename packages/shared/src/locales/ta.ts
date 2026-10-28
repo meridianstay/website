@@ -114,6 +114,7 @@ const ta: Dictionary = {
   'account.trips': 'உங்கள் பயணங்கள்',
   'account.noTrips': 'இன்னும் பயணம் இல்லை. முன்பதிவு செய்தால் இங்கே தெரியும்.',
   'account.noWishlist': 'இன்னும் எதுவும் சேமிக்கப்படவில்லை. இடத்தின் இதய அடையாளத்தை அழுத்தி இங்கே வைக்கவும்.',
+  'account.invoice': 'விலைப்பட்டியல்',
   'account.viewBooking': 'முன்பதிவைப் பார்',
   'account.writeReview': 'மதிப்புரை எழுது',
   'account.finishPayment': 'கட்டணத்தை முடி',

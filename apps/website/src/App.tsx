@@ -12,6 +12,7 @@ import { Property } from './pages/Property'
 // download. The rest arrive when someone actually goes there, which keeps that download small.
 const Checkout = lazy(() => import('./pages/Checkout').then((m) => ({ default: m.Checkout })))
 const BookingConfirmed = lazy(() => import('./pages/BookingConfirmed').then((m) => ({ default: m.BookingConfirmed })))
+const InvoicePage = lazy(() => import('./pages/InvoicePage').then((m) => ({ default: m.InvoicePage })))
 const Auth = lazy(() => import('./pages/Auth').then((m) => ({ default: m.Auth })))
 const About = lazy(() => import('./pages/About').then((m) => ({ default: m.About })))
 const Destination = lazy(() => import('./pages/Destination').then((m) => ({ default: m.Destination })))
@@ -38,6 +39,7 @@ export default function App() {
         <Route path="stays/:slug" element={<Property />} />
         <Route path="book/:slug" element={<RequireAuth>{page(<Checkout />)}</RequireAuth>} />
         <Route path="booking/:code" element={<RequireAuth>{page(<BookingConfirmed />)}</RequireAuth>} />
+        <Route path="booking/:code/invoice" element={<RequireAuth>{page(<InvoicePage />)}</RequireAuth>} />
         <Route path="login" element={page(<Auth />)} />
         <Route path="signup" element={<SignupRedirect />} />
         <Route path="about" element={page(<About />)} />

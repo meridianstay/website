@@ -5,6 +5,7 @@ import { body, currentUid, currentUser, requireUser, type AppEnv } from '../http
 import { AppError } from '../http/errors'
 import { str } from '../http/validate'
 import { runJob } from '../services/jobs'
+import { invoiceService } from '../services/invoices'
 
 export const bookingRoutes = new Hono<AppEnv>()
 bookingRoutes.use('/bookings', requireUser)
@@ -41,6 +42,14 @@ bookingRoutes.post('/bookings/:code/pay', async (c) =>
 
 bookingRoutes.post('/bookings/:code/cancel', async (c) =>
   c.json({ booking: await bookingService.cancelByGuest(currentUser(c), c.req.param('code')) }))
+
+/** The tax documents raised for a booking: its invoice, and any credit note against it. */
+bookingRoutes.get('/bookings/:code/invoices', requireUser, async (c) =>
+  c.json({ invoices: await invoiceService.forBooking(c.req.param('code')) }))
+
+/** One invoice. A guest may see their own, a host theirs, and your team any of them. */
+bookingRoutes.get('/invoices/:number{.+}', requireUser, async (c) =>
+  c.json({ invoice: await invoiceService.get(c.req.param('number'), currentUser(c)) }))
 
 // ─── Razorpay webhook and scheduled expiry (no sign-in; verified by signature / secret) ─────
 export const paymentRoutes = new Hono<AppEnv>()

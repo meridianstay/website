@@ -114,6 +114,7 @@ const hi: Dictionary = {
   'account.trips': 'आपकी यात्राएँ',
   'account.noTrips': 'अभी कोई यात्रा नहीं। जब आप बुक करेंगे, वह यहाँ दिखेगी।',
   'account.noWishlist': 'अभी कुछ सहेजा नहीं है। किसी जगह पर दिल के निशान को दबाकर उसे यहाँ रखें।',
+  'account.invoice': 'इनवॉइस',
   'account.viewBooking': 'बुकिंग देखें',
   'account.writeReview': 'समीक्षा लिखें',
   'account.finishPayment': 'भुगतान पूरा करें',

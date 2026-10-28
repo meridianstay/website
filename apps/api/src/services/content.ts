@@ -1,4 +1,4 @@
-import { isIconName, AD_PLACEMENTS, AD_REACH, PAYOUT_SCHEDULES, PLAN_LIMITS, ABOUT_LIMITS, aboutSchema, defaultClientPlans, withAboutDefaults, type AboutItem, type AboutPage, type ContentPage, type Me, type PageSection, type SiteSettings } from '@meridian/shared'
+import { GST_STATES, isGstin, stateName, isIconName, AD_PLACEMENTS, AD_REACH, PAYOUT_SCHEDULES, PLAN_LIMITS, ABOUT_LIMITS, aboutSchema, defaultClientPlans, withAboutDefaults, type AboutItem, type AboutPage, type ContentPage, type Me, type PageSection, type SiteSettings } from '@meridian/shared'
 import { auditLogRepo, contentRepo } from '../repositories'
 import { AppError, notFound } from '../http/errors'
 import { checkLength, collect, isImageUrl, str } from '../http/validate'
@@ -65,6 +65,26 @@ export const contentService = {
         const price = Number(plan.pricePerYear)
         if (!(price >= 0 && price <= 500000)) fields[`plans.${i}.pricePerYear`] = 'Enter a yearly price in rupees (0–5,00,000).'
         if (!Array.isArray(plan.perks) || !plan.perks.length) fields[`plans.${i}.perks`] = 'List at least one thing the plan includes.'
+      })
+    }
+    if (key === 'gst') {
+      const on = value.enabled === true
+      const gstin = String(value.gstin ?? '').trim().toUpperCase()
+      value.gstin = gstin
+      // Only checked when it is switched on: half-filled details are fine while it is off.
+      if (on && !isGstin(gstin)) fields.gstin = 'That is not a GSTIN. It is 15 characters, e.g. 29ABCDE1234F1Z5.'
+      if (on && !str(value.legalName)) fields.legalName = 'The name the business is registered under.'
+      if (on && !GST_STATES.some((st) => st.code === value.stateCode)) fields.stateCode = 'Choose the state you are registered in.'
+      // The GSTIN carries its own state in the first two digits; a mismatch means one of them is wrong.
+      if (on && isGstin(gstin) && value.stateCode && gstin.slice(0, 2) !== value.stateCode) {
+        fields.stateCode = `Your GSTIN begins ${gstin.slice(0, 2)}, which is ${stateName(gstin.slice(0, 2)) || 'another state'}.`
+      }
+      const slabs = Array.isArray(value.slabs) ? (value.slabs as Record<string, unknown>[]) : []
+      if (on && !slabs.length) fields.slabs = 'Set at least one rate.'
+      slabs.forEach((slab, i) => {
+        const rate = Number(slab.rate)
+        if (!(rate >= 0 && rate <= 50)) fields[`slabs.${i}.rate`] = 'A rate between 0 and 50%.'
+        if (!(Number(slab.upTo) > 0)) fields[`slabs.${i}.upTo`] = 'Up to how much a night?'
       })
     }
     if (key === 'payouts') {

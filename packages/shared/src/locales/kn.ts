@@ -114,6 +114,7 @@ const kn: Dictionary = {
   'account.trips': 'ನಿಮ್ಮ ಪ್ರವಾಸಗಳು',
   'account.noTrips': 'ಇನ್ನೂ ಪ್ರವಾಸಗಳಿಲ್ಲ. ನೀವು ಬುಕ್ ಮಾಡಿದಾಗ ಇಲ್ಲಿ ಕಾಣಿಸುತ್ತದೆ.',
   'account.noWishlist': 'ಇನ್ನೂ ಏನನ್ನೂ ಉಳಿಸಿಲ್ಲ. ಯಾವುದೇ ಸ್ಥಳದ ಹೃದಯ ಗುರುತನ್ನು ಒತ್ತಿ ಇಲ್ಲಿ ಇರಿಸಿ.',
+  'account.invoice': 'ಸರಕುಪಟ್ಟಿ',
   'account.viewBooking': 'ಬುಕಿಂಗ್ ನೋಡಿ',
   'account.writeReview': 'ವಿಮರ್ಶೆ ಬರೆಯಿರಿ',
   'account.finishPayment': 'ಪಾವತಿ ಪೂರ್ಣಗೊಳಿಸಿ',

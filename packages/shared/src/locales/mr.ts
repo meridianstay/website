@@ -114,6 +114,7 @@ const mr: Dictionary = {
   'account.trips': 'तुमच्या सहली',
   'account.noTrips': 'अजून सहल नाही. तुम्ही बुक कराल तेव्हा ती इथे दिसेल.',
   'account.noWishlist': 'अजून काही जतन केलेले नाही. जागेवरील हृदयाचे चिन्ह दाबून ती इथे ठेवा.',
+  'account.invoice': 'इनव्हॉइस',
   'account.viewBooking': 'बुकिंग पाहा',
   'account.writeReview': 'अभिप्राय लिहा',
   'account.finishPayment': 'पेमेंट पूर्ण करा',

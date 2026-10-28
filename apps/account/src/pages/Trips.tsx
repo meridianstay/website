@@ -88,6 +88,12 @@ function Trip({ booking: b, onChange }: { booking: BookingDetail; onChange: (b: 
       </div>
       <div className="flex flex-wrap gap-2 text-xs font-bold">
         <a href={appLink('website', `/booking/${b.code}`)} className="px-3 py-2 rounded-xl bg-white border border-slate-200 hover:bg-slate-100">{t('account.viewBooking')}</a>
+        {/* Shown once the money is in; there is nothing to invoice before that. */}
+        {['Confirmed', 'Completed', 'Cancelled'].includes(b.status) && (
+          <a href={appLink('website', `/booking/${b.code}/invoice`)} className="px-3 py-2 rounded-xl bg-white border border-slate-200 hover:bg-slate-100">
+            {t('account.invoice')}
+          </a>
+        )}
         {b.status === 'Completed' && !b.reviewed && (
           <a href={`${stayUrl}#reviews`} className="px-3 py-2 rounded-xl bg-brand-600 text-white hover:bg-brand-700">{t('account.writeReview')}</a>
         )}

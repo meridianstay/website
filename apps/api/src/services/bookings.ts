@@ -11,6 +11,7 @@ import { notifyService } from './notify'
 import { siteOrigin } from '../http/origin'
 import { checkEmail, checkPhone, collect, str } from '../http/validate'
 import { paymentGateway, paymentsService, type GatewayConfig, type GatewayPayment } from './payments'
+import { invoiceService } from './invoices'
 import { subscriptionService } from './subscriptions'
 
 // Booking rules: valid dates, capacity, availability, server-side pricing, commission, and the two booking modes:
@@ -104,6 +105,26 @@ function bookingTokens(b: BookingDoc) {
 }
 
 /** Tells the guest or the host what just happened. Failures are logged, never thrown. */
+/**
+ * Raises the tax invoice for a booking that is now paid for, or the credit note for one that has
+ * been refunded. Never allowed to fail the thing that caused it: a guest's booking must not break
+ * because an invoice could not be written, and the register can be put right afterwards.
+ */
+/** The payment states that mean the money is really in (`test` is a booking made with payments off). */
+const SETTLED_PAYMENTS: BookingDoc['paymentStatus'][] = ['paid', 'released', 'test']
+
+async function invoiceFor(b: BookingDoc) {
+  try {
+    if (b.status === 'Cancelled') {
+      if (b.refundedMinor > 0) await invoiceService.creditNote(b.code, b.refundedMinor / 100)
+      return
+    }
+    if (b.status === 'Confirmed' && SETTLED_PAYMENTS.includes(b.paymentStatus)) await invoiceService.forPaidBooking(b.code)
+  } catch (err) {
+    console.error('invoice', b.code, (err as Error).message)
+  }
+}
+
 async function announce(event: NotificationEvent, b: BookingDoc, extra: Record<string, string> = {}) {
   const toHost = event === 'booking.requested' || event === 'booking.hostCancelled'
   const who = toHost
@@ -239,6 +260,7 @@ export const bookingService = {
     if (!cfg) {
       // No payment gateway, so the booking is already in its final state and can be announced now.
       await announce(booking.status === 'Requested' ? 'booking.requested' : 'booking.confirmed', booking)
+      await invoiceFor(booking)
     }
     if (cfg) {
       try {
@@ -323,6 +345,7 @@ export const bookingService = {
     if (moved) {
       const fresh = (await bookingsRepo.find(b.code))!
       await announce(fresh.status === 'Requested' ? 'booking.requested' : 'booking.confirmed', fresh)
+      await invoiceFor(fresh)
     }
   },
 
@@ -385,6 +408,7 @@ export const bookingService = {
     if (before.couponCode && !before.confirmedAt) await couponsRepo.release(before.couponCode)
     const cancelled = (await bookingsRepo.find(code))!
     await announce('booking.cancelled', cancelled)
+    await invoiceFor(cancelled)
     // The host only hears about bookings they had actually been told about.
     if (before.status !== 'AwaitingPayment') await announce('booking.hostCancelled', cancelled)
     return toBooking(cancelled, today)
