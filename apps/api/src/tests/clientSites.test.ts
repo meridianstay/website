@@ -2,9 +2,10 @@ import { beforeEach, describe, test } from 'node:test'
 import assert from 'node:assert/strict'
 import {
   DEFAULT_DNS_CNAME, cleanDomain, dnsRecords, defaultClientPlans, entitlements, looksLikeDomain,
-  nextExpiry, siteSlug, subscriptionActive, blankSubscription,
+  nextExpiry, siteSlug, subscriptionActive, blankSubscription, type ClientPlan,
 } from '@meridian/shared'
 import { clientSiteService } from '../services/clientSites'
+import { contentService } from '../services/content'
 import { subscriptionService } from '../services/subscriptions'
 import { clientSitesRepo, contentRepo, subscriptionsRepo } from '../repositories'
 import { appError, createLiveListing, createUser, resetDatabase, type TestUser } from './helpers'
@@ -233,5 +234,52 @@ describe('lapsed plans', () => {
     await subscriptionsRepo.save(host.me.id, { expiresAt: new Date(Date.now() - 86_400_000).toISOString() })
     assert.equal((await subscriptionService.expireLapsed()).expired, 1)
     assert.equal((await subscriptionsRepo.get(host.me.id)).status, 'expired')
+  })
+})
+
+describe('the plans your team sets', () => {
+  beforeEach(resetDatabase)
+
+  test('prices and wording can be changed, and clients see the new ones', async () => {
+    const admin = await createUser('admin')
+    const plans = defaultClientPlans.map((p) => ({ ...p, pricePerYear: p.pricePerYear + 300, name: `${p.name} (2027)` }))
+    await contentService.saveSetting(admin.me, 'subscriptions', { required: true, plans })
+
+    const host = await createUser('host')
+    const view = await subscriptionService.mine(host.me)
+    assert.deepEqual(view.plans.map((p) => p.pricePerYear), [1299, 2299, 5299])
+    assert.ok(view.plans[0].name.endsWith('(2027)'))
+  })
+
+  test('a price off a round number is still a price', async () => {
+    const admin = await createUser('admin')
+    // 999 and 4999 are what the business actually charges; nothing may insist on round hundreds.
+    const plans = defaultClientPlans.map((p) => ({ ...p, pricePerYear: p.id === 'single' ? 999 : p.pricePerYear }))
+    const saved = await contentService.saveSetting(admin.me, 'subscriptions', { required: true, plans })
+    assert.equal((saved as { plans: ClientPlan[] }).plans.find((p) => p.id === 'single')!.pricePerYear, 999)
+  })
+
+  test('the three plans have to stay, because what each unlocks is built in', async () => {
+    const admin = await createUser('admin')
+    const twoOnly = defaultClientPlans.slice(0, 2)
+    const refused = await appError(() => contentService.saveSetting(admin.me, 'subscriptions', { required: true, plans: twoOnly }))
+    assert.equal(refused.status, 400)
+    assert.ok(refused.fields.plans)
+  })
+
+  test('a plan with no price or no name is refused', async () => {
+    const admin = await createUser('admin')
+    const broken = defaultClientPlans.map((p) => (p.id === 'pro' ? { ...p, name: '', pricePerYear: -5 } : p))
+    const refused = await appError(() => contentService.saveSetting(admin.me, 'subscriptions', { required: true, plans: broken }))
+    assert.ok(refused.fields['plans.2.name'])
+    assert.ok(refused.fields['plans.2.pricePerYear'])
+  })
+
+  test('switching the requirement off lets every client have a website', async () => {
+    const admin = await createUser('admin')
+    await contentService.saveSetting(admin.me, 'subscriptions', { required: false, plans: defaultClientPlans })
+    const host = await createUser('host')
+    assert.equal((await subscriptionService.mine(host.me)).required, false)
+    assert.equal((await subscriptionService.entitlementsOf(host.me.id)).ownWebsite, true)
   })
 })

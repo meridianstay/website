@@ -323,7 +323,7 @@ export function ListingEditor() {
                 <TimeSelect id="quietAfter" value={draft.houseRules.quietAfter} allowEmpty onChange={(v) => setRules({ quietAfter: v })} />
               </Field>
               <Field label="Refundable security deposit (₹)" id="securityDeposit" error={fields.securityDeposit} hint="Collected at check-in and returned at check-out. 0 for none.">
-                <input id="securityDeposit" type="number" min={0} step={500} className={inputClass} value={draft.securityDeposit} onChange={(e) => update('securityDeposit', Number(e.target.value))} />
+                <input id="securityDeposit" type="number" min={0} step="any" className={inputClass} value={draft.securityDeposit} onChange={(e) => update('securityDeposit', Number(e.target.value))} />
               </Field>
             </div>
             <Field label="Other rules (optional)" id="houseRulesNotes" error={fields.houseRulesNotes} hint="E.g. music off by 11 pm, no outside caterers, ID for every adult.">
@@ -390,7 +390,7 @@ export function ListingEditor() {
               <p className="font-bold text-slate-900"><i className="fa-solid fa-tag text-rose-500 mr-2" aria-hidden="true"></i>Discount (optional)</p>
               <p className="text-xs text-slate-500">Guests see the old price crossed out and a “% off” badge on your listing. It applies to nightly and day-use prices.</p>
               <div className="flex items-center gap-3">
-                <input id="discountPct" type="number" min={0} max={70} step={5} className={`${inputClass} w-28`} value={draft.discountPct} onChange={(e) => update('discountPct', Number(e.target.value))} />
+                <input id="discountPct" type="number" min={0} max={70} step="any" className={`${inputClass} w-28`} value={draft.discountPct} onChange={(e) => update('discountPct', Number(e.target.value))} />
                 <label htmlFor="discountPct" className="text-sm text-slate-600">% off</label>
                 {draft.discountPct > 0 && (
                   <span className="text-sm text-slate-600">

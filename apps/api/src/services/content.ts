@@ -1,4 +1,4 @@
-import { isIconName, AD_PLACEMENTS, AD_REACH, PAYOUT_SCHEDULES, PLAN_LIMITS, ABOUT_LIMITS, aboutSchema, withAboutDefaults, type AboutItem, type AboutPage, type ContentPage, type Me, type PageSection, type SiteSettings } from '@meridian/shared'
+import { isIconName, AD_PLACEMENTS, AD_REACH, PAYOUT_SCHEDULES, PLAN_LIMITS, ABOUT_LIMITS, aboutSchema, defaultClientPlans, withAboutDefaults, type AboutItem, type AboutPage, type ContentPage, type Me, type PageSection, type SiteSettings } from '@meridian/shared'
 import { auditLogRepo, contentRepo } from '../repositories'
 import { AppError, notFound } from '../http/errors'
 import { checkLength, collect, isImageUrl, str } from '../http/validate'
@@ -50,6 +50,21 @@ export const contentService = {
         if (!(Number(plan.slots) >= 1 && Number(plan.slots) <= PLAN_LIMITS.slots)) fields[`plans.${i}.slots`] = `Between 1 and ${PLAN_LIMITS.slots} slots.`
         if (!(Number(plan.pricePerDay) >= 0 && Number(plan.pricePerDay) <= PLAN_LIMITS.pricePerDay)) fields[`plans.${i}.pricePerDay`] = 'Enter a daily price in rupees (0–1,00,000).'
         if (!(Number(plan.maxDays) >= 1 && Number(plan.maxDays) <= PLAN_LIMITS.maxDays)) fields[`plans.${i}.maxDays`] = 'Between 1 and 365 days.'
+      })
+    }
+    if (key === 'subscriptions') {
+      const plans = Array.isArray(value.plans) ? (value.plans as Record<string, unknown>[]) : []
+      // The three ids are what the platform decides entitlements from, so they are fixed; the
+      // names, prices and wording are yours.
+      const wanted = defaultClientPlans.map((p) => p.id)
+      if (plans.length !== wanted.length || !wanted.every((id) => plans.some((p) => str(p.id) === id))) {
+        fields.plans = 'Keep all three plans. Their prices and wording are yours to change; which plan is which is not.'
+      }
+      plans.forEach((plan, i) => {
+        if (!str(plan.name)) fields[`plans.${i}.name`] = 'Give the plan a name clients will understand.'
+        const price = Number(plan.pricePerYear)
+        if (!(price >= 0 && price <= 500000)) fields[`plans.${i}.pricePerYear`] = 'Enter a yearly price in rupees (0–5,00,000).'
+        if (!Array.isArray(plan.perks) || !plan.perks.length) fields[`plans.${i}.perks`] = 'List at least one thing the plan includes.'
       })
     }
     if (key === 'payouts') {

@@ -259,7 +259,7 @@ function StaysEditor({ block, locations, onChange, err }: { block: HomeBlock; lo
         {rule.needs === 'budget' && (
           <div>
             <label htmlFor={`${listId}-max`} className="block text-xs font-bold uppercase text-slate-500 mb-1">Highest nightly price (₹)</label>
-            <input id={`${listId}-max`} type="number" min={100} step={100} value={block.maxPrice ?? ''} onChange={(e) => onChange({ maxPrice: e.target.value ? Number(e.target.value) : null })} placeholder="5000" className={input} />
+            <input id={`${listId}-max`} type="number" min={100} step="any" value={block.maxPrice ?? ''} onChange={(e) => onChange({ maxPrice: e.target.value ? Number(e.target.value) : null })} placeholder="5000" className={input} />
             {err('maxPrice')}
           </div>
         )}

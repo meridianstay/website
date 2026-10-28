@@ -214,7 +214,7 @@ function Plans() {
                   </div>
                   <div>
                     <label className={label} htmlFor={`${plan.id}-price`}>Price a day</label>
-                    <input id={`${plan.id}-price`} type="number" min={0} step={50} value={plan.pricePerDay} className={input}
+                    <input id={`${plan.id}-price`} type="number" min={0} step="any" value={plan.pricePerDay} className={input}
                       onChange={(e) => setPlan(i, { pricePerDay: Number(e.target.value) })} />
                     {fields[`plans.${i}.pricePerDay`] && <p className="text-xs text-rose-600 font-semibold mt-1">{fields[`plans.${i}.pricePerDay`]}</p>}
                   </div>

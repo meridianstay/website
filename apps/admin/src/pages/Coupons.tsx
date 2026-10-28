@@ -131,14 +131,14 @@ function CouponForm({ coupon, isNew, onCancel, onSaved }: { coupon: Coupon; isNe
         {draft.kind === 'percent' && (
           <div>
             <label htmlFor={`${id}-max`} className="block text-xs font-bold uppercase text-slate-500 mb-1">Most it can take off (₹)</label>
-            <input id={`${id}-max`} type="number" min={0} step={500} value={draft.maxDiscount} onChange={(e) => set({ maxDiscount: Number(e.target.value) })} className={input} />
+            <input id={`${id}-max`} type="number" min={0} step="any" value={draft.maxDiscount} onChange={(e) => set({ maxDiscount: Number(e.target.value) })} className={input} />
             <p className="text-xs text-slate-400 mt-1">0 for no cap.</p>
             {err('maxDiscount')}
           </div>
         )}
         <div>
           <label htmlFor={`${id}-min`} className="block text-xs font-bold uppercase text-slate-500 mb-1">Smallest booking total (₹)</label>
-          <input id={`${id}-min`} type="number" min={0} step={500} value={draft.minTotal} onChange={(e) => set({ minTotal: Number(e.target.value) })} className={input} />
+          <input id={`${id}-min`} type="number" min={0} step="any" value={draft.minTotal} onChange={(e) => set({ minTotal: Number(e.target.value) })} className={input} />
           {err('minTotal')}
         </div>
         <div>

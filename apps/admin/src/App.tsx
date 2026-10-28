@@ -28,6 +28,8 @@ const Database = lazy(() => import('./pages/Database').then((m) => ({ default: m
 const DatabaseTable = lazy(() => import('./pages/DatabaseTable').then((m) => ({ default: m.DatabaseTable })))
 const Settings = lazy(() => import('./pages/Settings').then((m) => ({ default: m.Settings })))
 const Server = lazy(() => import('./pages/Server').then((m) => ({ default: m.Server })))
+const ClientSites = lazy(() => import('./pages/ClientSites').then((m) => ({ default: m.ClientSites })))
+const Subscriptions = lazy(() => import('./pages/Subscriptions').then((m) => ({ default: m.Subscriptions })))
 
 const nav: NavItem[] = [
   { to: '/', label: 'Overview', icon: 'gauge-high', end: true },
@@ -38,6 +40,8 @@ const nav: NavItem[] = [
   { to: '/coupons', label: 'Coupons', icon: 'ticket' },
   { to: '/promotions', label: 'Promotions', icon: 'bullhorn' },
   { to: '/payouts', label: 'Payouts', icon: 'indian-rupee-sign' },
+  { to: '/client-sites', label: 'Client websites', icon: 'globe' },
+  { to: '/subscriptions', label: 'Subscriptions', icon: 'wallet' },
   { to: '/messages', label: 'Messages', icon: 'envelope' },
   { to: '/website', label: 'Website content', icon: 'pen-to-square' },
   { to: '/activity', label: 'Activity log', icon: 'clock-rotate-left' },
@@ -83,6 +87,8 @@ export default function App() {
                   <Route path="campaigns" element={<Suspense fallback={<BrandLoader />}><Campaigns /></Suspense>} />
                   <Route path="settings" element={<Suspense fallback={<BrandLoader />}><Settings /></Suspense>} />
                   <Route path="server" element={<Suspense fallback={<BrandLoader />}><Server /></Suspense>} />
+                  <Route path="client-sites" element={<Suspense fallback={<BrandLoader />}><ClientSites /></Suspense>} />
+                  <Route path="subscriptions" element={<Suspense fallback={<BrandLoader />}><Subscriptions /></Suspense>} />
                   <Route path="*" element={<Overview />} />
                 </Routes>
               </AppShell>

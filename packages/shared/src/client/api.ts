@@ -15,7 +15,7 @@ import type { Campaign, CampaignContent } from '../campaigns'
 import type { CacheReport, CronRun, ServerReport, ServerSettings, StorageUsage } from '../server'
 import type { ClientSite, ClientSiteView, DnsTarget } from '../clientSite'
 import type { ClientPageDesign } from '../clientPage'
-import type { ClientPlan, PlanId, Subscription } from '../subscription'
+import type { ClientPlan, PlanId, Subscription, SubscriptionSettings } from '../subscription'
 import type { CalendarFeed, PropertySync, SyncPlatform } from '../calendarSync'
 
 /** A plan as a host sees it: what it costs, and how much room is left over their dates. */
@@ -308,6 +308,7 @@ export const adminApi = {
   grantSubscription: (hostId: number, planId: PlanId, note = '') =>
     request<{ subscription: Subscription }>(`/admin/subscriptions/${hostId}/grant`, { method: 'POST', json: { planId, note } }),
   cancelSubscription: (hostId: number) => request<{ subscription: Subscription }>(`/admin/subscriptions/${hostId}/cancel`, { method: 'POST' }),
+  saveSubscriptionSettings: (value: SubscriptionSettings) => request<void>('/admin/settings/subscriptions', { method: 'PUT', json: value }),
 
   clientSites: () => request<{ sites: ClientSite[]; baseDomain: string }>('/admin/client-sites'),
   approveClientSite: (hostId: number) => request<{ site: ClientSite }>(`/admin/client-sites/${hostId}/approve`, { method: 'POST' }),

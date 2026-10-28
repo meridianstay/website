@@ -78,7 +78,7 @@ export function Settings() {
                 <label htmlFor="min-payout" className="block text-xs font-bold uppercase text-slate-500 mb-1">Smallest payout</label>
                 <div className="flex items-center">
                   <span className="px-3 py-2.5 bg-slate-100 border border-r-0 border-slate-200 rounded-l-xl text-sm text-slate-600">₹</span>
-                  <input id="min-payout" type="number" min={0} step={100} value={payouts.minimumPayout}
+                  <input id="min-payout" type="number" min={0} step="any" value={payouts.minimumPayout}
                     onChange={(e) => setPayouts({ ...payouts, minimumPayout: Number(e.target.value) })}
                     className="w-full bg-slate-50 border border-slate-200 rounded-r-xl p-2.5 text-sm font-semibold focus:outline-none focus:border-brand-500" />
                 </div>
@@ -94,6 +94,25 @@ export function Settings() {
               <p className="text-xs text-slate-500 mt-1">{PAYOUT_SCHEDULES.find((s) => s.value === payouts.schedule)?.explain}</p>
             </div>
           </SettingsForm>
+
+          <Panel title="Client websites &amp; plans">
+            <p className="text-sm text-slate-500">
+              Each client can have a website of their own, at their Meridian address or their own domain, carrying their logo beside yours. What they
+              write is checked by your team before it goes public, and what they pay for it is set on its own page.
+            </p>
+            <div className="flex flex-wrap gap-3 mt-4">
+              <Link to="/client-sites" className="inline-block bg-brand-600 hover:bg-brand-700 text-white text-xs font-bold py-2.5 px-5 rounded-xl">
+                <i className="fa-solid fa-globe mr-1.5" aria-hidden="true"></i>Client websites
+              </Link>
+              <Link to="/subscriptions" className="inline-block bg-slate-100 hover:bg-slate-200 text-slate-800 text-xs font-bold py-2.5 px-5 rounded-xl">
+                <i className="fa-solid fa-wallet mr-1.5" aria-hidden="true"></i>Plans &amp; subscriptions
+              </Link>
+            </div>
+            <p className="text-xs text-slate-500 mt-4">
+              The addresses themselves are set up in the hosting, once: see the wildcard domain guide in <span className="font-mono">docs/deployment.md</span>,
+              and <Link to="/server" className="font-semibold text-brand-700">Server → Environment</Link> for whether this deployment has what it needs.
+            </p>
+          </Panel>
 
           <Panel title="Promotions (host ads)">
             <p className="text-sm text-slate-500">
@@ -213,7 +232,7 @@ function PercentField({ id, label, detail, value, onChange }: { id: string; labe
     <div>
       <label htmlFor={id} className="block text-xs font-bold uppercase text-slate-500">{label}</label>
       <div className="flex items-center mt-1">
-        <input id={id} type="number" min={0} max={60} step={0.5} value={value} onChange={(e) => onChange(Number(e.target.value))}
+        <input id={id} type="number" min={0} max={60} step="any" value={value} onChange={(e) => onChange(Number(e.target.value))}
           className="w-24 bg-slate-50 border border-slate-200 rounded-l-xl p-2.5 text-sm font-semibold focus:outline-none focus:border-brand-500" />
         <span className="px-3 py-2.5 bg-slate-100 border border-l-0 border-slate-200 rounded-r-xl text-sm text-slate-600">%</span>
       </div>

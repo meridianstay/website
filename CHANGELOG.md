@@ -2,6 +2,21 @@
 
 Every change to Meridian Stay is recorded here, newest first. Each entry says what changed for the people using the platform, then the notable technical changes.
 
+## 0.38.0 — 2026-10-28
+
+### The control centre catches up with the client portal
+Clients could write a website and choose a plan, but there was nowhere in the control centre to approve either — the work was being done behind a door with no handle. Two new pages open it.
+
+- **Client websites** is the queue. It opens on what needs you: sites waiting to be checked, and domains waiting to be switched on. Each one shows the business name, their address, their own words, their contact details and which policies they have written, with a link to **read the page before approving it** — approving puts exactly that in front of guests, beside your logo.
+- **Approve**, or **send it back with a reason** the client sees. A site already live can be **taken down**. An edit made after approval is flagged, and the approved copy keeps serving until you approve the new one.
+- **Their own domain** is handled on the same card: what they asked for, a reminder to add it to Vercel and to Firebase's authorized domains, and then **Mark live** or **Not working** with a note back to the client. The client's address follows their domain the moment it goes live.
+- **Subscriptions** shows who is on what, how long they have left, what they have paid so far, and a year of income at today's prices. Your team can **record a year paid another way** — a bank transfer, or a deal agreed by hand — or end one now.
+- **The prices are yours.** Each plan's name, yearly price, one-line summary and list of what it includes are all editable, as is whether a plan is required at all. What a plan *unlocks* stays fixed to it, so a client who has paid keeps what they paid for. A price change only applies to the next year somebody pays for; nobody is re-charged.
+- **Settings** now points to both, and says where the addresses themselves are set up.
+
+### Fixes
+- **Several forms could not be saved at all, and said nothing about why.** A number box was told to count in hundreds, fifties or five hundreds, which browsers treat as a rule about the value and not just the arrows: a host's security deposit of ₹3,750, a coupon cap of ₹1,999, a promotion at ₹199 a day — each silently refused to save. The subscription prices were the worst case, because ₹999 and ₹4,999 are themselves off every round hundred, so the page could never have been saved as it stood. Prices and percentages now take any value; only whole-day fields still count in ones.
+
 ## 0.37.1 — 2026-10-28
 
 ### Setting up client websites
