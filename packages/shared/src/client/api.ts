@@ -212,6 +212,15 @@ export const hostApi = {
 
 // ─── Admin panel ──────────────────────────────────────────────────────────────
 
+/** One booking in full, with the people on both sides of it. */
+export interface AdminBookingDetail {
+  booking: AdminBooking
+  guest: { id: number; name: string; email: string | null; phone: string | null; createdAt: string } | null
+  host: { id: number; name: string; email: string | null; phone: string | null } | null
+  property: { id: number; slug: string; title: string; address: string; city: string; region: string } | null
+  timeline: { confirmedAt: string | null; cancelledAt: string | null; decidedAt: string | null; paymentId: string | null }
+}
+
 /** Everything the control centre shows about one person on their own page. */
 export interface AdminUserDetail {
   user: Me & { suspended: boolean }
@@ -332,6 +341,7 @@ export const adminApi = {
   saveSubscriptionSettings: (value: SubscriptionSettings) => request<void>('/admin/settings/subscriptions', { method: 'PUT', json: value }),
 
   user: (id: number) => request<AdminUserDetail>(`/admin/users/${id}`),
+  booking: (code: string) => request<AdminBookingDetail>(`/admin/bookings/${encodeURIComponent(code)}`),
 
   clientSites: () => request<{ sites: ClientSite[]; baseDomain: string }>('/admin/client-sites'),
   approveClientSite: (hostId: number) => request<{ site: ClientSite }>(`/admin/client-sites/${hostId}/approve`, { method: 'POST' }),

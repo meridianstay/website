@@ -147,4 +147,32 @@ export const adminService = {
     }
   },
 
+
+  /** One booking in full, with the people on both sides and what has been paid. */
+  async bookingDetail(code: string) {
+    // The stored document carries who and what it is for; the view of it carries the money.
+    const raw = await bookingsRepo.find(code.toUpperCase())
+    if (!raw) throw notFound('booking')
+    const booking = (await adminService.listBookings(code, null)).find((b) => b.code === raw.code)
+    if (!booking) throw notFound('booking')
+    const [property, guest, host] = await Promise.all([
+      propertiesRepo.get(raw.propertyId),
+      usersRepo.findById(raw.guestId),
+      usersRepo.findById(raw.hostId),
+    ])
+    return {
+      booking,
+      guest: guest && { id: guest.id, name: guest.name, email: guest.email, phone: guest.phone, createdAt: guest.createdAt },
+      host: host && { id: host.id, name: host.name, email: host.email, phone: host.phone },
+      property: property && { id: property.id, slug: property.slug, title: property.title, address: property.address, city: property.city, region: property.region },
+      // The moments this booking passed through, which the booking view itself doesn't carry.
+      timeline: {
+        confirmedAt: raw.confirmedAt,
+        cancelledAt: raw.cancelledAt,
+        decidedAt: raw.decidedAt,
+        paymentId: raw.razorpayPaymentId ?? null,
+      },
+    }
+  },
+
 }

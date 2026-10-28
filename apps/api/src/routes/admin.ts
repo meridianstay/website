@@ -59,6 +59,7 @@ adminRoutes.get('/admin/bookings', async (c) => {
   await bookingService.sweepSoon()
   return c.json({ bookings: await adminService.listBookings(q(c.req.query('q')), q(c.req.query('status'))) })
 })
+adminRoutes.get('/admin/bookings/:code', async (c) => c.json(await adminService.bookingDetail(c.req.param('code'))))
 adminRoutes.post('/admin/bookings/:code/cancel', async (c) => (await bookingService.cancelByAdmin(admin(c), c.req.param('code')), done()))
 adminRoutes.post('/admin/bookings/:code/refund', async (c) => (await bookingService.retryRefund(admin(c), c.req.param('code')), done()))
 

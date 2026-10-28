@@ -2,6 +2,13 @@
 
 Every change to Meridian Stay is recorded here, newest first. Each entry says what changed for the people using the platform, then the notable technical changes.
 
+## 0.43.1 — 2026-10-28
+
+### A page for each booking
+- The bookings list showed a row and nothing more. **A booking code now opens that booking in full**: what was booked and where, the money broken down from what the guest paid through the commission to the host's payout, what the payment is doing, and when it was booked, confirmed or cancelled.
+- The guest and the host each get a panel with their contact details and a link to their own page, so a booking is one click from either side of it.
+- **Retry a failed refund, or cancel and refund**, from the page itself.
+
 ## 0.43.0 — 2026-10-28
 
 ### A menu that slides in on a phone or tablet

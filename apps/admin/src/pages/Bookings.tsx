@@ -1,4 +1,5 @@
 import { useCallback, useEffect, useState } from 'react'
+import { Link } from 'react-router'
 import { ErrorNote, PageHeader, Panel, Spinner, StatusBadge } from '@meridian/ui'
 import { bookingWhen, formatPrice } from '@meridian/shared'
 import { adminApi, appLink, type AdminBooking } from '@meridian/shared/client'
@@ -55,7 +56,9 @@ export function Bookings() {
               <tbody className="divide-y divide-slate-100">
                 {bookings.map((b) => (
                   <tr key={b.code}>
-                    <td className="p-3 font-mono text-slate-500">{b.code}</td>
+                    <td className="p-3 font-mono">
+                      <Link to={`/bookings/${b.code}`} className="text-brand-700 font-semibold hover:underline">{b.code}</Link>
+                    </td>
                     <td className="p-3"><span className="font-semibold text-slate-900">{b.guestName}</span><br /><span className="text-slate-400">{b.guestEmail} · {b.contactPhone}</span></td>
                     <td className="p-3">
                       <a href={appLink('website', `/stays/${b.property.slug}`)} target="_blank" rel="noreferrer" className="hover:underline">{b.property.title}</a>
