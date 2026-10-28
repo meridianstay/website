@@ -53,3 +53,14 @@ export function themeVariables(theme: ThemeSettings): Record<string, string> {
   }
   return vars
 }
+
+/**
+ * The full `--brand-*` scale built from one colour, for a client's own page. Returns nothing for a
+ * colour we don't recognise, so a bad value leaves the page on Meridian's own green rather than
+ * half-painted.
+ */
+export function brandVariables(hex: string): Record<string, string> {
+  if (!isHexColor(hex)) return {}
+  const base = hexToRgb(hex)
+  return Object.fromEntries(STEPS.map(([step, mix]) => [`--brand-${step}`, shade(base, mix).join(' ')]))
+}

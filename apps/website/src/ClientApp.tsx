@@ -1,7 +1,7 @@
 import { lazy, Suspense, useEffect } from 'react'
 import { Route, Routes, useLocation } from 'react-router'
 import { BrandLoader, RequireAuth } from '@meridian/ui'
-import type { ClientSiteView } from '@meridian/shared'
+import { brandVariables, withPageDefaults, type ClientSiteView } from '@meridian/shared'
 import { ClientHeader } from './components/client/ClientHeader'
 import { ClientFooter } from './components/client/ClientFooter'
 import { ClientLanding } from './pages/ClientLanding'
@@ -23,8 +23,12 @@ export function ClientApp({ site }: { site: ClientSiteView }) {
     if (!window.location.hash) window.scrollTo(0, 0)
   }, [pathname])
 
+  // The client's own colour covers the whole page, so the header's button matches the page's.
+  const accent = withPageDefaults(site.design).accent
+  const palette = accent ? (brandVariables(accent) as React.CSSProperties) : undefined
+
   return (
-    <div className="bg-slate-50 text-slate-800 antialiased min-h-screen flex flex-col selection:bg-brand-500 selection:text-white">
+    <div style={palette} className="bg-slate-50 text-slate-800 antialiased min-h-screen flex flex-col selection:bg-brand-500 selection:text-white">
       <ClientHeader site={site} />
       <main className="flex-grow">
         <Routes>

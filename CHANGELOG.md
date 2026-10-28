@@ -2,6 +2,22 @@
 
 Every change to Meridian Stay is recorded here, newest first. Each entry says what changed for the people using the platform, then the notable technical changes.
 
+## 0.37.0 — 2026-10-28
+
+### Clients can arrange their own page
+- **Host portal → Design my page**, part of the Everything plan. The client drags the sections of their landing page into the order they want, switches off the ones they don't, and writes their own heading for any of them.
+- Eleven sections to arrange: the photos, about the stay, the booking box, what's here, house rules, guest reviews, the map, their other stays, about the business, terms & policies and the contact panel. Two more they can add as many of as they like — **their own words**, and a **banner** with a photo and a button for an offer.
+- **Dragging isn't the only way.** Every section also has up and down buttons, so the page can be arranged from a keyboard or on a phone, where dragging is awkward.
+- **Where the booking box sits** is theirs to choose: alongside the page, following the guest down as they read, or in the flow wherever they drag it.
+- **Their own colour** across the whole page — buttons, highlights and badges all follow it — and a photo or a plain band behind their name at the top.
+- An arrangement goes to your team to check like the rest of their website, and **the approved version keeps being served** until the new one is approved.
+- **Put it back the way it was** restores the standard order in one press, for a client who has arranged themselves into a corner.
+- A client who drops to a smaller plan **keeps their website**; it simply goes back to the standard arrangement rather than disappearing.
+
+### Fixes
+- The policies card on a client's website was showing a blank square where its icon should be: the icon wasn't in the cut-down font the site ships. Now it draws properly.
+- A section the renderer knew how to draw — guest reviews — was in no default page, so no client could reach it. It is now part of the standard arrangement.
+
 ## 0.36.0 — 2026-10-28
 
 ### The same night can't be sold twice

@@ -30,9 +30,9 @@ export function AssociationLockup({ site, stacked = false }: { site: ClientSiteV
         </span>
       </span>
       <span className={`flex items-center gap-1.5 shrink-0 ${stacked ? '' : 'border-l border-slate-200 pl-3 sm:pl-4'}`}>
-        <span className="text-[9px] uppercase tracking-wider text-slate-400 font-semibold whitespace-nowrap">in association with</span>
+        <span className="hidden sm:inline text-[9px] uppercase tracking-wider text-slate-400 font-semibold whitespace-nowrap">in association with</span>
         <LogoMark size="sm" />
-        <span className="hidden sm:inline text-xs font-bold text-slate-500 whitespace-nowrap">{brand.name}{brand.accent ? ` ${brand.accent}` : ''}</span>
+        <span className="hidden xl:inline text-xs font-bold text-slate-500 whitespace-nowrap">{brand.name}{brand.accent ? ` ${brand.accent}` : ''}</span>
       </span>
     </span>
   )
@@ -49,10 +49,11 @@ export function ClientHeader({ site }: { site: ClientSiteView }) {
   return (
     <header className="sticky top-0 z-50 bg-white/95 backdrop-blur-md border-b border-slate-200">
       <div className="max-w-[1180px] mx-auto px-4 sm:px-5 h-20 flex items-center justify-between gap-3 min-w-0">
-        <Link to="/" className="min-w-0" aria-label={`${site.businessName} home`}>
+        {/* The client's name is the most important thing here, so it gets the room first. */}
+        <Link to="/" className="min-w-0 flex-1" aria-label={`${site.businessName} home`}>
           <AssociationLockup site={site} />
         </Link>
-        <nav className="hidden lg:flex items-center gap-6 shrink-0" aria-label="Sections">
+        <nav className="hidden xl:flex items-center gap-6 shrink-0" aria-label="Sections">
           {sections.map(([href, label]) => (
             <a key={href} href={href} className="text-[13px] font-semibold text-slate-600 hover:text-brand-600 transition">{label}</a>
           ))}

@@ -7,6 +7,8 @@
 // and email. Bookings still run through Meridian, which is what keeps dates, payments and payouts in
 // one place.
 
+import { defaultPageDesign, type ClientPageDesign } from './clientPage'
+
 export type ClientSiteStatus = 'Draft' | 'Pending' | 'Approved' | 'Rejected'
 
 /** Where a custom domain has got to. Until it is `live`, the subdomain is what works. */
@@ -42,6 +44,8 @@ export interface ClientSiteContent {
   policies: ClientPolicies
   /** The listing shown at the top of the landing page. Null means the newest approved one. */
   featuredPropertyId: number | null
+  /** How the page is arranged. Only clients on the plan that includes the editor may change it. */
+  design: ClientPageDesign
 }
 
 export interface ClientSite {
@@ -145,6 +149,7 @@ export const blankContent = (): ClientSiteContent => ({
   contact: { phone: '', email: '', address: '', whatsapp: '' },
   policies: { terms: '', payment: '', cancellation: '' },
   featuredPropertyId: null,
+  design: defaultPageDesign(),
 })
 
 export const blankClientSite = (hostId: number): Omit<ClientSite, 'createdAt' | 'updatedAt'> => ({
@@ -172,6 +177,8 @@ export const starterPolicies = (businessName: string): ClientPolicies => ({
  * page names the business and gives its phone and email — it is a shopfront, not a listing.
  */
 export interface ClientSiteView extends ClientSiteContent {
+  /** How this page is arranged. The standard order unless the client pays for the editor. */
+  design: ClientPageDesign
   /** The address this site answers on, for links and sharing. */
   address: string
   /** Every approved stay this client runs, the featured one first. */

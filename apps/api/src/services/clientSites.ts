@@ -1,7 +1,8 @@
 import {
-  CLIENT_SITE_LIMITS, DEFAULT_SITE_DOMAIN, RESERVED_SLUGS, blankClientSite, blankContent, cleanDomain,
-  looksLikeDomain, siteAddress, siteSlug, starterPolicies,
-  type ClientSite, type ClientSiteContent, type ClientSiteView, type ClientStay, type Me,
+  CLIENT_SECTIONS, CLIENT_SITE_LIMITS, DEFAULT_SITE_DOMAIN, RESERVED_SLUGS, blankClientSite, blankContent,
+  cleanDomain, defaultPageDesign, looksLikeDomain, newSection, siteAddress, siteSlug, starterPolicies, withPageDefaults,
+  type ClientPageDesign, type ClientSection, type ClientSectionType, type ClientSite, type ClientSiteContent,
+  type ClientSiteView, type ClientStay, type Me,
 } from '@meridian/shared'
 import { auditLogRepo, clientSitesRepo, propertiesRepo } from '../repositories'
 import { subscriptionService } from './subscriptions'
@@ -13,6 +14,50 @@ import { collect, isImageUrl, str } from '../http/validate'
 // the change waits for its own approval while the last approved copy keeps being served.
 
 const baseDomain = () => process.env.CLIENT_SITE_DOMAIN?.trim() || DEFAULT_SITE_DOMAIN
+
+const SECTION_TYPES = new Set(CLIENT_SECTIONS.map((s) => s.value))
+const MAX_SECTIONS = 30
+
+/**
+ * Reads an arranged page back. Anything we don't recognise is dropped rather than stored, so a page
+ * is always something the renderer can actually draw.
+ */
+function parseDesign(raw: unknown, existing: ClientPageDesign): ClientPageDesign {
+  if (!raw || typeof raw !== 'object') return existing
+  const body = raw as Record<string, unknown>
+  const sections = Array.isArray(body.sections) ? body.sections : null
+  if (!sections) return withPageDefaults({ ...existing, ...body } as ClientPageDesign)
+
+  const seen = new Set<string>()
+  const cleaned: ClientSection[] = []
+  for (const item of sections.slice(0, MAX_SECTIONS)) {
+    const s = (item ?? {}) as Record<string, unknown>
+    const type = str(s.type) as ClientSectionType
+    if (!SECTION_TYPES.has(type)) continue
+    const kind = CLIENT_SECTIONS.find((k) => k.value === type)!
+    // Only the two free-form kinds may appear more than once.
+    if (!kind.repeatable && seen.has(type)) continue
+    seen.add(type)
+    const id = str(s.id).slice(0, 40) || newSection(type).id
+    cleaned.push({
+      ...newSection(type, id),
+      enabled: s.enabled !== false,
+      title: str(s.title).slice(0, 120),
+      subtitle: str(s.subtitle).slice(0, 200),
+      body: str(s.body).slice(0, 2000),
+      image: isImageUrl(str(s.image)) ? str(s.image) : '',
+      buttonLabel: str(s.buttonLabel).slice(0, 40),
+      buttonUrl: str(s.buttonUrl).slice(0, 300),
+    })
+  }
+  if (!cleaned.length) return existing
+  return withPageDefaults({
+    layout: body.layout === 'stacked' ? 'stacked' : 'sidebar',
+    accent: /^#[0-9a-f]{6}$/i.test(str(body.accent)) ? str(body.accent) : '',
+    heroStyle: body.heroStyle === 'plain' ? 'plain' : 'photo',
+    sections: cleaned,
+  })
+}
 
 /** Reads what the client sent into content we are willing to store. */
 function parse(body: Record<string, unknown>, existing: ClientSiteContent): ClientSiteContent {
@@ -60,6 +105,8 @@ function parse(body: Record<string, unknown>, existing: ClientSiteContent): Clie
     },
     policies,
     featuredPropertyId: featured === null || featured === undefined || featured === '' ? existing.featuredPropertyId : Number(featured) || null,
+    // The arrangement is only changed through its own call, which checks the plan first.
+    design: withPageDefaults(existing.design),
   }
 }
 
@@ -87,6 +134,8 @@ const viewOf = async (site: ClientSite): Promise<ClientSiteView> => {
     address: siteAddress(content.slug, site.domain, baseDomain()),
     // On the single-stay plan the website shows one stay; the others need the plan that covers them.
     stays: allowed.maxStaysOnSite > 0 ? stays.slice(0, allowed.maxStaysOnSite) : stays,
+    // A client who has stopped paying for the editor keeps their site, in the standard arrangement.
+    design: allowed.pageEditor ? withPageDefaults(content.design) : defaultPageDesign(),
   }
 }
 
@@ -123,6 +172,25 @@ export const clientSiteService = {
     // A change after approval waits its turn; the approved copy is what visitors keep seeing.
     const status = current.status === 'Approved' ? 'Pending' : current.status
     return clientSitesRepo.save(host.id, { ...current, content, status, rejectionReason: '' })
+  },
+
+  /**
+   * Saves how the client has arranged their page. Part of the plan that includes the editor, so the
+   * check happens before anything is written.
+   */
+  async saveDesign(host: Me, body: Record<string, unknown>) {
+    await subscriptionService.require(host.id, 'pageEditor')
+    const current = await this.mine(host)
+    const design = parseDesign(body.design ?? body, withPageDefaults(current.content.design))
+    const status = current.status === 'Approved' ? 'Pending' : current.status
+    return clientSitesRepo.save(host.id, { ...current, content: { ...current.content, design }, status, rejectionReason: '' })
+  },
+
+  /** Puts the page back the way it came, for a client who has rearranged themselves into a corner. */
+  async resetDesign(host: Me) {
+    await subscriptionService.require(host.id, 'pageEditor')
+    const current = await this.mine(host)
+    return clientSitesRepo.save(host.id, { ...current, content: { ...current.content, design: defaultPageDesign() } })
   },
 
   /** Sends it to your team to look at. */

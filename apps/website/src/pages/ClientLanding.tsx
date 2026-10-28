@@ -1,7 +1,8 @@
 import { lazy, Suspense, useCallback, useEffect, useState } from 'react'
 import { Link, useParams, useSearchParams } from 'react-router'
 import {
-  formatPrice, formatTime, HOUSE_RULES, type ClientSiteView, type ClientStay, type PropertyDetail,
+  formatPrice, formatTime, HOUSE_RULES, withPageDefaults,
+  type ClientSection, type ClientSiteView, type ClientStay, type PropertyDetail,
 } from '@meridian/shared'
 import { ApiError, api } from '@meridian/shared/client'
 import { ErrorNote, Spinner, useT } from '@meridian/ui'
@@ -38,11 +39,61 @@ export function ClientLanding({ site }: { site: ClientSiteView }) {
   useEffect(load, [load])
   useDocumentTitle(featured ? `${featured.title} · ${site.businessName}` : site.businessName)
 
+  const design = withPageDefaults(site.design)
+  const live = design.sections.filter((s) => s.enabled)
   const others = site.stays.filter((s) => s.id !== featured?.id)
+
+  const draw = (section: ClientSection) => {
+    const key = section.id
+    switch (section.type) {
+      case 'gallery':
+        return property && <section key={key} id="stay" className="scroll-mt-24"><PhotoMosaic photos={[property.image, ...property.gallery]} onOpen={setPhotoIndex} /></section>
+      case 'details':
+        return property && <StayDetails key={key} property={property} section={section} />
+      case 'amenities':
+        return property && <Amenities key={key} property={property} section={section} />
+      case 'rules':
+        return property && <Rules key={key} property={property} section={section} />
+      case 'map':
+        return property && property.lat !== 0 && (
+          <section key={key} className="scroll-mt-24">
+            <h2 className="text-xl font-extrabold text-slate-900 mb-4">{section.title || "Where you'll be"}</h2>
+            <Suspense fallback={<div className="h-80 rounded-3xl bg-slate-200 animate-pulse" />}>
+              <PropertyMap pins={[property]} plain zoom={10} />
+            </Suspense>
+          </section>
+        )
+      case 'reviews':
+        return property && property.reviews.length > 0 && <Reviews key={key} property={property} section={section} />
+      case 'booking':
+        return property && design.layout === 'stacked' && (
+          <section key={key} id="book" className="scroll-mt-24 max-w-md">
+            <BookingBox property={property} initial={readSearch(params)} />
+          </section>
+        )
+      case 'branches':
+        return others.length > 0 && <Branches key={key} stays={others} businessName={site.businessName} section={section} />
+      case 'about':
+        return <About key={key} site={site} section={section} />
+      case 'policies':
+        return <Policies key={key} site={site} section={section} />
+      case 'contact':
+        return <Contact key={key} site={site} section={section} />
+      case 'text':
+        return <FreeText key={key} section={section} />
+      case 'banner':
+        return <Banner key={key} section={section} />
+      default:
+        return null
+    }
+  }
+
+  const booking = live.find((s) => s.type === 'booking')
+  const body = live.filter((s) => !(design.layout === 'sidebar' && s.type === 'booking'))
 
   return (
     <div className="bg-slate-50">
-      <Hero site={site} stay={featured} />
+      <Hero site={site} stay={featured} design={design} />
 
       <div className="max-w-[1180px] mx-auto px-5 py-10">
         {!featured ? (
@@ -53,41 +104,21 @@ export function ClientLanding({ site }: { site: ClientSiteView }) {
           <ErrorNote message={error.message} onRetry={load} />
         ) : !property ? (
           <Spinner label={t('stay.loading')} />
-        ) : (
-          <>
-            <section id="stay" className="scroll-mt-24">
-              <PhotoMosaic photos={[property.image, ...property.gallery]} onOpen={setPhotoIndex} />
-            </section>
-
-            <div className="grid grid-cols-1 lg:grid-cols-3 gap-10">
-              <div className="lg:col-span-2 space-y-10">
-                <StayDetails property={property} />
+        ) : design.layout === 'sidebar' && booking ? (
+          <div className="grid grid-cols-1 lg:grid-cols-3 gap-10">
+            <div className="lg:col-span-2 space-y-12">{body.map(draw)}</div>
+            <aside id="book" className="lg:col-span-1 scroll-mt-24 lg:row-start-1 lg:col-start-3">
+              <div className="lg:sticky lg:top-28">
+                <BookingBox property={property} initial={readSearch(params)} />
+                <p className="text-[11px] text-slate-400 text-center mt-3">
+                  Your booking and payment are handled securely by Meridian Stay.
+                </p>
               </div>
-              <aside id="book" className="lg:col-span-1 scroll-mt-24">
-                <div className="lg:sticky lg:top-28">
-                  <BookingBox property={property} initial={readSearch(params)} />
-                  <p className="text-[11px] text-slate-400 text-center mt-3">
-                    Your booking and payment are handled securely by Meridian Stay.
-                  </p>
-                </div>
-              </aside>
-            </div>
-
-            {property.lat !== 0 && (
-              <section className="mt-12">
-                <h2 className="text-xl font-extrabold text-slate-900 mb-4">Where you'll be</h2>
-                <Suspense fallback={<div className="h-80 rounded-3xl bg-slate-200 animate-pulse" />}>
-                  <PropertyMap pins={[property]} plain zoom={10} />
-                </Suspense>
-              </section>
-            )}
-          </>
+            </aside>
+          </div>
+        ) : (
+          <div className="space-y-12">{body.map(draw)}</div>
         )}
-
-        {others.length > 0 && <Branches stays={others} businessName={site.businessName} />}
-        <About site={site} />
-        <Policies site={site} />
-        <Contact site={site} />
       </div>
 
       {photoIndex !== null && property && (
@@ -99,10 +130,13 @@ export function ClientLanding({ site }: { site: ClientSiteView }) {
   )
 }
 
-function Hero({ site, stay }: { site: ClientSiteView; stay: ClientStay | undefined }) {
+/** A client's own heading for a section, or the one the page would have used. */
+const heading = (section: ClientSection, fallback: string) => section.title || fallback
+
+function Hero({ site, stay, design }: { site: ClientSiteView; stay: ClientStay | undefined; design: { heroStyle: 'photo' | 'plain' } }) {
   return (
     <section className="relative bg-slate-900 text-white">
-      {stay && <img src={stay.image} alt="" className="absolute inset-0 w-full h-full object-cover opacity-45" />}
+      {stay && design.heroStyle === 'photo' && <img src={stay.image} alt="" className="absolute inset-0 w-full h-full object-cover opacity-45" />}
       <div className="relative max-w-[1180px] mx-auto px-5 py-16 sm:py-24">
         <p className="text-[11px] font-bold uppercase tracking-widest text-brand-yellow-400 mb-3">
           {stay ? `${stay.type} · ${stay.city}, ${stay.region}` : site.tagline}
@@ -124,52 +158,115 @@ function Hero({ site, stay }: { site: ClientSiteView; stay: ClientStay | undefin
   )
 }
 
-function StayDetails({ property }: { property: PropertyDetail }) {
-  const t = useT()
-  const rules = HOUSE_RULES.filter((r) => property.houseRules[r.key as keyof typeof property.houseRules])
+function StayDetails({ property, section }: { property: PropertyDetail; section: ClientSection }) {
   return (
-    <>
-      <section>
-        <h2 className="text-xl font-extrabold text-slate-900 mb-3">About this stay</h2>
-        <p className="text-slate-600 leading-relaxed whitespace-pre-line">{property.description}</p>
-        <dl className="grid grid-cols-2 sm:grid-cols-4 gap-4 mt-6 text-sm">
-          <Fact label="Sleeps" value={`${property.maxGuests} guests`} />
-          <Fact label="Bedrooms" value={String(property.beds)} />
-          <Fact label="Bathrooms" value={String(property.baths)} />
-          <Fact label="Check-in" value={formatTime(property.checkInTime)} />
-        </dl>
-      </section>
+    <section className="scroll-mt-24">
+      <h2 className="text-xl font-extrabold text-slate-900 mb-3">{heading(section, 'About this stay')}</h2>
+      {section.subtitle && <p className="text-slate-500 -mt-1 mb-3">{section.subtitle}</p>}
+      <p className="text-slate-600 leading-relaxed whitespace-pre-line">{property.description}</p>
+      <dl className="grid grid-cols-2 sm:grid-cols-4 gap-4 mt-6 text-sm">
+        <Fact label="Sleeps" value={`${property.maxGuests} guests`} />
+        <Fact label="Bedrooms" value={String(property.beds)} />
+        <Fact label="Bathrooms" value={String(property.baths)} />
+        <Fact label="Check-in" value={formatTime(property.checkInTime)} />
+      </dl>
+    </section>
+  )
+}
 
-      {property.amenities.length > 0 && (
-        <section>
-          <h2 className="text-xl font-extrabold text-slate-900 mb-4">{t('stay.amenities')}</h2>
-          <ul className="grid grid-cols-2 sm:grid-cols-3 gap-3 text-sm text-slate-700">
-            {property.amenities.map((a) => (
-              <li key={a.name} className="flex items-center gap-2.5">
-                <i className={`fa-solid fa-${a.icon} text-brand-600 w-4`} aria-hidden="true"></i>{a.name}
-              </li>
-            ))}
-          </ul>
-        </section>
-      )}
+function Amenities({ property, section }: { property: PropertyDetail; section: ClientSection }) {
+  const t = useT()
+  if (!property.amenities.length) return null
+  return (
+    <section className="scroll-mt-24">
+      <h2 className="text-xl font-extrabold text-slate-900 mb-4">{heading(section, t('stay.amenities'))}</h2>
+      <ul className="grid grid-cols-2 sm:grid-cols-3 gap-3 text-sm text-slate-700">
+        {property.amenities.map((a) => (
+          <li key={a.name} className="flex items-center gap-2.5">
+            <i className={`fa-solid fa-${a.icon} text-brand-600 w-4`} aria-hidden="true"></i>{a.name}
+          </li>
+        ))}
+      </ul>
+    </section>
+  )
+}
 
-      {rules.length > 0 && (
-        <section>
-          <h2 className="text-xl font-extrabold text-slate-900 mb-4">House rules</h2>
-          <ul className="grid grid-cols-1 sm:grid-cols-2 gap-3 text-sm text-slate-700">
-            {rules.map((r) => (
-              <li key={r.key} className="flex items-center gap-2.5">
-                <i className={`fa-solid fa-${r.icon} text-slate-400 w-4`} aria-hidden="true"></i>{r.label}
-              </li>
-            ))}
-          </ul>
-          <p className="text-sm text-slate-500 mt-4">
-            Check-in from {formatTime(property.checkInTime)} · Check-out by {formatTime(property.checkOutTime)}
-            {property.securityDeposit > 0 && <> · Security deposit {formatPrice(property.securityDeposit)}</>}
-          </p>
-        </section>
-      )}
-    </>
+function Rules({ property, section }: { property: PropertyDetail; section: ClientSection }) {
+  const rules = HOUSE_RULES.filter((r) => property.houseRules[r.key as keyof typeof property.houseRules])
+  if (!rules.length) return null
+  return (
+    <section className="scroll-mt-24">
+      <h2 className="text-xl font-extrabold text-slate-900 mb-4">{heading(section, 'House rules')}</h2>
+      <ul className="grid grid-cols-1 sm:grid-cols-2 gap-3 text-sm text-slate-700">
+        {rules.map((r) => (
+          <li key={r.key} className="flex items-center gap-2.5">
+            <i className={`fa-solid fa-${r.icon} text-slate-400 w-4`} aria-hidden="true"></i>{r.label}
+          </li>
+        ))}
+      </ul>
+      <p className="text-sm text-slate-500 mt-4">
+        Check-in from {formatTime(property.checkInTime)} · Check-out by {formatTime(property.checkOutTime)}
+        {property.securityDeposit > 0 && <> · Security deposit {formatPrice(property.securityDeposit)}</>}
+      </p>
+    </section>
+  )
+}
+
+function Reviews({ property, section }: { property: PropertyDetail; section: ClientSection }) {
+  return (
+    <section className="scroll-mt-24">
+      <h2 className="text-xl font-extrabold text-slate-900 mb-4">
+        {heading(section, 'What guests said')}
+        {property.reviewCount > 0 && (
+          <span className="ml-3 text-sm font-bold text-slate-500">
+            <i className="fa-solid fa-star text-brand-yellow-500 mr-1" aria-hidden="true"></i>{property.rating} · {property.reviewCount}
+          </span>
+        )}
+      </h2>
+      <div className="grid grid-cols-1 sm:grid-cols-2 gap-5">
+        {property.reviews.slice(0, 4).map((r) => (
+          <article key={r.id} className="bg-white rounded-2xl p-5 border border-slate-100">
+            <p className="text-sm font-bold text-slate-900">
+              {r.authorName}
+              <span className="ml-2 font-semibold text-slate-500"><i className="fa-solid fa-star text-brand-yellow-500 mr-1" aria-hidden="true"></i>{r.rating}</span>
+            </p>
+            <p className="text-sm text-slate-600 mt-2 leading-relaxed">{r.comment}</p>
+          </article>
+        ))}
+      </div>
+    </section>
+  )
+}
+
+/** A heading and a paragraph the client wrote themselves, anywhere they want it. */
+function FreeText({ section }: { section: ClientSection }) {
+  if (!section.title && !section.body) return null
+  return (
+    <section className="scroll-mt-24 bg-white rounded-3xl p-8 sm:p-10 border border-slate-100">
+      {section.title && <h2 className="text-2xl font-extrabold text-slate-900">{section.title}</h2>}
+      {section.subtitle && <p className="text-slate-500 mt-1">{section.subtitle}</p>}
+      {section.body && <p className="text-slate-600 leading-relaxed whitespace-pre-line mt-4 max-w-3xl">{section.body}</p>}
+    </section>
+  )
+}
+
+/** A photo with a headline over it, for an offer or an announcement. */
+function Banner({ section }: { section: ClientSection }) {
+  if (!section.title && !section.body) return null
+  const internal = section.buttonUrl.startsWith('/') || section.buttonUrl.startsWith('#')
+  return (
+    <section className="relative overflow-hidden rounded-3xl bg-slate-900 text-white scroll-mt-24">
+      {section.image && <img src={section.image} alt="" className="absolute inset-0 w-full h-full object-cover opacity-40" />}
+      <div className="relative p-8 sm:p-12">
+        <h2 className="text-2xl sm:text-3xl font-extrabold tracking-tight text-balance max-w-2xl">{section.title}</h2>
+        {section.body && <p className="text-white/80 mt-3 max-w-2xl whitespace-pre-line">{section.body}</p>}
+        {section.buttonLabel && section.buttonUrl && (
+          internal
+            ? <a href={section.buttonUrl} className="inline-block mt-6 bg-brand-600 hover:bg-brand-700 text-white font-bold py-3 px-7 rounded-full text-sm">{section.buttonLabel}</a>
+            : <a href={section.buttonUrl} target="_blank" rel="noopener noreferrer" className="inline-block mt-6 bg-brand-600 hover:bg-brand-700 text-white font-bold py-3 px-7 rounded-full text-sm">{section.buttonLabel}</a>
+        )}
+      </div>
+    </section>
   )
 }
 
@@ -181,11 +278,11 @@ const Fact = ({ label, value }: { label: string; value: string }) => (
 )
 
 /** The client's other branches: same business, another town or another property in this one. */
-function Branches({ stays, businessName }: { stays: ClientStay[]; businessName: string }) {
+function Branches({ stays, businessName, section }: { stays: ClientStay[]; businessName: string; section: ClientSection }) {
   return (
-    <section id="branches" className="mt-16 scroll-mt-24">
-      <h2 className="text-2xl font-extrabold text-slate-900">More from {businessName}</h2>
-      <p className="text-slate-500 mt-1 mb-6">Our other stays, ready to book on this same website.</p>
+    <section id="branches" className="scroll-mt-24">
+      <h2 className="text-2xl font-extrabold text-slate-900">{heading(section, `More from ${businessName}`)}</h2>
+      <p className="text-slate-500 mt-1 mb-6">{section.subtitle || 'Our other stays, ready to book on this same website.'}</p>
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
         {stays.map((s) => (
           <Link key={s.id} to={`/stays/${s.slug}`} className="group bg-white rounded-2xl overflow-hidden border border-slate-200 hover:shadow-lg transition">
@@ -208,28 +305,28 @@ function Branches({ stays, businessName }: { stays: ClientStay[]; businessName: 
   )
 }
 
-function About({ site }: { site: ClientSiteView }) {
+function About({ site, section }: { site: ClientSiteView; section: ClientSection }) {
   if (!site.about) return null
   return (
-    <section id="about" className="mt-16 scroll-mt-24 bg-white rounded-3xl p-8 sm:p-10 border border-slate-100">
-      <h2 className="text-2xl font-extrabold text-slate-900">About {site.businessName}</h2>
+    <section id="about" className="scroll-mt-24 bg-white rounded-3xl p-8 sm:p-10 border border-slate-100">
+      <h2 className="text-2xl font-extrabold text-slate-900">{heading(section, `About ${site.businessName}`)}</h2>
       <p className="text-slate-600 leading-relaxed whitespace-pre-line mt-4 max-w-3xl">{site.about}</p>
     </section>
   )
 }
 
 const POLICIES: [key: keyof ClientSiteView['policies'], title: string, icon: string][] = [
-  ['terms', 'Property terms', 'file-lines'],
+  ['terms', 'Property terms', 'book-open'],
   ['payment', 'Payment policy', 'credit-card'],
   ['cancellation', 'Cancellation policy', 'rotate-left'],
 ]
 
-function Policies({ site }: { site: ClientSiteView }) {
+function Policies({ site, section }: { site: ClientSiteView; section: ClientSection }) {
   const shown = POLICIES.filter(([key]) => site.policies[key])
   if (!shown.length) return null
   return (
-    <section id="policies" className="mt-16 scroll-mt-24">
-      <h2 className="text-2xl font-extrabold text-slate-900 mb-6">Terms &amp; policies</h2>
+    <section id="policies" className="scroll-mt-24">
+      <h2 className="text-2xl font-extrabold text-slate-900 mb-6">{heading(section, 'Terms & policies')}</h2>
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
         {shown.map(([key, title, icon]) => (
           <article key={key} className="bg-white rounded-3xl p-7 border border-slate-100">
@@ -244,13 +341,13 @@ function Policies({ site }: { site: ClientSiteView }) {
   )
 }
 
-function Contact({ site }: { site: ClientSiteView }) {
+function Contact({ site, section }: { site: ClientSiteView; section: ClientSection }) {
   const { phone, email, whatsapp, address } = site.contact
   if (!phone && !email && !address) return null
   return (
-    <section id="contact" className="mt-16 scroll-mt-24 bg-slate-900 text-white rounded-3xl p-8 sm:p-10">
-      <h2 className="text-2xl font-extrabold">Talk to us</h2>
-      <p className="text-white/70 mt-2 max-w-2xl">Questions about the property, the area or a booking you already have? We're here.</p>
+    <section id="contact" className="scroll-mt-24 bg-slate-900 text-white rounded-3xl p-8 sm:p-10">
+      <h2 className="text-2xl font-extrabold">{heading(section, 'Talk to us')}</h2>
+      <p className="text-white/70 mt-2 max-w-2xl">{section.subtitle || "Questions about the property, the area or a booking you already have? We're here."}</p>
       <div className="grid grid-cols-1 sm:grid-cols-3 gap-6 mt-7 text-sm">
         {phone && (
           <a href={`tel:${phone}`} className="bg-white/10 hover:bg-white/15 rounded-2xl p-5 transition">

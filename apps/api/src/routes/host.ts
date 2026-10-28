@@ -110,6 +110,8 @@ hostRoutes.get('/host/website', async (c) => {
 })
 hostRoutes.put('/host/website', async (c) => c.json({ site: await clientSiteService.save(currentUser(c), await body(c)) }))
 hostRoutes.post('/host/website/submit', async (c) => c.json({ site: await clientSiteService.submit(currentUser(c)) }))
+hostRoutes.put('/host/website/design', async (c) => c.json({ site: await clientSiteService.saveDesign(currentUser(c), await body(c)) }))
+hostRoutes.post('/host/website/design/reset', async (c) => c.json({ site: await clientSiteService.resetDesign(currentUser(c)) }))
 hostRoutes.put('/host/website/domain', async (c) =>
   c.json({ site: await clientSiteService.setDomain(currentUser(c), str((await body(c)).domain)) }))
 

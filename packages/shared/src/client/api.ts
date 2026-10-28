@@ -14,6 +14,7 @@ import type { AdCampaign, AdPlacement, PromotionPlan, PromotionSettings } from '
 import type { Campaign, CampaignContent } from '../campaigns'
 import type { CacheReport, CronRun, ServerReport, ServerSettings, StorageUsage } from '../server'
 import type { ClientSite, ClientSiteView } from '../clientSite'
+import type { ClientPageDesign } from '../clientPage'
 import type { ClientPlan, PlanId, Subscription } from '../subscription'
 import type { CalendarFeed, PropertySync, SyncPlatform } from '../calendarSync'
 
@@ -192,6 +193,8 @@ export const hostApi = {
   website: () => request<{ site: ClientSite; baseDomain: string }>('/host/website'),
   saveWebsite: (value: Partial<ClientSite['content']>) => request<{ site: ClientSite }>('/host/website', { method: 'PUT', json: value }),
   submitWebsite: () => request<{ site: ClientSite }>('/host/website/submit', { method: 'POST' }),
+  saveWebsiteDesign: (design: ClientPageDesign) => request<{ site: ClientSite }>('/host/website/design', { method: 'PUT', json: { design } }),
+  resetWebsiteDesign: () => request<{ site: ClientSite }>('/host/website/design/reset', { method: 'POST' }),
   saveWebsiteDomain: (domain: string) => request<{ site: ClientSite }>('/host/website/domain', { method: 'PUT', json: { domain } }),
   createPromotion: (data: { propertyId: number; planId: string; startDate: string; days: number }) =>
     request<{ campaign: AdCampaign; payment: PaymentRequest | null }>('/host/promotions', { method: 'POST', json: data }),
