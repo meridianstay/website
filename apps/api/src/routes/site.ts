@@ -9,6 +9,7 @@ import { body } from '../http/auth'
 import { AppError } from '../http/errors'
 import { campaignService } from '../services/campaigns'
 import { clientSiteService } from '../services/clientSites'
+import { calendarSyncService } from '../services/calendarSync'
 import { pushService } from '../services/push'
 import { publicSettings, translateDeep } from '@meridian/shared'
 
@@ -32,6 +33,21 @@ siteRoutes.get('/home', async (c) => {
 siteRoutes.get('/about', async (c) => {
   const [page, stats, words] = await Promise.all([contentRepo.about(), statsRepo.forAbout(), contentRepo.translations(wanted(c))])
   return c.json({ page: translateDeep(page, words), stats })
+})
+
+/**
+ * A stay's dates, for the other platforms to read. The long token in the address is what makes it
+ * private; it holds dates and nothing else — no guest, no price, no booking code.
+ */
+siteRoutes.get('/ical/:token', async (c) => {
+  const token = c.req.param('token').replace(/\.ics$/i, '')
+  const body = await calendarSyncService.publish(token)
+  return c.body(body, 200, {
+    'Content-Type': 'text/calendar; charset=utf-8',
+    'Content-Disposition': 'attachment; filename="meridian-stay.ics"',
+    // Other platforms poll this; a few minutes of cache spares us their retries.
+    'Cache-Control': 'public, max-age=300',
+  })
 })
 
 /**

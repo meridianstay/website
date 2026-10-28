@@ -33,6 +33,8 @@ export const C = {
   clientSites: 'clientSites',
   /** What each client pays Meridian for, and until when. */
   subscriptions: 'subscriptions',
+  /** Calendars on other platforms that a stay's dates are kept in step with. */
+  calendarFeeds: 'calendarFeeds',
 } as const
 
 export const col = (name: string) => firestore.collection(name)

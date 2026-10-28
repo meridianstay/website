@@ -15,6 +15,7 @@ import type { Campaign, CampaignContent } from '../campaigns'
 import type { CacheReport, CronRun, ServerReport, ServerSettings, StorageUsage } from '../server'
 import type { ClientSite, ClientSiteView } from '../clientSite'
 import type { ClientPlan, PlanId, Subscription } from '../subscription'
+import type { CalendarFeed, PropertySync, SyncPlatform } from '../calendarSync'
 
 /** A plan as a host sees it: what it costs, and how much room is left over their dates. */
 export interface PlanOnOffer extends PromotionPlan {
@@ -181,6 +182,12 @@ export const hostApi = {
   }>('/host/subscription/checkout', { method: 'POST', json: { planId } }),
   confirmSubscription: (value: { orderId: string; paymentId: string; signature: string; planId: PlanId }) =>
     request<{ subscription: Subscription }>('/host/subscription/confirm', { method: 'POST', json: value }),
+
+  calendarSync: () => request<{ stays: PropertySync[] }>('/host/calendar-sync'),
+  addCalendar: (value: { propertyId: number; platform: SyncPlatform; url: string; name: string }) =>
+    request<{ feed: CalendarFeed }>('/host/calendar-sync', { method: 'POST', json: value }),
+  syncCalendar: (id: string) => request<{ feed: CalendarFeed }>(`/host/calendar-sync/${id}/sync`, { method: 'POST' }),
+  removeCalendar: (id: string) => request<void>(`/host/calendar-sync/${id}`, { method: 'DELETE' }),
 
   website: () => request<{ site: ClientSite; baseDomain: string }>('/host/website'),
   saveWebsite: (value: Partial<ClientSite['content']>) => request<{ site: ClientSite }>('/host/website', { method: 'PUT', json: value }),

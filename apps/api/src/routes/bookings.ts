@@ -64,6 +64,13 @@ paymentRoutes.get('/cron/expire', async (c) => {
   return c.json(result)
 })
 
+/** Reads every other platform's calendar. Worth running far more often than once a day. */
+paymentRoutes.get('/cron/calendars', async (c) => {
+  fromScheduler(c)
+  const { result } = await runJob('calendars', 'schedule')
+  return c.json(result)
+})
+
 /** Check-in reminders, review invitations, and starting or finishing scheduled offers. */
 paymentRoutes.get('/cron/daily', async (c) => {
   fromScheduler(c)

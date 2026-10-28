@@ -4,7 +4,11 @@ import { datesIn } from './properties'
 
 // Collection: availabilityBlocks/{id} — nights a host has closed. Each also claims its night documents.
 
-export interface BlockDoc { id: number; propertyId: number; checkIn: string; checkOut: string; note: string | null; createdAt: string }
+export interface BlockDoc {
+  id: number; propertyId: number; checkIn: string; checkOut: string; note: string | null; createdAt: string
+  /** The calendar feed these nights were read from, when they weren't closed by the host. */
+  feedId?: string | null
+}
 
 export class BlockConflictError extends Error {
   constructor(public reason: 'booked' | 'blocked') {
@@ -20,7 +24,7 @@ export const availabilityRepo = {
   },
 
   /** Claims the nights for a block; throws BlockConflictError if any is booked or already blocked. */
-  async addBlock(propertyId: number, checkIn: string, checkOut: string, note: string | null) {
+  async addBlock(propertyId: number, checkIn: string, checkOut: string, note: string | null, feedId: string | null = null) {
     await firestore.runTransaction(async (tx) => {
       const dates = datesIn(checkIn, checkOut)
       const nightRefs = dates.map((d) => nightsOf(propertyId).doc(d))
@@ -32,9 +36,14 @@ export const availabilityRepo = {
       if (taken.includes('booking')) throw new BlockConflictError('booked')
       if (taken.length) throw new BlockConflictError('blocked')
       const id = await nextId('blocks', tx)
-      tx.set(col(C.blocks).doc(String(id)), { id, propertyId, checkIn, checkOut, note, createdAt: nowISO() } satisfies BlockDoc)
+      tx.set(col(C.blocks).doc(String(id)), { id, propertyId, checkIn, checkOut, note, feedId, createdAt: nowISO() } satisfies BlockDoc)
       for (const n of nightRefs) tx.set(n, { kind: 'block', ref: String(id) })
     })
+  },
+
+  /** Every block a feed put there, so a fresh read can replace them. */
+  async blocksFromFeed(feedId: string): Promise<BlockDoc[]> {
+    return all<BlockDoc>(col(C.blocks).where('feedId', '==', feedId))
   },
 
   async removeBlock(blockId: number, propertyId: number) {

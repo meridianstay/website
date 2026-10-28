@@ -73,6 +73,10 @@ const JOBS: Omit<CronJobReport, 'lastRun'>[] = [
     explain: 'Check-in reminders, review invitations, and starting or finishing scheduled offers. Without this they are never sent.',
   },
   {
+    name: 'calendars', label: 'Other platforms\u2019 calendars', path: '/api/cron/calendars', schedule: '0 * * * *',
+    explain: 'Reads the calendars of Airbnb and anywhere else a stay is listed, so the same night is never sold twice. Also read when a guest opens a stay.',
+  },
+  {
     name: 'expire', label: 'Expire lapsed bookings', path: '/api/cron/expire', schedule: '0 3 * * *',
     explain: 'Releases dates held by an unpaid checkout or an unanswered request. Also runs opportunistically as people browse.',
   },

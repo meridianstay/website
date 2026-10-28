@@ -7,6 +7,7 @@ import { promotionsRepo } from '../repositories'
 import { reviewService } from '../services/reviews'
 import { PROPERTY_TYPES } from '../services/listings'
 import { clientSiteService } from '../services/clientSites'
+import { calendarSyncService } from '../services/calendarSync'
 import { body, currentUser, requireUser, type AppEnv } from '../http/auth'
 import { AppError, notFound } from '../http/errors'
 import { str } from '../http/validate'
@@ -69,6 +70,10 @@ propertyRoutes.get('/properties/:slug', async (c) => {
   // Hosts and admins can preview listings that aren't live yet.
   const canPreview = user && (user.role === 'admin' || user.id === p?.hostId)
   if (!p || (p.status !== 'Approved' && !canPreview)) throw notFound('stay')
+
+  // If this stay is also listed elsewhere, read those calendars before showing dates, so a guest is
+  // never offered a night Airbnb sold this morning.
+  await calendarSyncService.ensureFresh(p.id)
 
   const [host, amenities, reviews, bookedRanges, reviewableBookingCode, ratingBreakdown, similar, promotedIds, hasPaidStay] = await Promise.all([
     usersRepo.findById(p.hostId),

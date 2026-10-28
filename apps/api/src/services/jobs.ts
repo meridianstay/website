@@ -4,6 +4,7 @@ import { bookingService } from './bookings'
 import { campaignService } from './campaigns'
 import { pushService } from './push'
 import { subscriptionService } from './subscriptions'
+import { calendarSyncService } from './calendarSync'
 import { AppError } from '../http/errors'
 
 // The work that happens on a clock rather than because someone did something. The hosting calls
@@ -42,6 +43,17 @@ const JOBS: Record<string, () => Promise<{ result: Record<string, unknown>; summ
   async expire() {
     const expired = await bookingService.expireStale()
     return { result: { expired }, summary: expired ? `${plural(expired, 'booking')} released` : 'nothing was due' }
+  },
+
+  /** Reads every other platform's calendar, so nobody sells the same night twice. */
+  async calendars() {
+    const r = await calendarSyncService.syncAll()
+    const parts = [
+      `${plural(r.feeds, 'calendar')} read`,
+      r.failed ? `${r.failed} failing` : '',
+      r.clashes ? `${plural(r.clashes, 'clash')} needing attention` : '',
+    ].filter(Boolean)
+    return { result: r, summary: r.feeds ? parts.join(', ') : 'no calendars are being synced' }
   },
 }
 

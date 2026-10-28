@@ -4,7 +4,17 @@
   "installCommand": "npm install",
   "buildCommand": "node scripts/build-vercel.mjs",
   "crons": [
-    { "path": "/api/cron/daily", "schedule": "30 2 * * *" },
-    { "path": "/api/cron/expire", "schedule": "0 3 * * *" }
+    {
+      "path": "/api/cron/calendars",
+      "schedule": "0 * * * *"
+    },
+    {
+      "path": "/api/cron/daily",
+      "schedule": "30 2 * * *"
+    },
+    {
+      "path": "/api/cron/expire",
+      "schedule": "0 3 * * *"
+    }
   ]
 }

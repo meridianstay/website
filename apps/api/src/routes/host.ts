@@ -11,6 +11,7 @@ import { str } from '../http/validate'
 import { rateLimit } from '../http/rateLimit'
 import { clientSiteService } from '../services/clientSites'
 import { subscriptionService } from '../services/subscriptions'
+import { calendarSyncService } from '../services/calendarSync'
 
 // Anyone signed in can host: creating a first listing turns a guest into a host.
 export const hostRoutes = new Hono<AppEnv>()
@@ -118,3 +119,12 @@ hostRoutes.post('/host/subscription/checkout', async (c) =>
   c.json(await subscriptionService.startCheckout(currentUser(c), str((await body(c)).planId))))
 hostRoutes.post('/host/subscription/confirm', async (c) =>
   c.json({ subscription: await subscriptionService.confirm(currentUser(c), await body(c)) }))
+
+// ─── Keeping dates in step with the other platforms ──────────────────────────
+hostRoutes.get('/host/calendar-sync', async (c) => c.json({ stays: await calendarSyncService.forHost(currentUser(c)) }))
+hostRoutes.post('/host/calendar-sync', async (c) => c.json({ feed: await calendarSyncService.add(currentUser(c), await body(c)) }))
+hostRoutes.post('/host/calendar-sync/:id/sync', async (c) => c.json({ feed: await calendarSyncService.syncOne(currentUser(c), c.req.param('id')) }))
+hostRoutes.delete('/host/calendar-sync/:id', async (c) => {
+  await calendarSyncService.remove(currentUser(c), c.req.param('id'))
+  return new Response(null, { status: 204 })
+})

@@ -2,6 +2,21 @@
 
 Every change to Meridian Stay is recorded here, newest first. Each entry says what changed for the people using the platform, then the notable technical changes.
 
+## 0.36.0 — 2026-10-28
+
+### The same night can't be sold twice
+- A client whose stay is also on Airbnb, Booking.com, Vrbo, Agoda or MakeMyTrip can now keep all of those calendars in step with Meridian, from **Host portal → Calendar sync**.
+- It works both ways, and takes two links per stay. The client pastes **their** export link here, and we close those nights so nobody can book them on Meridian. We give them **our** link to paste into each platform, so a booking taken here closes the night over there.
+- Read **every hour**, and again **the moment a guest opens the stay** — so the dates someone is looking at are current, not as old as the last scheduled run.
+- A night the other platform has taken that **Meridian has already sold** can't be fixed by us, so it is reported as a clash for the client to settle rather than quietly cancelling somebody's holiday.
+- Removing a calendar frees the nights it was holding. A platform being down never closes dates — the calendar is marked as failing, with the reason, and your stay carries on as it was.
+- Pasting the listing page instead of the calendar link is caught before it is saved, with where to find the right one on each platform.
+- Our published calendar carries **dates and nothing else**: no guest name, no price, no booking code. The long token in its address is what keeps it private.
+
+### Why iCalendar rather than Airbnb's API
+- Airbnb has no public booking API that a platform can simply call; `api.airbnb.com` is their own internal one and is not open to us. Their supported way of sharing a calendar — and Booking.com's, and Vrbo's — is the iCalendar feed this is built on. It is what every channel manager in the industry uses.
+- The trade-off is that it is a poll, not a push: we read theirs hourly and on demand, and they read ours on their own schedule (Airbnb's is a couple of hours). A night here is held the moment a guest starts paying, which is what closes the gap on our side.
+
 ## 0.35.0 — 2026-10-28
 
 ### Clients pay to be here
