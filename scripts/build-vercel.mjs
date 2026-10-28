@@ -51,9 +51,54 @@ writeFileSync(`${fn}/.vc-config.json`, JSON.stringify({ runtime: 'nodejs22.x', h
 
 // Hashed assets can be cached forever; HTML must always be fresh.
 const immutable = { 'Cache-Control': 'public, max-age=31536000, immutable' }
+
+/**
+ * What a browser is allowed to load on our pages. Written out rather than guessed: every origin
+ * here is one the platform actually talks to.
+ *
+ * It is sent as Report-Only for now. A policy that is slightly wrong does not show an error — it
+ * silently stops a script, a font or the payment window from loading — so it is reported first and
+ * enforced once the reports are quiet. To enforce it, rename the header to
+ * `Content-Security-Policy`; to see what it would block, read the browser console on each app.
+ */
+const csp = [
+  "default-src 'self'",
+  // Razorpay Checkout; Google's reCAPTCHA, which phone sign-in uses.
+  "script-src 'self' 'unsafe-inline' https://checkout.razorpay.com https://www.google.com https://www.gstatic.com",
+  // Tailwind ships real stylesheets, but React writes inline styles for the client page colours.
+  "style-src 'self' 'unsafe-inline' https://fonts.googleapis.com",
+  "font-src 'self' data: https://fonts.gstatic.com",
+  // Uploaded photos, map tiles, and the stock images the demo content points at.
+  "img-src 'self' data: blob: https://firebasestorage.googleapis.com https://*.tile.openstreetmap.org https://images.unsplash.com https://placehold.co",
+  // Firebase sign-in and storage, the geocoder behind the map pin, Razorpay.
+  "connect-src 'self' https://*.googleapis.com https://*.firebaseio.com https://nominatim.openstreetmap.org https://api.razorpay.com https://lumberjack.razorpay.com",
+  // The payment window, reCAPTCHA, and the video a listing may link to.
+  "frame-src 'self' https://checkout.razorpay.com https://www.google.com https://api.razorpay.com https://www.youtube-nocookie.com https://www.youtube.com https://player.vimeo.com",
+  "frame-ancestors 'none'",
+  "base-uri 'self'",
+  "form-action 'self'",
+  "object-src 'none'",
+].join('; ')
+
+/** Sent on every page. None of these can break a working site; the policy above is the risky one. */
+const security = {
+  // Two years, so the browser refuses plain HTTP to this domain long before it is asked to.
+  'Strict-Transport-Security': 'max-age=63072000; includeSubDomains; preload',
+  // Stops a browser guessing that an upload is really a script.
+  'X-Content-Type-Options': 'nosniff',
+  // No other site may put the control centre in a frame and click through it.
+  'X-Frame-Options': 'DENY',
+  // Our address never leaks to another site beyond its origin.
+  'Referrer-Policy': 'strict-origin-when-cross-origin',
+  // Nothing on these pages needs a camera, a microphone or a payment handler.
+  'Permissions-Policy': 'camera=(), microphone=(), geolocation=(self), payment=(), usb=(), interest-cohort=()',
+  'Content-Security-Policy-Report-Only': csp,
+}
 writeFileSync(`${out}/config.json`, JSON.stringify({
   version: 3,
   routes: [
+    // Every response carries these; `continue` lets the routes below still match.
+    { src: '^/.*$', headers: security, continue: true },
     { src: '^/api(?:/.*)?$', dest: '/api' },
     { src: '^/(sitemap\\.xml|robots\\.txt)$', dest: '/api' },
     { src: '^/(?:admin/|host/|account/)?assets/.+$', headers: immutable, continue: true },

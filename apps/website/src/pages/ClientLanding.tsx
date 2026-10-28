@@ -10,7 +10,7 @@ import { BookingBox } from '../components/BookingBox'
 import { PhotoMosaic } from '../components/PhotoMosaic'
 import { Modal } from '../components/Modal'
 import { readSearch } from '../lib/search'
-import { useDocumentTitle } from '../lib/useDocumentTitle'
+import { useDocumentTitle, useSocialMeta, useStructuredData } from '../lib/useDocumentTitle'
 
 const PropertyMap = lazy(() => import('../components/PropertyMap'))
 
@@ -38,6 +38,27 @@ export function ClientLanding({ site }: { site: ClientSiteView }) {
   }, [featured?.slug])
   useEffect(load, [load])
   useDocumentTitle(featured ? `${featured.title} · ${site.businessName}` : site.businessName)
+  useSocialMeta({
+    title: featured ? `${featured.title} — ${site.businessName}` : site.businessName,
+    description: site.tagline || site.about.slice(0, 200),
+    image: featured?.image || site.logoUrl,
+  })
+  useStructuredData(featured ? {
+    '@context': 'https://schema.org',
+    '@type': 'LodgingBusiness',
+    name: featured.title,
+    brand: { '@type': 'Brand', name: site.businessName, logo: site.logoUrl || undefined },
+    description: site.about || site.tagline,
+    image: featured.image,
+    address: { '@type': 'PostalAddress', streetAddress: site.contact.address || undefined, addressLocality: featured.city, addressRegion: featured.region, addressCountry: 'IN' },
+    telephone: site.contact.phone || undefined,
+    email: site.contact.email || undefined,
+    url: `https://${site.address}`,
+    priceRange: `₹${featured.priceNow}`,
+    aggregateRating: featured.reviewCount > 0
+      ? { '@type': 'AggregateRating', ratingValue: featured.rating, reviewCount: featured.reviewCount, bestRating: 5 }
+      : undefined,
+  } : null)
 
   const design = withPageDefaults(site.design)
   const live = design.sections.filter((s) => s.enabled)

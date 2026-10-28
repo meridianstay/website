@@ -10,7 +10,7 @@ import { PhotoMosaic } from '../components/PhotoMosaic'
 import { ReviewForm } from '../components/ReviewForm'
 import { useWishlist } from '../lib/wishlist'
 import { readSearch } from '../lib/search'
-import { useDocumentTitle } from '../lib/useDocumentTitle'
+import { useDocumentTitle, useSocialMeta, useStructuredData } from '../lib/useDocumentTitle'
 import { NotFound } from './NotFound'
 
 const PropertyMap = lazy(() => import('../components/PropertyMap'))
@@ -37,6 +37,26 @@ export function Property() {
   }, [slug])
   useEffect(load, [load])
   useDocumentTitle(property?.title)
+  useSocialMeta({
+    title: property ? `${property.title} — ${property.location}` : 'Meridian Stay',
+    description: property?.description?.slice(0, 200),
+    image: property?.image,
+  })
+  // What a search engine needs to show this as a place to stay, with its price and rating.
+  useStructuredData(property ? {
+    '@context': 'https://schema.org',
+    '@type': 'LodgingBusiness',
+    name: property.title,
+    description: property.description,
+    image: [property.image, ...property.gallery].slice(0, 6),
+    address: { '@type': 'PostalAddress', addressLocality: property.location.split(',')[0]?.trim(), addressRegion: property.location.split(',')[1]?.trim(), addressCountry: 'IN' },
+    geo: property.lat ? { '@type': 'GeoCoordinates', latitude: property.lat, longitude: property.lng } : undefined,
+    priceRange: `₹${property.priceNow}`,
+    makesOffer: { '@type': 'Offer', price: property.priceNow, priceCurrency: 'INR', availability: 'https://schema.org/InStock' },
+    aggregateRating: property.reviewCount > 0
+      ? { '@type': 'AggregateRating', ratingValue: property.rating, reviewCount: property.reviewCount, bestRating: 5 }
+      : undefined,
+  } : null)
 
   if (error?.status === 404) return <NotFound what="stay" />
   if (error) return <div className="max-w-[1180px] mx-auto px-5 py-12"><ErrorNote message={error.message} onRetry={load} /></div>

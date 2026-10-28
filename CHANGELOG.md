@@ -2,6 +2,24 @@
 
 Every change to Meridian Stay is recorded here, newest first. Each entry says what changed for the people using the platform, then the notable technical changes.
 
+## 0.44.0 — 2026-10-28
+
+### Things any live site needs, which this one didn't have
+
+**Security headers.** The platform was sending none at all. Every response now carries them:
+
+- **HSTS** — browsers refuse plain HTTP to the domain for two years, so a tapped link can't be downgraded.
+- **nosniff** — a browser can't decide an uploaded file is really a script.
+- **X-Frame-Options: DENY** — nobody can put the control centre in a hidden frame and click through it on your team's behalf.
+- **Referrer-Policy** and **Permissions-Policy** — your addresses don't leak to other sites, and the pages give up camera, microphone, payment-handler and USB access they never needed.
+- A **content security policy**, naming every origin the platform actually talks to — Razorpay, Firebase, the map tiles, the fonts. It is sent in **report-only** mode: a policy that is slightly wrong doesn't show an error, it silently stops a script or the payment window from loading, so it reports for a while before it is switched on. See `scripts/build-vercel.mjs` for how to enforce it.
+
+**Link previews and search results.** A link to any page showed nothing when pasted into a chat.
+
+- Every page now carries Open Graph and Twitter tags, and a stay page updates them to its own name, description and photograph.
+- Stay pages and client websites carry **structured data** — what the place is, where it is, what a night costs and how guests rated it — which is what lets a search engine show a stay as a stay rather than a page of text. A client's own site names their business as the brand.
+- **One honest limit:** WhatsApp, Facebook and X don't run JavaScript, so they read the fallback written into the HTML file and show the same preview for every address. Per-page previews in a chat need the pages rendered on the server, which is still on the pending list.
+
 ## 0.43.1 — 2026-10-28
 
 ### A page for each booking
