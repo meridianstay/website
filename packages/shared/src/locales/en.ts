@@ -28,6 +28,7 @@ const en: Dictionary = {
   'common.reviews': 'reviews',
 
   // Header and navigation
+  'nav.menu': 'Menu',
   'nav.home': 'Home',
   'nav.anywhere': 'Anywhere',
   'nav.anyWeek': 'Any week',

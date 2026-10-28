@@ -24,6 +24,7 @@ const bn: Dictionary = {
   'common.signIn': 'সাইন ইন',
   'common.signOut': 'সাইন আউট',
   'common.reviews': 'পর্যালোচনা',
+  'nav.menu': 'মেনু',
   'nav.home': 'হোম',
   'nav.anywhere': 'যেকোনো জায়গা',
   'nav.anyWeek': 'যেকোনো সপ্তাহ',

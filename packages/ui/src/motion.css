@@ -89,3 +89,14 @@ button {
     stroke-dashoffset: 0;
   }
 }
+
+/* The panel menu sliding in from the side on a phone or tablet. */
+@keyframes ms-slide-in-left {
+  from { transform: translateX(-100%); }
+  to { transform: translateX(0); }
+}
+.animate-slide-in-left { animation: ms-slide-in-left .22s cubic-bezier(.32, .72, 0, 1); }
+
+@media (prefers-reduced-motion: reduce) {
+  .animate-slide-in-left { animation: none; }
+}

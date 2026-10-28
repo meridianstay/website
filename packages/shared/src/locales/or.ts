@@ -24,6 +24,7 @@ const or: Dictionary = {
   'common.signIn': 'ସାଇନ୍ ଇନ୍',
   'common.signOut': 'ସାଇନ୍ ଆଉଟ୍',
   'common.reviews': 'ସମୀକ୍ଷା',
+  'nav.menu': 'ମେନୁ',
   'nav.home': 'ହୋମ୍',
   'nav.anywhere': 'ଯେକୌଣସି ସ୍ଥାନ',
   'nav.anyWeek': 'ଯେକୌଣସି ସପ୍ତାହ',

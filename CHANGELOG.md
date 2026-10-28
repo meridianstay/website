@@ -2,6 +2,16 @@
 
 Every change to Meridian Stay is recorded here, newest first. Each entry says what changed for the people using the platform, then the notable technical changes.
 
+## 0.43.0 — 2026-10-28
+
+### A menu that slides in on a phone or tablet
+- The control centre, host portal and guest account used to put every page in a strip under the header that scrolled sideways — with eighteen entries, most of it was off-screen. **They now open a menu that slides in from the side**, with the same headings as the sidebar.
+- It closes when you pick something, when you tap outside it, and on Escape. The page behind it stays where it was, and gives back the width of its own scrollbar so nothing shifts sideways while it is open.
+- The menu button is labelled in every language the platform speaks.
+
+### The README describes the business as it is now
+- Client websites, the four plans and what each includes, how commission and subscriptions relate, calendar sync with other platforms, the scheduled jobs and the Server page are all in it. The old description — a marketplace that earns only a commission — had been wrong for several releases.
+
 ## 0.42.0 — 2026-10-28
 
 ### Charts, a map, and decisions you can take where you see them

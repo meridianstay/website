@@ -24,6 +24,7 @@ const te: Dictionary = {
   'common.signIn': 'సైన్ ఇన్',
   'common.signOut': 'సైన్ అవుట్',
   'common.reviews': 'సమీక్షలు',
+  'nav.menu': 'మెను',
   'nav.home': 'హోమ్',
   'nav.anywhere': 'ఎక్కడైనా',
   'nav.anyWeek': 'ఏ వారమైనా',

@@ -24,6 +24,7 @@ const kn: Dictionary = {
   'common.signIn': 'ಸೈನ್ ಇನ್',
   'common.signOut': 'ಸೈನ್ ಔಟ್',
   'common.reviews': 'ವಿಮರ್ಶೆಗಳು',
+  'nav.menu': 'ಮೆನು',
   'nav.home': 'ಮುಖಪುಟ',
   'nav.anywhere': 'ಎಲ್ಲಿಯಾದರೂ',
   'nav.anyWeek': 'ಯಾವುದೇ ವಾರ',

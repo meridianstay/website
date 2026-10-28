@@ -24,6 +24,7 @@ const gu: Dictionary = {
   'common.signIn': 'સાઇન ઇન',
   'common.signOut': 'સાઇન આઉટ',
   'common.reviews': 'સમીક્ષાઓ',
+  'nav.menu': 'મેનુ',
   'nav.home': 'હોમ',
   'nav.anywhere': 'ગમે ત્યાં',
   'nav.anyWeek': 'કોઈ પણ અઠવાડિયું',

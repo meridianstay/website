@@ -24,6 +24,7 @@ const pa: Dictionary = {
   'common.signIn': 'ਸਾਈਨ ਇਨ',
   'common.signOut': 'ਸਾਈਨ ਆਊਟ',
   'common.reviews': 'ਸਮੀਖਿਆਵਾਂ',
+  'nav.menu': 'ਮੀਨੂ',
   'nav.home': 'ਹੋਮ',
   'nav.anywhere': 'ਕਿਤੇ ਵੀ',
   'nav.anyWeek': 'ਕੋਈ ਵੀ ਹਫ਼ਤਾ',

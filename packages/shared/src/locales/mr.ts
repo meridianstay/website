@@ -24,6 +24,7 @@ const mr: Dictionary = {
   'common.signIn': 'साइन इन',
   'common.signOut': 'साइन आउट',
   'common.reviews': 'अभिप्राय',
+  'nav.menu': 'मेनू',
   'nav.home': 'होम',
   'nav.anywhere': 'कुठेही',
   'nav.anyWeek': 'कोणताही आठवडा',

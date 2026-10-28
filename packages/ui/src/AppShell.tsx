@@ -1,4 +1,4 @@
-import { Fragment, useState, type ReactNode } from 'react'
+import { Fragment, useEffect, useState, type ReactNode } from 'react'
 import { NavLink, useLocation } from 'react-router'
 import { appLink } from '@meridian/shared/client'
 import { versionLabel, type BrandApp } from '@meridian/shared'
@@ -34,6 +34,27 @@ interface AppShellProps {
   children: ReactNode
 }
 
+/** The nav, with a heading wherever the group changes. Used by the sidebar and the sliding menu. */
+function NavList({ nav, t, onNavigate }: { nav: NavItem[]; t: (key: string) => string; onNavigate?: () => void }) {
+  return (
+    <>
+      {nav.map((item, i) => (
+        <Fragment key={item.to}>
+          {item.group && item.group !== nav[i - 1]?.group && (
+            <p className="px-4 pt-5 pb-1.5 text-[10px] font-bold uppercase tracking-wider text-slate-400 first:pt-0">
+              {t(item.group)}
+            </p>
+          )}
+          <NavLink to={item.to} end={item.end} className={linkClass} onClick={onNavigate}>
+            <i className={`fa-solid fa-${item.icon} w-4 text-center`} aria-hidden="true"></i>
+            <span>{t(item.label)}</span>
+          </NavLink>
+        </Fragment>
+      ))}
+    </>
+  )
+}
+
 const linkClass = ({ isActive }: { isActive: boolean }) =>
   `flex items-center space-x-3 px-4 py-2.5 rounded-xl text-sm font-semibold transition whitespace-nowrap ${
     isActive ? 'bg-brand-50 text-brand-700' : 'text-slate-600 hover:bg-slate-100 hover:text-slate-900'
@@ -45,6 +66,26 @@ export function AppShell({ subtitle, nav, app, children }: AppShellProps) {
   const { t, languages } = useLanguage()
   const credit = useCredit()
   const { pathname } = useLocation()
+  const [menuOpen, setMenuOpen] = useState(false)
+
+  // Escape closes it, and the page behind it stays put while it is open.
+  useEffect(() => {
+    if (!menuOpen) return
+    const onKey = (e: KeyboardEvent) => { if (e.key === 'Escape') setMenuOpen(false) }
+    document.addEventListener('keydown', onKey)
+    // Holding the page still removes its scrollbar, which would shift everything behind the menu
+    // sideways by the width of it. That width is given back as padding while the menu is open.
+    const { overflow, paddingRight } = document.body.style
+    const scrollbar = window.innerWidth - document.documentElement.clientWidth
+    document.body.style.overflow = 'hidden'
+    if (scrollbar > 0) document.body.style.paddingRight = `${scrollbar}px`
+    return () => {
+      document.removeEventListener('keydown', onKey)
+      document.body.style.overflow = overflow
+      document.body.style.paddingRight = paddingRight
+    }
+  }, [menuOpen])
+
   if (!user) return null
 
   const signOut = async () => {
@@ -59,19 +100,7 @@ export function AppShell({ subtitle, nav, app, children }: AppShellProps) {
           <Logo subtitle={subtitle} href={appLink('website', '/')} />
         </div>
         <nav className="flex-1 p-4 space-y-1 overflow-y-auto" aria-label="Main">
-          {nav.map((item, i) => (
-            <Fragment key={item.to}>
-              {item.group && item.group !== nav[i - 1]?.group && (
-                <p className="px-4 pt-5 pb-1.5 text-[10px] font-bold uppercase tracking-wider text-slate-400 first:pt-0">
-                  {t(item.group)}
-                </p>
-              )}
-              <NavLink to={item.to} end={item.end} className={linkClass}>
-                <i className={`fa-solid fa-${item.icon} w-4 text-center`} aria-hidden="true"></i>
-                <span>{t(item.label)}</span>
-              </NavLink>
-            </Fragment>
-          ))}
+          <NavList nav={nav} t={t} />
         </nav>
         <div className="p-4 border-t border-slate-100 space-y-3">
           <a href={appLink('website', '/')} className="flex items-center space-x-3 px-4 py-2 rounded-xl text-sm font-semibold text-slate-600 hover:bg-slate-100">
@@ -91,9 +120,20 @@ export function AppShell({ subtitle, nav, app, children }: AppShellProps) {
       <div className="flex-1 min-w-0 flex flex-col">
         {/* Compact header and scrolling nav below the lg breakpoint */}
         <header className="lg:hidden sticky top-0 z-40 bg-white/95 backdrop-blur-md border-b border-slate-200">
-          <div className="h-16 px-4 flex items-center justify-between">
-            <Logo subtitle={subtitle} href={appLink('website', '/')} />
-            <div className="flex items-center space-x-2">
+          <div className="h-16 px-4 flex items-center justify-between gap-2">
+            <div className="flex items-center gap-2 min-w-0">
+              <button
+                type="button"
+                onClick={() => setMenuOpen(true)}
+                aria-label={t('nav.menu')}
+                aria-expanded={menuOpen}
+                className="w-10 h-10 shrink-0 rounded-xl text-slate-600 hover:bg-slate-100 flex items-center justify-center"
+              >
+                <i className="fa-solid fa-bars" aria-hidden="true"></i>
+              </button>
+              <Logo subtitle={subtitle} href={appLink('website', '/')} />
+            </div>
+            <div className="flex items-center space-x-2 shrink-0">
               {languages.length > 1 && <LanguageButton compact />}
               <Avatar user={user} />
               <button type="button" onClick={signOut} aria-label={t('common.signOut')} className="w-9 h-9 rounded-full text-slate-500 hover:bg-rose-50 hover:text-rose-600">
@@ -101,21 +141,39 @@ export function AppShell({ subtitle, nav, app, children }: AppShellProps) {
               </button>
             </div>
           </div>
-          {/* A phone scrolls this sideways; a tablet has room to wrap it, so nothing hides off-screen. */}
-          <nav className="px-3 pb-3 flex items-center gap-1 overflow-x-auto md:flex-wrap md:overflow-x-visible" aria-label="Main">
-            {nav.map((item, i) => (
-              <Fragment key={item.to}>
-                {item.group && i > 0 && item.group !== nav[i - 1]?.group && (
-                  <span className="self-stretch w-px bg-slate-200 shrink-0 mx-1" aria-hidden="true" />
-                )}
-                <NavLink to={item.to} end={item.end} className={linkClass}>
-                  <i className={`fa-solid fa-${item.icon}`} aria-hidden="true"></i>
-                  <span>{t(item.label)}</span>
-                </NavLink>
-              </Fragment>
-            ))}
-          </nav>
         </header>
+
+        {/*
+          The menu slides in rather than filling the page: a panel with eighteen entries is a list
+          to look down, and a strip of them scrolling sideways hides most of itself.
+        */}
+        {menuOpen && (
+          <div className="lg:hidden fixed inset-0 z-50 flex" role="dialog" aria-modal="true" aria-label={t('nav.menu')}>
+            <button type="button" aria-label={t('common.close')} onClick={() => setMenuOpen(false)}
+              className="absolute inset-0 bg-slate-900/50 backdrop-blur-sm animate-fade-in cursor-default" />
+            <div
+              className="relative w-[82%] max-w-xs bg-white h-full flex flex-col shadow-2xl animate-slide-in-left"
+              style={{ paddingLeft: 'env(safe-area-inset-left, 0px)' }}
+            >
+              <div className="h-16 px-4 flex items-center justify-between border-b border-slate-100 shrink-0">
+                <Logo subtitle={subtitle} href={null} />
+                <button type="button" onClick={() => setMenuOpen(false)} aria-label={t('common.close')}
+                  className="w-10 h-10 rounded-xl text-slate-500 hover:bg-slate-100 flex items-center justify-center">
+                  <i className="fa-solid fa-xmark" aria-hidden="true"></i>
+                </button>
+              </div>
+              <nav className="flex-1 p-4 space-y-1 overflow-y-auto" aria-label="Main">
+                <NavList nav={nav} t={t} onNavigate={() => setMenuOpen(false)} />
+              </nav>
+              <div className="p-4 border-t border-slate-100 shrink-0">
+                <a href={appLink('website', '/')} className="flex items-center space-x-3 px-4 py-2 rounded-xl text-sm font-semibold text-slate-600 hover:bg-slate-100">
+                  <i className="fa-solid fa-arrow-left w-4 text-center" aria-hidden="true"></i>
+                  <span>{t('nav.home')}</span>
+                </a>
+              </div>
+            </div>
+          </div>
+        )}
 
         <main key={pathname} className="flex-1 p-4 sm:p-8 max-w-7xl w-full mx-auto animate-page-in"><PageErrorBoundary>{children}</PageErrorBoundary></main>
 

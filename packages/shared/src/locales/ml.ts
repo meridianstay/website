@@ -24,6 +24,7 @@ const ml: Dictionary = {
   'common.signIn': 'സൈൻ ഇൻ',
   'common.signOut': 'സൈൻ ഔട്ട്',
   'common.reviews': 'അവലോകനങ്ങൾ',
+  'nav.menu': 'മെനു',
   'nav.home': 'ഹോം',
   'nav.anywhere': 'എവിടെയും',
   'nav.anyWeek': 'ഏത് ആഴ്ചയും',

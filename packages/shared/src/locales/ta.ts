@@ -24,6 +24,7 @@ const ta: Dictionary = {
   'common.signIn': 'உள்நுழை',
   'common.signOut': 'வெளியேறு',
   'common.reviews': 'மதிப்புரைகள்',
+  'nav.menu': 'மெனு',
   'nav.home': 'முகப்பு',
   'nav.anywhere': 'எங்கும்',
   'nav.anyWeek': 'எந்த வாரமும்',
