@@ -106,7 +106,11 @@ hostRoutes.delete('/host/listings/:id/blocks/:blockId', async (c) => {
 // ─── The client's own website ────────────────────────────────────────────────
 hostRoutes.get('/host/website', async (c) => {
   const host = currentUser(c)
-  return c.json({ site: await clientSiteService.mine(host), baseDomain: clientSiteService.baseDomain() })
+  return c.json({
+    site: await clientSiteService.mine(host),
+    baseDomain: clientSiteService.baseDomain(),
+    dns: clientSiteService.dnsTarget(),
+  })
 })
 hostRoutes.put('/host/website', async (c) => c.json({ site: await clientSiteService.save(currentUser(c), await body(c)) }))
 hostRoutes.post('/host/website/submit', async (c) => c.json({ site: await clientSiteService.submit(currentUser(c)) }))

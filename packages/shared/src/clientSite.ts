@@ -126,18 +126,34 @@ export function cleanDomain(input: string): string {
 /** Looks like a domain at all: something.something, no spaces, a real top level. */
 export const looksLikeDomain = (d: string) => /^[a-z0-9]([a-z0-9-]*[a-z0-9])?(\.[a-z0-9]([a-z0-9-]*[a-z0-9])?)+$/.test(d) && d.includes('.')
 
+/** Where Vercel points apex domains. Overridden by what the hosting shows, if it differs. */
+export const DEFAULT_APEX_IP = '76.76.21.21'
+
+/**
+ * The CNAME every project used to share. Vercel now gives each project its own value, shown in
+ * Settings → Domains, so the real one is passed in from the API (see CLIENT_DNS_CNAME).
+ */
+export const DEFAULT_DNS_CNAME = 'cname.vercel-dns.com'
+
+export interface DnsTarget {
+  /** What an apex domain's A record points at. */
+  apexIp: string
+  /** What a subdomain's CNAME points at — this project's own value. */
+  cname: string
+}
+
 /**
  * What the client has to add at their domain registrar. An apex domain (example.com) needs an A
  * record; anything in front of it (www, stay) needs a CNAME.
  */
-export function dnsRecords(domain: string): { type: 'A' | 'CNAME'; name: string; value: string }[] {
+export function dnsRecords(domain: string, target: DnsTarget = { apexIp: DEFAULT_APEX_IP, cname: DEFAULT_DNS_CNAME }): { type: 'A' | 'CNAME'; name: string; value: string }[] {
   const apex = domain.split('.').length <= 2
   return apex
     ? [
-        { type: 'A', name: '@', value: '76.76.21.21' },
-        { type: 'CNAME', name: 'www', value: 'cname.vercel-dns.com' },
+        { type: 'A', name: '@', value: target.apexIp },
+        { type: 'CNAME', name: 'www', value: target.cname },
       ]
-    : [{ type: 'CNAME', name: domain.split('.')[0], value: 'cname.vercel-dns.com' }]
+    : [{ type: 'CNAME', name: domain.split('.')[0], value: target.cname }]
 }
 
 export const blankContent = (): ClientSiteContent => ({

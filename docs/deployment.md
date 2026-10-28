@@ -66,6 +66,9 @@ While `SEED_DEMO_DATA=true`, **Admin → Settings → Demo data → Reset demo d
 | `CRON_SECRET` | Random text. Vercel Cron sends it automatically once it is set, and the two scheduled jobs in [`vercel.json`](../vercel.json) refuse to run without it. **Check-in reminders, review invitations and scheduled offers only go out if this is set.** | Yes |
 | `PUBLIC_SITE_URL` | Optional. The live address used in emails, texts and the sitemap, e.g. `https://meridianstay.com`. Guessed from the request when unset, which is wrong behind a proxy. | No |
 | `COOKIE_DOMAIN` | Optional. The shared domain (e.g. `.meridianstay.com`) so one sign-in covers the website, account, host and admin panels. | No |
+| `CLIENT_SITE_DOMAIN` | The domain clients' own websites sit under, e.g. `meridianstay.com` — see [client websites](#5-client-websites-the-wildcard-domain). | No |
+| `CLIENT_DNS_CNAME` | The CNAME value this Vercel project is given, shown in Settings → Domains. Clients adding their own domain are told to point at it. | No |
+| `CLIENT_DNS_APEX_IP` | Only if Vercel shows an A record other than `76.76.21.21`. | No |
 | `FIREBASE_STORAGE_BUCKET` | Only if the bucket isn't `meridianstay-bcfd0.firebasestorage.app` | No |
 
 The Firebase **web config** (API key, project id and so on) is already in [`.env.production`](../.env.production). Those values are public by design and are built into the pages.
@@ -109,6 +112,122 @@ Push to `main`, or press **Redeploy**. Then:
 - **Admin → Settings** shows *Live Firebase project* with Firestore, Authentication and Storage all connected.
 
 Without `FIREBASE_SERVICE_ACCOUNT`, the API answers every request with "isn’t connected to Firebase yet".
+
+## 5. Client websites: the wildcard domain
+
+Every client gets a website of their own at `<their-business-name>.meridianstay.com`. One wildcard
+domain makes all of them work at once — you add it to Vercel once, and nothing has to be done per
+client. Until it is in place, a client's site is only reachable at `/c/<their-business-name>` on the
+main domain, which is enough for them and your team to look at it, but not something to give guests.
+
+### Add the wildcard to the project
+
+1. Vercel → the project → **Settings → Domains → Add Domain**.
+2. Enter `*.meridianstay.com` (with the `*.` prefix). This is separate from `meridianstay.com`
+   itself, which stays as it is — the wildcard covers only what is in front of the dot.
+
+A certificate for a wildcard can only be issued if Vercel can answer a DNS challenge, so one of the
+two following setups is required. Vercel's Domains page shows which state yours is in.
+
+### Either: let Vercel run the DNS (simplest)
+
+Adding a wildcard turns Vercel's nameservers on for the domain and shows you two nameserver
+addresses. Put those at your registrar in place of the current ones, and Vercel handles the wildcard
+record and the certificate from then on.
+
+**Before you switch nameservers, copy your existing DNS records into Vercel first** — in particular
+your MX records, or email to your domain stops arriving, and any TXT records used to verify your
+domain with other services.
+
+### Or: keep your DNS where it is
+
+If the domain's DNS has to stay with your current provider, hand Vercel just the certificate
+challenge and keep everything else:
+
+| Type | Name | Value |
+| --- | --- | --- |
+| `NS` | `_acme-challenge` | `ns1.vercel-dns.com.` |
+| `NS` | `_acme-challenge` | `ns2.vercel-dns.com.` |
+| `CNAME` | `*` | `cname.vercel-dns-0.com.` |
+
+Both `NS` records are needed, and they must stay there — Vercel re-reads them every time the
+certificate is renewed. The `CNAME` is what actually sends visitors to the deployment; check the
+value against what your project's Domains page shows, since Vercel has changed it before.
+
+Only use this route if the nameservers genuinely cannot move. Delegating `_acme-challenge` means no
+other provider can issue a certificate using that same challenge name for this domain.
+
+On the team's **Domains** page, open `meridianstay.com` and click **Enable Vercel DNS**, leaving the
+nameservers at your registrar as they are. That is what makes the delegated challenge work.
+
+### Tell the API which domain it is
+
+Set `CLIENT_SITE_DOMAIN` in the project's environment variables to the domain the wildcard is on:
+
+```
+CLIENT_SITE_DOMAIN=meridianstay.com
+```
+
+The API uses it to work out which client a visitor's address belongs to, and the host portal uses it
+to show each client their address. Left unset it falls back to `meridianstay.com`, so set it
+explicitly if the platform ever runs on anything else.
+
+### Check it
+
+- `https://<any-client-slug>.meridianstay.com` → that client's website.
+- `https://<something-nobody-has>.meridianstay.com` → the ordinary marketplace, not an error. An
+  address we don't recognise is simply treated as the main site.
+- A client's slug is on their **My website** page in the host portal, under "Your Meridian address".
+
+### Sign-in on a client's address
+
+Firebase will refuse to sign anyone in on a domain it doesn't know, and **its authorized-domains
+list does not accept wildcards** — `*.meridianstay.com` cannot be entered there.
+
+So before guests can log in or book on client addresses, in the Firebase console →
+**Authentication → Settings → Authorized domains**, add each address guests will actually use. In
+practice that means adding a client's address when you put their site live, in the same pass as
+adding their custom domain to Vercel. The list has a size limit, so if you reach a point where every
+client needs its own entry, move sign-in to the main domain instead: send guests to
+`https://meridianstay.com/login` and back again, which works across subdomains because the session
+cookie is set on `COOKIE_DOMAIN=.meridianstay.com`.
+
+## 6. A client's own domain
+
+A client who has their own domain (`greenvalleystays.com`) enters it in **Host portal → My website →
+Your address**. That records the request and shows them the records to add at their registrar; it
+does not make it work on its own. Your team does two things:
+
+1. **Add the domain to the Vercel project** (Settings → Domains), exactly as it was entered. If
+   Vercel says the domain is in use by another account, add the `TXT` record at `_vercel` that it
+   shows — that proves access without moving the domain.
+2. Once Vercel reports it as valid, open **Control centre → Client websites**, find the client and
+   mark the domain **live**. Until you do, their Meridian address keeps serving and the custom one
+   does nothing.
+
+Also add the domain to Firebase's authorized domains, as above, or guests cannot sign in on it.
+
+### The records the client is shown
+
+The host portal shows an apex domain an `A` record and a `www` `CNAME`, and a subdomain a single
+`CNAME`. **Vercel gives each project its own CNAME value** (something like
+`d1d4fc829fe7bc7c.vercel-dns-017.com`), so set it once and every client is then told the right thing:
+
+```
+CLIENT_DNS_CNAME=d1d4fc829fe7bc7c.vercel-dns-017.com
+CLIENT_DNS_APEX_IP=76.76.21.21
+```
+
+Both are optional and both have sensible fallbacks, but if the Domains page shows a CNAME different
+from `cname.vercel-dns.com`, set `CLIENT_DNS_CNAME` or your clients will be given a value that does
+not resolve. Copy the exact values from Vercel → Settings → Domains.
+
+### How many you can have
+
+A Hobby project allows **50 custom domains**, and every client's own domain counts against that; the
+wildcard counts once however many clients sit behind it. Clients who stay on their
+`*.meridianstay.com` address cost nothing from this allowance, so the limit only bites once fifty
+clients have brought their own domains. Moving to a paid Vercel plan raises it.
 
 ## Security notes
 

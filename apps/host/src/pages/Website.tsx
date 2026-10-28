@@ -2,7 +2,7 @@ import { useEffect, useState } from 'react'
 import { ErrorNote, PageHeader, Panel, PhotoUpload, Spinner } from '@meridian/ui'
 import {
   CLIENT_SITE_LIMITS, cleanDomain, dnsRecords, hasUnpublishedChanges, siteAddress, siteSlug,
-  type ClientSite, type ClientSiteContent,
+  type ClientSite, type ClientSiteContent, type DnsTarget,
 } from '@meridian/shared'
 import { ApiError, hostApi } from '@meridian/shared/client'
 
@@ -12,11 +12,12 @@ import { ApiError, hostApi } from '@meridian/shared/client'
 export function Website() {
   const [site, setSite] = useState<ClientSite | null>(null)
   const [base, setBase] = useState('meridianstay.com')
+  const [dns, setDns] = useState<DnsTarget | undefined>(undefined)
   const [error, setError] = useState<string | null>(null)
 
   const load = () => {
     setError(null)
-    hostApi.website().then((r) => { setSite(r.site); setBase(r.baseDomain) }).catch((e) => setError(e.message))
+    hostApi.website().then((r) => { setSite(r.site); setBase(r.baseDomain); setDns(r.dns) }).catch((e) => setError(e.message))
   }
   useEffect(load, [])
 
@@ -33,7 +34,7 @@ export function Website() {
       <div className="grid grid-cols-1 xl:grid-cols-2 gap-8">
         <ContentForm site={site} base={base} onSaved={setSite} />
         <div className="space-y-8">
-          <DomainPanel site={site} base={base} onSaved={setSite} />
+          <DomainPanel site={site} base={base} dns={dns} onSaved={setSite} />
           <PoliciesForm site={site} onSaved={setSite} />
         </div>
       </div>
@@ -273,7 +274,7 @@ function PoliciesForm({ site, onSaved }: { site: ClientSite; onSaved: (s: Client
   )
 }
 
-function DomainPanel({ site, base, onSaved }: { site: ClientSite; base: string; onSaved: (s: ClientSite) => void }) {
+function DomainPanel({ site, base, dns, onSaved }: { site: ClientSite; base: string; dns?: DnsTarget; onSaved: (s: ClientSite) => void }) {
   const [domain, setDomain] = useState(site.domain.name)
   const [busy, setBusy] = useState(false)
   const [error, setError] = useState<string | null>(null)
@@ -338,7 +339,7 @@ function DomainPanel({ site, base, onSaved }: { site: ClientSite; base: string; 
                 </tr>
               </thead>
               <tbody className="divide-y divide-slate-100 font-mono">
-                {dnsRecords(site.domain.name).map((r) => (
+                {dnsRecords(site.domain.name, dns).map((r) => (
                   <tr key={r.type + r.name}>
                     <td className="py-2 font-bold">{r.type}</td>
                     <td className="py-2">{r.name}</td>

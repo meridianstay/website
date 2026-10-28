@@ -50,6 +50,16 @@ function environment(): EnvVarCheck[] {
       fix: `Leave unset unless the bucket is named something other than ${projectId}.firebasestorage.app`,
     },
     {
+      name: 'CLIENT_SITE_DOMAIN', required: false,
+      purpose: 'The domain clients’ own websites sit under. Decides which client an address belongs to.',
+      fix: 'Set it to the domain the *.<domain> wildcard is on, e.g. meridianstay.com',
+    },
+    {
+      name: 'CLIENT_DNS_CNAME', required: false,
+      purpose: 'What a client pointing their own domain here is told to use. Vercel gives each project its own value.',
+      fix: 'Copy the CNAME from Vercel → Settings → Domains. Without it clients are given the old shared value, which may not resolve.',
+    },
+    {
       name: 'COOKIE_DOMAIN', required: false,
       purpose: 'Lets one sign-in work across the website, account, host and admin panels on the same domain.',
       fix: 'Set it to the shared domain, e.g. .meridianstay.com',

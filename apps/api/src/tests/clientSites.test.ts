@@ -1,8 +1,8 @@
 import { beforeEach, describe, test } from 'node:test'
 import assert from 'node:assert/strict'
 import {
-  cleanDomain, dnsRecords, defaultClientPlans, entitlements, looksLikeDomain, nextExpiry,
-  siteSlug, subscriptionActive, blankSubscription,
+  DEFAULT_DNS_CNAME, cleanDomain, dnsRecords, defaultClientPlans, entitlements, looksLikeDomain,
+  nextExpiry, siteSlug, subscriptionActive, blankSubscription,
 } from '@meridian/shared'
 import { clientSiteService } from '../services/clientSites'
 import { subscriptionService } from '../services/subscriptions'
@@ -48,6 +48,25 @@ describe('turning a business name into an address', () => {
     assert.deepEqual(dnsRecords('greenvalley.com').map((r) => r.type), ['A', 'CNAME'])
     assert.deepEqual(dnsRecords('stay.greenvalley.com').map((r) => r.type), ['CNAME'])
     assert.equal(dnsRecords('stay.greenvalley.com')[0].name, 'stay')
+  })
+
+  test('the records point wherever the hosting says, not at a guess', () => {
+    // Vercel gives each project its own CNAME, so a client must be told this project's one.
+    const target = { apexIp: '198.51.100.7', cname: 'd1d4fc829fe7bc7c.vercel-dns-017.com' }
+    assert.deepEqual(dnsRecords('greenvalley.com', target).map((r) => r.value), [target.apexIp, target.cname])
+    assert.equal(dnsRecords('stay.greenvalley.com', target)[0].value, target.cname)
+    // Without one, the old shared value is the fallback rather than nothing at all.
+    assert.equal(dnsRecords('stay.greenvalley.com')[0].value, DEFAULT_DNS_CNAME)
+  })
+
+  test('the API hands the host portal the values the hosting is actually set to', async () => {
+    process.env.CLIENT_DNS_CNAME = 'abc123.vercel-dns-017.com'
+    try {
+      assert.equal(clientSiteService.dnsTarget().cname, 'abc123.vercel-dns-017.com')
+    } finally {
+      delete process.env.CLIENT_DNS_CNAME
+    }
+    assert.equal(clientSiteService.dnsTarget().cname, DEFAULT_DNS_CNAME)
   })
 })
 

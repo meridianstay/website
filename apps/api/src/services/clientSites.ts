@@ -1,8 +1,8 @@
 import {
-  CLIENT_SECTIONS, CLIENT_SITE_LIMITS, DEFAULT_SITE_DOMAIN, RESERVED_SLUGS, blankClientSite, blankContent,
+  CLIENT_SECTIONS, CLIENT_SITE_LIMITS, DEFAULT_APEX_IP, DEFAULT_DNS_CNAME, DEFAULT_SITE_DOMAIN, RESERVED_SLUGS, blankClientSite, blankContent,
   cleanDomain, defaultPageDesign, looksLikeDomain, newSection, siteAddress, siteSlug, starterPolicies, withPageDefaults,
   type ClientPageDesign, type ClientSection, type ClientSectionType, type ClientSite, type ClientSiteContent,
-  type ClientSiteView, type ClientStay, type Me,
+  type ClientSiteView, type ClientStay, type DnsTarget, type Me,
 } from '@meridian/shared'
 import { auditLogRepo, clientSitesRepo, propertiesRepo } from '../repositories'
 import { subscriptionService } from './subscriptions'
@@ -14,6 +14,16 @@ import { collect, isImageUrl, str } from '../http/validate'
 // the change waits for its own approval while the last approved copy keeps being served.
 
 const baseDomain = () => process.env.CLIENT_SITE_DOMAIN?.trim() || DEFAULT_SITE_DOMAIN
+
+/**
+ * What a client's DNS has to point at. Vercel gives each project its own CNAME value, shown in
+ * Settings → Domains, so it is set here rather than guessed — the old shared `cname.vercel-dns.com`
+ * is the fallback for an installation that hasn't set it.
+ */
+const dnsTarget = (): DnsTarget => ({
+  apexIp: process.env.CLIENT_DNS_APEX_IP?.trim() || DEFAULT_APEX_IP,
+  cname: process.env.CLIENT_DNS_CNAME?.trim() || DEFAULT_DNS_CNAME,
+})
 
 const SECTION_TYPES = new Set(CLIENT_SECTIONS.map((s) => s.value))
 const MAX_SECTIONS = 30
@@ -141,6 +151,7 @@ const viewOf = async (site: ClientSite): Promise<ClientSiteView> => {
 
 export const clientSiteService = {
   baseDomain,
+  dnsTarget,
 
   /** The client's own site, started from a blank one the first time they open the page. */
   async mine(host: Me): Promise<ClientSite> {

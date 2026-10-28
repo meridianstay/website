@@ -13,7 +13,7 @@ import type { Coupon } from '../offers'
 import type { AdCampaign, AdPlacement, PromotionPlan, PromotionSettings } from '../promotions'
 import type { Campaign, CampaignContent } from '../campaigns'
 import type { CacheReport, CronRun, ServerReport, ServerSettings, StorageUsage } from '../server'
-import type { ClientSite, ClientSiteView } from '../clientSite'
+import type { ClientSite, ClientSiteView, DnsTarget } from '../clientSite'
 import type { ClientPageDesign } from '../clientPage'
 import type { ClientPlan, PlanId, Subscription } from '../subscription'
 import type { CalendarFeed, PropertySync, SyncPlatform } from '../calendarSync'
@@ -190,7 +190,7 @@ export const hostApi = {
   syncCalendar: (id: string) => request<{ feed: CalendarFeed }>(`/host/calendar-sync/${id}/sync`, { method: 'POST' }),
   removeCalendar: (id: string) => request<void>(`/host/calendar-sync/${id}`, { method: 'DELETE' }),
 
-  website: () => request<{ site: ClientSite; baseDomain: string }>('/host/website'),
+  website: () => request<{ site: ClientSite; baseDomain: string; dns: DnsTarget }>('/host/website'),
   saveWebsite: (value: Partial<ClientSite['content']>) => request<{ site: ClientSite }>('/host/website', { method: 'PUT', json: value }),
   submitWebsite: () => request<{ site: ClientSite }>('/host/website/submit', { method: 'POST' }),
   saveWebsiteDesign: (design: ClientPageDesign) => request<{ site: ClientSite }>('/host/website/design', { method: 'PUT', json: { design } }),

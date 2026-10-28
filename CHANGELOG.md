@@ -2,6 +2,16 @@
 
 Every change to Meridian Stay is recorded here, newest first. Each entry says what changed for the people using the platform, then the notable technical changes.
 
+## 0.37.1 — 2026-10-28
+
+### Setting up client websites
+- [Deployment](docs/deployment.md) now has a step-by-step guide to the **wildcard domain** that makes every client's `<name>.meridianstay.com` address work: what to add in Vercel, the two ways to satisfy the certificate check (Vercel's nameservers, or keeping your DNS where it is and delegating `_acme-challenge`), how to check it, and what to do about Firebase sign-in — whose authorized-domain list does not accept wildcards, so each address has to be added as you put clients live.
+- A second section covers a **client's own domain** end to end: what the client does, what your team does in Vercel and in the control centre, and the 50-domain limit on a Hobby project — which only counts clients who bring their own domain, not the ones on a Meridian address.
+
+### Fixes
+- **Clients were being given a DNS record that may not work.** The host portal told every client to point their domain at `cname.vercel-dns.com`, but Vercel now gives each project its own CNAME. The real value is read from `CLIENT_DNS_CNAME` and shown to clients instead; the old shared value remains the fallback. Copy yours from Vercel → Settings → Domains.
+- `CLIENT_SITE_DOMAIN` and `CLIENT_DNS_CNAME` now appear on **Control centre → Server → Environment**, so a missing one is visible rather than silently wrong.
+
 ## 0.37.0 — 2026-10-28
 
 ### Clients can arrange their own page
