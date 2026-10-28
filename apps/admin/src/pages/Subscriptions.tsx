@@ -27,6 +27,7 @@ export function Subscriptions() {
   if (error && !rows) return <ErrorNote message={error} onRetry={load} />
   if (!rows) return <Spinner />
 
+  // Free clients have no record here at all, so these are the ones actually paying.
   const paying = rows.filter((r) => r.active)
   const income = paying.reduce((sum, r) => sum + (plans.find((p) => p.id === r.planId)?.pricePerYear ?? 0), 0)
   const lapsing = paying.filter((r) => r.daysLeft !== null && r.daysLeft <= 30)
@@ -216,7 +217,7 @@ function PlansPanel({ plans, required, onSaved }: { plans: ClientPlan[]; require
           </span>
         </label>
 
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-5">
+        <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-5">
           {draft.map((plan) => (
             <article key={plan.id} className="rounded-2xl border border-slate-200 p-5 space-y-3">
               <p className="text-[10px] font-bold uppercase text-slate-400 font-mono">{plan.id}</p>
@@ -244,6 +245,7 @@ function PlansPanel({ plans, required, onSaved }: { plans: ClientPlan[]; require
               </div>
               <p className="text-xs text-slate-500 bg-slate-50 rounded-xl p-2.5">
                 Unlocks: {plan.features.maxStaysOnSite === 1 ? 'one stay' : 'every stay'} on their website
+                {plan.features.customDomain ? ', their own domain' : ', on a Meridian address'}
                 {plan.features.pageEditor ? ', and rearranging the page' : ''}.
               </p>
             </article>

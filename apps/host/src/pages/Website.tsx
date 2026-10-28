@@ -4,6 +4,7 @@ import {
   CLIENT_SITE_LIMITS, cleanDomain, dnsRecords, hasUnpublishedChanges, siteAddress, siteSlug,
   type ClientSite, type ClientSiteContent, type DnsTarget, type DomainCheck,
 } from '@meridian/shared'
+import { Link } from 'react-router'
 import { ApiError, hostApi } from '@meridian/shared/client'
 
 // "My website": the client writes their own site here — their logo, who they are, their policies
@@ -13,11 +14,15 @@ export function Website() {
   const [site, setSite] = useState<ClientSite | null>(null)
   const [base, setBase] = useState('meridianstay.com')
   const [dns, setDns] = useState<DnsTarget | undefined>(undefined)
+  const [stays, setStays] = useState<Stay[]>([])
+  const [plan, setPlan] = useState<Entitlements | null>(null)
   const [error, setError] = useState<string | null>(null)
 
   const load = () => {
     setError(null)
-    hostApi.website().then((r) => { setSite(r.site); setBase(r.baseDomain); setDns(r.dns) }).catch((e) => setError(e.message))
+    hostApi.website()
+      .then((r) => { setSite(r.site); setBase(r.baseDomain); setDns(r.dns); setStays(r.stays); setPlan(r.entitlements) })
+      .catch((e) => setError(e.message))
   }
   useEffect(load, [])
 
@@ -32,9 +37,9 @@ export function Website() {
       />
       <StatusBanner site={site} base={base} />
       <div className="grid grid-cols-1 xl:grid-cols-2 gap-8">
-        <ContentForm site={site} base={base} onSaved={setSite} />
+        <ContentForm site={site} base={base} stays={stays} plan={plan} onSaved={setSite} />
         <div className="space-y-8">
-          <DomainPanel site={site} base={base} dns={dns} onSaved={setSite} />
+          <DomainPanel site={site} base={base} dns={dns} plan={plan} onSaved={setSite} />
           <PoliciesForm site={site} onSaved={setSite} />
         </div>
       </div>
@@ -85,7 +90,12 @@ function StatusBanner({ site, base }: { site: ClientSite; base: string }) {
 
 const field = 'w-full bg-slate-50 border border-slate-200 rounded-xl p-2.5 text-sm focus:outline-none focus:border-brand-500'
 
-function ContentForm({ site, base, onSaved }: { site: ClientSite; base: string; onSaved: (s: ClientSite) => void }) {
+interface Stay { id: number; title: string; location: string; status: string }
+interface Entitlements { ownWebsite: boolean; maxStaysOnSite: number; pageEditor: boolean; customDomain: boolean }
+
+function ContentForm({ site, base, stays, plan, onSaved }: {
+  site: ClientSite; base: string; stays: Stay[]; plan: Entitlements | null; onSaved: (s: ClientSite) => void
+}) {
   const [form, setForm] = useState<ClientSiteContent>(site.content)
   const [state, setState] = useState<'idle' | 'saving' | 'saved'>('idle')
   const [fields, setFields] = useState<Record<string, string>>({})
@@ -166,6 +176,27 @@ function ContentForm({ site, base, onSaved }: { site: ClientSite; base: string; 
           {fields.logoUrl && <p className="text-xs text-rose-600 font-semibold mt-1">{fields.logoUrl}</p>}
           <p className="text-xs text-slate-500 mt-2">A square image works best. Meridian's own mark is shown beside it, smaller.</p>
         </div>
+
+        {stays.length > 1 && (
+          <div>
+            <label htmlFor="biz-stay" className="block text-xs font-bold uppercase text-slate-500 mb-1">
+              {plan && plan.maxStaysOnSite === 1 ? 'Which stay is this website for?' : 'Which stay leads the page?'}
+            </label>
+            <select id="biz-stay" value={form.featuredPropertyId ?? ''}
+              onChange={(e) => set('featuredPropertyId', e.target.value ? Number(e.target.value) : null)} className={field}>
+              <option value="">{plan && plan.maxStaysOnSite === 1 ? 'Choose a stay…' : 'My newest stay'}</option>
+              {stays.map((stay) => (
+                <option key={stay.id} value={stay.id}>{stay.title} — {stay.location}{stay.status !== 'Approved' ? ` (${stay.status.toLowerCase()})` : ''}</option>
+              ))}
+            </select>
+            {fields.featuredPropertyId && <p className="text-xs text-rose-600 font-semibold mt-1">{fields.featuredPropertyId}</p>}
+            <p className="text-xs text-slate-500 mt-1">
+              {plan && plan.maxStaysOnSite === 1
+                ? `Your plan covers one stay, and you have ${stays.length}. The one you pick here is what your website — and your own domain — show. The rest stay on the Meridian marketplace as they are.`
+                : 'Your other stays are listed below it, and each opens as its own page.'}
+            </p>
+          </div>
+        )}
 
         <div>
           <label htmlFor="biz-tagline" className="block text-xs font-bold uppercase text-slate-500 mb-1">One line about you</label>
@@ -274,7 +305,9 @@ function PoliciesForm({ site, onSaved }: { site: ClientSite; onSaved: (s: Client
   )
 }
 
-function DomainPanel({ site, base, dns, onSaved }: { site: ClientSite; base: string; dns?: DnsTarget; onSaved: (s: ClientSite) => void }) {
+function DomainPanel({ site, base, dns, plan, onSaved }: {
+  site: ClientSite; base: string; dns?: DnsTarget; plan: Entitlements | null; onSaved: (s: ClientSite) => void
+}) {
   const [domain, setDomain] = useState(site.domain.name)
   const [busy, setBusy] = useState<'save' | 'check' | null>(null)
   const [error, setError] = useState<string | null>(null)
@@ -335,6 +368,15 @@ function DomainPanel({ site, base, dns, onSaved }: { site: ClientSite; base: str
           <p className="text-xs text-slate-500 mt-1">Given to you with your Meridian account. Nothing to set up.</p>
         </div>
 
+        {plan && !plan.customDomain ? (
+          <div className="bg-slate-50 rounded-2xl p-4">
+            <p className="text-sm font-bold text-slate-900">Your own domain</p>
+            <p className="text-xs text-slate-500 mt-1">
+              Comes with any paid plan. Your Meridian address above keeps working whatever you choose, and your website is already live on it.
+            </p>
+            <Link to="/plan" className="inline-block mt-3 bg-brand-600 hover:bg-brand-700 text-white font-bold py-2 px-5 rounded-xl text-xs">See the plans</Link>
+          </div>
+        ) : (
         <form onSubmit={save} className="space-y-3">
           <label htmlFor="own-domain" className="block text-xs font-bold uppercase text-slate-500">Your own domain (optional)</label>
           <input id="own-domain" value={domain} onChange={(e) => setDomain(e.target.value)} className={`${field} font-mono`} placeholder="greenvalleystays.com" />
@@ -358,6 +400,7 @@ function DomainPanel({ site, base, dns, onSaved }: { site: ClientSite; base: str
             )}
           </div>
         </form>
+        )}
 
         {check && <CheckResult check={check} />}
 

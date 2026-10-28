@@ -58,7 +58,7 @@ export const contentService = {
       // names, prices and wording are yours.
       const wanted = defaultClientPlans.map((p) => p.id)
       if (plans.length !== wanted.length || !wanted.every((id) => plans.some((p) => str(p.id) === id))) {
-        fields.plans = 'Keep all three plans. Their prices and wording are yours to change; which plan is which is not.'
+        fields.plans = 'Keep all four plans, Free included. Their prices and wording are yours to change; which plan is which is not.'
       }
       plans.forEach((plan, i) => {
         if (!str(plan.name)) fields[`plans.${i}.name`] = 'Give the plan a name clients will understand.'

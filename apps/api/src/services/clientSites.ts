@@ -221,6 +221,17 @@ export const clientSiteService = {
     return { check, site: next }
   },
 
+  /**
+   * The client's stays, for the picker. On the single-stay plan this is the choice that decides
+   * which one the website — and their own domain — is for.
+   */
+  async staysForPicker(hostId: number) {
+    const listings = await propertiesRepo.listForHost(hostId)
+    return listings
+      .filter((l) => l.status === 'Approved' || l.status === 'Pending')
+      .map((l) => ({ id: l.id, title: l.title, location: l.location, status: l.status }))
+  },
+
   /** The client's own site, started from a blank one the first time they open the page. */
   async mine(host: Me): Promise<ClientSite> {
     const existing = await clientSitesRepo.find(host.id)
@@ -246,6 +257,9 @@ export const clientSiteService = {
     await subscriptionService.require(host.id, 'ownWebsite')
     const current = await this.mine(host)
     const content = parse(body, current.content)
+    if (content.featuredPropertyId && !(await propertiesRepo.ownedBy(content.featuredPropertyId, host.id))) {
+      collect({ featuredPropertyId: 'Choose one of your own stays.' })
+    }
     const taken = await clientSitesRepo.taken(host.id, content.slug, current.domain.name)
     if (taken.slug) collect({ slug: 'Another client already has that address. Choose another.' })
     // A change after approval waits its turn; the approved copy is what visitors keep seeing.
@@ -286,6 +300,8 @@ export const clientSiteService = {
   async setDomain(host: Me, input: string) {
     const site = await this.mine(host)
     const name = cleanDomain(input)
+    // Removing a domain is always allowed; adding one is what the first paid plan buys.
+    if (name) await subscriptionService.require(host.id, 'customDomain')
     if (name && !looksLikeDomain(name)) collect({ domain: 'That doesn’t look like a domain. Try something like greenvalleystays.com' })
     if (name) {
       const taken = await clientSitesRepo.taken(host.id, site.content.slug, name)

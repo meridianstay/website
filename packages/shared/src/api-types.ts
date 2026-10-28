@@ -331,6 +331,34 @@ export interface AdminStats {
   adRevenue: number
   new_messages: number
   reviews: number
+  /** What clients pay Meridian to be here, once a year. */
+  subscriptions: {
+    paying: number
+    /** Had a plan once, not paid up now. */
+    lapsed: number
+    /** A year at today's prices, from the clients currently paid up. */
+    yearly: number
+    /** Paid up, but inside the last 30 days of their year. */
+    renewingSoon: number
+  }
+  /** Clients' own websites. */
+  sites: {
+    live: number
+    /** Written or changed, waiting for your team to read. */
+    pendingReview: number
+    /** A domain the client has asked for that is not switched on yet. */
+    pendingDomains: number
+  }
+  /** Keeping dates in step with Airbnb and the rest. */
+  calendars: {
+    feeds: number
+    /** Feeds that could not be read last time. */
+    failing: number
+    /** Nights sold on both sides, which only a person can sort out. */
+    clashes: number
+  }
+  /** Host earnings past their hold period, waiting to be sent. */
+  payoutsOwed: number
 }
 
 export type AdminUser = Me & { suspended: boolean; listings: number; bookings: number }

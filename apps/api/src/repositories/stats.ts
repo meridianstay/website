@@ -1,7 +1,12 @@
-import type { AboutStats, AdminStats, HostStats } from '@meridian/shared'
+import { RENEWAL_WARNING_DAYS, daysLeft, defaultPayouts, payableUpTo, subscriptionActive, type AboutStats, type AdminStats, type HostStats } from '@meridian/shared'
 import { C, all, col } from '../store/db'
 import { cached } from '../store/cache'
 import { promotionsRepo } from './promotions'
+import { subscriptionsRepo } from './subscriptions'
+import { clientSitesRepo } from './clientSites'
+import { calendarFeedsRepo } from './calendarFeeds'
+import { contentRepo } from './content'
+import { payoutsRepo } from './payouts'
 import { keptMinor, withDefaults, type BookingDoc } from './bookings'
 import type { PropertyDoc } from './properties'
 import type { UserDoc } from './users'
@@ -28,14 +33,35 @@ export const statsRepo = {
   },
 
   async forAdmin(today: string): Promise<AdminStats> {
-    const [properties, users, bookings, messages, reviews, adRevenue] = await Promise.all([
+    const [properties, users, bookings, messages, reviews, adRevenue, subs, sites, feeds, plans, payouts, payoutConfig] = await Promise.all([
       all<PropertyDoc>(col(C.properties)),
       all<UserDoc>(col(C.users)),
       all<BookingDoc>(col(C.bookings)).then((r) => r.map(withDefaults)),
       all<{ status: string }>(col(C.messages).select('status')),
       all<{ hiddenAt: string | null }>(col(C.reviews).select('hiddenAt')),
       promotionsRepo.spendTotal(),
+      subscriptionsRepo.list(),
+      clientSitesRepo.list(),
+      calendarFeedsRepo.list(),
+      contentRepo.settings().then((s) => s.subscriptions?.plans ?? []),
+      payoutsRepo.list(),
+      contentRepo.settings().then((s) => s.payouts ?? defaultPayouts),
     ])
+
+    const now = new Date().toISOString()
+    const paidUp = subs.filter((s) => subscriptionActive(s, now))
+    const priceOf = (planId: string | null) => plans.find((p) => p.id === planId)?.pricePerYear ?? 0
+    // A feed only counts as a feed once it has a url; the export tokens share the collection.
+    const liveFeeds = feeds.filter((f) => !!f.url)
+
+    // What hosts have earned on stays that are out of their hold period, less whatever has already
+    // been put into a payout. A failed payout went back into the queue, so it doesn't count as sent.
+    const cutoff = payableUpTo(today, payoutConfig.holdDays)
+    const earned = bookings
+      .filter((b) => keptMinor(b) > 0 && b.checkOut <= cutoff)
+      .reduce((sum, b) => sum + b.hostPayoutMinor, 0) / 100
+    const alreadyPaid = payouts.filter((p) => p.status !== 'Failed').reduce((sum, p) => sum + p.net, 0)
+    const payoutsOwed = Math.max(0, Math.round((earned - alreadyPaid) * 100) / 100)
     const confirmed = bookings.filter((b) => b.status === 'Confirmed')
     return {
       listings: properties.length,
@@ -52,6 +78,26 @@ export const statsRepo = {
       adRevenue,
       new_messages: messages.filter((m) => m.status === 'new').length,
       reviews: reviews.filter((r) => !r.hiddenAt).length,
+      subscriptions: {
+        paying: paidUp.length,
+        lapsed: subs.filter((s) => !subscriptionActive(s, now) && s.terms.length > 0).length,
+        yearly: paidUp.reduce((sum, s) => sum + priceOf(s.planId), 0),
+        renewingSoon: paidUp.filter((s) => {
+          const left = daysLeft(s)
+          return left !== null && left <= RENEWAL_WARNING_DAYS
+        }).length,
+      },
+      sites: {
+        live: sites.filter((s) => !!s.published).length,
+        pendingReview: sites.filter((s) => s.status === 'Pending').length,
+        pendingDomains: sites.filter((s) => s.domain.status === 'pending').length,
+      },
+      calendars: {
+        feeds: liveFeeds.length,
+        failing: liveFeeds.filter((f) => f.status === 'failing').length,
+        clashes: liveFeeds.reduce((n, f) => n + (f.clashes?.length ?? 0), 0),
+      },
+      payoutsOwed,
     }
   },
 

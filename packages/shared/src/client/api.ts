@@ -175,8 +175,8 @@ export const hostApi = {
 
   subscription: () => request<{
     subscription: Subscription; plans: ClientPlan[]; required: boolean; active: boolean
-    entitlements: { ownWebsite: boolean; maxStaysOnSite: number; pageEditor: boolean }
-    daysLeft: number | null; renewSoon: boolean
+    entitlements: { ownWebsite: boolean; maxStaysOnSite: number; pageEditor: boolean; customDomain: boolean }
+    daysLeft: number | null; renewSoon: boolean; currentPlanId: PlanId | null
   }>('/host/subscription'),
   startSubscription: (planId: PlanId) => request<{
     testMode: boolean; orderId?: string; keyId?: string; amount?: number; planName?: string; renewal?: boolean
@@ -190,7 +190,11 @@ export const hostApi = {
   syncCalendar: (id: string) => request<{ feed: CalendarFeed }>(`/host/calendar-sync/${id}/sync`, { method: 'POST' }),
   removeCalendar: (id: string) => request<void>(`/host/calendar-sync/${id}`, { method: 'DELETE' }),
 
-  website: () => request<{ site: ClientSite; baseDomain: string; dns: DnsTarget }>('/host/website'),
+  website: () => request<{
+    site: ClientSite; baseDomain: string; dns: DnsTarget
+    stays: { id: number; title: string; location: string; status: string }[]
+    entitlements: { ownWebsite: boolean; maxStaysOnSite: number; pageEditor: boolean; customDomain: boolean }
+  }>('/host/website'),
   saveWebsite: (value: Partial<ClientSite['content']>) => request<{ site: ClientSite }>('/host/website', { method: 'PUT', json: value }),
   submitWebsite: () => request<{ site: ClientSite }>('/host/website/submit', { method: 'POST' }),
   saveWebsiteDesign: (design: ClientPageDesign) => request<{ site: ClientSite }>('/host/website/design', { method: 'PUT', json: { design } }),

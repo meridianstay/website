@@ -171,31 +171,38 @@ describe('what each plan is worth', () => {
     assert.equal((await clientSiteService.forSlug('green-valley-farmstays'))?.stays.length, 2)
   })
 
-  test('a website needs a plan, and rearranging the page needs the top one', async () => {
+  test('a website needs no plan at all; the domain and the editor do', async () => {
     const host = await createUser('host')
-    const unpaid = await appError(() => clientSiteService.save(host.me, content()))
-    assert.equal(unpaid.status, 402)
-
-    const admin = await createUser('admin')
-    await subscriptionService.grantByAdmin(admin.me, host.me.id, 'multi', '')
+    // Free is the floor: everyone can write a website from the day they register.
     await clientSiteService.save(host.me, content())
+    const noDomain = await appError(() => clientSiteService.setDomain(host.me, 'greenvalley.test'))
+    assert.equal(noDomain.status, 402)
     const noEditor = await appError(() => subscriptionService.require(host.me.id, 'pageEditor'))
     assert.equal(noEditor.status, 402)
 
+    const admin = await createUser('admin')
+    await subscriptionService.grantByAdmin(admin.me, host.me.id, 'multi', '')
+    await clientSiteService.setDomain(host.me, 'greenvalley.test')
+    assert.equal((await appError(() => subscriptionService.require(host.me.id, 'pageEditor'))).status, 402)
+
     await subscriptionService.grantByAdmin(admin.me, host.me.id, 'pro', '')
-    assert.deepEqual(await subscriptionService.require(host.me.id, 'pageEditor'), { ownWebsite: true, maxStaysOnSite: 0, pageEditor: true })
+    assert.deepEqual(await subscriptionService.require(host.me.id, 'pageEditor'),
+      { ownWebsite: true, maxStaysOnSite: 0, pageEditor: true, customDomain: true })
   })
 
-  test('a site stops being served when the plan runs out', async () => {
+  test('a plan running out drops them to Free rather than taking the site away', async () => {
     const admin = await createUser('admin')
-    const host = await clientOn('single')
-    await createLiveListing(host)
+    const host = await clientOn('multi')
+    await createLiveListing(host, { title: 'Green Valley Cottage' })
+    await createLiveListing(host, { title: 'Green Valley Treehouse' })
     await clientSiteService.save(host.me, content())
     await clientSiteService.approve(admin.me, host.me.id)
-    assert.ok(await clientSiteService.forSlug('green-valley-farmstays'))
+    assert.equal((await clientSiteService.forSlug('green-valley-farmstays'))?.stays.length, 2)
 
     await subscriptionService.cancel(admin.me, host.me.id)
-    assert.equal(await clientSiteService.forSlug('green-valley-farmstays'), null)
+    const view = await clientSiteService.forSlug('green-valley-farmstays')
+    assert.ok(view, 'the website stays up on the Meridian address')
+    assert.equal(view?.stays.length, 1, 'but back to one stay, as Free allows')
   })
 
   test('with the requirement switched off, everyone gets everything', async () => {
@@ -203,13 +210,19 @@ describe('what each plan is worth', () => {
     const settings = await contentRepo.settings()
     await contentRepo.saveSetting('subscriptions', { ...settings.subscriptions, required: false }, admin.me.id)
     const host = await createUser('host')
-    assert.deepEqual(await subscriptionService.entitlementsOf(host.me.id), { ownWebsite: true, maxStaysOnSite: 0, pageEditor: true })
+    assert.deepEqual(await subscriptionService.entitlementsOf(host.me.id),
+      { ownWebsite: true, maxStaysOnSite: 0, pageEditor: true, customDomain: true })
   })
 
   test('the plan rules themselves', () => {
     const none = blankSubscription(1)
     assert.equal(subscriptionActive(none), false)
-    assert.equal(entitlements(defaultClientPlans, none).ownWebsite, false)
+    // No subscription is not no website: it is the free plan.
+    const free = entitlements(defaultClientPlans, none)
+    assert.equal(free.ownWebsite, true)
+    assert.equal(free.maxStaysOnSite, 1)
+    assert.equal(free.customDomain, false)
+    assert.equal(free.pageEditor, false)
     // A year from an expiry still running is added on, not restarted.
     const inSixMonths = new Date(Date.now() + 182 * 86_400_000).toISOString()
     assert.ok(Date.parse(nextExpiry(inSixMonths)) > Date.now() + 500 * 86_400_000)
@@ -217,10 +230,21 @@ describe('what each plan is worth', () => {
     assert.ok(Math.abs(Date.parse(nextExpiry(null)) - (Date.now() + 365 * 86_400_000)) < 2 * 86_400_000)
   })
 
-  test('the three plans are the ones the business sells', () => {
-    assert.deepEqual(defaultClientPlans.map((p) => p.pricePerYear), [999, 1999, 4999])
-    assert.deepEqual(defaultClientPlans.map((p) => p.features.maxStaysOnSite), [1, 0, 0])
-    assert.deepEqual(defaultClientPlans.map((p) => p.features.pageEditor), [false, false, true])
+  test('the four plans are the ones the business sells', () => {
+    assert.deepEqual(defaultClientPlans.map((p) => p.id), ['free', 'single', 'multi', 'pro'])
+    assert.deepEqual(defaultClientPlans.map((p) => p.pricePerYear), [0, 999, 1999, 4999])
+    // Free and 999 cover one stay; 1999 and above cover every stay a client runs.
+    assert.deepEqual(defaultClientPlans.map((p) => p.features.maxStaysOnSite), [1, 1, 0, 0])
+    // Free lives on a Meridian address; every paid plan may bring its own domain.
+    assert.deepEqual(defaultClientPlans.map((p) => p.features.customDomain), [false, true, true, true])
+    assert.deepEqual(defaultClientPlans.map((p) => p.features.pageEditor), [false, false, false, true])
+  })
+
+  test('Free is never sold', async () => {
+    const admin = await createUser('admin')
+    const host = await createUser('host')
+    const refused = await appError(() => subscriptionService.grantByAdmin(admin.me, host.me.id, 'free', ''))
+    assert.equal(refused.status, 400)
   })
 })
 
@@ -247,8 +271,10 @@ describe('the plans your team sets', () => {
 
     const host = await createUser('host')
     const view = await subscriptionService.mine(host.me)
-    assert.deepEqual(view.plans.map((p) => p.pricePerYear), [1299, 2299, 5299])
+    assert.deepEqual(view.plans.map((p) => p.pricePerYear), [300, 1299, 2299, 5299])
     assert.ok(view.plans[0].name.endsWith('(2027)'))
+    // Nobody has paid, so the plan in force is the free one.
+    assert.equal(view.currentPlanId, 'free')
   })
 
   test('a price off a round number is still a price', async () => {
@@ -271,8 +297,8 @@ describe('the plans your team sets', () => {
     const admin = await createUser('admin')
     const broken = defaultClientPlans.map((p) => (p.id === 'pro' ? { ...p, name: '', pricePerYear: -5 } : p))
     const refused = await appError(() => contentService.saveSetting(admin.me, 'subscriptions', { required: true, plans: broken }))
-    assert.ok(refused.fields['plans.2.name'])
-    assert.ok(refused.fields['plans.2.pricePerYear'])
+    assert.ok(refused.fields['plans.3.name'])
+    assert.ok(refused.fields['plans.3.pricePerYear'])
   })
 
   test('switching the requirement off lets every client have a website', async () => {

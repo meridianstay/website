@@ -1,17 +1,23 @@
 // What a client pays Meridian for, once a year. Listing on the marketplace is what they came for;
 // the plan decides how much of a website of their own they get with it.
 //
-//   Single stay   — the portal and one stay's own website.
+//   Free          — a website at <business-name>.meridianstay.com, one stay. Nobody pays for this.
+//   Single stay   — the same, at the client's own domain.
 //   Multiple      — every branch they run on that one website.
 //   Everything    — the above, plus rearranging the page themselves.
+//
+// Everyone is on Free from the moment they register, so a client always has somewhere to send
+// guests. A plan that lapses falls back to Free rather than taking their website away.
 
-export type PlanId = 'single' | 'multi' | 'pro'
+export type PlanId = 'free' | 'single' | 'multi' | 'pro'
 
 export interface PlanFeatures {
   /** How many stays may appear on the client's own website. 0 means as many as they have. */
   maxStaysOnSite: number
   /** Whether they may rearrange their landing page themselves. */
   pageEditor: boolean
+  /** Whether they may point their own domain at it. Free sites live on the Meridian subdomain. */
+  customDomain: boolean
 }
 
 export interface ClientPlan {
@@ -27,16 +33,29 @@ export interface ClientPlan {
 
 export const defaultClientPlans: ClientPlan[] = [
   {
+    id: 'free',
+    name: 'Free',
+    pricePerYear: 0,
+    tagline: 'A website on us, from the day you join.',
+    features: { maxStaysOnSite: 1, pageEditor: false, customDomain: false },
+    perks: [
+      'Your stay listed on the Meridian marketplace',
+      'Your own website at your-business-name.meridianstay.com',
+      'Bookings, calendar, guests and payouts in your portal',
+      'Nothing to pay, and nothing to set up',
+    ],
+  },
+  {
     id: 'single',
     name: 'Single stay',
     pricePerYear: 999,
-    tagline: 'One stay, one website.',
-    features: { maxStaysOnSite: 1, pageEditor: false },
+    tagline: 'The same website, at your own address.',
+    features: { maxStaysOnSite: 1, pageEditor: false, customDomain: true },
     perks: [
-      'Your stay listed on the Meridian marketplace',
-      'Your own website at your-name.meridianstay.com',
-      'Your own domain, if you have one',
-      'Bookings, calendar, guests and payouts in your portal',
+      'Everything in Free',
+      'Your own domain — yourbusiness.com instead of our subdomain',
+      'A secure certificate, issued and renewed for you',
+      'Your name on the address guests remember',
     ],
   },
   {
@@ -44,7 +63,7 @@ export const defaultClientPlans: ClientPlan[] = [
     name: 'Multiple stays',
     pricePerYear: 1999,
     tagline: 'Every branch on the same website.',
-    features: { maxStaysOnSite: 0, pageEditor: false },
+    features: { maxStaysOnSite: 0, pageEditor: false, customDomain: true },
     perks: [
       'Everything in Single stay',
       'All your stays and branches on one website',
@@ -57,7 +76,7 @@ export const defaultClientPlans: ClientPlan[] = [
     name: 'Everything',
     pricePerYear: 4999,
     tagline: 'Your website, arranged your way.',
-    features: { maxStaysOnSite: 0, pageEditor: true },
+    features: { maxStaysOnSite: 0, pageEditor: true, customDomain: true },
     perks: [
       'Everything in Multiple stays',
       'Rearrange your landing page yourself — drag the sections into the order you want',
@@ -66,6 +85,11 @@ export const defaultClientPlans: ClientPlan[] = [
     ],
   },
 ]
+
+/** The plan everybody has without paying. Never sold, never expires. */
+export const FREE_PLAN_ID: PlanId = 'free'
+
+export const freePlan = (plans: ClientPlan[]) => plans.find((p) => p.id === FREE_PLAN_ID) ?? defaultClientPlans[0]
 
 export type SubscriptionStatus = 'none' | 'active' | 'expired' | 'cancelled'
 
@@ -122,13 +146,18 @@ export function nextExpiry(current: string | null, now = new Date()): string {
 
 export const planById = (plans: ClientPlan[], id: PlanId | null) => plans.find((p) => p.id === id) ?? null
 
-/** What this client may actually do right now. Nothing without a plan that is paid up. */
+/**
+ * What this client may actually do right now. Everyone has a website: without a plan that is paid
+ * up, they fall back to Free, which is a real website on a Meridian subdomain rather than nothing.
+ */
 export function entitlements(plans: ClientPlan[], s: Pick<Subscription, 'status' | 'expiresAt' | 'planId'>, now?: string): PlanFeatures & { ownWebsite: boolean } {
-  const plan = subscriptionActive(s, now) ? planById(plans, s.planId) : null
+  const paid = subscriptionActive(s, now) ? planById(plans, s.planId) : null
+  const plan = paid ?? freePlan(plans)
   return {
-    ownWebsite: !!plan,
-    maxStaysOnSite: plan?.features.maxStaysOnSite ?? 1,
-    pageEditor: !!plan?.features.pageEditor,
+    ownWebsite: true,
+    maxStaysOnSite: plan.features.maxStaysOnSite,
+    pageEditor: plan.features.pageEditor,
+    customDomain: plan.features.customDomain,
   }
 }
 

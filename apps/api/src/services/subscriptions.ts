@@ -1,5 +1,5 @@
 import {
-  RENEWAL_WARNING_DAYS, daysLeft, defaultSubscriptionSettings, entitlements, nextExpiry, planById,
+  FREE_PLAN_ID, RENEWAL_WARNING_DAYS, daysLeft, defaultSubscriptionSettings, entitlements, freePlan, nextExpiry, planById,
   subscriptionActive, type ClientPlan, type Me, type PlanId, type SubscriptionSettings, type SubscriptionTerm,
 } from '@meridian/shared'
 import { auditLogRepo, contentRepo, subscriptionsRepo, usersRepo } from '../repositories'
@@ -21,6 +21,7 @@ export const subscriptionSettings = async (): Promise<SubscriptionSettings> => {
 const planOrFail = (plans: ClientPlan[], id: string): ClientPlan => {
   const plan = planById(plans, id as PlanId)
   if (!plan) throw new AppError(400, 'Choose one of the plans.')
+  if (plan.id === FREE_PLAN_ID) throw new AppError(400, 'Free is what everyone starts on — there is nothing to pay or record.')
   return plan
 }
 
@@ -35,6 +36,8 @@ export const subscriptionService = {
       required: settings.required,
       active: subscriptionActive(subscription),
       entitlements: entitlements(settings.plans, subscription),
+      /** The plan in force right now — the one they bought, or Free. */
+      currentPlanId: subscriptionActive(subscription) ? subscription.planId : freePlan(settings.plans).id,
       daysLeft: left,
       /** True when it is worth telling them to renew. */
       renewSoon: left !== null && left <= RENEWAL_WARNING_DAYS,
@@ -45,17 +48,19 @@ export const subscriptionService = {
   async entitlementsOf(hostId: number) {
     const [settings, subscription] = await Promise.all([subscriptionSettings(), subscriptionsRepo.get(hostId)])
     // With the requirement switched off, everyone gets everything: that is what it is for.
-    if (!settings.required) return { ownWebsite: true, maxStaysOnSite: 0, pageEditor: true }
+    if (!settings.required) return { ownWebsite: true, maxStaysOnSite: 0, pageEditor: true, customDomain: true }
     return entitlements(settings.plans, subscription)
   },
 
   /** Stops a request in its tracks when the client hasn't paid for that part. */
-  async require(hostId: number, feature: 'ownWebsite' | 'pageEditor') {
+  async require(hostId: number, feature: 'ownWebsite' | 'pageEditor' | 'customDomain') {
     const has = await this.entitlementsOf(hostId)
     if (!has[feature]) {
-      throw new AppError(402, feature === 'pageEditor'
-        ? 'Rearranging your page is part of the Everything plan.'
-        : 'Choose a plan to set up your own website.')
+      throw new AppError(402, {
+        pageEditor: 'Rearranging your page is part of the Everything plan.',
+        customDomain: 'Your own domain comes with a paid plan. Your Meridian address keeps working either way.',
+        ownWebsite: 'Choose a plan to set up your own website.',
+      }[feature])
     }
     return has
   },

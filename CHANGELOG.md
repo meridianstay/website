@@ -2,6 +2,20 @@
 
 Every change to Meridian Stay is recorded here, newest first. Each entry says what changed for the people using the platform, then the notable technical changes.
 
+## 0.40.0 — 2026-10-28
+
+### Every client gets a website, free
+- **A new Free plan, on from the day a client registers.** It gives them a real website at `their-business-name.meridianstay.com` with one stay on it, and costs nothing. Nobody is ever without somewhere to send guests.
+- What the paid plans add has moved up accordingly: **₹999** puts that website on **their own domain**, **₹1,999** puts **every stay they run** on it, **₹4,999** adds the page editor.
+- **A plan that lapses drops to Free** rather than taking the website down. They keep the site and the Meridian address; they lose the custom domain and any stays past the first.
+- **On ₹999, a client with more than one stay chooses which one the website is for** — a picker in My website, which also decides what their own domain points at. Their other stays carry on appearing on the Meridian marketplace as normal.
+- Free can't be bought or recorded as paid; it's the floor, not a product.
+
+### A control centre dashboard built around what's waiting
+- The first screen now opens with **what needs you**: calendar clashes where a night has been sold twice, listings and websites to read, domains to switch on, requests about to expire, plans running out. Each tile is a link to the page you act on, and the row is replaced by a single line when nothing is waiting.
+- **Money is grouped by direction** — commission earned, client subscriptions, promotion income, and what is owed to hosts shown apart from the rest, because it is money leaving.
+- Below that, a compact strip for the shape of the platform: live listings, bookings, users, client websites, paying clients, calendars synced. The figures that are not decisions no longer take up tiles the size of the ones that are.
+
 ## 0.39.1 — 2026-10-28
 
 ### Fixes

@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react'
 import { CheckoutDismissed, ErrorNote, PageHeader, Panel, Spinner, payWithRazorpay, useAuth } from '@meridian/ui'
-import { formatPrice, type ClientPlan, type PlanId, type Subscription as Sub } from '@meridian/shared'
+import { FREE_PLAN_ID, formatPrice, type ClientPlan, type PlanId, type Subscription as Sub } from '@meridian/shared'
 import { hostApi } from '@meridian/shared/client'
 
 // What the client pays Meridian for. One year at a time, through the same Razorpay account that
@@ -13,6 +13,8 @@ interface View {
   active: boolean
   daysLeft: number | null
   renewSoon: boolean
+  /** The plan in force — the one they bought, or Free. */
+  currentPlanId: PlanId | null
 }
 
 const when = (iso: string) => new Date(iso).toLocaleDateString('en-IN', { dateStyle: 'medium' })
@@ -83,29 +85,34 @@ export function Subscription() {
           {view.renewSoon && <p className="mt-1">Renewing adds a year onto what you have left, so nothing is wasted.</p>}
         </div>
       )}
-      {!active && view.required && (
-        <div className="rounded-2xl p-4 mb-8 text-sm bg-amber-50 text-amber-800">
+      {!active && (
+        <div className="rounded-2xl p-4 mb-8 text-sm bg-brand-50 text-brand-800">
           <p className="font-semibold">
-            <i className="fa-solid fa-circle-exclamation mr-2" aria-hidden="true"></i>
-            {sub.terms.length ? 'Your plan has run out.' : 'Choose a plan to get started.'}
+            <i className="fa-solid fa-circle-check mr-2" aria-hidden="true"></i>
+            {sub.terms.length ? 'Your paid plan has run out, so you are back on Free.' : 'You are on Free.'}
           </p>
-          <p className="mt-1">Your listings and bookings keep working. Your own website needs a plan.</p>
+          <p className="mt-1">
+            Your website is live at your Meridian address and your listings, bookings and payouts all keep working.
+            A paid plan adds your own domain, and more than one stay on the site.
+          </p>
         </div>
       )}
       {message && <p role="status" className="rounded-2xl p-4 mb-8 text-sm bg-brand-50 text-brand-800 font-semibold">{message}</p>}
       {error && <p role="alert" className="rounded-2xl p-4 mb-8 text-sm bg-rose-50 text-rose-700 font-semibold">{error}</p>}
 
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 mb-8">
+      <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-5 mb-8">
         {plans.map((plan) => {
-          const current = active && sub.planId === plan.id
+          const free = plan.id === FREE_PLAN_ID
+          const current = free ? !active : active && sub.planId === plan.id
           return (
             <article key={plan.id} className={`bg-white rounded-3xl p-7 border-2 flex flex-col ${current ? 'border-brand-500' : 'border-slate-100'}`}>
               {current && <span className="self-start text-[10px] font-bold uppercase bg-brand-100 text-brand-700 px-2.5 py-1 rounded-full mb-3">Your plan</span>}
+              {free && !current && <span className="self-start text-[10px] font-bold uppercase bg-slate-100 text-slate-500 px-2.5 py-1 rounded-full mb-3">Always included</span>}
               <h2 className="text-lg font-extrabold text-slate-900">{plan.name}</h2>
               <p className="text-sm text-slate-500 mt-1">{plan.tagline}</p>
               <p className="mt-5">
-                <span className="text-3xl font-extrabold text-slate-900">{formatPrice(plan.pricePerYear)}</span>
-                <span className="text-sm text-slate-400 font-semibold"> / year</span>
+                <span className="text-3xl font-extrabold text-slate-900">{free ? 'Free' : formatPrice(plan.pricePerYear)}</span>
+                {!free && <span className="text-sm text-slate-400 font-semibold"> / year</span>}
               </p>
               <ul className="mt-5 space-y-2.5 text-sm text-slate-600 flex-1">
                 {plan.perks.map((perk) => (
@@ -114,16 +121,22 @@ export function Subscription() {
                   </li>
                 ))}
               </ul>
-              <button
-                type="button"
-                onClick={() => choose(plan)}
-                disabled={!!busy}
-                className={`mt-6 font-bold py-3 px-6 rounded-2xl text-sm disabled:opacity-50 ${
-                  current ? 'bg-slate-100 hover:bg-slate-200 text-slate-800' : 'bg-brand-600 hover:bg-brand-700 text-white'
-                }`}
-              >
-                {busy === plan.id ? 'Opening payment…' : current ? 'Renew for a year' : active ? 'Switch to this plan' : 'Choose this plan'}
-              </button>
+              {free ? (
+                <p className="mt-6 text-xs text-slate-500 text-center py-3">
+                  {current ? 'This is what you are on. Nothing to pay.' : 'Still yours underneath — a paid plan never takes it away.'}
+                </p>
+              ) : (
+                <button
+                  type="button"
+                  onClick={() => choose(plan)}
+                  disabled={!!busy}
+                  className={`mt-6 font-bold py-3 px-6 rounded-2xl text-sm disabled:opacity-50 ${
+                    current ? 'bg-slate-100 hover:bg-slate-200 text-slate-800' : 'bg-brand-600 hover:bg-brand-700 text-white'
+                  }`}
+                >
+                  {busy === plan.id ? 'Opening payment…' : current ? 'Renew for a year' : active ? 'Switch to this plan' : 'Choose this plan'}
+                </button>
+              )}
             </article>
           )
         })}

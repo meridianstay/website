@@ -110,6 +110,8 @@ hostRoutes.get('/host/website', async (c) => {
     site: await clientSiteService.mine(host),
     baseDomain: clientSiteService.baseDomain(),
     dns: clientSiteService.dnsTarget(),
+    stays: await clientSiteService.staysForPicker(host.id),
+    entitlements: await subscriptionService.entitlementsOf(host.id),
   })
 })
 hostRoutes.put('/host/website', async (c) => c.json({ site: await clientSiteService.save(currentUser(c), await body(c)) }))
