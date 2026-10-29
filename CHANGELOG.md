@@ -2,6 +2,19 @@
 
 Every change to Meridian Stay is recorded here, newest first. Each entry says what changed for the people using the platform, then the notable technical changes.
 
+## 0.46.0 — 2026-10-29
+
+### Clients invoice their own guests
+The property belongs to the client, so the bill for staying in it should come from them. It now does.
+
+- **Host portal → Tax invoices** is where a client enters their GST registration — their GSTIN, the name it is in, and the state. From the next booking onwards their guests are invoiced **under their own name and GSTIN**, automatically, with no step for them to remember.
+- **The tax split follows whoever is supplying.** A client registered in the same state as their property charges CGST and SGST; before, the same stay showed IGST because it was being compared against Meridian's state. Nothing about what a guest pays changes.
+- **A client who isn't registered is invoiced for by Meridian**, exactly as before. That is the right arrangement for an owner below the registration threshold, and it needs no decision from them.
+- The same page shows them every invoice raised for their stays, **marked with whose it is** — theirs to file, or Meridian's — with what is taxable, what tax was collected, and a link to each document.
+- **Registering later never rewrites the past.** Bookings invoiced by Meridian before a client registered stay exactly as they were, and the page says so plainly. A credit note is always raised by whoever raised the invoice it reverses.
+- A GSTIN is checked before it is stored, including against the state it claims — the first two characters of a GSTIN *are* the state, so a mismatch means one of the two is wrong. Changing the number puts the registration back in your team's queue to look over, and **Control centre → Tax invoices** now shows which registration each document was raised under.
+- Your team can still override all of this and invoice everything itself, if an accountant says so.
+
 ## 0.45.0 — 2026-10-28
 
 ### GST invoices

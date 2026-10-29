@@ -35,7 +35,7 @@ export function Invoices() {
     <>
       <PageHeader
         title="Tax invoices"
-        description="Every invoice and credit note raised, and the registration they are raised under. An invoice is written once and never changed, so a rate you alter today cannot rewrite last month."
+        description="Every invoice and credit note raised, whether under a client's own registration or Meridian's. An invoice is written once and never changed, so a rate you alter today cannot rewrite last month."
       />
 
       {!register.ready && (
@@ -46,8 +46,9 @@ export function Invoices() {
         </p>
       )}
 
-      <div className="grid grid-cols-2 lg:grid-cols-5 gap-4 sm:gap-5 mb-8">
+      <div className="grid grid-cols-2 lg:grid-cols-6 gap-4 sm:gap-5 mb-8">
         <Stat label="Invoices" value={String(register.totals.count)} hint={register.totals.credits ? `${register.totals.credits} credit notes` : 'no credit notes'} />
+        <Stat label="Raised by Meridian" value={String(register.invoices.filter((i) => i.raisedBy === 'platform' && i.kind === 'booking').length)} hint="yours to file" />
         <Stat label="Taxable value" value={formatPrice(register.totals.taxable)} hint="before tax" />
         <Stat label="CGST" value={formatPrice(register.totals.cgst)} hint="within the state" />
         <Stat label="SGST" value={formatPrice(register.totals.sgst)} hint="within the state" />
@@ -73,6 +74,7 @@ export function Invoices() {
                   <th className="px-2 py-2 font-bold">Number</th>
                   <th className="px-2 py-2 font-bold">Date</th>
                   <th className="px-2 py-2 font-bold">Guest</th>
+                  <th className="px-2 py-2 font-bold">Raised by</th>
                   <th className="px-2 py-2 font-bold">Place of supply</th>
                   <th className="px-2 py-2 font-bold text-right">Taxable</th>
                   <th className="px-2 py-2 font-bold text-right">Tax</th>
@@ -113,6 +115,12 @@ function Row({ invoice: i }: { invoice: Invoice }) {
       </td>
       <td className="px-2 py-2.5 whitespace-nowrap text-slate-600">{when(i.issuedAt)}</td>
       <td className="px-2 py-2.5 text-slate-700">{i.recipient.name}</td>
+      <td className="px-2 py-2.5">
+        <span className={`px-2 py-0.5 rounded-full text-[10px] font-bold uppercase ${i.raisedBy === 'owner' ? 'bg-slate-100 text-slate-600' : 'bg-brand-100 text-brand-700'}`}>
+          {i.raisedBy === 'owner' ? 'The owner' : 'Meridian'}
+        </span>
+        {i.raisedBy === 'owner' && <span className="block text-[11px] text-slate-500 mt-0.5 font-mono">{i.supplier.gstin}</span>}
+      </td>
       <td className="px-2 py-2.5 text-slate-600">{i.placeOfSupply.stateName || '—'}</td>
       <td className="px-2 py-2.5 text-right tabular-nums">{formatPrice(sign * i.lines.taxable)}</td>
       <td className="px-2 py-2.5 text-right tabular-nums">

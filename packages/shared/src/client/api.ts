@@ -13,7 +13,7 @@ import type { Coupon } from '../offers'
 import type { AdCampaign, AdPlacement, PromotionPlan, PromotionSettings } from '../promotions'
 import type { Campaign, CampaignContent } from '../campaigns'
 import type { CacheReport, CronRun, ServerReport, ServerSettings, StorageUsage } from '../server'
-import type { GstSettings, Invoice } from '../gst'
+import type { GstSettings, HostGst, Invoice } from '../gst'
 import type { ClientSite, ClientSiteView, DnsTarget, DomainCheck } from '../clientSite'
 import type { ClientPageDesign } from '../clientPage'
 import type { ClientPlan, PlanId, Subscription, SubscriptionSettings } from '../subscription'
@@ -194,6 +194,12 @@ export const hostApi = {
   syncCalendar: (id: string) => request<{ feed: CalendarFeed }>(`/host/calendar-sync/${id}/sync`, { method: 'POST' }),
   removeCalendar: (id: string) => request<void>(`/host/calendar-sync/${id}`, { method: 'DELETE' }),
 
+  invoices: () => request<{
+    invoices: Invoice[]; registration: HostGst; raisedByPlatform: number
+    totals: { count: number; taxable: number; tax: number; total: number }
+  }>('/host/invoices'),
+  saveGst: (value: Partial<HostGst>) => request<{ registration: HostGst }>('/host/gst', { method: 'PUT', json: value }),
+
   website: () => request<{
     site: ClientSite; baseDomain: string; dns: DnsTarget
     stays: { id: number; title: string; location: string; status: string }[]
@@ -348,6 +354,8 @@ export const adminApi = {
   user: (id: number) => request<AdminUserDetail>(`/admin/users/${id}`),
   booking: (code: string) => request<AdminBookingDetail>(`/admin/bookings/${encodeURIComponent(code)}`),
 
+  verifyHostGst: (hostId: number, verified: boolean) =>
+    request<{ registration: HostGst }>(`/admin/invoices/host/${hostId}/verify`, { method: 'POST', json: { verified } }),
   invoiceRegister: (params: { year?: string; month?: string } = {}) =>
     request<{ invoices: Invoice[]; ready: boolean; totals: { count: number; credits: number; taxable: number; cgst: number; sgst: number; igst: number; total: number } }>(`/admin/invoices${qs(params)}`),
 

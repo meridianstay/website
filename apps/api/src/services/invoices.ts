@@ -1,10 +1,11 @@
 import {
-  defaultGstSettings, isGstin, stateCodeOf, stateName, taxLines,
+  GST_STATES, blankHostGst, defaultGstSettings, isGstin, stateCodeOf, stateName, supplierFor, taxLines,
   type GstSettings, type Invoice, type Me,
 } from '@meridian/shared'
-import { bookingsRepo, invoicesRepo, propertiesRepo, usersRepo } from '../repositories'
+import { bookingsRepo, hostTaxRepo, invoicesRepo, propertiesRepo, usersRepo } from '../repositories'
 import { contentRepo } from '../repositories'
 import { AppError, notFound } from '../http/errors'
+import { collect, str } from '../http/validate'
 
 // Tax invoices for bookings.
 //
@@ -40,7 +41,13 @@ export const invoiceService = {
     const booking = await bookingsRepo.find(bookingCode)
     if (!booking) return null
     const property = await propertiesRepo.get(booking.propertyId)
-    const guest = await usersRepo.findById(booking.guestId)
+    const [guest, hostGst] = await Promise.all([
+      usersRepo.findById(booking.guestId),
+      hostTaxRepo.find(booking.hostId),
+    ])
+    // The client owns the property, so their registration is the one the guest is invoiced under.
+    // A client who hasn't registered falls to Meridian's, which is what the platform is there for.
+    const supplier = supplierFor(gst, hostGst)
 
     const total = booking.totalMinor / 100
     const perNight = booking.pricePerNightMinor / 100
@@ -49,7 +56,9 @@ export const invoiceService = {
     return invoicesRepo.issue({
       kind: 'booking',
       bookingCode,
-      supplier: { legalName: gst.legalName, gstin: gst.gstin, address: gst.address, stateCode: gst.stateCode },
+      hostId: booking.hostId,
+      raisedBy: supplier.who,
+      supplier: { legalName: supplier.legalName, gstin: supplier.gstin, address: supplier.address, stateCode: supplier.stateCode },
       recipient: {
         name: booking.guest.name,
         email: booking.guest.email ?? guest?.email ?? null,
@@ -63,7 +72,8 @@ export const invoiceService = {
       sac: gst.sac,
       nights: booking.nights,
       perNight,
-      lines: taxLines(total, perNight, gst, placeOfSupply),
+      // Whose state decides CGST+SGST or IGST is whoever is supplying, not always Meridian.
+      lines: taxLines(total, perNight, { ...gst, stateCode: supplier.stateCode }, placeOfSupply),
       against: null,
     }, gst.invoicePrefix)
   },
@@ -87,6 +97,9 @@ export const invoiceService = {
     return invoicesRepo.issue({
       kind: 'cancellation',
       bookingCode,
+      hostId: original.hostId,
+      // A credit note is raised by whoever raised the invoice it reverses, whatever has changed since.
+      raisedBy: original.raisedBy,
       supplier: original.supplier,
       recipient: original.recipient,
       placeOfSupply: original.placeOfSupply,
@@ -95,7 +108,12 @@ export const invoiceService = {
       nights: original.nights,
       perNight: original.perNight,
       // Taxed at the rate the booking was taxed at, not at today's.
-      lines: taxLines(amount, original.perNight, { ...gst, slabs: [{ upTo: Number.MAX_SAFE_INTEGER, rate: original.lines.rate, label: '' }] }, original.placeOfSupply.stateCode),
+      lines: taxLines(
+        amount,
+        original.perNight,
+        { ...gst, stateCode: original.supplier.stateCode, slabs: [{ upTo: Number.MAX_SAFE_INTEGER, rate: original.lines.rate, label: '' }] },
+        original.placeOfSupply.stateCode,
+      ),
       against: original.number,
     }, gst.invoicePrefix)
   },
@@ -112,6 +130,65 @@ export const invoiceService = {
     if (!booking) throw notFound('invoice')
     if (booking.guestId !== viewer.id && booking.hostId !== viewer.id) throw new AppError(403, 'That invoice isn’t yours.')
     return invoice
+  },
+
+  /**
+   * A client saving their own GST registration. Checked rather than trusted: an invoice raised
+   * under a wrong GSTIN is worse than one raised under Meridian's.
+   */
+  async saveHostGst(host: Me, body: Record<string, unknown>) {
+    const gstin = str(body.gstin).trim().toUpperCase()
+    const legalName = str(body.legalName).slice(0, 120)
+    const stateCode = str(body.stateCode)
+    const fields: Record<string, string> = {}
+
+    // Clearing it is always allowed: a client who deregisters says so by emptying the box.
+    if (!gstin && !legalName) {
+      return hostTaxRepo.save(host.id, { ...blankHostGst(), updatedAt: new Date().toISOString() })
+    }
+    if (!isGstin(gstin)) fields.gstin = 'That is not a GSTIN. It is 15 characters, e.g. 29ABCDE1234F1Z5.'
+    if (!legalName) fields.legalName = 'The name your registration is in.'
+    if (!GST_STATES.some((s) => s.code === stateCode)) fields.stateCode = 'Choose the state you are registered in.'
+    if (isGstin(gstin) && stateCode && gstin.slice(0, 2) !== stateCode) {
+      fields.stateCode = `Your GSTIN begins ${gstin.slice(0, 2)}, which is ${stateName(gstin.slice(0, 2)) || 'another state'}.`
+    }
+    collect(fields)
+
+    const existing = await hostTaxRepo.find(host.id)
+    return hostTaxRepo.save(host.id, {
+      gstin,
+      legalName,
+      stateCode,
+      address: str(body.address).slice(0, 300),
+      // A changed registration is a new thing for your team to look at.
+      verifiedAt: existing?.gstin === gstin ? existing.verifiedAt : null,
+    })
+  },
+
+  /** Your team marking a client's registration as checked. */
+  async verifyHostGst(hostId: number, verified: boolean) {
+    return hostTaxRepo.save(hostId, { verifiedAt: verified ? new Date().toISOString() : null })
+  },
+
+  /** One client's own invoices — what they would file under their own registration. */
+  async forHost(hostId: number) {
+    const [all, registration] = await Promise.all([invoicesRepo.byHost(hostId), hostTaxRepo.get(hostId)])
+    const mine = all.filter((i) => i.raisedBy === 'owner')
+    const booked = mine.filter((i) => i.kind === 'booking')
+    const credited = mine.filter((i) => i.kind === 'cancellation')
+    const sum = (rows: Invoice[], pick: (i: Invoice) => number) => Math.round(rows.reduce((t, i) => t + pick(i), 0) * 100) / 100
+    return {
+      invoices: all,
+      registration,
+      /** Invoices raised under Meridian's registration because this client had none at the time. */
+      raisedByPlatform: all.filter((i) => i.raisedBy === 'platform' && i.kind === 'booking').length,
+      totals: {
+        count: booked.length,
+        taxable: Math.round((sum(booked, (i) => i.lines.taxable) - sum(credited, (i) => i.lines.taxable)) * 100) / 100,
+        tax: Math.round((sum(booked, (i) => i.lines.tax) - sum(credited, (i) => i.lines.tax)) * 100) / 100,
+        total: Math.round((sum(booked, (i) => i.lines.total) - sum(credited, (i) => i.lines.total)) * 100) / 100,
+      },
+    }
   },
 
   /** The register your team files from. */

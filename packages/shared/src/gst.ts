@@ -36,8 +36,17 @@ export interface GstSettings {
    */
   pricesIncludeTax: boolean
   slabs: GstSlab[]
-  /** Who the law treats as supplying the stay. Only an accountant can settle this. */
-  supplier: 'platform' | 'host'
+  /**
+   * Who the law treats as supplying the stay.
+   *
+   * `owner` — the usual arrangement, and the default: the client owns the property, so a client
+   * who is GST-registered invoices the guest under their own registration. A client who is not
+   * registered falls to Meridian, which is what an e-commerce operator is for.
+   *
+   * `platform` — Meridian invoices for every stay, whatever the client's registration. Only set
+   * this if an accountant has told you to.
+   */
+  supplier: 'owner' | 'platform'
 }
 
 export const defaultGstSettings: GstSettings = {
@@ -53,7 +62,7 @@ export const defaultGstSettings: GstSettings = {
     { upTo: 7500, rate: 5, label: 'Up to ₹7,500 a night' },
     { upTo: Number.MAX_SAFE_INTEGER, rate: 18, label: 'Above ₹7,500 a night' },
   ],
-  supplier: 'platform',
+  supplier: 'owner',
 }
 
 /** The state codes GST uses, which are the first two digits of every GSTIN. */
@@ -131,6 +140,48 @@ export function taxLines(amount: number, perNight: number, settings: GstSettings
   }
 }
 
+/** A client's own GST registration. Theirs to fill in, and theirs to keep correct. */
+export interface HostGst {
+  gstin: string
+  /** The name the registration is in, which is often not the name of the stay. */
+  legalName: string
+  address: string
+  stateCode: string
+  /** Set when your team has looked at it. Invoices are raised under it either way. */
+  verifiedAt: string | null
+  updatedAt: string
+}
+
+export const blankHostGst = (): HostGst =>
+  ({ gstin: '', legalName: '', address: '', stateCode: '', verifiedAt: null, updatedAt: '' })
+
+/** True once there is a registration good enough to raise an invoice under. */
+export const hostGstReady = (gst: HostGst | null | undefined) =>
+  !!gst && isGstin(gst.gstin) && !!gst.legalName && !!gst.stateCode
+
+/**
+ * Whose registration a booking is invoiced under. The client's when they have one and the settings
+ * allow it, otherwise Meridian's — which is how an unregistered owner's stay is still invoiced.
+ */
+export function supplierFor(settings: GstSettings, hostGst: HostGst | null | undefined) {
+  if (settings.supplier === 'owner' && hostGstReady(hostGst)) {
+    return {
+      who: 'owner' as const,
+      legalName: hostGst!.legalName,
+      gstin: hostGst!.gstin,
+      address: hostGst!.address,
+      stateCode: hostGst!.stateCode,
+    }
+  }
+  return {
+    who: 'platform' as const,
+    legalName: settings.legalName,
+    gstin: settings.gstin,
+    address: settings.address,
+    stateCode: settings.stateCode,
+  }
+}
+
 export type InvoiceKind = 'booking' | 'cancellation'
 
 /** A tax invoice, kept exactly as it was issued. Nothing about one is ever recalculated. */
@@ -146,6 +197,10 @@ export interface Invoice {
   issuedAt: string
   /** Who is supplying, copied in full so a later settings change can't alter a past invoice. */
   supplier: { legalName: string; gstin: string; address: string; stateCode: string }
+  /** Whether that was the property's owner or Meridian, which decides whose return it belongs in. */
+  raisedBy: 'owner' | 'platform'
+  /** The client whose stay it was, so a register can be split by owner. */
+  hostId: number
   /** Who it is for. A guest without a GSTIN is an unregistered recipient, which is normal. */
   recipient: { name: string; email: string | null; phone: string | null; gstin: string | null }
   /** Where the supply happened, which for a stay is where the property is. */

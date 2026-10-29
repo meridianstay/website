@@ -17,6 +17,7 @@ const Website = lazy(() => import('./pages/Website').then((m) => ({ default: m.W
 const Subscription = lazy(() => import('./pages/Subscription').then((m) => ({ default: m.Subscription })))
 const CalendarSync = lazy(() => import('./pages/CalendarSync').then((m) => ({ default: m.CalendarSync })))
 const PageEditor = lazy(() => import('./pages/PageEditor').then((m) => ({ default: m.PageEditor })))
+const Invoices = lazy(() => import('./pages/Invoices').then((m) => ({ default: m.Invoices })))
 
 const nav: NavItem[] = [
   { to: '/', label: 'host.dashboard', icon: 'chart-line', end: true },
@@ -24,6 +25,7 @@ const nav: NavItem[] = [
   { to: '/bookings', label: 'host.bookings', icon: 'calendar-days' },
   { to: '/promotions', label: 'host.promotions', icon: 'bullhorn' },
   { to: '/payouts', label: 'host.payouts', icon: 'indian-rupee-sign' },
+  { to: '/invoices', label: 'Tax invoices', icon: 'book-open' },
   { to: '/website', label: 'My website', icon: 'globe' },
   { to: '/design', label: 'Design my page', icon: 'shapes' },
   { to: '/sync', label: 'Calendar sync', icon: 'rotate' },
@@ -50,6 +52,7 @@ export default function App() {
                   <Route path="bookings" element={<Suspense fallback={<BrandLoader />}><HostBookings /></Suspense>} />
                   <Route path="promotions" element={<Suspense fallback={<BrandLoader />}><Promotions /></Suspense>} />
                   <Route path="payouts" element={<Suspense fallback={<BrandLoader />}><Payouts /></Suspense>} />
+                  <Route path="invoices" element={<Suspense fallback={<BrandLoader />}><Invoices /></Suspense>} />
                   <Route path="website" element={<Suspense fallback={<BrandLoader />}><Website /></Suspense>} />
                   <Route path="design" element={<Suspense fallback={<BrandLoader />}><PageEditor /></Suspense>} />
                   <Route path="plan" element={<Suspense fallback={<BrandLoader />}><Subscription /></Suspense>} />

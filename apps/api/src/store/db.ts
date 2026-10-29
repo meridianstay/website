@@ -37,6 +37,8 @@ export const C = {
   calendarFeeds: 'calendarFeeds',
   /** Tax invoices and credit notes, written once and never changed. */
   invoices: 'invoices',
+  /** A client's own GST registration, which their guests' invoices are raised under. */
+  hostTax: 'hostTax',
 } as const
 
 export const col = (name: string) => firestore.collection(name)

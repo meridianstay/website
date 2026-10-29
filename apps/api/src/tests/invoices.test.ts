@@ -237,3 +237,128 @@ describe('raising an invoice', () => {
     assert.ok(after.totals.total >= 0)
   })
 })
+
+describe('whose registration a booking is invoiced under', () => {
+  beforeEach(resetDatabase)
+
+  const ownerGst = { gstin: '32AABCU9603R1ZM', legalName: 'Green Valley Estates LLP', stateCode: '32', address: 'Munnar, Kerala' }
+
+  test('a registered client invoices their own guests', async () => {
+    await switchOn()
+    const host = await createUser('host')
+    const guest = await createUser('guest')
+    await invoiceService.saveHostGst(host.me, ownerGst)
+    const stay = await createLiveListing(host, { price: 3500, city: 'Munnar', region: 'Kerala' })
+    const { booking } = await bookingService.create(guest.me, guest.uid, bookingInput(stay))
+
+    const invoice = (await invoiceService.forBooking(booking.code))[0]
+    assert.equal(invoice.raisedBy, 'owner')
+    assert.equal(invoice.supplier.gstin, ownerGst.gstin)
+    assert.equal(invoice.supplier.legalName, ownerGst.legalName)
+    // The owner and the stay are both in Kerala, so it is a within-state supply.
+    assert.equal(invoice.lines.interState, false)
+    assert.ok(invoice.lines.cgst > 0 && invoice.lines.sgst > 0)
+    assert.equal(invoice.lines.igst, 0)
+  })
+
+  test('a client with no registration is invoiced for by Meridian', async () => {
+    await switchOn()
+    const host = await createUser('host')
+    const guest = await createUser('guest')
+    const stay = await createLiveListing(host, { price: 3500, city: 'Munnar', region: 'Kerala' })
+    const { booking } = await bookingService.create(guest.me, guest.uid, bookingInput(stay))
+
+    const invoice = (await invoiceService.forBooking(booking.code))[0]
+    assert.equal(invoice.raisedBy, 'platform')
+    assert.equal(invoice.supplier.gstin, registered.gstin)
+    // Meridian is in Karnataka and the stay is in Kerala, so this one crosses a state line.
+    assert.equal(invoice.lines.interState, true)
+  })
+
+  test('your team can insist on invoicing everything itself', async () => {
+    await switchOn({ supplier: 'platform' })
+    const host = await createUser('host')
+    const guest = await createUser('guest')
+    await invoiceService.saveHostGst(host.me, ownerGst)
+    const stay = await createLiveListing(host, { price: 3500 })
+    const { booking } = await bookingService.create(guest.me, guest.uid, bookingInput(stay))
+    assert.equal((await invoiceService.forBooking(booking.code))[0].raisedBy, 'platform')
+  })
+
+  test('registering later changes the next booking, never an invoice already raised', async () => {
+    await switchOn()
+    const host = await createUser('host')
+    const guest = await createUser('guest')
+    const stay = await createLiveListing(host, { price: 3500, region: 'Kerala' })
+
+    const before = (await bookingService.create(guest.me, guest.uid, bookingInput(stay))).booking
+    await invoiceService.saveHostGst(host.me, ownerGst)
+    const after = (await bookingService.create(guest.me, guest.uid, {
+      ...bookingInput(stay), checkIn: day(40), checkOut: day(43),
+    })).booking
+
+    assert.equal((await invoiceService.forBooking(before.code))[0].raisedBy, 'platform')
+    assert.equal((await invoiceService.forBooking(after.code))[0].raisedBy, 'owner')
+  })
+
+  test('a credit note is raised by whoever raised the invoice it reverses', async () => {
+    await switchOn()
+    const host = await createUser('host')
+    const guest = await createUser('guest')
+    await invoiceService.saveHostGst(host.me, ownerGst)
+    const stay = await createLiveListing(host, { price: 3500, region: 'Kerala' })
+    const { booking } = await bookingService.create(guest.me, guest.uid, bookingInput(stay))
+    await bookingService.cancelByGuest(guest.me, booking.code)
+
+    const credit = (await invoiceService.forBooking(booking.code)).find((i) => i.kind === 'cancellation')!
+    assert.equal(credit.raisedBy, 'owner')
+    assert.equal(credit.supplier.gstin, ownerGst.gstin)
+    assert.equal(credit.lines.interState, false, 'credited the same way the invoice was taxed')
+  })
+
+  test('a registration is checked before it is stored, and can be cleared', async () => {
+    const host = await createUser('host')
+    const wrong = await appError(() => invoiceService.saveHostGst(host.me, { ...ownerGst, gstin: 'NOPE' }))
+    assert.ok(wrong.fields.gstin)
+
+    // The GSTIN says Kerala; claiming Karnataka is one of them being wrong.
+    const mismatch = await appError(() => invoiceService.saveHostGst(host.me, { ...ownerGst, stateCode: '29' }))
+    assert.ok(mismatch.fields.stateCode)
+
+    const saved = await invoiceService.saveHostGst(host.me, ownerGst)
+    assert.equal(saved.gstin, ownerGst.gstin)
+    assert.equal(saved.verifiedAt, null, 'a new registration has not been looked at yet')
+
+    const cleared = await invoiceService.saveHostGst(host.me, { gstin: '', legalName: '' })
+    assert.equal(cleared.gstin, '')
+  })
+
+  test('a client sees their own invoices, and which of them are theirs to file', async () => {
+    await switchOn()
+    const host = await createUser('host')
+    const guest = await createUser('guest')
+    const stay = await createLiveListing(host, { price: 3500, region: 'Kerala' })
+    await bookingService.create(guest.me, guest.uid, bookingInput(stay))
+
+    const beforeRegistering = await invoiceService.forHost(host.me.id)
+    assert.equal(beforeRegistering.totals.count, 0, 'none of them are theirs yet')
+    assert.equal(beforeRegistering.raisedByPlatform, 1)
+
+    await invoiceService.saveHostGst(host.me, ownerGst)
+    await bookingService.create(guest.me, guest.uid, { ...bookingInput(stay), checkIn: day(40), checkOut: day(43) })
+    const after = await invoiceService.forHost(host.me.id)
+    assert.equal(after.totals.count, 1, 'the one raised under their own registration')
+    assert.equal(after.invoices.length, 2, 'they can still see both')
+    assert.ok(after.totals.tax > 0)
+  })
+
+  test('your team marking a registration as checked', async () => {
+    const host = await createUser('host')
+    await invoiceService.saveHostGst(host.me, ownerGst)
+    const verified = await invoiceService.verifyHostGst(host.me.id, true)
+    assert.ok(verified.verifiedAt)
+    // Changing the number puts it back in the queue to be looked at.
+    const changed = await invoiceService.saveHostGst(host.me, { ...ownerGst, gstin: '29ABCDE1234F1Z5', stateCode: '29' })
+    assert.equal(changed.verifiedAt, null)
+  })
+})

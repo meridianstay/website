@@ -143,9 +143,14 @@ The tax is taken *out of* what the guest paid rather than added on top, so nothi
 follows what a night costs; the split follows where the property is. Documents are immutable — changing a rate
 never alters one already raised — and numbers run gaplessly from one each financial year.
 
-**Two things are for your accountant, not the software:** the rates (set up as 5% up to ₹7,500 a night and 18%
-above, the structure from 22 September 2025, editable because rates move) and whether Meridian or the host is
-the supplier in law. Both are settings.
+**A client who is GST-registered invoices their own guests.** They enter their registration in **Host portal →
+Tax invoices**, and from the next booking their guests are billed under their name and GSTIN — they own the
+property, so the supply is theirs. A client who is not registered is invoiced for by Meridian instead, which is
+the right arrangement below the registration threshold. Either way nothing a guest pays changes, and registering
+later never rewrites an invoice already raised.
+
+**The rates are for your accountant, not the software:** set up as 5% up to ₹7,500 a night and 18% above, the
+structure from 22 September 2025, and editable because rates move.
 
 ## Keeping dates in step with other platforms
 

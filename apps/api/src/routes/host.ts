@@ -11,6 +11,7 @@ import { str } from '../http/validate'
 import { rateLimit } from '../http/rateLimit'
 import { clientSiteService } from '../services/clientSites'
 import { hostDashboard } from '../services/host'
+import { invoiceService } from '../services/invoices'
 import { subscriptionService } from '../services/subscriptions'
 import { calendarSyncService } from '../services/calendarSync'
 
@@ -138,3 +139,7 @@ hostRoutes.delete('/host/calendar-sync/:id', async (c) => {
   await calendarSyncService.remove(currentUser(c), c.req.param('id'))
   return new Response(null, { status: 204 })
 })
+
+// ─── The client's own tax registration and invoices ──────────────────────────
+hostRoutes.get('/host/invoices', async (c) => c.json(await invoiceService.forHost(currentUser(c).id)))
+hostRoutes.put('/host/gst', async (c) => c.json({ registration: await invoiceService.saveHostGst(currentUser(c), await body(c)) }))

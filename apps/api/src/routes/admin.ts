@@ -240,6 +240,8 @@ const rowKey = (raw: string | undefined) => {
 }
 
 // ─── Tax invoices ────────────────────────────────────────────────────────────
+adminRoutes.post('/admin/invoices/host/:hostId/verify', async (c) =>
+  c.json({ registration: await invoiceService.verifyHostGst(Number(c.req.param('hostId')), (await body(c)).verified !== false) }))
 adminRoutes.get('/admin/invoices', async (c) =>
   c.json(await invoiceService.register({ financialYear: q(c.req.query('year')) ?? undefined, month: q(c.req.query('month')) ?? undefined })))
 
