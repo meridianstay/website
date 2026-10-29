@@ -72,6 +72,7 @@ const bn: Dictionary = {
   'stay.privateTitle': 'নাম ও মালিকের তথ্য গোপন।',
   'stay.privateBody': 'সম্পত্তির নাম, মালিকের তথ্য এবং সঠিক ঠিকানা আপনার বুকিং নিশ্চিত ও সম্পূর্ণ পেমেন্ট হওয়ার সঙ্গে সঙ্গেই জানানো হয়।',
   'stay.aboutSpace': 'এই জায়গা সম্পর্কে',
+  'stay.visitWebsite': 'তাদের ওয়েবসাইট দেখুন',
   'stay.amenities': 'এখানে কী কী আছে',
   'stay.houseRules': 'বাড়ির নিয়ম',
   'stay.reviews': 'পর্যালোচনা',

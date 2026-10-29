@@ -82,6 +82,7 @@ const en: Dictionary = {
   'stay.privateTitle': 'Name and owner details are private.',
   'stay.privateBody': 'The property’s name, the owner’s details and the exact address are shared with you as soon as your booking is confirmed and paid.',
   'stay.aboutSpace': 'About this space',
+  'stay.visitWebsite': 'Visit their website',
   'stay.amenities': 'What this place offers',
   'stay.houseRules': 'House rules',
   'stay.reviews': 'Reviews',

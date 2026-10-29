@@ -72,6 +72,7 @@ const gu: Dictionary = {
   'stay.privateTitle': 'નામ અને માલિકની માહિતી ખાનગી છે.',
   'stay.privateBody': 'મિલકતનું નામ, માલિકની માહિતી અને ચોક્કસ સરનામું તમારું બુકિંગ કન્ફર્મ થઈ અને પૂરી ચુકવણી થતાં જ મળી જશે.',
   'stay.aboutSpace': 'આ જગ્યા વિશે',
+  'stay.visitWebsite': 'તેમની વેબસાઇટ જુઓ',
   'stay.amenities': 'અહીં શું શું છે',
   'stay.houseRules': 'ઘરના નિયમો',
   'stay.reviews': 'સમીક્ષાઓ',

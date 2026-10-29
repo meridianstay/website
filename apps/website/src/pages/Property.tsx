@@ -106,6 +106,22 @@ export function Property() {
             </button>
           )}
           <h1 className="text-2xl sm:text-3xl font-extrabold text-slate-900 tracking-tight">{property.title}</h1>
+          {property.brand && (
+            <p className="mt-2 flex items-center gap-2 text-sm">
+              {property.brand.logoUrl && <img src={property.brand.logoUrl} alt="" className="w-6 h-6 rounded-lg object-cover bg-white" />}
+              <span className="text-slate-600">Run by <span className="font-semibold text-slate-800">{property.brand.businessName}</span></span>
+              {/* Their own site takes the booking from here, so it opens in its own tab. */}
+              <a
+                href={`${property.brand.url}/stays/${property.slug}`}
+                target="_blank"
+                rel="noopener"
+                className="inline-flex items-center gap-1.5 font-bold text-brand-700 hover:text-brand-800 underline decoration-brand-200"
+              >
+                {t('stay.visitWebsite')}
+                <i className="fa-solid fa-arrow-up-right-from-square text-[10px]" aria-hidden="true"></i>
+              </a>
+            </p>
+          )}
           <p className="flex flex-wrap items-center gap-x-3 text-sm font-semibold text-slate-600 mt-2">
             {property.reviewCount > 0 ? (
               <a href="#reviews" className="hover:underline"><i className="fa-solid fa-star text-brand-yellow-400 mr-1" aria-hidden="true"></i>{property.rating.toFixed(2)} · {property.reviewCount} reviews</a>

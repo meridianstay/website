@@ -28,6 +28,13 @@ export interface GstSettings {
   stateCode: string
   /** Services Accounting Code for accommodation. 996311 is hotel and guest-house lodging. */
   sac: string
+  /**
+   * What Meridian's own services to a client are taxed at — the commission on a booking and the
+   * yearly plan. Services are 18% as a rule, but it is a setting like everything else here.
+   */
+  serviceRate: number
+  /** SAC for what Meridian supplies. 998599 is other support services. */
+  serviceSac: string
   /** What invoice numbers look like, e.g. MS/26-27/0001. */
   invoicePrefix: string
   /**
@@ -56,6 +63,8 @@ export const defaultGstSettings: GstSettings = {
   address: '',
   stateCode: '',
   sac: '996311',
+  serviceRate: 18,
+  serviceSac: '998599',
   invoicePrefix: 'MS',
   pricesIncludeTax: true,
   slabs: [
@@ -182,7 +191,11 @@ export function supplierFor(settings: GstSettings, hostGst: HostGst | null | und
   }
 }
 
-export type InvoiceKind = 'booking' | 'cancellation'
+/**
+ * booking / cancellation — what a guest is billed for a stay, by whoever owns it.
+ * commission / subscription — what Meridian bills a client for, where Meridian is the supplier.
+ */
+export type InvoiceKind = 'booking' | 'cancellation' | 'commission' | 'subscription'
 
 /** A tax invoice, kept exactly as it was issued. Nothing about one is ever recalculated. */
 export interface Invoice {
@@ -212,7 +225,22 @@ export interface Invoice {
   lines: TaxLines
   /** A credit note points back at the invoice it reverses. */
   against: string | null
+  /** What a commission invoice covers, as dates. Null on anything billed for a single thing. */
+  period?: { from: string; to: string } | null
+  /** The lines of a bill that covers several things, e.g. a month of commission. */
+  items?: { description: string; amount: number }[]
 }
+
+/** True when Meridian is billing the client rather than a guest being billed for a stay. */
+export const isPlatformBill = (kind: InvoiceKind) => kind === 'commission' || kind === 'subscription'
+
+/**
+ * Place of supply for a service Meridian sells a client is where the client is — their registered
+ * state when they have one. Without that there is nothing to go on but Meridian's own state, which
+ * makes it a supply within it.
+ */
+export const clientPlaceOfSupply = (settings: GstSettings, hostGst: HostGst | null | undefined) =>
+  (hostGstReady(hostGst) ? hostGst!.stateCode : settings.stateCode)
 
 /** April to March. A number issued in March belongs to the year that is ending. */
 export function financialYear(iso: string): string {

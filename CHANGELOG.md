@@ -2,6 +2,11 @@
 
 Every change to Meridian Stay is recorded here, newest first. Each entry says what changed for the people using the platform, then the notable technical changes.
 
+## 0.46.1 — 2026-10-29
+
+### A way through to the client's own website
+- A stay on the Meridian marketplace run by a client who has their own website now says so under its name — their logo, **"Run by ‹their business›"**, and a link straight to that stay on their own site, opening in its own tab so the search results stay where they were.
+
 ## 0.46.0 — 2026-10-29
 
 ### Clients invoice their own guests

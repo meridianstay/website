@@ -72,6 +72,7 @@ const hi: Dictionary = {
   'stay.privateTitle': 'नाम और मालिक की जानकारी निजी है।',
   'stay.privateBody': 'प्रॉपर्टी का नाम, मालिक की जानकारी और पूरा पता आपकी बुकिंग कन्फ़र्म और भुगतान पूरा होते ही आपको मिल जाएगा।',
   'stay.aboutSpace': 'इस जगह के बारे में',
+  'stay.visitWebsite': 'उनकी वेबसाइट देखें',
   'stay.amenities': 'यहाँ क्या-क्या है',
   'stay.houseRules': 'घर के नियम',
   'stay.reviews': 'समीक्षाएँ',

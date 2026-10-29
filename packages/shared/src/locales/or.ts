@@ -72,6 +72,7 @@ const or: Dictionary = {
   'stay.privateTitle': 'ନାମ ଓ ମାଲିକଙ୍କ ସୂଚନା ଗୋପନୀୟ।',
   'stay.privateBody': 'ସମ୍ପତ୍ତିର ନାମ, ମାଲିକଙ୍କ ସୂଚନା ଓ ସଠିକ ଠିକଣା ଆପଣଙ୍କ ବୁକିଂ ନିଶ୍ଚିତ ହୋଇ ସମ୍ପୂର୍ଣ୍ଣ ଦେୟ ପରିଶୋଧ ହେବା ମାତ୍ରେ ଆପଣଙ୍କୁ ଦିଆଯିବ।',
   'stay.aboutSpace': 'ଏହି ସ୍ଥାନ ବିଷୟରେ',
+  'stay.visitWebsite': 'ସେମାନଙ୍କ ୱେବସାଇଟ',
   'stay.amenities': 'ଏଠାରେ କଣ କଣ ଅଛି',
   'stay.houseRules': 'ଘରର ନିୟମ',
   'stay.reviews': 'ସମୀକ୍ଷା',

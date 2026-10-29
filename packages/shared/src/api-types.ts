@@ -105,6 +105,8 @@ export interface PropertyDetail extends PropertySummary {
   host: { name: string; joinedAt: string; avatar: string | null; phone: string | null; email: string | null }
   /** True when this viewer may see the real property name, the owner and the exact address. */
   revealed: boolean
+  /** The client's own website, when they have one approved. Null otherwise. */
+  brand: { businessName: string; logoUrl: string; url: string } | null
   reviews: Review[]
   bookedRanges: DateRange[]
   /** Code of the signed-in guest's finished, unreviewed stay here, if any. */

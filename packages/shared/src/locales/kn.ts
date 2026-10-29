@@ -72,6 +72,7 @@ const kn: Dictionary = {
   'stay.privateTitle': 'ಹೆಸರು ಮತ್ತು ಮಾಲೀಕರ ವಿವರಗಳು ಖಾಸಗಿ.',
   'stay.privateBody': 'ಆಸ್ತಿಯ ಹೆಸರು, ಮಾಲೀಕರ ವಿವರಗಳು ಮತ್ತು ನಿಖರವಾದ ವಿಳಾಸವನ್ನು ನಿಮ್ಮ ಬುಕಿಂಗ್ ಖಚಿತಗೊಂಡು ಪೂರ್ಣ ಹಣ ಪಾವತಿಯಾದ ಕೂಡಲೇ ನಿಮಗೆ ತಿಳಿಸಲಾಗುತ್ತದೆ.',
   'stay.aboutSpace': 'ಈ ಸ್ಥಳದ ಬಗ್ಗೆ',
+  'stay.visitWebsite': 'ಅವರ ಜಾಲತಾಣ ನೋಡಿ',
   'stay.amenities': 'ಇಲ್ಲಿ ಏನೇನು ಇದೆ',
   'stay.houseRules': 'ಮನೆಯ ನಿಯಮಗಳು',
   'stay.reviews': 'ವಿಮರ್ಶೆಗಳು',

@@ -72,6 +72,7 @@ const te: Dictionary = {
   'stay.privateTitle': 'పేరు మరియు యజమాని వివరాలు గోప్యం.',
   'stay.privateBody': 'ఆస్తి పేరు, యజమాని వివరాలు మరియు ఖచ్చితమైన చిరునామా మీ బుకింగ్ ఖరారై పూర్తి చెల్లింపు జరిగిన వెంటనే మీకు తెలియజేస్తాం.',
   'stay.aboutSpace': 'ఈ ప్రదేశం గురించి',
+  'stay.visitWebsite': 'వారి వెబ్‌సైట్ చూడండి',
   'stay.amenities': 'ఇక్కడ ఏమేమి ఉన్నాయి',
   'stay.houseRules': 'ఇంటి నియమాలు',
   'stay.reviews': 'సమీక్షలు',

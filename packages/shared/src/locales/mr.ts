@@ -72,6 +72,7 @@ const mr: Dictionary = {
   'stay.privateTitle': 'नाव आणि मालकाची माहिती खाजगी आहे.',
   'stay.privateBody': 'मालमत्तेचे नाव, मालकाची माहिती आणि नेमका पत्ता तुमची बुकिंग निश्चित होऊन पूर्ण पैसे भरल्यावर लगेच मिळतो.',
   'stay.aboutSpace': 'या जागेविषयी',
+  'stay.visitWebsite': 'त्यांची वेबसाइट पाहा',
   'stay.amenities': 'इथे काय काय आहे',
   'stay.houseRules': 'घराचे नियम',
   'stay.reviews': 'अभिप्राय',

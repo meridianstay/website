@@ -72,6 +72,7 @@ const pa: Dictionary = {
   'stay.privateTitle': 'ਨਾਂ ਅਤੇ ਮਾਲਕ ਦੀ ਜਾਣਕਾਰੀ ਨਿੱਜੀ ਹੈ।',
   'stay.privateBody': 'ਜਾਇਦਾਦ ਦਾ ਨਾਂ, ਮਾਲਕ ਦੀ ਜਾਣਕਾਰੀ ਅਤੇ ਪੂਰਾ ਪਤਾ ਤੁਹਾਡੀ ਬੁਕਿੰਗ ਪੱਕੀ ਹੋਣ ਅਤੇ ਪੂਰੀ ਅਦਾਇਗੀ ਹੁੰਦੇ ਹੀ ਮਿਲ ਜਾਵੇਗਾ।',
   'stay.aboutSpace': 'ਇਸ ਥਾਂ ਬਾਰੇ',
+  'stay.visitWebsite': 'ਉਨ੍ਹਾਂ ਦੀ ਵੈੱਬਸਾਈਟ',
   'stay.amenities': 'ਇੱਥੇ ਕੀ ਕੁਝ ਹੈ',
   'stay.houseRules': 'ਘਰ ਦੇ ਨਿਯਮ',
   'stay.reviews': 'ਸਮੀਖਿਆਵਾਂ',
