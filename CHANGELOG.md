@@ -2,6 +2,12 @@
 
 Every change to Meridian Stay is recorded here, newest first. Each entry says what changed for the people using the platform, then the notable technical changes.
 
+## 0.46.2 — 2026-10-29
+
+### Fixes
+- **The website's footer had been showing v0.37.0 since that release**, through nine versions of real work. The number lives in one file that is edited by hand at each release, and the edits had been silently missing it. It now reads correctly, and a test checks at every build that the platform version matches the newest entry in this changelog, that no panel claims to be newer than the platform, and that none has been left behind for a run of releases.
+- The other three numbers were right all along. Each panel carries **its own** version, bumped when that panel changes — so the control centre and host portal on 0.46.0 and the guest account on 0.45.0 are each showing the last release that actually touched them, which is what they are for.
+
 ## 0.46.1 — 2026-10-29
 
 ### A way through to the client's own website
