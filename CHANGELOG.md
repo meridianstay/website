@@ -2,6 +2,26 @@
 
 Every change to Meridian Stay is recorded here, newest first. Each entry says what changed for the people using the platform, then the notable technical changes.
 
+## 0.47.0 — 2026-10-29
+
+### A real account for guests
+The guest account had three pages — trips, wishlist, profile. It now has seven, grouped the way a traveller thinks, and the things that already existed but were hidden one click deep are now pages of their own.
+
+- **Overview** is the new front door. What needs the guest comes first — a payment not finished, a request still with an owner, a stay waiting to be reviewed — then **the next trip** as a card with a countdown ("In 6 days"), where it is, when, the check-in time, the total, the exact address and the owner's number once the booking is confirmed, and buttons to the booking, the stay and a call. Then what their travelling adds up to: trips taken, nights away, spent with us, stays saved. Then what is coming up, where they have been, and their wishlist.
+- **Trips** keeps every booking but no longer in one long list: **Upcoming, Waiting, Past and Cancelled** tabs, each with its count, plus a search across stay, place and booking code. A payment that needs finishing can't be buried at the bottom any more.
+- **Payments and invoices** is new. Paid to date, refunded, GST charged and how many tax documents — then **every invoice and credit note** with its number, date, what it was for, who raised it (the owner or Meridian), the taxable amount, the GST and the rate. Refunds are listed with what was paid and what came back. Before this, an invoice could only be reached from the one booking it belonged to.
+- **Reviews** is new, and a review is now written **in the account**, not on the stay's page: the stays waiting for one, each with the star ratings for the property and the service and a few words, and underneath everything already written, exactly as other travellers see it — including a note where our team has hidden one.
+- **Help** is new: the questions guests actually ask, each answered properly and pointed at the page that solves it, the policies in full, and a message straight to the team with the booking code asked for up front.
+- **Profile** gained how you sign in, when you joined, a sign-out, and a plain account of what Meridian keeps about you and what owners can see.
+- The bottom bar's **Trips** tab now goes to the trips page rather than the panel's front door, and the account menu on the website offers the overview and payments too.
+
+### Technical
+- `GET /account/invoices` and `GET /account/reviews`: a guest's own tax documents and reviews. Invoices are read through their bookings rather than stored against them, so a guest can never be handed someone else's document; `invoicesRepo.forBookings` batches the booking codes because Firestore takes at most thirty values in an `in`.
+- `reviewsRepo.byAuthor` returns a review with the stay it was about and whether it is on show. `MyReview` lives in the shared types so the API and the client can't drift.
+- `contentRepo.pointTripsTabAtTrips` moves a stored bottom tab still set to `/account` onto `/account/trips`; one an admin has pointed elsewhere is left alone.
+- `bookingPaid` in the shared package is now the single rule for whether a booking's money has been taken, because the overview and the payments page both show that figure and were about to disagree: one counted payment states, the other booking states, and in test mode they differed by the whole ledger. Bookings made while payments are in test mode are counted, and the payments page says so rather than quietly presenting them as money taken.
+- Only icons already in the trimmed Font Awesome subset are used, so nothing renders as a blank square.
+
 ## 0.46.2 — 2026-10-29
 
 ### Fixes

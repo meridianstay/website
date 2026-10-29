@@ -1,4 +1,4 @@
-import type { RatingBreakdown, Review } from '@meridian/shared'
+import type { MyReview, RatingBreakdown, Review } from '@meridian/shared'
 import { C, all, col, firestore, nextId, nowISO } from '../store/db'
 import { propertiesRepo, type PropertyDoc } from './properties'
 
@@ -17,6 +17,7 @@ const toReview = (r: ReviewDoc): Review => ({
 })
 
 export interface AdminReview extends Review { hidden: boolean; property: { slug: string; title: string } }
+
 
 export const reviewsRepo = {
   async visibleForProperty(propertyId: number, limit = 30) {
@@ -61,6 +62,30 @@ export const reviewsRepo = {
       propertiesRepo.adjustRating(tx, property, r.rating, hidden ? -1 : 1)
       return true
     })
+  },
+
+  /** Everything one guest has written, newest first — their own page of reviews. */
+  async byAuthor(userId: number): Promise<MyReview[]> {
+    const rows = await all<ReviewDoc>(col(C.reviews).where('userId', '==', userId))
+    if (!rows.length) return []
+    const properties = await all<PropertyDoc>(col(C.properties))
+    const byId = new Map(properties.map((p) => [p.id, p]))
+    return rows
+      .sort((a, b) => b.createdAt.localeCompare(a.createdAt))
+      .map((r) => {
+        const p = byId.get(r.propertyId)
+        return {
+          ...toReview(r),
+          hidden: !!r.hiddenAt,
+          bookingCode: r.bookingCode,
+          property: {
+            slug: p?.slug ?? '',
+            title: p?.title ?? 'Listing no longer available',
+            location: p ? `${p.city}, ${p.region}` : '',
+            image: p?.coverImageUrl ?? '',
+          },
+        }
+      })
   },
 
   async listForAdmin(q: string | null): Promise<AdminReview[]> {

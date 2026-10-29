@@ -1,7 +1,7 @@
 import type {
   AdminBooking, AdminListing, AdminReview, AdminStats, AdminUser, Amenity, AuditEntry, BookingDetail, ContactMessage,
   DbBrowseResult, DbRow, DbTableSummary, IntegrationStatus, SignInPortal,
-  HostBooking, HostCalendar, HostListing, HostStats, ListingInput, Me, PaymentMethod, PaymentRequest, PaymentSettingsView, Place, PropertyDetail, PropertySummary, SearchQuery,
+  HostBooking, HostCalendar, HostListing, HostStats, ListingInput, Me, MyReview, PaymentMethod, PaymentRequest, PaymentSettingsView, Place, PropertyDetail, PropertySummary, SearchQuery,
 } from '../api-types'
 import type { ListingStatus, UserRole } from '../types'
 import type { AnnouncementSettings, ContentPage, HomepageSettings, PublicSite, SignInSettings, SiteSettings, UploadSettings } from '../content'
@@ -139,6 +139,15 @@ export const api = {
   checkCoupon: (code: string, total: number, kind: 'stay' | 'dayuse') =>
     request<{ code: string; discount: number; label: string; description: string }>('/bookings/coupon', { method: 'POST', json: { code, total, kind } }),
   myBookings: () => request<{ bookings: BookingDetail[] }>('/bookings'),
+
+  /** Every tax document the guest has been given, newest first, with what it was for. */
+  myInvoices: () => request<{
+    invoices: (Invoice & { stayTitle: string })[]
+    totals: { documents: number; billed: number; credited: number; tax: number }
+  }>('/account/invoices'),
+
+  /** Reviews the guest has written. */
+  myReviews: () => request<{ reviews: MyReview[] }>('/account/reviews'),
   booking: (code: string) => request<{ booking: BookingDetail }>(`/bookings/${encodeURIComponent(code)}`),
   cancelBooking: (code: string) => request<{ booking: BookingDetail }>(`/bookings/${encodeURIComponent(code)}/cancel`, { method: 'POST' }),
 

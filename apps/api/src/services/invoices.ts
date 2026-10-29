@@ -170,6 +170,29 @@ export const invoiceService = {
     return hostTaxRepo.save(hostId, { verifiedAt: verified ? new Date().toISOString() : null })
   },
 
+  /**
+   * A guest's own tax documents, across every booking they have made. Read from their bookings
+   * rather than stored against them, so a guest can never be shown a document raised for someone
+   * else even if two bookings share a code by accident.
+   */
+  async forGuest(guestId: number, today: string) {
+    const bookings = await bookingsRepo.listForGuest(guestId, today)
+    const invoices = bookings.length ? await invoicesRepo.forBookings(bookings.map((b) => b.code)) : []
+    const titles = new Map(bookings.map((b) => [b.code, b.property.title]))
+    const sum = (rows: Invoice[]) => Math.round(rows.reduce((t, i) => t + i.lines.total, 0) * 100) / 100
+    const billed = invoices.filter((i) => i.kind === 'booking')
+    const credited = invoices.filter((i) => i.kind === 'cancellation')
+    return {
+      invoices: invoices.map((i) => ({ ...i, stayTitle: titles.get(i.bookingCode) ?? '' })),
+      totals: {
+        documents: invoices.length,
+        billed: sum(billed),
+        credited: sum(credited),
+        tax: Math.round((billed.reduce((t, i) => t + i.lines.tax, 0) - credited.reduce((t, i) => t + i.lines.tax, 0)) * 100) / 100,
+      },
+    }
+  },
+
   /** One client's own invoices — what they would file under their own registration. */
   async forHost(hostId: number) {
     const [all, registration] = await Promise.all([invoicesRepo.byHost(hostId), hostTaxRepo.get(hostId)])

@@ -145,7 +145,7 @@ export function BookingConfirmed() {
             </button>
           )}
           <div className="flex flex-col sm:flex-row gap-3">
-            <a href={appLink('account', '/')} className="flex-1 text-center bg-slate-900 hover:bg-slate-800 text-white font-bold py-3.5 rounded-2xl text-sm">{t('confirmed.viewTrips')}</a>
+            <a href={appLink('account', '/trips')} className="flex-1 text-center bg-slate-900 hover:bg-slate-800 text-white font-bold py-3.5 rounded-2xl text-sm">{t('confirmed.viewTrips')}</a>
             <Link to="/search" className="flex-1 text-center bg-slate-100 hover:bg-slate-200 text-slate-800 font-bold py-3.5 rounded-2xl text-sm">{t('confirmed.keepExploring')}</Link>
           </div>
         </div>

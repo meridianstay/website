@@ -415,6 +415,13 @@ export type AdminUser = Me & { suspended: boolean; listings: number; bookings: n
 
 export type AdminBooking = HostBooking & { guestEmail: string }
 
+/** A review as its own author sees it in their account, with the stay it was about. */
+export interface MyReview extends Review {
+  hidden: boolean
+  bookingCode: string | null
+  property: { slug: string; title: string; location: string; image: string }
+}
+
 export interface AdminReview {
   id: number
   authorName: string

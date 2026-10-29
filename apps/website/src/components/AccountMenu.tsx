@@ -43,8 +43,10 @@ export function AccountMenu() {
                 <p className="font-semibold text-slate-900 truncate">{user.name}</p>
                 <p className="text-xs text-slate-500 truncate">{user.email ?? user.phone}</p>
               </div>
-              <a href={appLink('account', '/')} className={itemClass} role="menuitem"><i className="fa-solid fa-suitcase-rolling w-4 text-brand-600" aria-hidden="true"></i><span>{t('nav.trips')}</span></a>
+              <a href={appLink('account', '/')} className={itemClass} role="menuitem"><i className="fa-solid fa-gauge-high w-4 text-slate-500" aria-hidden="true"></i><span>{t('nav.overview')}</span></a>
+              <a href={appLink('account', '/trips')} className={itemClass} role="menuitem"><i className="fa-solid fa-suitcase-rolling w-4 text-brand-600" aria-hidden="true"></i><span>{t('nav.trips')}</span></a>
               <a href={appLink('account', '/wishlist')} className={itemClass} role="menuitem"><i className="fa-solid fa-heart w-4 text-rose-500" aria-hidden="true"></i><span>{t('nav.wishlist')}</span></a>
+              <a href={appLink('account', '/payments')} className={itemClass} role="menuitem"><i className="fa-solid fa-credit-card w-4 text-slate-500" aria-hidden="true"></i><span>{t('nav.payments')}</span></a>
               <a href={appLink('account', '/profile')} className={itemClass} role="menuitem"><i className="fa-solid fa-user-gear w-4 text-slate-500" aria-hidden="true"></i><span>{t('nav.profile')}</span></a>
               <div className="border-t border-slate-100 my-1" />
               <a href={appLink('host', '/')} className={itemClass} role="menuitem"><i className="fa-solid fa-house-chimney w-4 text-brand-600" aria-hidden="true"></i><span>{user.role === 'host' ? t('host.dashboard') : t('nav.listProperty')}</span></a>

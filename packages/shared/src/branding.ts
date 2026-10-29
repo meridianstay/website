@@ -184,7 +184,7 @@ export const defaultBottomNav: BottomNavSettings = {
     { key: 'home', label: 'Home', icon: 'house', url: '/', enabled: true },
     { key: 'search', label: 'Explore', icon: 'magnifying-glass', url: '/search', enabled: true },
     { key: 'saved', label: 'Saved', icon: 'heart', url: '/account/wishlist', enabled: true },
-    { key: 'trips', label: 'Trips', icon: 'suitcase-rolling', url: '/account', enabled: true },
+    { key: 'trips', label: 'Trips', icon: 'suitcase-rolling', url: '/account/trips', enabled: true },
     { key: 'account', label: 'Account', icon: 'user', url: '/account/profile', enabled: true },
   ],
 }

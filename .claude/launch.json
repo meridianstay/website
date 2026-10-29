@@ -33,6 +33,17 @@
         "@meridian/host"
       ],
       "port": 5175
+    },
+    {
+      "name": "account",
+      "runtimeExecutable": "npm",
+      "runtimeArgs": [
+        "run",
+        "dev",
+        "-w",
+        "@meridian/account"
+      ],
+      "port": 5176
     }
   ]
 }

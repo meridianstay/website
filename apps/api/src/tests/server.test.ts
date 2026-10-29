@@ -299,3 +299,33 @@ describe('the footer credit', () => {
     }
   })
 })
+
+describe('the Trips tab after the account panel grew a front page', () => {
+  beforeEach(resetDatabase)
+
+  const storedTabs = async () =>
+    ((await col(C.settings).doc('bottomNav').get()).data()?.value as { tabs: { key: string; url: string }[] }).tabs
+
+  test('a tab still set to the panel index is moved onto the trips page', async () => {
+    const { bottomNav } = await contentRepo.settings()
+    await col(C.settings).doc('bottomNav').set({
+      value: { ...bottomNav, tabs: bottomNav.tabs.map((t) => (t.key === 'trips' ? { ...t, url: '/account' } : t)) },
+      updatedAt: nowISO(), updatedBy: null,
+    })
+    await contentRepo.pointTripsTabAtTrips()
+    const tabs = await storedTabs()
+    assert.equal(tabs.find((t) => t.key === 'trips')!.url, '/account/trips')
+    assert.equal(tabs.find((t) => t.key === 'saved')!.url, '/account/wishlist', 'the other tabs are untouched')
+    assert.equal(tabs.length, 5)
+  })
+
+  test('a tab an admin pointed somewhere else is left alone', async () => {
+    const { bottomNav } = await contentRepo.settings()
+    await col(C.settings).doc('bottomNav').set({
+      value: { ...bottomNav, tabs: bottomNav.tabs.map((t) => (t.key === 'trips' ? { ...t, url: '/offers' } : t)) },
+      updatedAt: nowISO(), updatedBy: null,
+    })
+    await contentRepo.pointTripsTabAtTrips()
+    assert.equal((await storedTabs()).find((t) => t.key === 'trips')!.url, '/offers')
+  })
+})

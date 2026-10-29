@@ -6,7 +6,7 @@ import {
 import { invoiceService } from '../services/invoices'
 import { bookingService } from '../services/bookings'
 import { contentRepo, invoicesRepo } from '../repositories'
-import { appError, createLiveListing, createUser, day, resetDatabase } from './helpers'
+import { appError, createLiveListing, createUser, day, resetDatabase, shownTitle, today } from './helpers'
 
 // GST on a booking. The arithmetic and the numbering are the parts an auditor looks at, so they
 // are the parts pinned down here.
@@ -360,5 +360,53 @@ describe('whose registration a booking is invoiced under', () => {
     // Changing the number puts it back in the queue to be looked at.
     const changed = await invoiceService.saveHostGst(host.me, { ...ownerGst, gstin: '29ABCDE1234F1Z5', stateCode: '29' })
     assert.equal(changed.verifiedAt, null)
+  })
+})
+
+describe('a guest’s own documents and reviews', () => {
+  beforeEach(resetDatabase)
+
+  test('a guest is shown every invoice for their bookings and nobody else’s', async () => {
+    await switchOn()
+    const host = await createUser('host')
+    const guest = await createUser('guest')
+    const stranger = await createUser('guest')
+    const stay = await createLiveListing(host, { price: 3500, region: 'Karnataka' })
+
+    const mine = await bookingService.create(guest.me, guest.uid, bookingInput(stay))
+    await bookingService.create(stranger.me, stranger.uid, { ...bookingInput(stay), checkIn: day(40), checkOut: day(43) })
+
+    const { invoices, totals } = await invoiceService.forGuest(guest.me.id, today)
+    assert.equal(invoices.length, 1, 'only their own')
+    assert.equal(invoices[0].bookingCode, mine.booking.code)
+    assert.equal(invoices[0].stayTitle, await shownTitle(stay), 'named, so the list reads as trips rather than codes')
+    assert.equal(totals.documents, 1)
+    assert.equal(totals.billed, mine.booking.total)
+    assert.ok(totals.tax > 0)
+
+    const theirs = await invoiceService.forGuest(stranger.me.id, today)
+    assert.equal(theirs.invoices.length, 1)
+    assert.notEqual(theirs.invoices[0].number, invoices[0].number)
+  })
+
+  test('a cancellation shows up as a credit note against what was billed', async () => {
+    await switchOn()
+    const host = await createUser('host')
+    const guest = await createUser('guest')
+    const stay = await createLiveListing(host, { price: 3500, region: 'Karnataka' })
+    const { booking } = await bookingService.create(guest.me, guest.uid, bookingInput(stay))
+    await bookingService.cancelByGuest(guest.me, booking.code)
+
+    const { invoices, totals } = await invoiceService.forGuest(guest.me.id, today)
+    assert.equal(invoices.length, 2)
+    assert.equal(invoices.filter((i) => i.kind === 'cancellation').length, 1)
+    assert.ok(totals.credited > 0 && totals.credited <= totals.billed)
+  })
+
+  test('a guest with no bookings is asked for nothing', async () => {
+    const guest = await createUser('guest')
+    const { invoices, totals } = await invoiceService.forGuest(guest.me.id, today)
+    assert.deepEqual(invoices, [])
+    assert.equal(totals.documents, 0)
   })
 })

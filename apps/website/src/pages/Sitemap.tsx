@@ -45,8 +45,11 @@ export function Sitemap() {
           <ul className={col}>
             <li><Link to="/login" className={link}>Log in</Link></li>
             <li><Link to="/signup" className={link}>Sign up</Link></li>
-            <li><a href={appLink('account', '/')} className={link}>Trips</a></li>
+            <li><a href={appLink('account', '/')} className={link}>Account overview</a></li>
+            <li><a href={appLink('account', '/trips')} className={link}>Trips</a></li>
             <li><a href={appLink('account', '/wishlist')} className={link}>Wishlist</a></li>
+            <li><a href={appLink('account', '/reviews')} className={link}>Your reviews</a></li>
+            <li><a href={appLink('account', '/payments')} className={link}>Payments and invoices</a></li>
             <li><a href={appLink('host', '/')} className={link}>Host portal</a></li>
           </ul>
         </section>

@@ -58,3 +58,46 @@ describe('reviews', () => {
     assert.ok(err.fields.comment)
   })
 })
+
+describe('the reviews a guest has written', () => {
+  beforeEach(resetDatabase)
+
+  test('their own, newest first, with the stay named', async () => {
+    const host = await createUser('host')
+    const guest = await createUser()
+    const stranger = await createUser()
+    const first = await createLiveListing(host, { title: 'Coorg coffee bungalow' })
+    const second = await createLiveListing(host, { title: 'Chikmagalur hill cottage' })
+
+    await reviewService.post(guest.me, await slugOf(first), { bookingCode: await insertBooking(first, guest, day(-20), day(-18)), rating: 4, comment: 'Woke up in the clouds.' })
+    await reviewService.post(guest.me, await slugOf(second), { bookingCode: await insertBooking(second, guest, day(-6), day(-4)), rating: 5, comment: 'The best coffee of my life.' })
+    await reviewService.post(stranger.me, await slugOf(first), { bookingCode: await insertBooking(first, stranger, day(-9), day(-7)), rating: 2, comment: 'Not what the photos showed.' })
+
+    const mine = await reviewsRepo.byAuthor(guest.me.id)
+    assert.equal(mine.length, 2, 'not the stranger’s')
+    assert.equal(mine[0].property.title, 'Chikmagalur hill cottage', 'newest first')
+    assert.equal(mine[0].rating, 5)
+    assert.ok(mine[0].property.slug && mine[0].property.location, 'enough to link to the stay')
+    assert.equal(mine[0].hidden, false)
+    assert.equal((await reviewsRepo.byAuthor(stranger.me.id)).length, 1)
+  })
+
+  test('a hidden review is still theirs to see, and says so', async () => {
+    const host = await createUser('host')
+    const admin = await createUser('admin')
+    const guest = await createUser()
+    const id = await createLiveListing(host)
+    await reviewService.post(guest.me, await slugOf(id), { bookingCode: await insertBooking(id, guest, day(-5), day(-3)), rating: 1, comment: 'Unrepeatable language about the host.' })
+
+    const [written] = await reviewsRepo.byAuthor(guest.me.id)
+    await reviewService.setHidden(admin.me, written.id, true)
+    const [after] = await reviewsRepo.byAuthor(guest.me.id)
+    assert.equal(after.hidden, true)
+    assert.equal((await reviewsRepo.visibleForProperty(id)).length, 0, 'but nobody else sees it')
+  })
+
+  test('a guest who has written nothing gets an empty list, not an error', async () => {
+    const guest = await createUser()
+    assert.deepEqual(await reviewsRepo.byAuthor(guest.me.id), [])
+  })
+})

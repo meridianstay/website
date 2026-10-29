@@ -19,6 +19,20 @@ export const invoicesRepo = {
     return snap.docs.map((d) => d.data() as Invoice).sort((a, b) => a.issuedAt.localeCompare(b.issuedAt))
   },
 
+  /**
+   * Every document raised against a set of bookings — how a guest sees their own invoices and
+   * credit notes in one place. Firestore takes at most thirty values in an `in`, so a frequent
+   * traveller's codes go up in batches.
+   */
+  async forBookings(codes: string[]): Promise<Invoice[]> {
+    const batches: string[][] = []
+    for (let i = 0; i < codes.length; i += 30) batches.push(codes.slice(i, i + 30))
+    const results = await Promise.all(batches.map((batch) => col(C.invoices).where('bookingCode', 'in', batch).get()))
+    return results
+      .flatMap((snap) => snap.docs.map((d) => d.data() as Invoice))
+      .sort((a, b) => b.issuedAt.localeCompare(a.issuedAt))
+  },
+
   /** Everything raised for one client's stays, theirs and Meridian's alike. */
   async byHost(hostId: number): Promise<Invoice[]> {
     const snap = await col(C.invoices).where('hostId', '==', hostId).get()

@@ -23,7 +23,17 @@ export function Wishlist() {
 
   return (
     <>
-      <PageHeader title="Wishlist" description="Stays you’ve saved for later." />
+      <PageHeader
+        title="Wishlist"
+        description={saved.length
+          ? `${saved.length} ${saved.length === 1 ? 'stay' : 'stays'} saved for later. The heart removes one.`
+          : 'Stays you’ve saved for later.'}
+        action={
+          <a href={appLink('website', '/search')} className="bg-brand-600 hover:bg-brand-700 text-white font-bold py-3 px-5 rounded-2xl text-xs transition inline-flex items-center">
+            <i className="fa-solid fa-magnifying-glass mr-2" aria-hidden="true"></i> Find more
+          </a>
+        }
+      />
       {saved.length === 0 ? (
         <Panel>
           <EmptyState icon="heart" title="Nothing saved yet" body="Tap the heart on any stay to save it here." action={<a href={appLink('website', '/search')} className="bg-brand-600 text-white text-xs font-bold py-3 px-6 rounded-2xl">Browse stays</a>} />

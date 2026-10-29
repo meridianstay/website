@@ -1,11 +1,28 @@
-import { useEffect, useState } from 'react'
+import { useEffect, useMemo, useState } from 'react'
 import { EmptyState, ErrorNote, PageHeader, Panel, Spinner, StatusBadge, useT } from '@meridian/ui'
-import { bookingWhen, formatPrice, type BookingDetail } from '@meridian/shared'
+import { bookingWhen, formatPrice, todayISO, type BookingDetail } from '@meridian/shared'
 import { api, appLink } from '@meridian/shared/client'
+
+// Every booking the guest has ever made, in the four states they think in: the ones coming up, the
+// ones waiting on somebody, the ones they have taken, and the ones that came to nothing. The tabs
+// carry counts so a trip waiting on a payment is never buried at the bottom of one long list.
+
+const OPEN = ['Confirmed', 'Requested', 'AwaitingPayment']
+
+type Tab = 'upcoming' | 'waiting' | 'past' | 'cancelled'
+
+const TABS: { id: Tab; label: string; blurb: string }[] = [
+  { id: 'upcoming', label: 'Upcoming', blurb: 'Confirmed stays, soonest first.' },
+  { id: 'waiting', label: 'Waiting', blurb: 'Requests with an owner, and payments not finished.' },
+  { id: 'past', label: 'Past', blurb: 'Stays you have taken.' },
+  { id: 'cancelled', label: 'Cancelled', blurb: 'Cancelled, declined and lapsed bookings.' },
+]
 
 export function Trips() {
   const [bookings, setBookings] = useState<BookingDetail[] | null>(null)
   const [error, setError] = useState<string | null>(null)
+  const [tab, setTab] = useState<Tab>('upcoming')
+  const [query, setQuery] = useState('')
 
   const load = () => {
     setError(null)
@@ -15,26 +32,82 @@ export function Trips() {
 
   const replace = (updated: BookingDetail) => setBookings((all) => all?.map((b) => (b.code === updated.code ? updated : b)) ?? null)
 
+  const groups = useMemo(() => {
+    const all = bookings ?? []
+    const today = todayISO()
+    return {
+      upcoming: all.filter((b) => b.status === 'Confirmed' && b.checkOut >= today).sort((a, b) => a.checkIn.localeCompare(b.checkIn)),
+      waiting: all.filter((b) => ['Requested', 'AwaitingPayment'].includes(b.status)).sort((a, b) => a.checkIn.localeCompare(b.checkIn)),
+      past: all.filter((b) => b.status === 'Completed' || (b.status === 'Confirmed' && b.checkOut < today)).sort((a, b) => b.checkIn.localeCompare(a.checkIn)),
+      cancelled: all.filter((b) => ['Cancelled', 'Declined', 'Expired'].includes(b.status)).sort((a, b) => b.checkIn.localeCompare(a.checkIn)),
+    } satisfies Record<Tab, BookingDetail[]>
+  }, [bookings])
+
   if (error) return <ErrorNote message={error} onRetry={load} />
   if (!bookings) return <Spinner />
 
-  const open = ['Confirmed', 'Requested', 'AwaitingPayment']
-  const upcoming = bookings.filter((b) => open.includes(b.status)).sort((a, b) => a.checkIn.localeCompare(b.checkIn))
-  const past = bookings.filter((b) => !open.includes(b.status))
+  const q = query.trim().toLowerCase()
+  const shown = groups[tab].filter((b) => !q || [b.property.title, b.property.location, b.code].some((v) => v.toLowerCase().includes(q)))
+  const open = bookings.filter((b) => OPEN.includes(b.status)).length
 
   return (
     <>
-      <PageHeader title="Your trips" description="Upcoming stays, requests waiting for a host, and your booking history." />
-      <div className="space-y-8">
-        <Panel title="Upcoming">
-          {upcoming.length ? <TripList trips={upcoming} onChange={replace} /> : (
-            <EmptyState icon="suitcase-rolling" title="No upcoming trips" body="Time to plan your next escape." action={<a href={appLink('website', '/search')} className="bg-brand-600 text-white text-xs font-bold py-3 px-6 rounded-2xl">Find a stay</a>} />
-          )}
+      <PageHeader
+        title="Your trips"
+        description={bookings.length
+          ? `${bookings.length} ${bookings.length === 1 ? 'booking' : 'bookings'} with Meridian${open ? `, ${open} still open` : ''}.`
+          : 'Upcoming stays, requests waiting for an owner, and your booking history.'}
+        action={
+          <a href={appLink('website', '/search')} className="bg-brand-600 hover:bg-brand-700 text-white font-bold py-3 px-5 rounded-2xl text-xs transition inline-flex items-center">
+            <i className="fa-solid fa-plus mr-2" aria-hidden="true"></i> Book another stay
+          </a>
+        }
+      />
+
+      {bookings.length === 0 ? (
+        <Panel>
+          <EmptyState icon="suitcase-rolling" title="No trips yet" body="Time to plan your first escape." action={<a href={appLink('website', '/search')} className="bg-brand-600 text-white text-xs font-bold py-3 px-6 rounded-2xl">Find a stay</a>} />
         </Panel>
-        <Panel title="Past, cancelled and declined">
-          {past.length ? <TripList trips={past} onChange={replace} /> : <p className="text-sm text-slate-500">No past trips yet.</p>}
-        </Panel>
-      </div>
+      ) : (
+        <>
+          <div className="flex flex-col sm:flex-row sm:items-center gap-3 mb-6">
+            <div role="tablist" aria-label="Which trips to show" className="flex gap-2 overflow-x-auto -mx-1 px-1 pb-1">
+              {TABS.map((t) => (
+                <button
+                  key={t.id}
+                  type="button"
+                  role="tab"
+                  aria-selected={tab === t.id}
+                  onClick={() => setTab(t.id)}
+                  className={`shrink-0 px-4 py-2.5 rounded-2xl text-xs font-bold transition ${
+                    tab === t.id ? 'bg-slate-900 text-white' : 'bg-white border border-slate-200 text-slate-600 hover:bg-slate-50'
+                  }`}
+                >
+                  {t.label}
+                  <span className={`ml-2 tabular-nums ${tab === t.id ? 'text-white/60' : 'text-slate-400'}`}>{groups[t.id].length}</span>
+                </button>
+              ))}
+            </div>
+            <label className="sm:ml-auto relative sm:w-64">
+              <span className="sr-only">Search your trips</span>
+              <i className="fa-solid fa-magnifying-glass absolute left-4 top-1/2 -translate-y-1/2 text-slate-400 text-xs" aria-hidden="true"></i>
+              <input
+                type="search"
+                value={query}
+                onChange={(e) => setQuery(e.target.value)}
+                placeholder="Stay, place or code"
+                className="w-full bg-white border border-slate-200 rounded-2xl py-2.5 pl-10 pr-4 text-sm focus:outline-none focus:border-brand-500"
+              />
+            </label>
+          </div>
+
+          <Panel title={TABS.find((t) => t.id === tab)!.label} subtitle={TABS.find((t) => t.id === tab)!.blurb}>
+            {shown.length ? <TripList trips={shown} onChange={replace} /> : (
+              <p className="text-sm text-slate-500">{q ? `Nothing here matches “${query.trim()}”.` : 'Nothing in this list.'}</p>
+            )}
+          </Panel>
+        </>
+      )}
     </>
   )
 }

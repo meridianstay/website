@@ -7,6 +7,7 @@ import { authRoutes } from './routes/auth'
 import { propertyRoutes } from './routes/properties'
 import { bookingRoutes, paymentRoutes } from './routes/bookings'
 import { wishlistRoutes } from './routes/wishlist'
+import { accountRoutes } from './routes/account'
 import { contactRoutes } from './routes/contact'
 import { hostRoutes } from './routes/host'
 import { adminRoutes } from './routes/admin'
@@ -36,6 +37,7 @@ app.route('/', propertyRoutes)
 app.route('/', bookingRoutes)
 app.route('/', paymentRoutes)
 app.route('/', wishlistRoutes)
+app.route('/', accountRoutes)
 app.route('/', contactRoutes)
 app.route('/', hostRoutes)
 app.route('/', adminRoutes)

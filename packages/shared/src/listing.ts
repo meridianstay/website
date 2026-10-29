@@ -81,6 +81,20 @@ export function bookingWhen(b: { kind?: 'stay' | 'dayuse'; checkIn: string; chec
   return `${formatDateRange(b.checkIn, b.checkOut)} · ${b.nights} ${b.nights === 1 ? 'night' : 'nights'}`
 }
 
+/**
+ * Whether the money for a booking has been taken. One rule, because the guest's account shows the
+ * figure in two places and they have to agree: payments that went through, plus bookings made
+ * during the testing period, where no payment is taken but the booking is as real as any other.
+ * A booking still waiting to be paid for, or waiting on an owner, has taken nothing.
+ */
+export function bookingPaid(b: { status: string; paymentStatus: string }): boolean {
+  if (['paid', 'released', 'refunded', 'partially_refunded'].includes(b.paymentStatus)) return true
+  return b.paymentStatus === 'test' && ['Confirmed', 'Completed', 'Cancelled'].includes(b.status)
+}
+
+/** True while payments are in test mode, so a figure can say that nothing was really charged. */
+export const bookingWasTestPayment = (b: { paymentStatus: string }) => b.paymentStatus === 'test'
+
 /** Video types hosts can upload, and how to spot links we can embed instead. */
 export const VIDEO_TYPES: Record<string, string> = { 'video/mp4': 'mp4', 'video/webm': 'webm', 'video/quicktime': 'mov' }
 

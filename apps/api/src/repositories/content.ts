@@ -139,6 +139,20 @@ export const contentRepo = {
     await clear()
   },
 
+  /**
+   * The account panel grew a dashboard at its front door in 0.47.0, so "Trips" in the bottom bar
+   * had to stop pointing at the panel's index and start pointing at the trips page itself. Only a
+   * tab still set to the old address is moved; one an admin has pointed somewhere else is left.
+   */
+  async pointTripsTabAtTrips() {
+    const ref = col(C.settings).doc('bottomNav')
+    const stored = (await ref.get()).data()?.value as { tabs?: { key: string; url: string }[] } | undefined
+    if (!stored?.tabs?.some((t) => t.key === 'trips' && t.url === '/account')) return
+    const tabs = stored.tabs.map((t) => (t.key === 'trips' && t.url === '/account' ? { ...t, url: '/account/trips' } : t))
+    await ref.set({ value: { ...stored, tabs } }, { merge: true })
+    await clear()
+  },
+
   /** Adds any missing default settings and pages. Never overwrites admin edits. */
   async ensureDefaults() {
     for (const [key, value] of Object.entries(defaultSiteSettings)) {
@@ -149,5 +163,6 @@ export const contentRepo = {
     }
     await clear()
     await this.fixCreditWording()
+    await this.pointTripsTabAtTrips()
   },
 }
