@@ -3,7 +3,7 @@ import { ErrorNote, PageHeader, Panel, Spinner, StatCard, StatusBadge } from '@m
 import { formatDate, formatPrice, type Payout } from '@meridian/shared'
 import { adminApi, type PayoutQueue } from '@meridian/shared/client'
 
-// Control centre → Payouts. Who is owed what, and a record of everything sent. Book My Get Away doesn't
+// Control centre → Payouts. Who is owed what, and a record of everything sent. BookMyGetaway doesn't
 // move money on its own: you create a payout, make the transfer from your own bank, then record the
 // reference here — which tells the host, with the number they need to trace it.
 

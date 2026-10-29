@@ -2,8 +2,8 @@ import type { ClientSiteView } from '@meridian/shared'
 import { versionLabel } from '@meridian/shared'
 import { LogoMark, useBrand, useCredit } from '@meridian/ui'
 
-// The client's footer. Book My Get Away is named here properly rather than in small print: a guest booking
-// through this page is paying Book My Get Away, and should be able to tell before they do.
+// The client's footer. BookMyGetaway is named here properly rather than in small print: a guest booking
+// through this page is paying BookMyGetaway, and should be able to tell before they do.
 
 export function ClientFooter({ site }: { site: ClientSiteView }) {
   const brand = useBrand()
@@ -46,7 +46,7 @@ export function ClientFooter({ site }: { site: ClientSiteView }) {
               <span className="uppercase tracking-wider">Bookings powered by</span>
               <LogoMark size="sm" />
               <a href={bookmygetaway} target="_blank" rel="noopener noreferrer" className="font-bold text-slate-500 hover:text-brand-600">
-                {brand.name}{brand.accent ? ` ${brand.accent}` : ''}
+                {brand.name}{brand.accent}
               </a>
             </span>
             {credit.label && (

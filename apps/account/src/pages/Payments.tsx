@@ -112,7 +112,7 @@ export function Payments() {
                         <span className="block font-semibold text-xs truncate max-w-[14rem]">{i.stayTitle || i.description}</span>
                         <span className="block text-[11px] text-slate-400 font-mono">{i.bookingCode}</span>
                       </td>
-                      <td className="py-3 pr-4 text-xs text-slate-500">{i.raisedBy === 'owner' ? 'The owner' : 'Book My Get Away'}</td>
+                      <td className="py-3 pr-4 text-xs text-slate-500">{i.raisedBy === 'owner' ? 'The owner' : 'BookMyGetaway'}</td>
                       <td className="py-3 pr-4 text-right tabular-nums text-xs">{formatPrice(i.lines.taxable)}</td>
                       <td className="py-3 pr-4 text-right tabular-nums text-xs">{formatPrice(i.lines.tax)} <span className="text-slate-400">({i.lines.rate}%)</span></td>
                       <td className="py-3 pr-4 text-right tabular-nums font-bold whitespace-nowrap">{i.kind === 'cancellation' ? '−' : ''}{formatPrice(i.lines.total)}</td>
@@ -150,7 +150,7 @@ export function Payments() {
 
         <Panel title="How you pay">
           <p className="text-sm text-slate-600">
-            Payments are taken by Razorpay — UPI, cards and net banking — and Book My Get Away never stores your card. A refundable
+            Payments are taken by Razorpay — UPI, cards and net banking — and BookMyGetaway never stores your card. A refundable
             security deposit, where a stay asks for one, is settled directly with the owner at check-in and is not part of
             what you pay here.
           </p>

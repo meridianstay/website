@@ -1,4 +1,4 @@
-// Book My Get Away service worker: makes the website installable as an app and shows a friendly page when offline.
+// BookMyGetaway service worker: makes the website installable as an app and shows a friendly page when offline.
 // It deliberately caches nothing else, so people always get the latest version of every page, price and booking.
 const CACHE = 'bookmygetaway-offline-v1'
 const OFFLINE_URL = '/offline.html'
@@ -32,9 +32,9 @@ self.addEventListener('push', (event) => {
   try {
     message = event.data.json()
   } catch {
-    message = { title: 'Book My Get Away', body: event.data.text() }
+    message = { title: 'BookMyGetaway', body: event.data.text() }
   }
-  event.waitUntil(self.registration.showNotification(message.title || 'Book My Get Away', {
+  event.waitUntil(self.registration.showNotification(message.title || 'BookMyGetaway', {
     body: message.body || '',
     icon: message.icon || '/icons/icon-192.png',
     badge: '/icons/icon-192.png',

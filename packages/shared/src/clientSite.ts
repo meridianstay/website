@@ -1,10 +1,10 @@
 // A client's own website. Each host (the client) gets a landing page carrying their logo and their
-// wording, at their own domain or at <business-name>.bookmygetaway.in, with Book My Get Away credited
+// wording, at their own domain or at <business-name>.bookmygetaway.in, with BookMyGetaway credited
 // alongside. The same listings that appear on the marketplace are what the page sells; a client with
 // more than one branch shows the others below.
 //
 // The page is the client's shopfront, so unlike the marketplace it names them and gives their phone
-// and email. Bookings still run through Book My Get Away, which is what keeps dates, payments and payouts in
+// and email. Bookings still run through BookMyGetaway, which is what keeps dates, payments and payouts in
 // one place.
 
 import { defaultPageDesign, type ClientPageDesign } from './clientPage'
@@ -198,7 +198,7 @@ export const hasUnpublishedChanges = (site: ClientSite) =>
 /** Default wording, so a client's page is never blank while they write their own. */
 export const starterPolicies = (businessName: string): ClientPolicies => ({
   terms: `Check-in and check-out times are shown with each stay. Please bring a government photo ID for every adult guest.\n\nThe number of guests may not exceed what the stay is booked for. ${businessName || 'We'} may refuse entry where it does.\n\nPlease treat the property and its surroundings with care. Any damage is charged at cost.`,
-  payment: 'Payment is taken in full at the time of booking, through Book My Get Away, by UPI, card or net banking.\n\nA booking is only held once payment has gone through. Prices include taxes unless the stay says otherwise.',
+  payment: 'Payment is taken in full at the time of booking, through BookMyGetaway, by UPI, card or net banking.\n\nA booking is only held once payment has gone through. Prices include taxes unless the stay says otherwise.',
   cancellation: 'Cancel more than 7 days before check-in and you are refunded in full, less the platform convenience fee.\n\nCancel within 7 days of check-in and 50% is refunded.\n\nCancel within 48 hours of check-in, or do not arrive, and the booking is not refunded.',
 })
 

@@ -5,7 +5,7 @@ import { nowISO } from '../store/db'
 import { AppError } from '../http/errors'
 import { checkLength, checkPhone, collect } from '../http/validate'
 
-// Sign-in with Firebase (Google or phone OTP) and Book My Get Away sessions.
+// Sign-in with Firebase (Google or phone OTP) and BookMyGetaway sessions.
 
 /** Where the person is signing in. Guests and hosts share one login page; the control centre has its own. */
 export type Portal = 'guest' | 'host' | 'admin'

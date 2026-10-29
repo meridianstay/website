@@ -80,7 +80,7 @@ const template = (subject: string, body: string, smsText: string, sms = false): 
   ({ enabled: true, email: true, sms, subject, body, smsText })
 
 export const defaultNotifications: NotificationSettings = {
-  fromName: 'Book My Get Away',
+  fromName: 'BookMyGetaway',
   fromEmail: '',
   replyTo: '',
   email: 'none',

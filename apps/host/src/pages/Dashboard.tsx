@@ -94,7 +94,7 @@ export function Dashboard() {
                   <span className="font-semibold text-slate-700">No commission</span> is taken on your bookings while your {stats.plan.name} plan runs — you keep the whole booking value.
                 </>
               ) : (
-                <>Book My Get Away’s commission is taken from each booking on the Free plan. <Link to="/plan" className="font-semibold text-brand-700">A paid plan removes it</Link> for the year.</>
+                <>BookMyGetaway’s commission is taken from each booking on the Free plan. <Link to="/plan" className="font-semibold text-brand-700">A paid plan removes it</Link> for the year.</>
               )}
             </p>
           </section>
@@ -143,7 +143,7 @@ export function Dashboard() {
                         : <span className="font-mono font-semibold text-slate-700 break-all">{stats.site.address}</span>}
                     </p>
                     <p className="text-xs text-slate-500 mt-2">
-                      {stats.site.status === 'Pending' ? 'With the Book My Get Away team to be checked.'
+                      {stats.site.status === 'Pending' ? 'With the BookMyGetaway team to be checked.'
                         : stats.site.status === 'Rejected' ? 'Sent back — see what needs changing.'
                         : stats.site.unpublished ? 'Your latest changes are waiting to be checked; visitors see the approved version.'
                         : stats.site.live ? 'Everything you have written is live.' : 'Not sent in yet.'}
@@ -157,7 +157,7 @@ export function Dashboard() {
                 <ul className="text-xs text-slate-600 mt-2 space-y-1">
                   <li><i className={`fa-solid fa-${stats.plan.commissionFree ? 'circle-check text-brand-600' : 'minus text-slate-300'} mr-2`} aria-hidden="true"></i>{stats.plan.commissionFree ? 'No commission on bookings' : 'Commission on each booking'}</li>
                   <li><i className={`fa-solid fa-${stats.plan.maxStaysOnSite === 0 ? 'circle-check text-brand-600' : 'minus text-slate-300'} mr-2`} aria-hidden="true"></i>{stats.plan.maxStaysOnSite === 0 ? 'Every stay on your website' : 'One stay on your website'}</li>
-                  <li><i className={`fa-solid fa-${stats.plan.customDomain ? 'circle-check text-brand-600' : 'minus text-slate-300'} mr-2`} aria-hidden="true"></i>{stats.plan.customDomain ? 'Your own domain' : 'A Book My Get Away address'}</li>
+                  <li><i className={`fa-solid fa-${stats.plan.customDomain ? 'circle-check text-brand-600' : 'minus text-slate-300'} mr-2`} aria-hidden="true"></i>{stats.plan.customDomain ? 'Your own domain' : 'A BookMyGetaway address'}</li>
                 </ul>
                 {stats.plan.active && stats.plan.daysLeft !== null && (
                   <p className="text-xs text-slate-500 mt-3">{stats.plan.daysLeft} days left on this year.</p>

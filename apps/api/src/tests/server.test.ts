@@ -2,7 +2,7 @@ import { beforeEach, afterEach, describe, test } from 'node:test'
 import assert from 'node:assert/strict'
 import { readFileSync } from 'node:fs'
 import { join } from 'node:path'
-import { PRIVATE_SETTING_KEYS, publicSettings, defaultSiteSettings } from '@meridian/shared'
+import { PRIVATE_SETTING_KEYS, publicSettings, defaultBranding, defaultSiteSettings } from '@meridian/shared'
 import { cached, clear, configure, report, resetForTests } from '../store/cache'
 import { serverService } from '../services/server'
 import { runJob } from '../services/jobs'
@@ -255,7 +255,7 @@ describe('what leaves the API', () => {
     for (const key of PRIVATE_SETTING_KEYS) assert.ok(!(key in published), `${key} must not be sent to visitors`)
     // Notification wording was the worst of it: twelve messages on every page load.
     assert.ok(!JSON.stringify(published).includes(defaultSiteSettings.notifications.templates['booking.confirmed'].subject))
-    // A host is shown what Book My Get Away's share will be, so commission stays.
+    // A host is shown what BookMyGetaway's share will be, so commission stays.
     assert.ok('commission' in published)
     assert.ok('branding' in published && 'theme' in published && 'header' in published)
   })
@@ -349,13 +349,13 @@ describe('renaming a site that had already saved its own content', () => {
     await contentRepo.renameToBookMyGetAway()
 
     const stored = (await col(C.settings).doc('footer').get()).data()!.value as { copyright: string; columns: unknown[] }
-    assert.equal(stored.copyright, '© {year} Book My Get Away Inc. All rights reserved.')
+    assert.equal(stored.copyright, '© {year} BookMyGetaway Inc. All rights reserved.')
     assert.ok(stored.columns.length, 'the rest of the footer survives')
 
     const page = (await col(C.pages).doc('about-us').get()).data() as { title: string; intro: string; sections: { body: string[] }[] }
-    assert.equal(page.title, 'About Book My Get Away')
-    assert.equal(page.intro, 'Book My Get Away connects travellers with nature stays. Write to us at hello@bookmygetaway.in.')
-    assert.equal(page.sections[0].body[0], 'Every stay on Book My Get Away is visited by our team.')
+    assert.equal(page.title, 'About BookMyGetaway')
+    assert.equal(page.intro, 'BookMyGetaway connects travellers with nature stays. Write to us at hello@bookmygetaway.in.')
+    assert.equal(page.sections[0].body[0], 'Every stay on BookMyGetaway is visited by our team.')
     assert.equal(page.sections[0].body[1], 'Nothing about this sentence mentions the brand.', 'wording around the name is untouched')
   })
 
@@ -369,7 +369,9 @@ describe('renaming a site that had already saved its own content', () => {
     await contentRepo.renameToBookMyGetAway()
 
     const saved = (await col(C.settings).doc('branding').get()).data()!.value as { apps: Record<string, { name: string; accent: string }> }
-    assert.deepEqual([saved.apps.website.name, saved.apps.website.accent], ['Book My', 'Get Away'])
+    assert.deepEqual([saved.apps.website.name, saved.apps.website.accent], ['BookMy', 'Getaway'])
+    // The two halves are one word, so joining them must not introduce a space.
+    assert.equal(`${saved.apps.website.name}${saved.apps.website.accent}`, 'BookMyGetaway')
     assert.deepEqual([saved.apps.admin.name, saved.apps.admin.accent], ['Acme', 'Travel'], 'a name an admin chose is left alone')
   })
 
@@ -425,5 +427,35 @@ describe('what the rename must not touch', () => {
     const after = (await col(C.invoices).doc(number.replace(/\//g, '-')).get()).data() as { supplier: { legalName: string }; description: string }
     assert.equal(after.supplier.legalName, 'Meridian Stay Private Limited', 'a tax document is never rewritten')
     assert.equal(after.description, 'Accommodation booked on Meridian Stay')
+  })
+})
+
+describe('the wordmark is one unspaced word', () => {
+  beforeEach(resetDatabase)
+
+  test('a site still on the spaced spelling 0.48.0 shipped is carried on', async () => {
+    const { branding, footer } = await contentRepo.settings()
+    const apps = structuredClone(branding.apps)
+    apps.website = { ...apps.website, name: 'Book My', accent: 'Get Away' }
+    await col(C.settings).doc('branding').set({ value: { ...branding, apps }, updatedAt: nowISO(), updatedBy: null })
+    await col(C.settings).doc('footer').set({
+      value: { ...footer, copyright: '© {year} Book My Get Away Inc. All rights reserved.' },
+      updatedAt: nowISO(), updatedBy: null,
+    })
+
+    await contentRepo.renameToBookMyGetAway()
+
+    const saved = (await col(C.settings).doc('branding').get()).data()!.value as { apps: Record<string, { name: string; accent: string }> }
+    assert.deepEqual([saved.apps.website.name, saved.apps.website.accent], ['BookMy', 'Getaway'])
+    const credit = (await col(C.settings).doc('footer').get()).data()!.value as { copyright: string }
+    assert.equal(credit.copyright, '© {year} BookMyGetaway Inc. All rights reserved.')
+  })
+
+  test('the default wordmark joins up with no space in it', () => {
+    const { apps } = defaultBranding
+    for (const [key, app] of Object.entries(apps)) {
+      assert.equal(`${app.name}${app.accent}`, 'BookMyGetaway', `${key} spells the brand`)
+      assert.ok(!app.name.includes(' ') && !app.accent.includes(' '), `${key} has no space in either half`)
+    }
   })
 })

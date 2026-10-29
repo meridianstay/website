@@ -33,7 +33,7 @@ export const invoicesRepo = {
       .sort((a, b) => b.issuedAt.localeCompare(a.issuedAt))
   },
 
-  /** Everything raised for one client's stays, theirs and Book My Get Away's alike. */
+  /** Everything raised for one client's stays, theirs and BookMyGetaway's alike. */
   async byHost(hostId: number): Promise<Invoice[]> {
     const snap = await col(C.invoices).where('hostId', '==', hostId).get()
     return snap.docs.map((d) => d.data() as Invoice).sort((a, b) => b.issuedAt.localeCompare(a.issuedAt))

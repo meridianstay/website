@@ -38,7 +38,7 @@ export function Property() {
   useEffect(load, [load])
   useDocumentTitle(property?.title)
   useSocialMeta({
-    title: property ? `${property.title} — ${property.location}` : 'Book My Get Away',
+    title: property ? `${property.title} — ${property.location}` : 'BookMyGetaway',
     description: property?.description?.slice(0, 200),
     image: property?.image,
   })
@@ -365,7 +365,7 @@ export function Property() {
       <Modal open={promotedOpen} onClose={() => setPromotedOpen(false)} title={t('stay.promotedStay')}>
         <div className="space-y-3 text-sm text-slate-600">
           <p className="flex items-center gap-2 font-bold text-slate-900"><i className="fa-solid fa-bullhorn text-slate-700" aria-hidden="true"></i>{t('stay.promotedMeans')}</p>
-          <p>The host is paying Book My Get Away to show this listing more often, for example at the top of search results or on our homepage.</p>
+          <p>The host is paying BookMyGetaway to show this listing more often, for example at the top of search results or on our homepage.</p>
           <p>It doesn’t change anything else: reviews are only from guests who stayed, the price is the host’s own, and promoted stays are checked and must follow the same rules as every other listing.</p>
         </div>
       </Modal>

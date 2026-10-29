@@ -4,13 +4,13 @@
 
 import type { BrandApp } from './branding'
 
-export const PLATFORM_VERSION = '0.48.0'
+export const PLATFORM_VERSION = '0.48.1'
 
 export const APP_VERSIONS: Record<BrandApp, string> = {
-  website: '0.48.0',
-  host: '0.48.0',
-  account: '0.48.0',
-  admin: '0.48.0',
+  website: '0.48.1',
+  host: '0.48.1',
+  account: '0.48.1',
+  admin: '0.48.1',
 }
 
 /** "v0.23.0", for the small grey line in the footer. Never a link. */

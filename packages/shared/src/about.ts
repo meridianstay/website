@@ -44,7 +44,7 @@ export const ABOUT_TOKENS: { token: keyof AboutStats; label: string }[] = [
   { token: 'destinations', label: 'Destinations (towns and cities)' },
   { token: 'states', label: 'States and regions' },
   { token: 'guestNights', label: 'Nights booked by guests' },
-  { token: 'managedStays', label: 'Stays managed by Book My Get Away' },
+  { token: 'managedStays', label: 'Stays managed by BookMyGetaway' },
 ]
 
 /** Replaces {{liveStays}} and friends with Indian-formatted numbers. Unknown tokens are left as they are. */
@@ -65,7 +65,7 @@ export const aboutSchema: {
   maxItems?: number
   fields?: Partial<Record<ItemField, string>>
 }[] = [
-  { key: 'company', label: 'About the company', hint: 'Who Book My Get Away is.', itemLabel: 'Highlight', maxItems: 4, fields: { icon: 'Icon', title: 'Title', text: 'Text' } },
+  { key: 'company', label: 'About the company', hint: 'Who BookMyGetaway is.', itemLabel: 'Highlight', maxItems: 4, fields: { icon: 'Icon', title: 'Title', text: 'Text' } },
   { key: 'mission', label: 'Mission', hint: 'What you do every day.', itemLabel: 'Pillar', maxItems: 3, fields: { icon: 'Icon', title: 'Title', text: 'Text' } },
   { key: 'vision', label: 'Vision', hint: 'The future you are building.' },
   { key: 'journey', label: 'Our journey', hint: 'Milestones, oldest first.', itemLabel: 'Milestone', maxItems: 8, fields: { meta: 'Year or chapter', title: 'Title', text: 'What happened' } },
@@ -74,7 +74,7 @@ export const aboutSchema: {
   { key: 'goals', label: 'Our aim and goals', hint: 'What you are working towards.', itemLabel: 'Goal', maxItems: 6, fields: { icon: 'Icon', title: 'Goal', text: 'Details' } },
   { key: 'globalImpact', label: 'Global impact', hint: 'Figures can use live numbers such as {{liveStays}}.', itemLabel: 'Impact', maxItems: 4, fields: { icon: 'Icon', title: 'Figure or headline', meta: 'Label', text: 'Details' } },
   { key: 'localImpact', label: 'Local impact', hint: 'Figures can use live numbers such as {{hosts}}.', itemLabel: 'Impact', maxItems: 4, fields: { icon: 'Icon', title: 'Figure or headline', meta: 'Label', text: 'Details' } },
-  { key: 'whyUs', label: 'Why us?', hint: 'Reasons to choose Book My Get Away.', itemLabel: 'Reason', maxItems: 8, fields: { icon: 'Icon', title: 'Title', text: 'Text' } },
+  { key: 'whyUs', label: 'Why us?', hint: 'Reasons to choose BookMyGetaway.', itemLabel: 'Reason', maxItems: 8, fields: { icon: 'Icon', title: 'Title', text: 'Text' } },
 ]
 
 export const ABOUT_LIMITS = { title: 120, tagline: 240, body: 3000, itemTitle: 120, itemMeta: 80, itemText: 600 }
@@ -83,7 +83,7 @@ const item = (fields: Partial<AboutItem>): AboutItem => ({ icon: '', title: '', 
 
 export const defaultAbout: AboutPage = {
   hero: {
-    eyebrow: 'About Book My Get Away',
+    eyebrow: 'About BookMyGetaway',
     title: 'We bring you home to',
     highlight: 'Nature',
     tagline: 'Handpicked farmstays, forest cottages, riverside rooms and pool villas across India, run by people who love the land they live on.',
@@ -93,7 +93,7 @@ export const defaultAbout: AboutPage = {
     company: {
       title: 'More than a place to sleep',
       tagline: 'A homegrown marketplace for stays that feel like the countryside you grew up hearing about.',
-      body: 'Book My Get Away connects travellers with nature stays across India: coffee estates in Coorg, apple orchards in Himachal, houseboats on the Kerala backwaters and heritage havelis in Rajasthan.\n\nEvery listing is reviewed by our team before it goes live. Some properties we manage end to end, from upkeep to guest care, so you can book them instantly. Others are run by independent hosts who welcome each guest personally.',
+      body: 'BookMyGetaway connects travellers with nature stays across India: coffee estates in Coorg, apple orchards in Himachal, houseboats on the Kerala backwaters and heritage havelis in Rajasthan.\n\nEvery listing is reviewed by our team before it goes live. Some properties we manage end to end, from upkeep to guest care, so you can book them instantly. Others are run by independent hosts who welcome each guest personally.',
       items: [
         item({ icon: 'seedling', title: 'Nature first', text: 'Stays chosen for their surroundings, not just their rooms.' }),
         item({ icon: 'magnifying-glass-location', title: 'Reviewed by people', text: 'Our team checks every listing before guests can book it.' }),
@@ -125,14 +125,14 @@ export const defaultAbout: AboutPage = {
         item({ meta: 'Chapter 1', title: 'The spark', text: 'A simple question: why was it so hard to find a genuine farmstay, and so easy to end up in another concrete hotel?' }),
         item({ meta: 'Chapter 2', title: 'The first hosts', text: 'We visited properties in person, met the families behind them and listed our first handful of stays.' }),
         item({ meta: 'Chapter 3', title: 'Managed stays', text: 'We began managing some properties end to end, so guests could book them instantly with the same standard every time.' }),
-        item({ meta: 'Chapter 4', title: 'Going digital', text: 'Book My Get Away launched online: instant booking, requests to hosts, secure payments and a portal for every host.' }),
+        item({ meta: 'Chapter 4', title: 'Going digital', text: 'BookMyGetaway launched online: instant booking, requests to hosts, secure payments and a portal for every host.' }),
         item({ meta: 'What’s next', title: 'Every corner of India', text: 'More regions, more host families, and tools that help small properties grow without losing their character.' }),
       ],
     },
     founder: {
       title: 'Meet our founder',
       tagline: 'The traveller who swapped city deadlines for village sunrises, and wanted everyone else to find them too.',
-      body: 'Aarav grew up spending summer holidays on his grandparents’ farm in the Western Ghats: mango trees, monsoon rain on tin roofs, and dinners cooked with whatever the fields gave that day. Years later, working long hours in Bengaluru, he went looking for that feeling again and found it almost impossible to book.\n\nThe beautiful places were there, but they were hidden behind phone numbers, word of mouth and uncertain photos. The families who ran them had no easy way to reach travellers. So he started visiting them one by one, listing the ones he loved, and Book My Get Away was born.\n\nToday he still spends a week every month on the road, meeting hosts and staying in the properties himself. “If I wouldn’t bring my own family here,” he says, “it doesn’t go on Book My Get Away.”',
+      body: 'Aarav grew up spending summer holidays on his grandparents’ farm in the Western Ghats: mango trees, monsoon rain on tin roofs, and dinners cooked with whatever the fields gave that day. Years later, working long hours in Bengaluru, he went looking for that feeling again and found it almost impossible to book.\n\nThe beautiful places were there, but they were hidden behind phone numbers, word of mouth and uncertain photos. The families who ran them had no easy way to reach travellers. So he started visiting them one by one, listing the ones he loved, and BookMyGetaway was born.\n\nToday he still spends a week every month on the road, meeting hosts and staying in the properties himself. “If I wouldn’t bring my own family here,” he says, “it doesn’t go on BookMyGetaway.”',
       items: [item({ title: 'Aarav Sharma', meta: 'Founder & CEO', image: images.avatar, text: 'The best holidays don’t feel like a hotel. They feel like being welcomed into someone’s home, in a place you never want to leave.' })],
     },
     team: {
@@ -180,7 +180,7 @@ export const defaultAbout: AboutPage = {
       ],
     },
     whyUs: {
-      title: 'Why travellers choose Book My Get Away',
+      title: 'Why travellers choose BookMyGetaway',
       tagline: 'The good parts of a boutique hotel, the soul of a homestay.',
       body: '',
       items: [

@@ -29,11 +29,11 @@ export interface GstSettings {
   /** Services Accounting Code for accommodation. 996311 is hotel and guest-house lodging. */
   sac: string
   /**
-   * What Book My Get Away's own services to a client are taxed at — the commission on a booking and the
+   * What BookMyGetaway's own services to a client are taxed at — the commission on a booking and the
    * yearly plan. Services are 18% as a rule, but it is a setting like everything else here.
    */
   serviceRate: number
-  /** SAC for what Book My Get Away supplies. 998599 is other support services. */
+  /** SAC for what BookMyGetaway supplies. 998599 is other support services. */
   serviceSac: string
   /** What invoice numbers look like, e.g. BMG/26-27/0001. */
   invoicePrefix: string
@@ -48,9 +48,9 @@ export interface GstSettings {
    *
    * `owner` — the usual arrangement, and the default: the client owns the property, so a client
    * who is GST-registered invoices the guest under their own registration. A client who is not
-   * registered falls to Book My Get Away, which is what an e-commerce operator is for.
+   * registered falls to BookMyGetaway, which is what an e-commerce operator is for.
    *
-   * `platform` — Book My Get Away invoices for every stay, whatever the client's registration. Only set
+   * `platform` — BookMyGetaway invoices for every stay, whatever the client's registration. Only set
    * this if an accountant has told you to.
    */
   supplier: 'owner' | 'platform'
@@ -170,7 +170,7 @@ export const hostGstReady = (gst: HostGst | null | undefined) =>
 
 /**
  * Whose registration a booking is invoiced under. The client's when they have one and the settings
- * allow it, otherwise Book My Get Away's — which is how an unregistered owner's stay is still invoiced.
+ * allow it, otherwise BookMyGetaway's — which is how an unregistered owner's stay is still invoiced.
  */
 export function supplierFor(settings: GstSettings, hostGst: HostGst | null | undefined) {
   if (settings.supplier === 'owner' && hostGstReady(hostGst)) {
@@ -193,7 +193,7 @@ export function supplierFor(settings: GstSettings, hostGst: HostGst | null | und
 
 /**
  * booking / cancellation — what a guest is billed for a stay, by whoever owns it.
- * commission / subscription — what Book My Get Away bills a client for, where Book My Get Away is the supplier.
+ * commission / subscription — what BookMyGetaway bills a client for, where BookMyGetaway is the supplier.
  */
 export type InvoiceKind = 'booking' | 'cancellation' | 'commission' | 'subscription'
 
@@ -210,7 +210,7 @@ export interface Invoice {
   issuedAt: string
   /** Who is supplying, copied in full so a later settings change can't alter a past invoice. */
   supplier: { legalName: string; gstin: string; address: string; stateCode: string }
-  /** Whether that was the property's owner or Book My Get Away, which decides whose return it belongs in. */
+  /** Whether that was the property's owner or BookMyGetaway, which decides whose return it belongs in. */
   raisedBy: 'owner' | 'platform'
   /** The client whose stay it was, so a register can be split by owner. */
   hostId: number
@@ -231,12 +231,12 @@ export interface Invoice {
   items?: { description: string; amount: number }[]
 }
 
-/** True when Book My Get Away is billing the client rather than a guest being billed for a stay. */
+/** True when BookMyGetaway is billing the client rather than a guest being billed for a stay. */
 export const isPlatformBill = (kind: InvoiceKind) => kind === 'commission' || kind === 'subscription'
 
 /**
- * Place of supply for a service Book My Get Away sells a client is where the client is — their registered
- * state when they have one. Without that there is nothing to go on but Book My Get Away's own state, which
+ * Place of supply for a service BookMyGetaway sells a client is where the client is — their registered
+ * state when they have one. Without that there is nothing to go on but BookMyGetaway's own state, which
  * makes it a supply within it.
  */
 export const clientPlaceOfSupply = (settings: GstSettings, hostGst: HostGst | null | undefined) =>

@@ -109,7 +109,7 @@ export function ListingEditor() {
   return (
     <>
       <PageHeader
-        eyebrow="Book My Get Away Host Portal"
+        eyebrow="BookMyGetaway Host Portal"
         title={editingId ? 'Edit listing' : 'List your property'}
         description={editingId ? 'Saving changes sends the listing back for a quick review before it goes live again.' : 'Share your farmstay, room, resort, cottage or villa with travellers.'}
       />
@@ -273,7 +273,7 @@ export function ListingEditor() {
             <div>
               <p className="block text-xs font-bold uppercase text-slate-500 mb-2">Video tour (optional)</p>
               <p className="text-xs text-slate-500 mb-3">
-                Videos live on the <strong>Book My Get Away YouTube channel</strong>, not on this site, so pages stay fast.
+                Videos live on the <strong>BookMyGetaway YouTube channel</strong>, not on this site, so pages stay fast.
                 Send your clip to our team, or upload it to YouTube yourself, then paste the link here. A 30–60 second walk-through works best.
                 You can leave this empty and add it later.
               </p>
@@ -346,7 +346,7 @@ export function ListingEditor() {
                     <input id="price" type="number" min={1} max={100000} className={inputClass} value={draft.price} onChange={(e) => update('price', Number(e.target.value))} />
                   </Field>
                   <p className="text-sm text-slate-600 bg-slate-50 rounded-xl p-3">
-                    A 2-night stay for 2 guests costs <span className="font-bold text-slate-900">{formatPrice(sample.total)}</span>, with no booking fee added. After Book My Get Away’s {pct}% commission you receive <span className="font-bold text-slate-900">{formatPrice(payout)}</span>.
+                    A 2-night stay for 2 guests costs <span className="font-bold text-slate-900">{formatPrice(sample.total)}</span>, with no booking fee added. After BookMyGetaway’s {pct}% commission you receive <span className="font-bold text-slate-900">{formatPrice(payout)}</span>.
                   </p>
                 </>
               )}
@@ -403,7 +403,7 @@ export function ListingEditor() {
             </section>
             <p className="text-xs text-slate-500">
               {management === 'managed'
-                ? 'This property is managed by Book My Get Away: guests book instantly, and we handle upkeep and guest care.'
+                ? 'This property is managed by BookMyGetaway: guests book instantly, and we handle upkeep and guest care.'
                 : 'You manage this property yourself: guests send booking requests, which you accept or decline within 24 hours.'}
             </p>
           </div>

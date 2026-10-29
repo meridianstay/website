@@ -202,7 +202,7 @@ describe('what each plan is worth', () => {
 
     await subscriptionService.cancel(admin.me, host.me.id)
     const view = await clientSiteService.forSlug('green-valley-farmstays')
-    assert.ok(view, 'the website stays up on the Book My Get Away address')
+    assert.ok(view, 'the website stays up on the BookMyGetaway address')
     assert.equal(view?.stays.length, 1, 'but back to one stay, as Free allows')
   })
 
@@ -238,7 +238,7 @@ describe('what each plan is worth', () => {
     assert.deepEqual(defaultClientPlans.map((p) => p.pricePerYear), [0, 999, 1999, 4999])
     // Free and 999 cover one stay; 1999 and above cover every stay a client runs.
     assert.deepEqual(defaultClientPlans.map((p) => p.features.maxStaysOnSite), [1, 1, 0, 0])
-    // Free lives on a Book My Get Away address; every paid plan may bring its own domain.
+    // Free lives on a BookMyGetaway address; every paid plan may bring its own domain.
     assert.deepEqual(defaultClientPlans.map((p) => p.features.customDomain), [false, true, true, true])
     assert.deepEqual(defaultClientPlans.map((p) => p.features.pageEditor), [false, false, false, true])
   })

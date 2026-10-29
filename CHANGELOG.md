@@ -2,6 +2,13 @@
 
 Every change to Meridian Stay is recorded here, newest first. Each entry says what changed for the people using the platform, then the notable technical changes.
 
+## 0.48.1 — 2026-10-29
+
+### Fixes
+- **The name is written `BookMyGetaway`, with no spaces.** 0.48.0 spelled it "Book My Get Away" across every page, panel, email and document; it is now closed up everywhere — page titles and link previews, the installable-app name, every email and SMS, all four panels and the Hindi, Marathi and Gujarati translations.
+- **The wordmark closed up with it.** It is drawn in two colours from two settings, a name and an accent, which used to be joined with a space; they now run together, so the logo reads **BookMy**Getaway in green and gold. The preloader that paints before any JavaScript runs was spelled out by hand and has been closed up too.
+- The rename of a site that had already saved its own content now recognises **both** spellings, so a site that took 0.48.0 before this fix is carried the rest of the way rather than being left half-renamed.
+
 ## 0.48.0 — 2026-10-29
 
 ### Meridian Stay is now Book My Get Away

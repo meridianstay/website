@@ -53,7 +53,7 @@ export function Overview() {
     <>
       <PageHeader
         eyebrow="Platform administrator"
-        title="Book My Get Away Control Centre"
+        title="BookMyGetaway Control Centre"
         description="What needs you, what the platform earned, and what it is made of."
       />
 
@@ -88,7 +88,7 @@ export function Overview() {
       <section aria-label="Money" className="mb-8">
         <h2 className="text-[11px] font-bold uppercase tracking-wider text-slate-500 mb-3">Money</h2>
         <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 sm:gap-6">
-          <Money label="Commission earned" value={stats.commission} hint="Book My Get Away’s share of confirmed stays" strong />
+          <Money label="Commission earned" value={stats.commission} hint="BookMyGetaway’s share of confirmed stays" strong />
           <Money label="Client subscriptions" value={stats.subscriptions.yearly} hint={`${stats.subscriptions.paying} paying · a year at today’s prices`} to="/subscriptions" strong />
           <Money label="Promotion income" value={stats.adRevenue} hint="Paid by hosts for ads" to="/promotions" />
           <Money label="Owed to hosts" value={stats.payoutsOwed} hint="Past its hold period, not yet sent" to="/payouts" owed />

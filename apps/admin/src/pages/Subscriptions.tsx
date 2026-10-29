@@ -3,7 +3,7 @@ import { ErrorNote, PageHeader, Panel, Spinner } from '@meridian/ui'
 import { formatPrice, type ClientPlan, type PlanId, type Subscription } from '@meridian/shared'
 import { ApiError, adminApi } from '@meridian/shared/client'
 
-// What clients pay Book My Get Away, and what each plan is worth. The prices and the wording are yours to
+// What clients pay BookMyGetaway, and what each plan is worth. The prices and the wording are yours to
 // change here; which plan unlocks what is fixed, because the platform decides entitlements from it.
 
 type Row = Subscription & { hostName: string; hostEmail: string; active: boolean; daysLeft: number | null }
@@ -36,7 +36,7 @@ export function Subscriptions() {
     <>
       <PageHeader
         title="Subscriptions"
-        description="What clients pay to be on Book My Get Away, once a year. Separate from guests' bookings and from what you pay hosts — this is your own income from the platform."
+        description="What clients pay to be on BookMyGetaway, once a year. Separate from guests' bookings and from what you pay hosts — this is your own income from the platform."
       />
 
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-5 mb-8">
@@ -245,7 +245,7 @@ function PlansPanel({ plans, required, onSaved }: { plans: ClientPlan[]; require
               </div>
               <p className="text-xs text-slate-500 bg-slate-50 rounded-xl p-2.5">
                 Unlocks: {plan.features.maxStaysOnSite === 1 ? 'one stay' : 'every stay'} on their website
-                {plan.features.customDomain ? ', their own domain' : ', on a Book My Get Away address'}
+                {plan.features.customDomain ? ', their own domain' : ', on a BookMyGetaway address'}
                 {plan.features.pageEditor ? ', and rearranging the page' : ''}.
               </p>
             </article>

@@ -1,6 +1,6 @@
 # API reference
 
-The Book My Get Away API is served at **`/api`** on the same domain as the apps, for example `https://website-seven-sable-30.vercel.app/api`. In development it runs at `http://localhost:8787/api`; the website's dev server forwards `/api` to it.
+The BookMyGetaway API is served at **`/api`** on the same domain as the apps, for example `https://website-seven-sable-30.vercel.app/api`. In development it runs at `http://localhost:8787/api`; the website's dev server forwards `/api` to it.
 
 The code lives in [`apps/api`](../apps/api). Each endpoint below is defined in `src/routes/`. Routes call services (business rules), which call repositories (Firestore).
 
@@ -210,7 +210,7 @@ Every change here is recorded in the activity log.
 | GET | `/api/admin/listings` | `?status=Pending\|Approved\|Rejected\|Draft&q=` | `{ listings }` with host and `featuredRank` |
 | POST | `/api/admin/listings/:id/approve` | — | `204` |
 | POST | `/api/admin/listings/:id/reject` | `{ reason }` (5–500 characters, shown to the host) | `204` |
-| POST | `/api/admin/listings/:id/assured` | `{ assured: boolean }` | `204`. Shows the “Book My Get Away Assured” badge to guests. |
+| POST | `/api/admin/listings/:id/assured` | `{ assured: boolean }` | `204`. Shows the “BookMyGetaway Assured” badge to guests. |
 | POST | `/api/admin/listings/:id/management` | `{ management: "managed" \| "self" }` | `204`. Managed: instant booking and the managed commission. |
 | POST | `/api/admin/listings/:id/feature` | `{ rank: 1–99 }` or `{ rank: null }` to remove | `204`; live listings only |
 

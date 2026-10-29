@@ -1,6 +1,6 @@
 # Data and backend
 
-Book My Get Away runs entirely on **Firebase**:
+BookMyGetaway runs entirely on **Firebase**:
 
 | Firebase service | What it holds |
 | --- | --- |

@@ -213,7 +213,7 @@ export function Branding() {
             onChange={(url) => { setBranding({ ...branding, placeholderUrl: url }); touched() }} error={fieldError('placeholderUrl')} />
         </Panel>
 
-        <Panel title="Logos, tab icons and preloaders" subtitle="Upload a square logo (PNG with a transparent background looks best). Leave it empty to keep the Book My Get Away sprout.">
+        <Panel title="Logos, tab icons and preloaders" subtitle="Upload a square logo (PNG with a transparent background looks best). Leave it empty to keep the BookMyGetaway sprout.">
           <div className="grid md:grid-cols-2 gap-8">
             {BRAND_APPS.map(({ app, label: name, where }) => {
               const b = branding.apps[app]

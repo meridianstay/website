@@ -37,7 +37,7 @@ export function Header() {
   return (
     <header className="sticky top-0 z-50 bg-white/95 backdrop-blur-md border-b border-slate-200">
       <div className="max-w-[1180px] mx-auto px-4 sm:px-5 h-20 flex items-center justify-between gap-2 sm:gap-3 min-w-0">
-        <Link to="/" className="shrink-0 min-w-0" aria-label="Book My Get Away home">
+        <Link to="/" className="shrink-0 min-w-0" aria-label="BookMyGetaway home">
           <Logo href={null} />
         </Link>
 

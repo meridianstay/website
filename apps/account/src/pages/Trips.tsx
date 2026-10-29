@@ -55,7 +55,7 @@ export function Trips() {
       <PageHeader
         title="Your trips"
         description={bookings.length
-          ? `${bookings.length} ${bookings.length === 1 ? 'booking' : 'bookings'} with Book My Get Away${open ? `, ${open} still open` : ''}.`
+          ? `${bookings.length} ${bookings.length === 1 ? 'booking' : 'bookings'} with BookMyGetaway${open ? `, ${open} still open` : ''}.`
           : 'Upcoming stays, requests waiting for an owner, and your booking history.'}
         action={
           <a href={appLink('website', '/search')} className="bg-brand-600 hover:bg-brand-700 text-white font-bold py-3 px-5 rounded-2xl text-xs transition inline-flex items-center">

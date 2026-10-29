@@ -17,13 +17,13 @@ describe('Logos, header and footer', () => {
     const branding = structuredClone(defaultBranding)
     branding.apps.website.logoUrl = 'https://cdn.example.com/website.png'
     branding.apps.host.logoUrl = 'https://cdn.example.com/host.png'
-    branding.apps.host.name = 'Book My Get Away Partners'
+    branding.apps.host.name = 'BookMyGetaway Partners'
     branding.apps.host.showName = false
     await appearanceService.saveBranding(admin.me, body(branding))
 
     const saved = (await contentRepo.settings()).branding
     assert.equal(saved.apps.website.logoUrl, 'https://cdn.example.com/website.png')
-    assert.equal(saved.apps.host.name, 'Book My Get Away Partners')
+    assert.equal(saved.apps.host.name, 'BookMyGetaway Partners')
     assert.equal(saved.apps.host.showName, false)
     assert.equal(saved.apps.admin.logoUrl, '', 'the control centre keeps its own (empty) logo')
   })
@@ -53,7 +53,7 @@ describe('Logos, header and footer', () => {
     const filled = withBrandingDefaults(old)
     assert.equal(filled.apps.website.logoUrl, 'https://cdn.example.com/old.png')
     assert.equal(filled.apps.website.faviconUrl, '')
-    assert.equal(filled.apps.host.name, 'Book My')
+    assert.equal(filled.apps.host.name, 'BookMy')
     assert.equal(filled.placeholderUrl, '')
   })
 
@@ -91,12 +91,12 @@ describe('Logos, header and footer', () => {
     const footer = structuredClone(defaultFooter)
     footer.columns = [{ heading: 'Company', links: [{ label: 'About us', url: '/about' }] }]
     footer.social.instagram = 'https://instagram.com/bookmygetaway'
-    footer.copyright = '© {year} Book My Get Away'
+    footer.copyright = '© {year} BookMyGetaway'
     const saved = await appearanceService.saveFooter(admin.me, body(footer))
     assert.equal(saved.columns.length, 1)
     assert.equal(saved.social.instagram, 'https://instagram.com/bookmygetaway')
     assert.equal(saved.credit.label, defaultFooter.credit.label, 'the studio credit is kept')
-    assert.equal(saved.copyright, '© {year} Book My Get Away')
+    assert.equal(saved.copyright, '© {year} BookMyGetaway')
 
     const bad = structuredClone(defaultFooter)
     bad.columns[0].heading = ''

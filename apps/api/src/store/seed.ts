@@ -46,7 +46,7 @@ interface SeedProperty {
   slug: string; host: string; title: string; type: string; city: string; region: string; country?: string
   price: number; rating: number; reviewCount: number; beds: number; baths: number; maxGuests: number
   status: 'Approved' | 'Pending' | 'Rejected' | 'Draft'; rejectionReason?: string; featured?: number
-  /** Run by Book My Get Away (instant booking, higher commission). Otherwise host-managed, request to book. */
+  /** Run by BookMyGetaway (instant booking, higher commission). Otherwise host-managed, request to book. */
   managed?: boolean
   cover: string; photos: string[]; amenities: string[]; lat: number; lng: number; description: string
   reviews: [author: string, rating: number, comment: string, daysAgo: number][]
@@ -232,13 +232,13 @@ const messages: [name: string, email: string, topic: string, message: string, st
   ['Asha Kulkarni', 'asha.k@example.com', 'Hosting', 'I have two cottages near Coorg. Can I list both under one account?', 'new', 1],
   ['Dev Malhotra', 'dev.m@example.com', 'Booking help', 'Can I change the dates of my houseboat booking instead of cancelling?', 'new', 2],
   ['Ritu Sharma', 'ritu@example.com', 'Payments & refunds', 'When will online payments be available? I’d like to pay by UPI.', 'read', 6],
-  ['The Travel Desk', 'press@example.com', 'Press', 'We’re writing about farmstays in South India and would love to feature Book My Get Away.', 'read', 9],
+  ['The Travel Desk', 'press@example.com', 'Press', 'We’re writing about farmstays in South India and would love to feature BookMyGetaway.', 'read', 9],
   ['Kiran Joshi', 'kiran.j@example.com', 'Trust & safety', 'A listing I viewed used photos I think belong to another property.', 'closed', 20],
 ]
 
 
 // Property details (demo): area, capacities, rules, deposit, a sample address, and day use on a few properties.
-/** Demo video tours. Real listings link to the Book My Get Away YouTube channel; these are Creative Commons films. */
+/** Demo video tours. Real listings link to the BookMyGetaway YouTube channel; these are Creative Commons films. */
 const VIDEOS: Record<string, string> = {
   'green-valley-organic-farmstay': 'https://www.youtube.com/watch?v=aqz-KE-bpKQ',
   'emerald-luxury-pool-villa': 'https://www.youtube.com/watch?v=eRsGyueVLvQ',
@@ -271,7 +271,7 @@ function details(s: SeedProperty) {
     address: `Sample address: ${s.title}, near the main road, ${s.city}, ${s.region} (demo)`,
     overnight: true,
     videoUrl: VIDEOS[s.slug] ?? '',
-    // Demo: Book My Get Away-managed stays and the best-reviewed ones are "Assured".
+    // Demo: BookMyGetaway-managed stays and the best-reviewed ones are "Assured".
     assured: !!s.managed || s.rating >= 4.9,
     discountPct: DISCOUNTS[s.slug] ?? 0,
     dayUse: d

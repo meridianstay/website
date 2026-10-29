@@ -7,7 +7,7 @@ import { AppError } from '../http/errors'
 // Uploads to Firebase Storage. Files are served through their download links.
 //
 // Photos go through the API (they're small). Videos are too big for a serverless request body, so the
-// Videos are never uploaded here: listings link to a video on the Book My Get Away YouTube channel instead,
+// Videos are never uploaded here: listings link to a video on the BookMyGetaway YouTube channel instead,
 // which keeps the site light and the storage bill small.
 
 const TYPES: Record<string, string> = { 'image/jpeg': 'jpg', 'image/png': 'png', 'image/webp': 'webp' }

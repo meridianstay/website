@@ -62,7 +62,7 @@ const qs = (params: object) => {
 
 export const api = {
   me: () => request<{ user: Me | null }>('/auth/me'),
-  /** Exchanges a Firebase ID token for a Book My Get Away session on one of the three portals. */
+  /** Exchanges a Firebase ID token for a BookMyGetaway session on one of the three portals. */
   session: (idToken: string, portal: SignInPortal) => request<{ user: Me }>('/auth/session', { method: 'POST', json: { idToken, portal } }),
   logout: () => request<void>('/auth/logout', { method: 'POST' }),
   updateMe: (data: { name: string; phone: string }) => request<{ user: Me }>('/me', { method: 'PATCH', json: data }),

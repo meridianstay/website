@@ -131,7 +131,7 @@ describe('translating the words written in the control centre', () => {
     const all = groups.flatMap((g) => g.strings)
     assert.ok(all.includes('Featured Getaways'), 'a homepage heading')
     assert.ok(all.includes(defaultSiteSettings.footer.tagline), 'the footer tagline')
-    assert.ok(all.includes('About Book My Get Away'), 'a footer column heading')
+    assert.ok(all.includes('About BookMyGetaway'), 'a footer column heading')
     assert.ok(all.some((s) => s === defaultAbout.hero.tagline), 'the About us tagline')
     // Never a link, a photo or a colour.
     assert.ok(!all.some((s) => s.startsWith('http') || s.startsWith('/') || /^#[0-9a-f]{6}$/i.test(s)), 'only real wording')

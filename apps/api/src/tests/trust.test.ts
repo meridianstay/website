@@ -35,7 +35,7 @@ describe('trust and reviews', () => {
     assert.ok(err.fields.serviceRating)
   })
 
-  test('admins award the Book My Get Away Assured badge; new listings show as new', async () => {
+  test('admins award the BookMyGetaway Assured badge; new listings show as new', async () => {
     const host = await createUser('host')
     const admin = await createUser('admin')
     const id = await createLiveListing(host)

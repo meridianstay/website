@@ -33,7 +33,7 @@ export function Promotions() {
   return (
     <>
       <PageHeader
-        eyebrow="Book My Get Away Host Portal"
+        eyebrow="BookMyGetaway Host Portal"
         title="Promote your property"
         description="Pay by the day to appear first where guests are looking. Our team checks each promotion before it starts."
         action={!creating && settings.enabled && listings.length > 0 && (

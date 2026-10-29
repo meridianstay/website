@@ -20,7 +20,7 @@ export function HostBookings() {
 
   return (
     <>
-      <PageHeader title="Bookings" description="Requests to answer and reservations for your properties. Payouts are after Book My Get Away’s commission." />
+      <PageHeader title="Bookings" description="Requests to answer and reservations for your properties. Payouts are after BookMyGetaway’s commission." />
       <div className="space-y-8">
         {requests.length > 0 && (
           <Panel title={`Requests to answer (${requests.length})`}>

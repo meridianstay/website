@@ -154,7 +154,7 @@ export const contentRepo = {
   },
 
   /**
-   * The platform was renamed from Meridian Stay to Book My Get Away in 0.48.0. Defaults alone
+   * The platform was renamed from Meridian Stay to BookMyGetaway in 0.48.0. Defaults alone
    * cannot do it: every setting and page the control centre has ever saved is stored, and a stored
    * value wins over the default, so a site that had saved its footer, its homepage or its About
    * page would have gone on saying the old name forever.
@@ -167,8 +167,10 @@ export const contentRepo = {
     const rename = (value: unknown): unknown => {
       if (typeof value === 'string') {
         return value
-          .replace(/Meridian Stay/g, 'Book My Get Away')
-          .replace(/\bMeridian\b/g, 'Book My Get Away')
+          .replace(/Meridian Stay/g, 'BookMyGetaway')
+          .replace(/\bMeridian\b/g, 'BookMyGetaway')
+          // 0.48.0 briefly spelled it with spaces; a site renamed by that release is carried on.
+          .replace(/Book My Get Away/g, 'BookMyGetaway')
           .replace(/meridianstay\.com/g, 'bookmygetaway.in')
       }
       if (Array.isArray(value)) return value.map(rename)
@@ -199,15 +201,18 @@ export const contentRepo = {
     }
     const touched = (await sweep(col(C.settings), 'value')) + (await sweep(col(C.pages), null))
 
-    // The wordmark is a name and a coloured accent, so it is split rather than replaced: a site
-    // still on "Meridian" + "Stay" becomes "Book My" + "Get Away". One an admin has made their own
-    // is left exactly as it is.
+    // The wordmark is a name and a coloured accent making one unspaced word, so it is split rather
+    // than replaced: a site on "Meridian" + "Stay", or on the spaced pair 0.48.0 shipped, becomes
+    // "BookMy" + "Getaway". One an admin has made their own is left exactly as it is.
+    const WAS = [['BookMyGetaway', 'Stay'], ['Book My', 'Get Away']]
     const brandRef = col(C.settings).doc('branding')
     const branding = (await brandRef.get()).data()?.value as { apps?: Record<string, { name?: string; accent?: string }> } | undefined
     if (branding?.apps) {
       const apps = Object.fromEntries(Object.entries(branding.apps).map(([key, app]) => [
         key,
-        app?.name === 'Book My Get Away' && app?.accent === 'Stay' ? { ...app, name: 'Book My', accent: 'Get Away' } : app,
+        WAS.some(([name, accent]) => app?.name === name && app?.accent === accent)
+          ? { ...app, name: 'BookMy', accent: 'Getaway' }
+          : app,
       ]))
       await brandRef.set({ value: { ...branding, apps } }, { merge: true })
     }

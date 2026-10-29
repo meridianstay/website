@@ -3,8 +3,8 @@ import { LogoMark, useBrand } from '@meridian/ui'
 import type { ClientSiteView } from '@meridian/shared'
 import { AccountMenu } from '../AccountMenu'
 
-// The client's own header: their logo at the size Book My Get Away's own wears on the marketplace, and
-// Book My Get Away alongside it in small print. The client is who the visitor came to see; Book My Get Away is who
+// The client's own header: their logo at the size BookMyGetaway's own wears on the marketplace, and
+// BookMyGetaway alongside it in small print. The client is who the visitor came to see; BookMyGetaway is who
 // takes the booking, and says so rather than hiding it.
 
 export function ClientLogo({ site }: { site: ClientSiteView }) {
@@ -17,7 +17,7 @@ export function ClientLogo({ site }: { site: ClientSiteView }) {
     )
 }
 
-/** The client's mark and name, with Book My Get Away credited beside it. */
+/** The client's mark and name, with BookMyGetaway credited beside it. */
 export function AssociationLockup({ site, stacked = false }: { site: ClientSiteView; stacked?: boolean }) {
   const brand = useBrand()
   return (
@@ -32,7 +32,7 @@ export function AssociationLockup({ site, stacked = false }: { site: ClientSiteV
       <span className={`flex items-center gap-1.5 shrink-0 ${stacked ? '' : 'border-l border-slate-200 pl-3 sm:pl-4'}`}>
         <span className="hidden sm:inline text-[9px] uppercase tracking-wider text-slate-400 font-semibold whitespace-nowrap">in association with</span>
         <LogoMark size="sm" />
-        <span className="hidden xl:inline text-xs font-bold text-slate-500 whitespace-nowrap">{brand.name}{brand.accent ? ` ${brand.accent}` : ''}</span>
+        <span className="hidden xl:inline text-xs font-bold text-slate-500 whitespace-nowrap">{brand.name}{brand.accent}</span>
       </span>
     </span>
   )

@@ -60,14 +60,14 @@ export const adminService = {
 
   listBookings: (q: string | null, status: string | null) => bookingsRepo.listAll(q, status, todayISO()),
 
-  /** "Book My Get Away Assured": the team has inspected and verified the property. */
+  /** "BookMyGetaway Assured": the team has inspected and verified the property. */
   async setAssured(admin: Me, id: number, assured: boolean) {
     await requireListing(id)
     await propertiesRepo.setFields(id, { assured })
     await auditLogRepo.record(admin, assured ? 'listing.assure' : 'listing.unassure', 'property', id)
   },
 
-  /** Managed listings are run by Book My Get Away: instant booking and the managed commission. */
+  /** Managed listings are run by BookMyGetaway: instant booking and the managed commission. */
   async setManagement(admin: Me, id: number, management: string) {
     collect({ management: management === 'managed' || management === 'self' ? null : 'Choose managed or self-managed.' })
     await requireListing(id)

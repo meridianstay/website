@@ -8,4 +8,4 @@ const port = Number(process.env.PORT ?? 8787)
 
 await ensureReady()
 serve({ fetch: app.fetch, port }, () =>
-  console.log(`Book My Get Away API on http://localhost:${port}/api — Firebase ${firebaseMode} (${projectId})`))
+  console.log(`BookMyGetaway API on http://localhost:${port}/api — Firebase ${firebaseMode} (${projectId})`))

@@ -12,7 +12,7 @@ export function AdminLogin() {
   const [notAdmin, setNotAdmin] = useState(false)
 
   useEffect(() => {
-    document.title = 'Control center · Book My Get Away'
+    document.title = 'Control center · BookMyGetaway'
   }, [])
   useEffect(() => {
     if (!user) return
@@ -26,7 +26,7 @@ export function AdminLogin() {
         <div className="flex items-center gap-3 mb-6">
           <LogoMark />
           <div>
-            <p className="text-xs font-bold uppercase tracking-widest text-slate-400">Book My Get Away</p>
+            <p className="text-xs font-bold uppercase tracking-widest text-slate-400">BookMyGetaway</p>
             <h1 className="text-xl font-extrabold text-slate-900">Control center</h1>
           </div>
         </div>

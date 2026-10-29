@@ -116,7 +116,7 @@ export function PageEditor() {
     <>
       <PageHeader
         title="Design your page"
-        description="Drag the sections into the order you want, switch off the ones you don't, and write your own headings. Your changes go to the Book My Get Away team to check, the same as the rest of your website."
+        description="Drag the sections into the order you want, switch off the ones you don't, and write your own headings. Your changes go to the BookMyGetaway team to check, the same as the rest of your website."
       />
 
       <div className="flex flex-wrap items-center gap-3 mb-8">

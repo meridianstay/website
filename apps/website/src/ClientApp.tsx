@@ -8,7 +8,7 @@ import { ClientLanding } from './pages/ClientLanding'
 
 // A client's website. The marketplace's own header, footer, search and bottom bar are all gone: a
 // visitor here came for this one business. Checkout and sign-in are the platform's, because the
-// booking and the money are still Book My Get Away's to handle.
+// booking and the money are still BookMyGetaway's to handle.
 
 const Checkout = lazy(() => import('./pages/Checkout').then((m) => ({ default: m.Checkout })))
 const BookingConfirmed = lazy(() => import('./pages/BookingConfirmed').then((m) => ({ default: m.BookingConfirmed })))

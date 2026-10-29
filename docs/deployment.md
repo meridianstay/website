@@ -1,4 +1,4 @@
-# Deploying Book My Get Away
+# Deploying BookMyGetaway
 
 The platform deploys as **one Vercel project** from this repository, backed by **one Firebase project**.
 
@@ -189,7 +189,7 @@ explicitly if the platform ever runs on anything else.
 - `https://<any-client-slug>.bookmygetaway.in` → that client's website.
 - `https://<something-nobody-has>.bookmygetaway.in` → the ordinary marketplace, not an error. An
   address we don't recognise is simply treated as the main site.
-- A client's slug is on their **My website** page in the host portal, under "Your Book My Get Away address".
+- A client's slug is on their **My website** page in the host portal, under "Your BookMyGetaway address".
 
 ### Sign-in on a client's address
 
@@ -214,7 +214,7 @@ does not make it work on its own. Your team does two things:
    Vercel says the domain is in use by another account, add the `TXT` record at `_vercel` that it
    shows — that proves access without moving the domain.
 2. Once Vercel reports it as valid, open **Control centre → Client websites**, find the client and
-   mark the domain **live**. Until you do, their Book My Get Away address keeps serving and the custom one
+   mark the domain **live**. Until you do, their BookMyGetaway address keeps serving and the custom one
    does nothing.
 
 Also add the domain to Firebase's authorized domains, as above, or guests cannot sign in on it.

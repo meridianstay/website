@@ -132,7 +132,7 @@ export function ClientLanding({ site }: { site: ClientSiteView }) {
               <div className="lg:sticky lg:top-28">
                 <BookingBox property={property} initial={readSearch(params)} />
                 <p className="text-[11px] text-slate-400 text-center mt-3">
-                  Your booking and payment are handled securely by Book My Get Away.
+                  Your booking and payment are handled securely by BookMyGetaway.
                 </p>
               </div>
             </aside>

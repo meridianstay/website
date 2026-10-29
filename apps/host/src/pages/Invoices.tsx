@@ -28,13 +28,13 @@ export function Invoices() {
     <>
       <PageHeader
         title="Tax invoices"
-        description="You own the property, so once your GST registration is here your guests are invoiced under it and these are yours to file. Without one, Book My Get Away invoices them instead."
+        description="You own the property, so once your GST registration is here your guests are invoiced under it and these are yours to file. Without one, BookMyGetaway invoices them instead."
       />
 
       {!registered ? (
         <p className="rounded-2xl p-4 mb-8 text-sm bg-amber-50 text-amber-900">
           <i className="fa-solid fa-circle-info mr-2" aria-hidden="true"></i>
-          <span className="font-semibold">Book My Get Away is invoicing your guests.</span> That is correct while you are not GST-registered. Add your
+          <span className="font-semibold">BookMyGetaway is invoicing your guests.</span> That is correct while you are not GST-registered. Add your
           registration below and every booking from then on is invoiced under your own name and GSTIN.
         </p>
       ) : (
@@ -48,7 +48,7 @@ export function Invoices() {
 
       {registered && view.raisedByPlatform > 0 && (
         <p className="rounded-2xl p-4 mb-8 text-sm bg-slate-100 text-slate-700">
-          {view.raisedByPlatform} earlier {view.raisedByPlatform === 1 ? 'booking was' : 'bookings were'} invoiced by Book My Get Away, before your
+          {view.raisedByPlatform} earlier {view.raisedByPlatform === 1 ? 'booking was' : 'bookings were'} invoiced by BookMyGetaway, before your
           registration was here. Those stay as they were — an invoice already issued is never rewritten.
         </p>
       )}
@@ -79,7 +79,7 @@ export function Invoices() {
         )}
         {mine.length > 0 && (
           <p className="text-xs text-slate-500 mt-4">
-            Your return needs the ones marked <span className="font-semibold">you</span>. The rest are Book My Get Away's.
+            Your return needs the ones marked <span className="font-semibold">you</span>. The rest are BookMyGetaway's.
           </p>
         )}
       </Panel>
@@ -112,7 +112,7 @@ function Row({ invoice: i }: { invoice: Invoice }) {
       <td className="px-2 py-2.5 text-slate-700">{i.recipient.name}</td>
       <td className="px-2 py-2.5">
         <span className={`px-2 py-0.5 rounded-full text-[10px] font-bold uppercase ${i.raisedBy === 'owner' ? 'bg-brand-100 text-brand-700' : 'bg-slate-100 text-slate-500'}`}>
-          {i.raisedBy === 'owner' ? 'You' : 'Book My Get Away'}
+          {i.raisedBy === 'owner' ? 'You' : 'BookMyGetaway'}
         </span>
       </td>
       <td className="px-2 py-2.5 text-right tabular-nums">{formatPrice(sign * i.lines.taxable)}</td>
@@ -161,13 +161,13 @@ function GstForm({ registration, onSaved }: { registration: HostGst; onSaved: ()
     <Panel
       title="Your GST registration"
       action={registration.verifiedAt
-        ? <span className="px-2.5 py-1 rounded-full text-[10px] font-bold uppercase bg-brand-100 text-brand-700">Checked by Book My Get Away</span>
+        ? <span className="px-2.5 py-1 rounded-full text-[10px] font-bold uppercase bg-brand-100 text-brand-700">Checked by BookMyGetaway</span>
         : registration.gstin ? <span className="px-2.5 py-1 rounded-full text-[10px] font-bold uppercase bg-amber-100 text-amber-800">Not checked yet</span> : null}
     >
       <form onSubmit={save} className="space-y-4" noValidate>
         <p className="text-sm text-slate-500">
           Enter this and your guests are invoiced under your name and GSTIN from the next booking on. The tax on those bookings is yours to pay, and
-          the invoices are yours to file. Leave it empty and Book My Get Away invoices your guests instead, which is the right arrangement if you are not
+          the invoices are yours to file. Leave it empty and BookMyGetaway invoices your guests instead, which is the right arrangement if you are not
           registered.
         </p>
 

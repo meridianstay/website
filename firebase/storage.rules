@@ -1,5 +1,5 @@
 rules_version = '2';
-// Uploads go through the Book My Get Away API. Photos are served through their public
+// Uploads go through the BookMyGetaway API. Photos are served through their public
 // download links, so direct browser access stays closed.
 service firebase.storage {
   match /b/{bucket}/o {

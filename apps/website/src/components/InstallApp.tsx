@@ -3,7 +3,7 @@ import { useT } from '@meridian/ui'
 import { isInAppBrowser, isIOS, useInstall } from '../lib/install'
 import { Modal } from './Modal'
 
-/** Header button that installs Book My Get Away as an app on the phone (or computer). */
+/** Header button that installs BookMyGetaway as an app on the phone (or computer). */
 export function InstallAppButton() {
   const { available, install } = useInstall()
   const t = useT()
@@ -19,12 +19,12 @@ export function InstallAppButton() {
 
   return (
     <>
-      <button type="button" onClick={onClick} aria-label="Download the Book My Get Away app"
+      <button type="button" onClick={onClick} aria-label="Download the BookMyGetaway app"
         className="flex items-center gap-2 whitespace-nowrap text-[13px] font-semibold text-slate-800 hover:bg-slate-100 h-10 px-2.5 lg:px-4 rounded-full transition">
         <i className={`fa-solid ${done ? 'fa-circle-check text-brand-600' : 'fa-mobile-screen-button text-brand-500'}`} aria-hidden="true"></i>
         <span className="hidden lg:inline">{done ? 'App installed' : t('nav.downloadApp')}</span>
       </button>
-      <Modal open={help} onClose={() => setHelp(false)} title="Get the Book My Get Away app">
+      <Modal open={help} onClose={() => setHelp(false)} title="Get the BookMyGetaway app">
         <InstallHelp />
       </Modal>
     </>
@@ -47,7 +47,7 @@ function InstallHelp() {
       <div className="flex items-center gap-4">
         <img src="/icons/icon-192.png" alt="" className="w-16 h-16 rounded-2xl shadow-lg shadow-brand-500/30" />
         <div>
-          <p className="font-extrabold text-slate-900">Book My Get Away</p>
+          <p className="font-extrabold text-slate-900">BookMyGetaway</p>
           <p className="text-xs text-slate-500">Adds an app icon to your home screen. Opens full screen, no app store needed.</p>
         </div>
       </div>
@@ -60,13 +60,13 @@ function InstallHelp() {
         <ol className="space-y-3">
           <Step n={1}>In <span className="font-bold">Safari</span>, tap the <span className="font-bold">Share</span> button <i className="fa-solid fa-arrow-up-from-bracket text-sky-600 mx-0.5" aria-hidden="true"></i> at the bottom (top on iPad).</Step>
           <Step n={2}>Scroll down and tap <span className="font-bold">Add to Home Screen</span> <i className="fa-solid fa-square-plus mx-0.5" aria-hidden="true"></i>.</Step>
-          <Step n={3}>Tap <span className="font-bold">Add</span>. Book My Get Away appears on your home screen.</Step>
+          <Step n={3}>Tap <span className="font-bold">Add</span>. BookMyGetaway appears on your home screen.</Step>
         </ol>
       ) : (
         <ol className="space-y-3">
           <Step n={1}>Open your browser’s menu <span className="font-bold">⋮</span> (Chrome, Edge or Samsung Internet).</Step>
           <Step n={2}>Tap <span className="font-bold">Install app</span> or <span className="font-bold">Add to Home screen</span>.</Step>
-          <Step n={3}>Confirm with <span className="font-bold">Install</span>. Book My Get Away appears with your other apps.</Step>
+          <Step n={3}>Confirm with <span className="font-bold">Install</span>. BookMyGetaway appears with your other apps.</Step>
         </ol>
       )}
     </div>

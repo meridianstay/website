@@ -35,7 +35,7 @@ export function Listings() {
 
   return (
     <>
-      <PageHeader title="Listings" description="Approve new and edited listings, reject with a reason the host can see, and choose which stays are featured (homepage sections set to “Featured by our team” show them in rank order). Managed properties are run by Book My Get Away: guests book instantly and the managed commission applies. Self-managed hosts approve each request. “Assured” shows a verified badge to guests, so only tick it once the property has been checked." />
+      <PageHeader title="Listings" description="Approve new and edited listings, reject with a reason the host can see, and choose which stays are featured (homepage sections set to “Featured by our team” show them in rank order). Managed properties are run by BookMyGetaway: guests book instantly and the managed commission applies. Self-managed hosts approve each request. “Assured” shows a verified badge to guests, so only tick it once the property has been checked." />
       <Panel>
         <Toolbar placeholder="Search title, city or host" onSearch={setQ}>
           {filters.map((f) => <Chip key={f} active={filter === f} onClick={() => setFilter(f)}>{filterLabel[f]}</Chip>)}
@@ -71,9 +71,9 @@ export function Listings() {
                       </select>
                     </td>
                     <td className="p-3">
-                      <label className="inline-flex items-center gap-2 cursor-pointer" title="Book My Get Away Assured: inspected and verified by our team">
+                      <label className="inline-flex items-center gap-2 cursor-pointer" title="BookMyGetaway Assured: inspected and verified by our team">
                         <input type="checkbox" className="accent-brand-600 w-4 h-4" checked={p.assured} onChange={(e) => run(() => adminApi.setAssured(p.id, e.target.checked))} />
-                        <span className="sr-only">Book My Get Away Assured for {p.title}</span>
+                        <span className="sr-only">BookMyGetaway Assured for {p.title}</span>
                         {p.assured && <i className="fa-solid fa-circle-check text-brand-600" aria-hidden="true"></i>}
                       </label>
                     </td>

@@ -13,12 +13,13 @@ export function Logo({ subtitle, href = '/' }: LogoProps) {
   const Wrapper = href === null ? 'span' : 'a'
   const line = subtitle ?? brand.subtitle
   return (
-    <Wrapper href={href ?? undefined} className="flex items-center space-x-2 sm:space-x-3" aria-label={href === null ? undefined : `${brand.name} ${brand.accent} home`.trim()}>
+    <Wrapper href={href ?? undefined} className="flex items-center space-x-2 sm:space-x-3" aria-label={href === null ? undefined : `${brand.name}${brand.accent} home`.trim()}>
       <LogoMark />
       {(brand.showName || !brand.logoUrl) && (
         <div className="leading-tight">
           <span className="text-lg sm:text-xl font-extrabold tracking-tight bg-gradient-to-r from-brand-700 to-brand-600 bg-clip-text text-transparent">{brand.name}</span>
-          {brand.accent && <> <span className="text-lg sm:text-xl font-bold text-brand-yellow-600 tracking-tight">{brand.accent}</span></>}
+          {/* The name and the accent are two halves of one word, so nothing goes between them. */}
+          {brand.accent && <span className="text-lg sm:text-xl font-bold text-brand-yellow-600 tracking-tight">{brand.accent}</span>}
           {line && <span className="block text-[10px] uppercase tracking-widest text-slate-400 font-semibold">{line}</span>}
         </div>
       )}

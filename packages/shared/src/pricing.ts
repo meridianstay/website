@@ -3,7 +3,7 @@ import { daysBetween } from './dates'
 /** Currency used across every app. */
 export const CURRENCY = { code: 'INR', symbol: '₹', locale: 'en-IN' } as const
 
-/** Guests pay only the stay price; Book My Get Away earns a commission from the host's share. */
+/** Guests pay only the stay price; BookMyGetaway earns a commission from the host's share. */
 export const SERVICE_FEE = 0
 
 /** Guests included in the nightly price; each extra guest adds 15%. */
@@ -18,7 +18,7 @@ export const REQUEST_HOURS = 24
 export const PAYMENT_HOLD_MINUTES = 15
 
 /**
- * managed: Book My Get Away maintains and manages the property; guests book instantly.
+ * managed: BookMyGetaway maintains and manages the property; guests book instantly.
  * self:    the host manages it and approves each request.
  */
 export type Management = 'managed' | 'self'
@@ -35,12 +35,12 @@ export interface CommissionRates {
 
 export const defaultCommission: CommissionRates = { managedPct: 30, selfPct: 15, cancellationFeePct: 30 }
 
-/** The convenience fee Book My Get Away keeps on a cancellation (minor units). */
+/** The convenience fee BookMyGetaway keeps on a cancellation (minor units). */
 export const convenienceFeeMinor = (totalMinor: number, feePct: number) => Math.round((totalMinor * Math.max(0, feePct)) / 100)
 
 export const commissionPct = (management: Management, rates: CommissionRates) => (management === 'managed' ? rates.managedPct : rates.selfPct)
 
-/** Book My Get Away's cut of a booking total (both in minor units, i.e. paise). */
+/** BookMyGetaway's cut of a booking total (both in minor units, i.e. paise). */
 export const commissionMinor = (totalMinor: number, pct: number) => Math.round((totalMinor * pct) / 100)
 
 /** "₹6,500" or, when there are paise, "₹1,32,829.50" (Indian digit grouping). Missing amounts show as "—". */

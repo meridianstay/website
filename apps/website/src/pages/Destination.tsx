@@ -34,7 +34,7 @@ export function Destination() {
 
   const heading = place ? `${type ? typeLabel(type) : 'Stays'} in ${place.name}` : null
   useDocumentTitle(heading ? `${heading}${place?.region ? `, ${place.region}` : ''}` : null)
-  useMetaDescription(place ? `Book handpicked ${type ? typeLabel(type).toLowerCase() : 'farmstays, cottages, resorts and villas'} in ${place.name}${place.region ? `, ${place.region}` : ''} on Book My Get Away: verified listings, instant booking or request to book, and no booking fees.` : null)
+  useMetaDescription(place ? `Book handpicked ${type ? typeLabel(type).toLowerCase() : 'farmstays, cottages, resorts and villas'} in ${place.name}${place.region ? `, ${place.region}` : ''} on BookMyGetaway: verified listings, instant booking or request to book, and no booking fees.` : null)
 
   if (all && !place) return <NotFound what="destination" />
   if (!all || !place) return <Spinner />
@@ -56,7 +56,7 @@ export function Destination() {
           </nav>
           <h1 className="text-3xl sm:text-5xl font-extrabold tracking-tight">{heading}</h1>
           <p className="mt-3 text-slate-200 max-w-xl">
-            {place.kind === 'city' && place.region ? `${place.region} · ` : ''}{place.stays} handpicked {place.stays === 1 ? 'stay' : 'stays'} on Book My Get Away, every one reviewed by our team.
+            {place.kind === 'city' && place.region ? `${place.region} · ` : ''}{place.stays} handpicked {place.stays === 1 ? 'stay' : 'stays'} on BookMyGetaway, every one reviewed by our team.
           </p>
         </div>
       </section>

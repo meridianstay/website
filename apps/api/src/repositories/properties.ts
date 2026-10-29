@@ -12,7 +12,7 @@ export interface PropertyDoc {
   pricePerNightMinor: number; bedrooms: number; bathrooms: number; maxGuests: number
   status: ListingStatus; rejectionReason: string | null; coverImageUrl: string; photos: string[]; videoUrl: string; amenities: string[]
   ratingAvg: number; reviewCount: number; featuredRank: number | null
-  /** managed: run by Book My Get Away, instant booking. self: host-managed, request to book. Set by admins. */
+  /** managed: run by BookMyGetaway, instant booking. self: host-managed, request to book. Set by admins. */
   management: Management
   areaSqft: number | null; gatheringCapacity: number | null; checkInTime: string; checkOutTime: string
   houseRules: HouseRules; securityDepositMinor: number
@@ -20,7 +20,7 @@ export interface PropertyDoc {
   address: string
   /** Offers overnight stays at pricePerNightMinor. */
   overnight: boolean
-  /** "Book My Get Away Assured": inspected and verified by the team. Set by admins. */
+  /** "BookMyGetaway Assured": inspected and verified by the team. Set by admins. */
   assured: boolean
   /** Host discount in percent (0–70), applied to nightly and day-use prices. */
   discountPct: number

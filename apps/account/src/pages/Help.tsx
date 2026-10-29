@@ -16,7 +16,7 @@ const ANSWERS: { q: string; a: string; to?: { label: string; href: string } }[] 
   },
   {
     q: 'When is my refund back in my account?',
-    a: 'Book My Get Away sends it the moment a cancellation goes through. Your bank then takes three to seven working days to show it, and it goes back to whatever you paid with — the same card, account or UPI handle.',
+    a: 'BookMyGetaway sends it the moment a cancellation goes through. Your bank then takes three to seven working days to show it, and it goes back to whatever you paid with — the same card, account or UPI handle.',
     to: { label: 'See your refunds', href: '/payments' },
   },
   {
@@ -34,7 +34,7 @@ const ANSWERS: { q: string; a: string; to?: { label: string; href: string } }[] 
   },
   {
     q: 'What about the security deposit?',
-    a: 'Where a stay asks for one it is settled with the owner at check-in and returned by them when you leave. It never passes through Book My Get Away and is not part of what you pay online.',
+    a: 'Where a stay asks for one it is settled with the owner at check-in and returned by them when you leave. It never passes through BookMyGetaway and is not part of what you pay online.',
   },
 ]
 
@@ -42,8 +42,8 @@ const POLICIES: { label: string; slug: string; blurb: string }[] = [
   { label: 'Cancellation policy', slug: 'cancellation-policy', blurb: 'What comes back, and by when' },
   { label: 'Help centre', slug: 'help', blurb: 'Every answer, not just these' },
   { label: 'Trust and safety', slug: 'trust-safety', blurb: 'How stays and reviews are checked' },
-  { label: 'How Book My Get Away works', slug: 'how-it-works', blurb: 'Bookings, requests and reviews' },
-  { label: 'Terms of service', slug: 'terms', blurb: 'The rules of using Book My Get Away' },
+  { label: 'How BookMyGetaway works', slug: 'how-it-works', blurb: 'Bookings, requests and reviews' },
+  { label: 'Terms of service', slug: 'terms', blurb: 'The rules of using BookMyGetaway' },
   { label: 'Privacy', slug: 'privacy', blurb: 'What we keep, and why' },
 ]
 

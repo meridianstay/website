@@ -9,14 +9,14 @@ import { AppError, notFound } from '../http/errors'
 import { collect, str } from '../http/validate'
 import { siteOrigin } from '../http/origin'
 
-// Two links per stay keep Book My Get Away and the other platforms from selling the same night.
+// Two links per stay keep BookMyGetaway and the other platforms from selling the same night.
 //
 //   Theirs → ours: the client pastes each platform's export link here; every sync reads it and
-//                  closes those nights, so nobody can book them on Book My Get Away.
+//                  closes those nights, so nobody can book them on BookMyGetaway.
 //   Ours → theirs: we publish a link of our own that the client pastes into each platform, so a
 //                  booking taken here closes the night over there too.
 //
-// A night the other platform has taken that Book My Get Away has *already sold* cannot be fixed by us. It
+// A night the other platform has taken that BookMyGetaway has *already sold* cannot be fixed by us. It
 // is reported as a clash for the client to sort out, rather than quietly cancelling a guest.
 
 const FETCH_TIMEOUT_MS = 10_000
@@ -59,7 +59,7 @@ export const calendarSyncService = {
     })))
   },
 
-  /** The link a client pastes into Airbnb so it can read Book My Get Away's dates. */
+  /** The link a client pastes into Airbnb so it can read BookMyGetaway's dates. */
   async exportUrl(propertyId: number) {
     const token = await calendarFeedsRepo.exportToken(propertyId, () => randomUUID().replace(/-/g, ''))
     return `${siteOrigin()}/api/ical/${token}.ics`
@@ -118,7 +118,7 @@ export const calendarSyncService = {
   },
 
   /**
-   * Reads one feed and makes Book My Get Away's calendar agree with it. Blocks this feed put there before
+   * Reads one feed and makes BookMyGetaway's calendar agree with it. Blocks this feed put there before
    * are replaced, so a date the other platform has released opens up again here.
    */
   async syncFeed(feed: CalendarFeed): Promise<CalendarFeed> {
@@ -143,7 +143,7 @@ export const calendarSyncService = {
           await availabilityRepo.addBlock(feed.propertyId, event.start, event.end, `Booked on ${feed.name}`, feed.id)
           nights += Math.round((Date.parse(event.end) - Date.parse(event.start)) / 86_400_000)
         } catch (err) {
-          // A night Book My Get Away has already sold cannot be given away; the client is told instead.
+          // A night BookMyGetaway has already sold cannot be given away; the client is told instead.
           if (err instanceof BlockConflictError && err.reason === 'booked') clashes.push(`${event.start} to ${event.end}`)
           else if (!(err instanceof BlockConflictError)) throw err
         }
@@ -197,7 +197,7 @@ export const calendarSyncService = {
     return { feeds: feeds.length, ok, failed, clashes }
   },
 
-  /** Book My Get Away's own calendar for a stay, as the other platforms read it. */
+  /** BookMyGetaway's own calendar for a stay, as the other platforms read it. */
   async publish(token: string) {
     const propertyId = await calendarFeedsRepo.propertyForToken(token)
     if (propertyId === null) throw notFound('calendar')
@@ -213,12 +213,12 @@ export const calendarSyncService = {
     const events: CalEvent[] = [
       ...bookings
         .filter((b) => (b.status === 'Confirmed' || b.status === 'Requested') && b.checkOut > today)
-        .map((b) => ({ start: b.checkIn, end: b.checkOut, summary: 'Booked on Book My Get Away', uid: `bookmygetaway-booking-${b.code}` })),
+        .map((b) => ({ start: b.checkIn, end: b.checkOut, summary: 'Booked on BookMyGetaway', uid: `bookmygetaway-booking-${b.code}` })),
       // Nights closed here, except the ones another platform told us about in the first place.
       ...blocks
         .filter((b) => !(b.note ?? '').startsWith('Booked on '))
         .map((b) => ({ start: b.checkIn, end: b.checkOut, summary: b.note || 'Not available', uid: `bookmygetaway-block-${b.id}` })),
     ]
-    return buildICS(`${property.title} — Book My Get Away`, events)
+    return buildICS(`${property.title} — BookMyGetaway`, events)
   },
 }

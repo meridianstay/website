@@ -15,7 +15,7 @@ const registered = {
   ...defaultGstSettings,
   enabled: true,
   gstin: '29ABCDE1234F1Z5',
-  legalName: 'Book My Get Away Private Limited',
+  legalName: 'BookMyGetaway Private Limited',
   address: '4 Residency Road, Bengaluru 560025',
   stateCode: '29',
 }
@@ -261,7 +261,7 @@ describe('whose registration a booking is invoiced under', () => {
     assert.equal(invoice.lines.igst, 0)
   })
 
-  test('a client with no registration is invoiced for by Book My Get Away', async () => {
+  test('a client with no registration is invoiced for by BookMyGetaway', async () => {
     await switchOn()
     const host = await createUser('host')
     const guest = await createUser('guest')
@@ -271,7 +271,7 @@ describe('whose registration a booking is invoiced under', () => {
     const invoice = (await invoiceService.forBooking(booking.code))[0]
     assert.equal(invoice.raisedBy, 'platform')
     assert.equal(invoice.supplier.gstin, registered.gstin)
-    // Book My Get Away is in Karnataka and the stay is in Kerala, so this one crosses a state line.
+    // BookMyGetaway is in Karnataka and the stay is in Kerala, so this one crosses a state line.
     assert.equal(invoice.lines.interState, true)
   })
 

@@ -12,7 +12,7 @@ export interface ThemeSettings {
 export const defaultTheme: ThemeSettings = { brand: '#10b981', accent: '#eab308' }
 
 export const THEME_PRESETS: { name: string; blurb: string; theme: ThemeSettings }[] = [
-  { name: 'Emerald & Solar', blurb: 'The Book My Get Away look: forest green with warm sunlight', theme: { brand: '#10b981', accent: '#eab308' } },
+  { name: 'Emerald & Solar', blurb: 'The BookMyGetaway look: forest green with warm sunlight', theme: { brand: '#10b981', accent: '#eab308' } },
   { name: 'Teak & Amber', blurb: 'Warm wood and lamplight, for heritage stays', theme: { brand: '#b45309', accent: '#f59e0b' } },
   { name: 'Deep Teal & Coral', blurb: 'Backwaters and beach houses', theme: { brand: '#0d9488', accent: '#fb7185' } },
   { name: 'Indigo & Gold', blurb: 'Evening blue with a royal accent', theme: { brand: '#4f46e5', accent: '#f59e0b' } },
@@ -56,7 +56,7 @@ export function themeVariables(theme: ThemeSettings): Record<string, string> {
 
 /**
  * The full `--brand-*` scale built from one colour, for a client's own page. Returns nothing for a
- * colour we don't recognise, so a bad value leaves the page on Book My Get Away's own green rather than
+ * colour we don't recognise, so a bad value leaves the page on BookMyGetaway's own green rather than
  * half-painted.
  */
 export function brandVariables(hex: string): Record<string, string> {

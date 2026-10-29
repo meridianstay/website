@@ -2,7 +2,7 @@
 const c = (name, fallback) => `rgb(var(--${name}, ${fallback}) / <alpha-value>)`
 
 /**
- * Book My Get Away brand preset, shared by every app.
+ * BookMyGetaway brand preset, shared by every app.
  * Apps add their own `content` globs and include `sharedContent`.
  * @type {import('tailwindcss').Config}
  */
@@ -12,7 +12,7 @@ export default {
     extend: {
       colors: {
         // Every shade reads a CSS variable so the control centre can change the palette at runtime.
-        // The fallback is the built-in Book My Get Away emerald and solar yellow, used before settings load.
+        // The fallback is the built-in BookMyGetaway emerald and solar yellow, used before settings load.
         brand: {
           50: c('brand-50', '244 251 247'),
           100: c('brand-100', '225 245 236'),

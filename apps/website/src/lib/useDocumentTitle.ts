@@ -2,7 +2,7 @@ import { useEffect } from 'react'
 
 export function useDocumentTitle(title: string | null | undefined) {
   useEffect(() => {
-    document.title = title ? `${title} · Book My Get Away` : 'Book My Get Away - Farmstays, Rooms, Resorts, Cottages & Villas'
+    document.title = title ? `${title} · BookMyGetaway` : 'BookMyGetaway - Farmstays, Rooms, Resorts, Cottages & Villas'
   }, [title])
 }
 
