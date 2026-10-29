@@ -3,7 +3,7 @@ import react from '@vitejs/plugin-react'
 
 // /admin, /host and /account are served at /admin/ etc.; add the slash so typed addresses work.
 const panelSlash: Plugin = {
-  name: 'meridian-panel-slash',
+  name: 'bookmygetaway-panel-slash',
   configureServer(server) {
     server.middlewares.use((req, res, next) => {
       const match = req.url?.match(/^\/(admin|host|account)(\?.*)?$/)

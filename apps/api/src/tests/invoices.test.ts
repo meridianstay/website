@@ -15,7 +15,7 @@ const registered = {
   ...defaultGstSettings,
   enabled: true,
   gstin: '29ABCDE1234F1Z5',
-  legalName: 'Meridian Stay Private Limited',
+  legalName: 'Book My Get Away Private Limited',
   address: '4 Residency Road, Bengaluru 560025',
   stateCode: '29',
 }
@@ -120,7 +120,7 @@ describe('raising an invoice', () => {
     const raised = await invoiceService.forBooking(booking.code)
     assert.equal(raised.length, 1)
     const invoice = raised[0]
-    assert.match(invoice.number, /^MS\/\d\d-\d\d\/0001$/)
+    assert.match(invoice.number, /^BMG\/\d\d-\d\d\/0001$/)
     assert.equal(invoice.supplier.gstin, '29ABCDE1234F1Z5')
     assert.equal(invoice.placeOfSupply.stateCode, '29')
     assert.equal(invoice.lines.interState, false)
@@ -261,7 +261,7 @@ describe('whose registration a booking is invoiced under', () => {
     assert.equal(invoice.lines.igst, 0)
   })
 
-  test('a client with no registration is invoiced for by Meridian', async () => {
+  test('a client with no registration is invoiced for by Book My Get Away', async () => {
     await switchOn()
     const host = await createUser('host')
     const guest = await createUser('guest')
@@ -271,7 +271,7 @@ describe('whose registration a booking is invoiced under', () => {
     const invoice = (await invoiceService.forBooking(booking.code))[0]
     assert.equal(invoice.raisedBy, 'platform')
     assert.equal(invoice.supplier.gstin, registered.gstin)
-    // Meridian is in Karnataka and the stay is in Kerala, so this one crosses a state line.
+    // Book My Get Away is in Karnataka and the stay is in Kerala, so this one crosses a state line.
     assert.equal(invoice.lines.interState, true)
   })
 

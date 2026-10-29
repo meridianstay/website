@@ -85,7 +85,7 @@ const en: Dictionary = {
 
   // Stay page
   'stay.hostedBy': 'Hosted by {name}',
-  'stay.verifiedHost': 'Meridian verified host',
+  'stay.verifiedHost': 'Book My Get Away verified host',
   'stay.privateTitle': 'Name and owner details are private.',
   'stay.privateBody': 'The property’s name, the owner’s details and the exact address are shared with you as soon as your booking is confirmed and paid.',
   'stay.aboutSpace': 'About this space',
@@ -99,7 +99,7 @@ const en: Dictionary = {
   'stay.watchVideo': 'Watch video',
   'stay.videoTour': 'Video tour',
   'stay.similar': 'Similar stays nearby',
-  'stay.assured': 'Meridian Assured',
+  'stay.assured': 'Book My Get Away Assured',
   'stay.promoted': 'Promoted',
   'stay.new': 'New',
   'stay.bedrooms': '{count} bedrooms',
@@ -182,7 +182,7 @@ const en: Dictionary = {
   'footer.popularSearches': 'Popular searches',
 
   // Property cards
-  'card.assuredHint': 'Meridian Assured: inspected and verified by our team',
+  'card.assuredHint': 'Book My Get Away Assured: inspected and verified by our team',
   'card.promotedHint': 'This host paid to promote this stay',
   'card.view': 'View Details',
 
@@ -190,7 +190,7 @@ const en: Dictionary = {
   'box.addDate': 'Add date',
   'box.bookingType': 'Booking type',
   'box.fullyBooked': 'Fully booked',
-  'box.instantNote': 'Instant book · managed by Meridian Stay',
+  'box.instantNote': 'Instant book · managed by Book My Get Away',
   'box.pickDate': 'Pick a date',
   'box.requestDayOut': 'Request day out',
   'box.reserveDayOut': 'Reserve day out',
@@ -201,7 +201,7 @@ const en: Dictionary = {
 
   // Search form
   'form.checkInOut': 'Check in / out',
-  'form.destPlaceholder': 'Destination, stay name or code (MS007)',
+  'form.destPlaceholder': 'Destination, stay name or code (BMG007)',
   'form.includes2': 'Prices include 2 guests',
   'form.searchStays': 'Search Stays',
   'form.searchDest': 'Search destinations',
@@ -324,7 +324,7 @@ const en: Dictionary = {
   'stay.depositNote': 'Paid to the host at check-in (cash or UPI) and returned at check-out if nothing is damaged.',
   'stay.promotedStay': 'Promoted stay',
   'stay.quoteCode': 'Quote this code to our team, or search for it',
-  'stay.promise': 'The Meridian Promise',
+  'stay.promise': 'The Book My Get Away Promise',
   'stay.theProperty': 'The property',
   'stay.theService': 'The service',
   'stay.watchTour': 'Watch the video tour',
@@ -370,7 +370,7 @@ const en: Dictionary = {
   'checkout.datesJustBooked': 'Those dates were just booked',
   'checkout.takenNights': 'Someone booked some of these nights. Pick new dates on the stay page.',
   'checkout.instantBook': 'Instant book.',
-  'checkout.managedNote': 'Managed by Meridian Stay, so your booking is confirmed straight away.',
+  'checkout.managedNote': 'Managed by Book My Get Away, so your booking is confirmed straight away.',
   'checkout.confirmedStraightAway': 'Your booking is confirmed straight away',
   'checkout.requestGoesToHost': 'Your request goes straight to the host',
   'checkout.securedBy': 'Secured by Razorpay',
@@ -424,7 +424,7 @@ const en: Dictionary = {
   'request.elsePlaceholder': 'Pet friendly, pool, close to the lake…',
 
   // Checkout notes
-  'checkout.testModeNote': 'No money is taken while Meridian Stay is in testing.',
+  'checkout.testModeNote': 'No money is taken while Book My Get Away is in testing.',
   'checkout.authoriseNote': 'You’ll approve the payment in the Razorpay window, but you’re only charged if the host accepts within {hours} hours. If they decline or don’t reply, the hold is released.',
 
   // Booking confirmation notes

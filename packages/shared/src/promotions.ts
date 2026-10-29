@@ -1,5 +1,5 @@
 // Paid promotions: hosts pay by the day to have a listing promoted, and see how it performed.
-// Meridian keeps the whole amount (it isn't a booking, so there's no commission).
+// Book My Get Away keeps the whole amount (it isn't a booking, so there's no commission).
 //
 // What a host can buy is a *plan*, written in the control centre: where the listing appears, how far
 // away guests have to be for it to count, how many listings can run on it at once, and what a day
@@ -10,7 +10,7 @@ export type AdPlacement = 'search' | 'home' | 'destination'
 
 export const AD_PLACEMENTS: { value: AdPlacement; label: string; explain: string; icon: string }[] = [
   { value: 'search', label: 'Top of search', explain: 'Shown first when guests search, above the other results.', icon: 'magnifying-glass' },
-  { value: 'home', label: 'Homepage row', explain: 'In the “Promoted stays” row on the Meridian Stay homepage.', icon: 'house' },
+  { value: 'home', label: 'Homepage row', explain: 'In the “Promoted stays” row on the Book My Get Away homepage.', icon: 'house' },
   { value: 'destination', label: 'Destination page', explain: 'First on the page for a town or state, e.g. “Stays in Coorg”.', icon: 'map-location-dot' },
 ]
 

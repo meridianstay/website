@@ -26,7 +26,7 @@ export function Logo({ subtitle, href = '/' }: LogoProps) {
   )
 }
 
-/** The square mark: an uploaded logo when there is one, otherwise the sprout. */
+/** The square mark: an uploaded logo when there is one, otherwise the sun over the ridge. */
 export function LogoMark({ size = 'md' }: { size?: 'sm' | 'md' }) {
   const brand = useBrand()
   const box = size === 'sm' ? 'w-8 h-8 rounded-xl' : 'w-11 h-11 rounded-2xl shadow-md shadow-brand-500/20'
@@ -34,7 +34,7 @@ export function LogoMark({ size = 'md' }: { size?: 'sm' | 'md' }) {
   const icon = size === 'sm' ? '' : 'text-xl'
   return (
     <div className={`${box} bg-gradient-to-tr from-brand-600 to-brand-yellow-500 flex items-center justify-center text-white shrink-0`}>
-      <i className={`fa-solid fa-seedling ${icon}`} aria-hidden="true"></i>
+      <i className={`fa-solid fa-mountain-sun ${icon}`} aria-hidden="true"></i>
     </div>
   )
 }

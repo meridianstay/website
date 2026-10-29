@@ -7,7 +7,7 @@ export type AppEnv = { Variables: { user: Me | null; uid: string | null } }
 
 const COOKIE = 'ms_session'
 const isProd = process.env.NODE_ENV === 'production'
-// Set COOKIE_DOMAIN=.meridianstay.com when apps move to subdomains so they share the session.
+// Set COOKIE_DOMAIN=.bookmygetaway.in when apps move to subdomains so they share the session.
 const domain = () => process.env.COOKIE_DOMAIN || undefined
 
 /** Verifies a Firebase ID token for a portal and sets the session cookie. */

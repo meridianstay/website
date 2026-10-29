@@ -1,7 +1,7 @@
 {
   "id": "/",
-  "name": "Meridian Stay",
-  "short_name": "Meridian",
+  "name": "Book My Get Away",
+  "short_name": "Book My Get Away",
   "description": "Book handpicked farmstays, forest cottages, resorts and villas across India.",
   "start_url": "/?source=app",
   "scope": "/",
@@ -18,6 +18,6 @@
   ],
   "shortcuts": [
     { "name": "Find a stay", "url": "/search?source=app", "icons": [{ "src": "/icons/icon-192.png", "sizes": "192x192" }] },
-    { "name": "My trips", "url": "/account/?source=app", "icons": [{ "src": "/icons/icon-192.png", "sizes": "192x192" }] }
+    { "name": "My trips", "url": "/account/trips?source=app", "icons": [{ "src": "/icons/icon-192.png", "sizes": "192x192" }] }
   ]
 }

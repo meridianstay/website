@@ -12,7 +12,7 @@ export interface PropertyDoc {
   pricePerNightMinor: number; bedrooms: number; bathrooms: number; maxGuests: number
   status: ListingStatus; rejectionReason: string | null; coverImageUrl: string; photos: string[]; videoUrl: string; amenities: string[]
   ratingAvg: number; reviewCount: number; featuredRank: number | null
-  /** managed: run by Meridian, instant booking. self: host-managed, request to book. Set by admins. */
+  /** managed: run by Book My Get Away, instant booking. self: host-managed, request to book. Set by admins. */
   management: Management
   areaSqft: number | null; gatheringCapacity: number | null; checkInTime: string; checkOutTime: string
   houseRules: HouseRules; securityDepositMinor: number
@@ -20,7 +20,7 @@ export interface PropertyDoc {
   address: string
   /** Offers overnight stays at pricePerNightMinor. */
   overnight: boolean
-  /** "Meridian Assured": inspected and verified by the team. Set by admins. */
+  /** "Book My Get Away Assured": inspected and verified by the team. Set by admins. */
   assured: boolean
   /** Host discount in percent (0–70), applied to nightly and day-use prices. */
   discountPct: number
@@ -109,7 +109,7 @@ export const propertiesRepo = {
   async search(f: Filters): Promise<PropertySummary[]> {
     let rows = await readProps(col(C.properties).where('status', '==', 'Approved'))
     const where = f.where?.toLowerCase()
-    // "MS007" finds the listing with that code.
+    // "BMG007" finds the listing with that code.
     const codeId = f.where ? parsePropertyCode(f.where) : null
     rows = rows.filter((p) =>
       (codeId !== null ? p.id === codeId : !where || `${p.title} ${p.city}, ${p.region}, ${p.country}`.toLowerCase().includes(where)) &&

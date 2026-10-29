@@ -84,18 +84,18 @@ describe('translating the words written in the control centre', () => {
   test('a translated heading replaces the English one everywhere it appears', async () => {
     const admin = await createUser('admin')
     await appearanceService.saveTranslations(admin.me, body({
-      mr: { 'Featured Meridian Stays': 'निवडक मेरिडियन मुक्काम' },
-      ta: { 'Featured Meridian Stays': 'தேர்ந்தெடுத்த இடங்கள்' },
+      mr: { 'Featured Getaways': 'निवडक बुक माय गेट अवे मुक्काम' },
+      ta: { 'Featured Getaways': 'தேர்ந்தெடுத்த இடங்கள்' },
     }))
 
     const words = await contentRepo.translations('mr')
-    assert.equal(words['Featured Meridian Stays'], 'निवडक मेरिडियन मुक्काम', 'what the control centre saved wins')
+    assert.equal(words['Featured Getaways'], 'निवडक बुक माय गेट अवे मुक्काम', 'what the control centre saved wins')
     assert.equal(words['Explore Property Types'], 'मालमत्तेचे प्रकार पाहा', 'and the starter pack fills the rest')
 
     const layout = await contentRepo.home()
     const marathi = translateDeep(layout, words)
     const titles = marathi.blocks.map((b) => b.title)
-    assert.ok(titles.includes('निवडक मेरिडियन मुक्काम'))
+    assert.ok(titles.includes('निवडक बुक माय गेट अवे मुक्काम'))
     assert.ok(titles.includes('मालमत्तेचे प्रकार पाहा'))
 
     // Tamil has no starter pack, so only the one saved sentence changes.
@@ -111,9 +111,9 @@ describe('translating the words written in the control centre', () => {
     const admin = await createUser('admin')
     await appearanceService.saveLanguages(admin.me, body({ enabled: ['mr'], fallback: 'en', autoDetect: true }))
     const saved = await appearanceService.saveTranslations(admin.me, body({
-      en: { 'Featured Meridian Stays': 'nope' },
-      mr: { 'Featured Meridian Stays': 'निवडक' },
-      ta: { 'Featured Meridian Stays': 'தேர்ந்தெடுத்த' },
+      en: { 'Featured Getaways': 'nope' },
+      mr: { 'Featured Getaways': 'निवडक' },
+      ta: { 'Featured Getaways': 'தேர்ந்தெடுத்த' },
     }))
     assert.deepEqual(Object.keys(saved), ['mr'])
     assert.deepEqual(await contentRepo.translations('en'), {}, 'English is the original wording')
@@ -129,14 +129,14 @@ describe('translating the words written in the control centre', () => {
       about: defaultAbout,
     })
     const all = groups.flatMap((g) => g.strings)
-    assert.ok(all.includes('Featured Meridian Stays'), 'a homepage heading')
+    assert.ok(all.includes('Featured Getaways'), 'a homepage heading')
     assert.ok(all.includes(defaultSiteSettings.footer.tagline), 'the footer tagline')
-    assert.ok(all.includes('About Meridian'), 'a footer column heading')
+    assert.ok(all.includes('About Book My Get Away'), 'a footer column heading')
     assert.ok(all.some((s) => s === defaultAbout.hero.tagline), 'the About us tagline')
     // Never a link, a photo or a colour.
     assert.ok(!all.some((s) => s.startsWith('http') || s.startsWith('/') || /^#[0-9a-f]{6}$/i.test(s)), 'only real wording')
 
-    const progress = translationProgress(groups, { 'Featured Meridian Stays': 'x' })
+    const progress = translationProgress(groups, { 'Featured Getaways': 'x' })
     assert.equal(progress.done, 1)
     assert.ok(progress.total > 30)
   })

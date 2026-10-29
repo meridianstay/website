@@ -33,7 +33,7 @@ export const BRAND_APPS: { app: BrandApp; label: string; where: string }[] = [
   { app: 'admin', label: 'Control centre', where: 'This panel.' },
 ]
 
-const blank = { logoUrl: '', faviconUrl: '', splashUrl: '', showName: true, name: 'Meridian', accent: 'Stay' }
+const blank = { logoUrl: '', faviconUrl: '', splashUrl: '', showName: true, name: 'Book My', accent: 'Get Away' }
 
 export const defaultBranding: BrandingSettings = {
   apps: {
@@ -121,7 +121,7 @@ export const defaultFooter: FooterSettings = {
   tagline: 'Your premium ecosystem for farmstays, boutique resorts, woodland cottages, and luxury villas.',
   columns: [
     {
-      heading: 'About Meridian',
+      heading: 'About Book My Get Away',
       links: [
         { label: 'About us', url: '/about' },
         { label: 'How it works', url: '/how-it-works' },
@@ -156,7 +156,7 @@ export const defaultFooter: FooterSettings = {
     { label: 'Terms', url: '/terms' },
     { label: 'Sitemap', url: '/sitemap' },
   ],
-  copyright: '© {year} Meridian Stay Inc. All rights reserved.',
+  copyright: '© {year} Book My Get Away Inc. All rights reserved.',
   credit: { label: 'Designed & Developed by Digitech Miner', url: 'https://digitechminer.com' },
 }
 

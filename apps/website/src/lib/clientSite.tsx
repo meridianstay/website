@@ -3,7 +3,7 @@ import type { ClientSiteView } from '@meridian/shared'
 import { api } from '@meridian/shared/client'
 
 // Which client's website this is. A visitor arriving at greenvalleystays.com, or at
-// green-valley.meridianstay.com, gets that client's page instead of the marketplace; everyone else
+// green-valley.bookmygetaway.in, gets that client's page instead of the marketplace; everyone else
 // gets the marketplace exactly as before.
 //
 // A client can also see their page at /c/<name> before their domain is pointing anywhere, which is

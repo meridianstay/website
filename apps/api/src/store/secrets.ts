@@ -6,7 +6,7 @@ import { AppError } from '../http/errors'
 // The master key lives only in the hosting environment (SETTINGS_ENCRYPTION_KEY), so a copy of the
 // database alone can't reveal them. Local development uses a fixed development key.
 
-const master = process.env.SETTINGS_ENCRYPTION_KEY ?? (emulated ? 'meridian-local-development-only' : '')
+const master = process.env.SETTINGS_ENCRYPTION_KEY ?? (emulated ? 'bookmygetaway-local-development-only' : '')
 const key = master ? createHash('sha256').update(master).digest() : null
 
 export const encryptionReady = !!key

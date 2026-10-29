@@ -1,5 +1,5 @@
 rules_version = '2';
-// All reads and writes go through the Meridian Stay API (Firebase Admin SDK), which enforces
+// All reads and writes go through the Book My Get Away API (Firebase Admin SDK), which enforces
 // roles and business rules. Browsers get no direct database access.
 service cloud.firestore {
   match /databases/{database}/documents {

@@ -2,6 +2,26 @@
 
 Every change to Meridian Stay is recorded here, newest first. Each entry says what changed for the people using the platform, then the notable technical changes.
 
+## 0.48.0 — 2026-10-29
+
+### Meridian Stay is now Book My Get Away
+The platform has been renamed. The name is gone from every page, panel, email, document and icon.
+
+- **A new logo**: a white sun rising between two dark-green peaks on the brand's green-to-gold square. It replaces the sprout everywhere it appeared — the browser tab icon on all four panels, the phone and desktop home-screen icons, the preloader that draws itself before any JavaScript runs, and the loading mark inside the apps. The wordmark is **Book My** in green with **Get Away** in gold, and still comes from Branding in the control centre, so it can be replaced with an uploaded logo at any time.
+- **Everything visible was renamed**: page titles and link previews, the homepage, About us, Help, Terms, Privacy, the cancellation and trust pages, every email and SMS, the host and guest portals, the control centre, the installable-app name, and the Hindi, Marathi and Gujarati translations.
+- **Client websites** now sit at `<business-name>.bookmygetaway.in`, and the co-branding line on a client's own site reads "in association with Book My Get Away".
+- **Codes guests quote on the phone** changed with the name: a stay is now `BMG007` and a booking `BMG-7K3F9Q`. **Codes already issued keep working** — an old `MS007` typed into search still finds its stay, and every booking made under the old code is untouched.
+- **Tax invoices** are now numbered `BMG/26-27/0001`, continuing the same unbroken serial within the financial year.
+
+### What was deliberately *not* renamed
+- **The registered company name on tax invoices.** A trading name is not a company name, and a GSTIN belongs to the registered one. The GST settings are skipped by the rename and only the invoice prefix moves; change the legal name yourself in the control centre if and when the company is actually renamed at the registrar.
+- **Invoices already issued.** A tax document is never rewritten after the fact.
+- **Internal identifiers** — the npm workspace names, the Firebase project and the browser storage keys. Nobody sees them, and renaming them risks the build and the deployment for no visible gain.
+
+### Technical
+- `contentRepo.renameToBookMyGetAway` does the half that defaults cannot: every setting and page the control centre has ever saved is stored, and a stored value beats a default, so a site that had saved its footer, homepage or About page would have gone on showing the old name forever. It rewrites the name wherever it is stored as text, leaves the wording around it alone, splits the stored wordmark into the new name and accent only where it was still the old pair, moves the invoice prefix only if it was still the old default, and writes nothing to a document it did not change — so running it twice is a no-op.
+- `parsePropertyCode` accepts both the new and the old prefix.
+
 ## 0.47.0 — 2026-10-29
 
 ### A real account for guests

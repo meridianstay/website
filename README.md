@@ -1,8 +1,8 @@
-# Meridian Stay
+# Book My Get Away
 
-An Airbnb-style marketplace for local, nature-first stays: farmstays, private rooms, cottages, resorts and villas. Guests find and book stays, property owners list them, and the Meridian team runs the platform from a control centre.
+An Airbnb-style marketplace for local, nature-first stays: farmstays, private rooms, cottages, resorts and villas. Guests find and book stays, property owners list them, and the Book My Get Away team runs the platform from a control centre.
 
-Meridian also sells each owner **a website of their own** — their logo, their words, their domain — built from the same listings and taking bookings through the same checkout. That is the business: a marketplace that earns a commission from clients on the free plan, and a yearly subscription from clients who would rather pay once and keep the whole booking.
+Book My Get Away also sells each owner **a website of their own** — their logo, their words, their domain — built from the same listings and taking bookings through the same checkout. That is the business: a marketplace that earns a commission from clients on the free plan, and a yearly subscription from clients who would rather pay once and keep the whole booking.
 
 The whole platform is web-based and lives in this one repository.
 
@@ -20,8 +20,8 @@ Everything is served from one domain. Each app can later move to its own subdoma
 | `/` | `apps/website` | Everyone | Search by place, dates and guests; filters, sorting and map view; stay pages with gallery, amenities, map, reviews and live pricing; checkout; booking confirmation; guest login (`/login`); help and policy pages; contact form |
 | `/account` | `apps/account` | Guests | Upcoming and past trips, cancel a booking, write a review, wishlist, profile and photo |
 | `/host` | `apps/host` | Property owners | Own login (`/host/login`), earnings dashboard, listings with approval status, a step-by-step listing wizard with map pin and photo uploads, calendar to block dates, pause or relist, bookings with guest contact details |
-| `/admin` | `apps/admin` | Meridian team | Own login (`/admin/login`, not linked from the website). A dashboard of what needs attention, with a trading chart and a map of every live stay; approve listings and client websites; subscriptions and plan prices; host payouts; users, each with their own page; bookings, reviews, coupons, promotions, contact inbox; website content, offers and alerts, notifications; activity log, Database screen, Server page and Settings |
-| `<client>.meridianstay.com` | `apps/website` | A client's own guests | The client's own website: their logo beside Meridian's, their stay with a photo slideshow, a working booking box, their other branches, their policies and contact details. Same app, served by address |
+| `/admin` | `apps/admin` | Book My Get Away team | Own login (`/admin/login`, not linked from the website). A dashboard of what needs attention, with a trading chart and a map of every live stay; approve listings and client websites; subscriptions and plan prices; host payouts; users, each with their own page; bookings, reviews, coupons, promotions, contact inbox; website content, offers and alerts, notifications; activity log, Database screen, Server page and Settings |
+| `<client>.bookmygetaway.in` | `apps/website` | A client's own guests | The client's own website: their logo beside Book My Get Away's, their stay with a photo slideshow, a working booking box, their other branches, their policies and contact details. Same app, served by address |
 
 The API lives in `apps/api` and is served at `/api`. It runs on **Firebase** (Firestore, Authentication, Storage) through the Admin SDK and is layered: routes (HTTP) → services (business rules) → repositories (all Firestore access). See [docs/api.md](docs/api.md).
 
@@ -97,7 +97,7 @@ reference/index.html       the original single-file prototype
 - **Roles:** everyone signs up as a guest. Creating a first listing makes you a host. Only an admin can make someone an admin.
 - **Listings** go live only after an admin approves them. Any edit sends a listing back for review.
 - **Pricing** is in Indian rupees (₹) and calculated on the server when booking: the nightly price covers two guests and each extra guest adds 15%. Guests pay **no booking fee**. Money is stored in paise.
-- **Two kinds of property.** *Managed* properties are run and maintained by Meridian: guests **book instantly** and Meridian's commission is **30%**. *Self-managed* properties are run by the host: guests send a **request**, the host accepts or declines within **24 hours**, and the commission is **15%**. Admins set each listing's type (Listings page) and the rates (Settings → Commission).
+- **Two kinds of property.** *Managed* properties are run and maintained by Book My Get Away: guests **book instantly** and Book My Get Away's commission is **30%**. *Self-managed* properties are run by the host: guests send a **request**, the host accepts or declines within **24 hours**, and the commission is **15%**. Admins set each listing's type (Listings page) and the rates (Settings → Commission).
 - **Payments** go through **Razorpay** (UPI, cards, net banking). Admins enter the Razorpay keys in Settings → Payments; secrets are encrypted before they're stored and never shown again. Instant bookings are charged at checkout. Requests are only authorised at checkout and charged when the host accepts; declined or expired requests are never charged. Until payments are switched on, everything runs in test mode without taking money.
 - **Cancellations:** full refund up to 48 hours before check-in, otherwise everything except the first night. Refunds go back through Razorpay automatically.
 - **Photos** upload to Firebase Storage through the API. Browsers have no direct access to Firestore or Storage.
@@ -110,26 +110,26 @@ reference/index.html       the original single-file prototype
 
 Every client gets a website of their own, built from the listings they already have.
 
-- It answers at **`<their-business-name>.meridianstay.com`** from the day they register, and at **their own domain** on a paid plan. One wildcard domain serves all of them: see [deployment](docs/deployment.md#5-client-websites-the-wildcard-domain).
+- It answers at **`<their-business-name>.bookmygetaway.in`** from the day they register, and at **their own domain** on a paid plan. One wildcard domain serves all of them: see [deployment](docs/deployment.md#5-client-websites-the-wildcard-domain).
 - The client writes it in **Host portal → My website** — logo, business name, about, contact details, property terms, payment and cancellation policies. **Your team approves it** before anything is public, and an edit afterwards never takes the live site down: the approved copy keeps serving until the new one is approved too.
 - On the top plan they can **rearrange the page themselves** — drag the sections into any order, switch some off, write their own headings, choose their colour.
 - Guests book on it through the same checkout, so dates, payments and payouts stay in one place.
 - A client can see their page at `/c/<their-name>` before any DNS exists, which is also how your team reviews it.
 
-## How Meridian earns
+## How Book My Get Away earns
 
 Two ways, and a client is on one or the other — never both.
 
 | | Free | ₹999 / year | ₹1,999 / year | ₹4,999 / year |
 | --- | --- | --- | --- | --- |
 | Listed on the marketplace | ✓ | ✓ | ✓ | ✓ |
-| Their own website | on a Meridian address | on their domain | on their domain | on their domain |
+| Their own website | on a Book My Get Away address | on their domain | on their domain | on their domain |
 | Stays on that website | one | one | all of them | all of them |
 | Rearrange the page | — | — | — | ✓ |
 | **Commission per booking** | **taken** | **none** | **none** | **none** |
 
 - **Free is the floor.** Everyone starts there, nobody is ever without a website, and a plan that lapses falls back to it rather than taking anything down.
-- **Commission** is taken only from clients on Free: 30% on properties Meridian manages, 15% on host-managed ones (Admin → Settings). The rate is written onto each booking as it stands that day, so a plan bought or lost later never reaches back into a booking already made.
+- **Commission** is taken only from clients on Free: 30% on properties Book My Get Away manages, 15% on host-managed ones (Admin → Settings). The rate is written onto each booking as it stands that day, so a plan bought or lost later never reaches back into a booking already made.
 - **Host promotions**: hosts pay by the day to have a listing promoted in search, on the homepage or on a destination page. Approved by the team, labelled "Promoted" to guests.
 - Guests pay **no booking fee**, on any plan.
 
@@ -145,7 +145,7 @@ never alters one already raised — and numbers run gaplessly from one each fina
 
 **A client who is GST-registered invoices their own guests.** They enter their registration in **Host portal →
 Tax invoices**, and from the next booking their guests are billed under their name and GSTIN — they own the
-property, so the supply is theirs. A client who is not registered is invoiced for by Meridian instead, which is
+property, so the supply is theirs. A client who is not registered is invoiced for by Book My Get Away instead, which is
 the right arrangement below the registration threshold. Either way nothing a guest pays changes, and registering
 later never rewrites an invoice already raised.
 
@@ -154,11 +154,11 @@ structure from 22 September 2025, and editable because rates move.
 
 ## Keeping dates in step with other platforms
 
-A stay listed on Airbnb, Booking.com, Vrbo, Agoda or MakeMyTrip as well can keep every calendar in step from **Host portal → Calendar sync**. It takes two links per stay: the client pastes each platform's export link in, and pastes Meridian's own link into those platforms. Built on iCalendar, which is what all of them support — there is no public Airbnb booking API. Read hourly, and again whenever a guest opens the stay, so the dates somebody is looking at are current. A night sold on both sides is reported as a clash for a person to settle rather than quietly cancelling anyone.
+A stay listed on Airbnb, Booking.com, Vrbo, Agoda or MakeMyTrip as well can keep every calendar in step from **Host portal → Calendar sync**. It takes two links per stay: the client pastes each platform's export link in, and pastes Book My Get Away's own link into those platforms. Built on iCalendar, which is what all of them support — there is no public Airbnb booking API. Read hourly, and again whenever a guest opens the stay, so the dates somebody is looking at are current. A night sold on both sides is reported as a clash for a person to settle rather than quietly cancelling anyone.
 
 ## Installing as a phone app
 
-The website is a **Progressive Web App**: the **Download app** button in the header adds Meridian Stay to a phone's home screen with its own icon, opening full screen. Android and desktop Chrome/Edge get a one-tap install prompt; iPhones get Safari's "Add to Home Screen" steps. The files are in `apps/website/public`: `manifest.webmanifest` (name, colours, icons, shortcuts), `icons/`, `sw.js` (offline page only, no caching of data) and `offline.html`. The install logic is `apps/website/src/lib/install.ts`.
+The website is a **Progressive Web App**: the **Download app** button in the header adds Book My Get Away to a phone's home screen with its own icon, opening full screen. Android and desktop Chrome/Edge get a one-tap install prompt; iPhones get Safari's "Add to Home Screen" steps. The files are in `apps/website/public`: `manifest.webmanifest` (name, colours, icons, shortcuts), `icons/`, `sw.js` (offline page only, no caching of data) and `offline.html`. The install logic is `apps/website/src/lib/install.ts`.
 
 To change the app icon, replace the PNGs in `apps/website/public/icons/` (192×192 and 512×512, plus a 512×512 `maskable` version with the logo inside the middle 80%, and a 180×180 `apple-touch-icon`).
 

@@ -3,7 +3,7 @@ import { CheckoutDismissed, ErrorNote, PageHeader, Panel, Spinner, payWithRazorp
 import { FREE_PLAN_ID, formatPrice, type ClientPlan, type PlanId, type Subscription as Sub } from '@meridian/shared'
 import { hostApi } from '@meridian/shared/client'
 
-// What the client pays Meridian for. One year at a time, through the same Razorpay account that
+// What the client pays Book My Get Away for. One year at a time, through the same Razorpay account that
 // takes their guests' bookings. Nothing changes on the account until a payment is confirmed.
 
 interface View {
@@ -72,7 +72,7 @@ export function Subscription() {
     <>
       <PageHeader
         title="Your plan"
-        description="What you pay Meridian to be here, once a year. Your guests' bookings and your payouts are separate — this is only your own subscription."
+        description="What you pay Book My Get Away to be here, once a year. Your guests' bookings and your payouts are separate — this is only your own subscription."
       />
 
       {active && sub.expiresAt && (
@@ -92,7 +92,7 @@ export function Subscription() {
             {sub.terms.length ? 'Your paid plan has run out, so you are back on Free.' : 'You are on Free.'}
           </p>
           <p className="mt-1">
-            Your website is live at your Meridian address and your listings, bookings and payouts all keep working.
+            Your website is live at your Book My Get Away address and your listings, bookings and payouts all keep working.
             A paid plan adds your own domain, and more than one stay on the site.
           </p>
         </div>
@@ -153,7 +153,7 @@ export function Subscription() {
                 </span>
                 <span className="flex items-center gap-4">
                   <span className="font-bold text-slate-900">{formatPrice(term.amount)}</span>
-                  <span className="text-xs text-slate-400 font-mono">{term.via === 'manual' ? 'recorded by Meridian' : term.paymentId}</span>
+                  <span className="text-xs text-slate-400 font-mono">{term.via === 'manual' ? 'recorded by Book My Get Away' : term.paymentId}</span>
                 </span>
               </li>
             ))}

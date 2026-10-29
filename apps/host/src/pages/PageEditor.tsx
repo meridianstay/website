@@ -16,7 +16,7 @@ import { hostApi } from '@meridian/shared/client'
 export function PageEditor() {
   const [site, setSite] = useState<ClientSite | null>(null)
   const [design, setDesign] = useState<ClientPageDesign | null>(null)
-  const [base, setBase] = useState('meridianstay.com')
+  const [base, setBase] = useState('bookmygetaway.in')
   const [error, setError] = useState<string | null>(null)
   const [locked, setLocked] = useState(false)
   const [state, setState] = useState<'idle' | 'saving' | 'saved'>('idle')
@@ -116,7 +116,7 @@ export function PageEditor() {
     <>
       <PageHeader
         title="Design your page"
-        description="Drag the sections into the order you want, switch off the ones you don't, and write your own headings. Your changes go to the Meridian team to check, the same as the rest of your website."
+        description="Drag the sections into the order you want, switch off the ones you don't, and write your own headings. Your changes go to the Book My Get Away team to check, the same as the rest of your website."
       />
 
       <div className="flex flex-wrap items-center gap-3 mb-8">

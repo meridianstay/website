@@ -282,7 +282,7 @@ export function Checkout() {
   )
 }
 
-/** Explains instant booking (Meridian-managed) versus requests (host-managed). */
+/** Explains instant booking (Book My Get Away-managed) versus requests (host-managed). */
 export function BookingModeNote({ instant }: { instant: boolean }) {
   const t = useT()
   return instant ? (

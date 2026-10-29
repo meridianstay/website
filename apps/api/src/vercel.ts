@@ -33,9 +33,9 @@ export default async function handler(req: IncomingMessage, res: ServerResponse)
   } catch (err) {
     loaded = null
     console.error('API failed to load', err)
-    return unavailable(res, `Meridian Stay couldn’t start: ${describe(err)}`)
+    return unavailable(res, `Book My Get Away couldn’t start: ${describe(err)}`)
   }
-  if (api.firebaseMode === 'unconfigured') return unavailable(res, 'Meridian Stay isn’t connected to Firebase yet. Set FIREBASE_SERVICE_ACCOUNT in Vercel.')
+  if (api.firebaseMode === 'unconfigured') return unavailable(res, 'Book My Get Away isn’t connected to Firebase yet. Set FIREBASE_SERVICE_ACCOUNT in Vercel.')
   try {
     await api.ensureReady()
   } catch (err) {

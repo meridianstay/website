@@ -62,7 +62,7 @@ export type ClientPageLayout = 'sidebar' | 'stacked'
 
 export interface ClientPageDesign {
   layout: ClientPageLayout
-  /** The colour of the buttons and headings. Empty uses Meridian's green. */
+  /** The colour of the buttons and headings. Empty uses Book My Get Away's green. */
   accent: string
   /** A photo behind the client's name at the top, or a plain band of colour. */
   heroStyle: 'photo' | 'plain'
@@ -70,7 +70,7 @@ export interface ClientPageDesign {
 }
 
 export const ACCENT_CHOICES: { value: string; label: string }[] = [
-  { value: '', label: 'Meridian green' },
+  { value: '', label: 'Book My Get Away green' },
   { value: '#0f766e', label: 'Deep teal' },
   { value: '#b45309', label: 'Amber' },
   { value: '#9d174d', label: 'Plum' },

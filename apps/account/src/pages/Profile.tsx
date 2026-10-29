@@ -64,7 +64,7 @@ export function Profile() {
           </form>
         </Panel>
 
-        <Panel title="How you sign in" subtitle="There is no password on a Meridian account, so there is none to be stolen.">
+        <Panel title="How you sign in" subtitle="There is no password on a Book My Get Away account, so there is none to be stolen.">
           <dl className="divide-y divide-slate-100 text-sm">
             <Row label="Method" value={user!.email ? 'Google' : 'A code sent to your phone'} />
             <Row label={user!.email ? 'Google account' : 'Phone number'} value={user!.email ?? user!.phone ?? '—'} />
@@ -81,7 +81,7 @@ export function Profile() {
 
         <Panel title="Your data">
           <p className="text-sm text-slate-600">
-            Meridian keeps your name, how you sign in, your bookings and the reviews you have written. Owners see your name
+            Book My Get Away keeps your name, how you sign in, your bookings and the reviews you have written. Owners see your name
             and your contact number only once a booking of theirs is confirmed. Nothing is sold to anyone.
           </p>
           <p className="text-xs text-slate-500 mt-3">

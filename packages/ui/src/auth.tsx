@@ -62,7 +62,7 @@ export function RequireAuth({ children, roles, loginHref }: { children: ReactNod
   if (roles && !roles.includes(user.role)) {
     return (
       <FullPageMessage icon="lock" title="Access restricted" body={`This area is only for ${roles.join(' or ')} accounts. You’re signed in as ${user.email ?? user.phone ?? user.name}.`}>
-        <a href={appLink('website', '/')} className="inline-block bg-slate-900 text-white text-xs font-bold py-3 px-6 rounded-2xl">Go to Meridian Stay</a>
+        <a href={appLink('website', '/')} className="inline-block bg-slate-900 text-white text-xs font-bold py-3 px-6 rounded-2xl">Go to Book My Get Away</a>
       </FullPageMessage>
     )
   }

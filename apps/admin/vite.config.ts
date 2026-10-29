@@ -1,7 +1,7 @@
 import { defineConfig } from 'vite'
 import react from '@vitejs/plugin-react'
 
-// Served under /admin/ by default. For a subdomain (e.g. admin.meridianstay.com) build with VITE_BASE_PATH=/
+// Served under /admin/ by default. For a subdomain (e.g. admin.bookmygetaway.in) build with VITE_BASE_PATH=/
 export default defineConfig({
   // Shared .env files (e.g. the Firebase web config in .env.production) live at the repo root.
   envDir: '../..',

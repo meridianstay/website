@@ -8,7 +8,7 @@ import { paymentGateway, paymentsService } from './payments'
 import { AppError, notFound } from '../http/errors'
 import { collect, str } from '../http/validate'
 
-// A client pays Meridian once a year to be here. The plan decides how much of a website of their own
+// A client pays Book My Get Away once a year to be here. The plan decides how much of a website of their own
 // comes with it; everything else in the portal works the same whichever they are on.
 //
 // Money is taken through the same Razorpay account bookings use. A payment that never finishes
@@ -62,7 +62,7 @@ export const subscriptionService = {
     if (!has[feature]) {
       throw new AppError(402, {
         pageEditor: 'Rearranging your page is part of the Everything plan.',
-        customDomain: 'Your own domain comes with a paid plan. Your Meridian address keeps working either way.',
+        customDomain: 'Your own domain comes with a paid plan. Your Book My Get Away address keeps working either way.',
         ownWebsite: 'Choose a plan to set up your own website.',
       }[feature])
     }

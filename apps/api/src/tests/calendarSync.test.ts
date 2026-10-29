@@ -64,15 +64,15 @@ describe('reading another platform’s calendar', () => {
 
 describe('publishing our own calendar', () => {
   test('what we write can be read back', () => {
-    const ics = buildICS('Green Valley — Meridian Stay', [
-      { start: '2027-05-01', end: '2027-05-04', summary: 'Booked on Meridian Stay', uid: 'meridian-booking-MS-ABC123' },
+    const ics = buildICS('Green Valley — Book My Get Away', [
+      { start: '2027-05-01', end: '2027-05-04', summary: 'Booked on Book My Get Away', uid: 'bookmygetaway-booking-MS-ABC123' },
     ])
     assert.match(ics, /BEGIN:VCALENDAR/)
     assert.match(ics, /DTSTART;VALUE=DATE:20270501/)
     // Lines end the way the format wants them to.
     assert.ok(ics.includes('\r\n'))
     const back = parseICS(ics)
-    assert.deepEqual(back, [{ start: '2027-05-01', end: '2027-05-04', summary: 'Booked on Meridian Stay', uid: 'meridian-booking-MS-ABC123' }])
+    assert.deepEqual(back, [{ start: '2027-05-01', end: '2027-05-04', summary: 'Booked on Book My Get Away', uid: 'bookmygetaway-booking-MS-ABC123' }])
   })
 
   test('commas and semicolons in a name do not break the file', () => {
@@ -148,6 +148,6 @@ describe('syncing a stay', () => {
     assert.ok(events.some((e) => e.summary === 'Family visiting'))
     // Nothing about who is staying, what they paid, or how to reach them.
     assert.ok(!ics.includes(guest.me.name))
-    assert.ok(!/MS-[A-Z0-9]{6}(?!.*meridian-booking)/.test(ics.replace(/meridian-booking-MS-[A-Z0-9]+/g, '')))
+    assert.ok(!/MS-[A-Z0-9]{6}(?!.*bookmygetaway-booking)/.test(ics.replace(/bookmygetaway-booking-MS-[A-Z0-9]+/g, '')))
   })
 })

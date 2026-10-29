@@ -80,7 +80,7 @@ function parse(body: Record<string, unknown>, existing: ClientSiteContent): Clie
   const slug = siteSlug(str(body.slug) || businessName)
   if (!slug) fields.slug = 'This needs letters or numbers in it.'
   else if (slug.length < 3) fields.slug = 'A little longer, please — at least 3 characters.'
-  else if (RESERVED_SLUGS.includes(slug)) fields.slug = 'That address is kept for Meridian itself. Choose another.'
+  else if (RESERVED_SLUGS.includes(slug)) fields.slug = 'That address is kept for Book My Get Away itself. Choose another.'
 
   const logoUrl = str(body.logoUrl)
   if (logoUrl && !isImageUrl(logoUrl)) fields.logoUrl = 'Upload a logo, or use an image link starting with https://'

@@ -146,7 +146,7 @@ describe('Razorpay payments', () => {
     const { booking, payment } = await bookingService.create(guest.me, guest.uid, request(id))
     await confirm(guest, booking.code, rzp.pay(payment!.orderId))
     const cancelled = await bookingService.cancelByGuest(guest.me, booking.code)
-    // The 30% convenience fee stays with Meridian, so this is a partial refund.
+    // The 30% convenience fee stays with Book My Get Away, so this is a partial refund.
     assert.equal(cancelled.paymentStatus, 'partially_refunded')
     assert.deepEqual(rzp.refunds.map((r) => r.amount), [140000])
   })

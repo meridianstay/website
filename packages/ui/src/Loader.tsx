@@ -1,6 +1,5 @@
 import { useEffect } from 'react'
 
-/** The seedling mark that "grows" while something loads. Same design as the page preloader. */
 /**
  * Shown while a page or its data arrives. It sits in the middle of the space it is given rather
  * than at the top of it: a mark floating under the header reads as a half-drawn page, where one in
@@ -10,7 +9,7 @@ export function BrandLoader({ label = 'Loading…', fullPage = false }: { label?
   return (
     <div role="status" className={`flex flex-col items-center justify-center gap-4 text-slate-400 text-sm animate-fade-in ${fullPage ? 'min-h-screen bg-slate-50' : 'min-h-[60vh] py-16'}`}>
       <div className="ms-loader-mark" aria-hidden="true">
-        <SeedlingPath />
+        <RidgePath />
       </div>
       <div className="ms-loader-bar" aria-hidden="true" />
       <span className="sr-only">{label}</span>
@@ -18,10 +17,12 @@ export function BrandLoader({ label = 'Loading…', fullPage = false }: { label?
   )
 }
 
-function SeedlingPath() {
+/** The mark: a sun over a ridge, drawing itself. The same design as the page preloader. */
+function RidgePath() {
   return (
     <svg viewBox="0 0 32 32" fill="none" stroke="#fff" strokeWidth="2.6" strokeLinecap="round" strokeLinejoin="round">
-      <path d="M16 28V16c0-4-3-8-10-8 0 5 3 9 10 9M16 16c0-5 3-9 10-9 0 5-3 9-10 9" />
+      <circle className="sun" cx="21.5" cy="10.5" r="3" />
+      <path d="M4.5 23.5 11.5 14.5 16.5 20.5 20.5 16.5 27.5 23.5" />
     </svg>
   )
 }

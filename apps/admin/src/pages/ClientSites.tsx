@@ -4,7 +4,7 @@ import { hasUnpublishedChanges, siteAddress, type ClientSite, type DomainCheck, 
 import { adminApi } from '@meridian/shared/client'
 
 // The websites clients have written for themselves, waiting for someone here to look at them. A page
-// carries Meridian's mark alongside the client's, so nothing goes public until your team says so.
+// carries Book My Get Away's mark alongside the client's, so nothing goes public until your team says so.
 
 const when = (iso: string) => new Date(iso).toLocaleString('en-IN', { dateStyle: 'medium', timeStyle: 'short' })
 
@@ -16,7 +16,7 @@ const STATUS: Record<ClientSite['status'], [tone: string, label: string]> = {
 }
 
 const DOMAIN: Record<DomainStatus, [tone: string, label: string]> = {
-  none: ['bg-slate-100 text-slate-500', 'Meridian address only'],
+  none: ['bg-slate-100 text-slate-500', 'Book My Get Away address only'],
   pending: ['bg-amber-100 text-amber-800', 'Domain waiting for you'],
   live: ['bg-brand-100 text-brand-700', 'Own domain live'],
   failed: ['bg-rose-100 text-rose-700', 'Domain not working'],
@@ -24,7 +24,7 @@ const DOMAIN: Record<DomainStatus, [tone: string, label: string]> = {
 
 export function ClientSites() {
   const [sites, setSites] = useState<ClientSite[] | null>(null)
-  const [base, setBase] = useState('meridianstay.com')
+  const [base, setBase] = useState('bookmygetaway.in')
   const [error, setError] = useState<string | null>(null)
   const [filter, setFilter] = useState<'waiting' | 'all'>('waiting')
 
@@ -44,7 +44,7 @@ export function ClientSites() {
     <>
       <PageHeader
         title="Client websites"
-        description="Each client's own website, at their Meridian address or their own domain. Nothing a client writes goes public until you approve it — their page carries your logo as well as theirs."
+        description="Each client's own website, at their Book My Get Away address or their own domain. Nothing a client writes goes public until you approve it — their page carries your logo as well as theirs."
       />
 
       <div className="flex flex-wrap items-center gap-3 mb-8">
@@ -242,7 +242,7 @@ function SiteCard({ site, base, onChanged }: { site: ClientSite; base: string; o
             {site.domain.note && <p className="text-xs text-slate-500 mt-2">Your note: {site.domain.note}</p>}
           </>
         ) : (
-          <p className="text-xs text-slate-500 mt-2">This client is on their Meridian address. Nothing to do.</p>
+          <p className="text-xs text-slate-500 mt-2">This client is on their Book My Get Away address. Nothing to do.</p>
         )}
       </div>
     </Panel>

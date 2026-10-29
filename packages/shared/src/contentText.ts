@@ -5,7 +5,7 @@ import type { HomeLayout } from './homepage'
 
 // The words on the homepage, in the footer and on the About page are written in the control centre,
 // so no built-in dictionary can reach them. They are translated by their English wording instead:
-// type the Hindi for "Featured Meridian Stays" once and it appears wherever that heading is used.
+// type the Hindi for "Featured Getaways" once and it appears wherever that heading is used.
 
 /** One language's translations, keyed by the English wording. */
 export type ContentTranslations = Record<string, string>

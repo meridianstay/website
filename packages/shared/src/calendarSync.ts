@@ -35,7 +35,7 @@ export interface CalendarFeed {
   lastError: string
   /** Dates held by the other platform at the last read. */
   blockedNights: number
-  /** Nights the other platform has booked that Meridian has also sold. Needs a human. */
+  /** Nights the other platform has booked that Book My Get Away has also sold. Needs a human. */
   clashes: string[]
   createdAt: string
 }
@@ -43,7 +43,7 @@ export interface CalendarFeed {
 export interface PropertySync {
   propertyId: number
   title: string
-  /** The link the client pastes into the other platforms so they can read Meridian's dates. */
+  /** The link the client pastes into the other platforms so they can read Book My Get Away's dates. */
   exportUrl: string
   feeds: CalendarFeed[]
 }

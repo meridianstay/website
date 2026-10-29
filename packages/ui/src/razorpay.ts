@@ -36,7 +36,7 @@ export async function payWithRazorpay(payment: PaymentRequest, info: { title: st
       order_id: payment.orderId,
       amount: payment.amount,
       currency: payment.currency,
-      name: 'Meridian Stay',
+      name: 'Book My Get Away',
       description: info.title,
       prefill: { name: info.user?.name ?? '', email: info.user?.email ?? '', contact: (info.phone ?? '').replace(/[^\d+]/g, ''), method: info.method },
       theme: { color: '#059669' },

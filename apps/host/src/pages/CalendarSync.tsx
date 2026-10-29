@@ -61,12 +61,12 @@ function StayPanel({ stay, onChanged }: { stay: PropertySync; onChanged: () => v
       {clashes.length > 0 && (
         <div className="bg-rose-50 text-rose-700 rounded-2xl p-4 mb-5 text-sm">
           <p className="font-bold"><i className="fa-solid fa-triangle-exclamation mr-2" aria-hidden="true"></i>These nights are sold on both sides</p>
-          <p className="mt-1">Another platform has taken {clashes.join(', ')}, which Meridian has already booked. We can't cancel a guest for you — sort it out with one of the two guests and the date will clear.</p>
+          <p className="mt-1">Another platform has taken {clashes.join(', ')}, which Book My Get Away has already booked. We can't cancel a guest for you — sort it out with one of the two guests and the date will clear.</p>
         </div>
       )}
 
       <section className="mb-7">
-        <h3 className="text-sm font-extrabold text-slate-900">1. Give them your Meridian calendar</h3>
+        <h3 className="text-sm font-extrabold text-slate-900">1. Give them your Book My Get Away calendar</h3>
         <p className="text-xs text-slate-500 mt-1 mb-3">
           Copy this and paste it into each platform's <span className="font-semibold">import calendar</span> box. A booking taken here then closes the night over there.
         </p>

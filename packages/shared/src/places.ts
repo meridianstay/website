@@ -16,12 +16,15 @@ export function distanceKm(a: GeoPoint, b: GeoPoint): number {
 /** "Under 1 km", "3.4 km", "48 km", "1,240 km". */
 export const formatKm = (km: number) => (km < 1 ? 'Under 1 km' : km < 10 ? `${km.toFixed(1)} km` : `${Math.round(km).toLocaleString('en-IN')} km`)
 
-/** Short code guests can search for and quote on the phone, e.g. MS007. */
-export const propertyCode = (id: number) => `MS${String(id).padStart(3, '0')}`
+/** Short code guests can search for and quote on the phone, e.g. BMG007. */
+export const propertyCode = (id: number) => `BMG${String(id).padStart(3, '0')}`
 
-/** "MS007", "ms-7", "MS 07" → 7. */
+/**
+ * "BMG007", "bmg-7", "BMG 07" → 7. The old "MS007" form is still understood: guests have those
+ * codes written down and on printed confirmations, and a code that stops working is a lost booking.
+ */
 export function parsePropertyCode(q: string): number | null {
-  const m = /^\s*ms[\s-]?0*(\d{1,6})\s*$/i.exec(q)
+  const m = /^\s*(?:bmg|ms)[\s-]?0*(\d{1,6})\s*$/i.exec(q)
   return m ? Number(m[1]) : null
 }
 

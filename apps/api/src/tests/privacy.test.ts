@@ -37,7 +37,7 @@ describe('what guests may see', () => {
     assert.equal(paid.address, '12 Estate Road, Coorg')
     assert.equal(paid.host?.name, host.me.name)
 
-    // Before the money arrives the stay is still named, but there is no way to go around Meridian.
+    // Before the money arrives the stay is still named, but there is no way to go around Book My Get Away.
     await bookingsRepo.setFields(code, { status: 'AwaitingPayment', paymentStatus: 'created' })
     const held = (await bookingsRepo.listForGuest(guest.me.id, '2026-01-01')).find((b) => b.code === code)!
     assert.equal(held.property.title, 'Green Valley Organic Farmstay')

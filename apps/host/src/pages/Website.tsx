@@ -8,11 +8,11 @@ import { Link } from 'react-router'
 import { ApiError, hostApi } from '@meridian/shared/client'
 
 // "My website": the client writes their own site here — their logo, who they are, their policies
-// and their domain — and sends it to the Meridian team to put live.
+// and their domain — and sends it to the Book My Get Away team to put live.
 
 export function Website() {
   const [site, setSite] = useState<ClientSite | null>(null)
-  const [base, setBase] = useState('meridianstay.com')
+  const [base, setBase] = useState('bookmygetaway.in')
   const [dns, setDns] = useState<DnsTarget | undefined>(undefined)
   const [stays, setStays] = useState<Stay[]>([])
   const [plan, setPlan] = useState<Entitlements | null>(null)
@@ -33,7 +33,7 @@ export function Website() {
     <>
       <PageHeader
         title="My website"
-        description="Your own website, carrying your logo and your words, at your own address. Guests book on it exactly as they would on Meridian — dates, payment and your payouts all keep working the way they do now."
+        description="Your own website, carrying your logo and your words, at your own address. Guests book on it exactly as they would on Book My Get Away — dates, payment and your payouts all keep working the way they do now."
       />
       <StatusBanner site={site} base={base} />
       <div className="grid grid-cols-1 xl:grid-cols-2 gap-8">
@@ -69,7 +69,7 @@ function StatusBanner({ site, base }: { site: ClientSite; base: string }) {
       {site.status === 'Pending' && (
         <p className="font-semibold">
           <i className="fa-solid fa-hourglass-half mr-2" aria-hidden="true"></i>
-          With the Meridian team to be checked. {site.published ? 'Your live site keeps running in the meantime.' : 'You will see it go live here.'}
+          With the Book My Get Away team to be checked. {site.published ? 'Your live site keeps running in the meantime.' : 'You will see it go live here.'}
         </p>
       )}
       {site.status === 'Rejected' && (
@@ -147,11 +147,11 @@ function ContentForm({ site, base, stays, plan, onSaved }: {
           <input id="biz-name" value={form.businessName} maxLength={CLIENT_SITE_LIMITS.businessName}
             onChange={(e) => set('businessName', e.target.value)} className={field} placeholder="Green Valley Farmstays" />
           {fields.businessName && <p className="text-xs text-rose-600 font-semibold mt-1">{fields.businessName}</p>}
-          <p className="text-xs text-slate-500 mt-1">Shown large in your header, beside the Meridian mark.</p>
+          <p className="text-xs text-slate-500 mt-1">Shown large in your header, beside the Book My Get Away mark.</p>
         </div>
 
         <div>
-          <label htmlFor="biz-slug" className="block text-xs font-bold uppercase text-slate-500 mb-1">Your Meridian address</label>
+          <label htmlFor="biz-slug" className="block text-xs font-bold uppercase text-slate-500 mb-1">Your Book My Get Away address</label>
           <div className="flex items-center">
             <input id="biz-slug" value={form.slug} onChange={(e) => set('slug', e.target.value)} className={`${field} rounded-r-none font-mono`} placeholder={siteSlug(form.businessName)} />
             <span className="px-3 py-2.5 bg-slate-100 border border-l-0 border-slate-200 rounded-r-xl text-sm text-slate-600 font-mono whitespace-nowrap">.{base}</span>
@@ -174,7 +174,7 @@ function ContentForm({ site, base, stays, plan, onSaved }: {
             </div>
           </div>
           {fields.logoUrl && <p className="text-xs text-rose-600 font-semibold mt-1">{fields.logoUrl}</p>}
-          <p className="text-xs text-slate-500 mt-2">A square image works best. Meridian's own mark is shown beside it, smaller.</p>
+          <p className="text-xs text-slate-500 mt-2">A square image works best. Book My Get Away's own mark is shown beside it, smaller.</p>
         </div>
 
         {stays.length > 1 && (
@@ -192,7 +192,7 @@ function ContentForm({ site, base, stays, plan, onSaved }: {
             {fields.featuredPropertyId && <p className="text-xs text-rose-600 font-semibold mt-1">{fields.featuredPropertyId}</p>}
             <p className="text-xs text-slate-500 mt-1">
               {plan && plan.maxStaysOnSite === 1
-                ? `Your plan covers one stay, and you have ${stays.length}. The one you pick here is what your website — and your own domain — show. The rest stay on the Meridian marketplace as they are.`
+                ? `Your plan covers one stay, and you have ${stays.length}. The one you pick here is what your website — and your own domain — show. The rest stay on the Book My Get Away marketplace as they are.`
                 : 'Your other stays are listed below it, and each opens as its own page.'}
             </p>
           </div>
@@ -235,7 +235,7 @@ function ContentForm({ site, base, stays, plan, onSaved }: {
             </div>
           </div>
           <p className="text-xs text-slate-500 mt-3">
-            These appear on your own website for anyone to see. On the Meridian marketplace they are still only shared with a guest once their booking is paid.
+            These appear on your own website for anyone to see. On the Book My Get Away marketplace they are still only shared with a guest once their booking is paid.
           </p>
         </fieldset>
 
@@ -283,7 +283,7 @@ function PoliciesForm({ site, onSaved }: { site: ClientSite; onSaved: (s: Client
     <Panel title="Terms &amp; policies">
       <form onSubmit={save} className="space-y-4">
         <p className="text-sm text-slate-500">
-          Shown on your website as three cards. Meridian's own cancellation handling still decides what is actually refunded — keep these in step with it.
+          Shown on your website as three cards. Book My Get Away's own cancellation handling still decides what is actually refunded — keep these in step with it.
         </p>
         {boxes.map(([key, label, hint]) => (
           <div key={key}>
@@ -326,7 +326,7 @@ function DomainPanel({ site, base, dns, plan, onSaved }: {
       const { site: next } = await hostApi.saveWebsiteDomain(cleaned)
       onSaved(next)
       setDomain(next.domain.name)
-      setMessage(next.domain.name ? 'Saved. Add the records below, then press Check now.' : 'Removed. Your Meridian address keeps working.')
+      setMessage(next.domain.name ? 'Saved. Add the records below, then press Check now.' : 'Removed. Your Book My Get Away address keeps working.')
     } catch (err) {
       const fields = (err as ApiError).fields ?? {}
       setError(Object.values(fields)[0] ?? (err as Error).message)
@@ -365,14 +365,14 @@ function DomainPanel({ site, base, dns, plan, onSaved }: {
         <div className="bg-slate-50 rounded-2xl p-4">
           <p className="text-xs font-bold uppercase text-slate-500">Always works</p>
           <p className="font-mono text-sm font-bold text-slate-900 mt-1 break-all">{subdomain}</p>
-          <p className="text-xs text-slate-500 mt-1">Given to you with your Meridian account. Nothing to set up.</p>
+          <p className="text-xs text-slate-500 mt-1">Given to you with your Book My Get Away account. Nothing to set up.</p>
         </div>
 
         {plan && !plan.customDomain ? (
           <div className="bg-slate-50 rounded-2xl p-4">
             <p className="text-sm font-bold text-slate-900">Your own domain</p>
             <p className="text-xs text-slate-500 mt-1">
-              Comes with any paid plan. Your Meridian address above keeps working whatever you choose, and your website is already live on it.
+              Comes with any paid plan. Your Book My Get Away address above keeps working whatever you choose, and your website is already live on it.
             </p>
             <Link to="/plan" className="inline-block mt-3 bg-brand-600 hover:bg-brand-700 text-white font-bold py-2 px-5 rounded-xl text-xs">See the plans</Link>
           </div>

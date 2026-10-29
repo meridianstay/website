@@ -118,7 +118,7 @@ describe('booking a stay (test mode, no payment keys)', () => {
     assert.equal((await appError(() => bookingService.cancelByGuest(stranger.me, booking.code))).status, 400)
     const cancelled = await bookingService.cancelByGuest(guest.me, booking.code)
     assert.equal(cancelled.status, 'Cancelled')
-    // ₹2,000 paid, less the 30% convenience fee Meridian keeps on any cancellation.
+    // ₹2,000 paid, less the 30% convenience fee Book My Get Away keeps on any cancellation.
     assert.equal(cancelled.refunded, 1400)
     assert.equal((await bookingService.create(stranger.me, stranger.uid, request(id, day(10), day(12)))).booking.status, 'Confirmed')
   })

@@ -31,7 +31,7 @@ export const C = {
   serverState: 'serverState',
   /** One per client: their own website — branding, wording, policies and domain. */
   clientSites: 'clientSites',
-  /** What each client pays Meridian for, and until when. */
+  /** What each client pays Book My Get Away for, and until when. */
   subscriptions: 'subscriptions',
   /** Calendars on other platforms that a stay's dates are kept in step with. */
   calendarFeeds: 'calendarFeeds',

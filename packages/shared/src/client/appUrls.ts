@@ -1,7 +1,7 @@
 // Where each web app lives. By default everything shares one domain:
 //   /         website      /admin    admin panel
 //   /host     host portal  /account  guest account
-// To move an app to a subdomain, set e.g. VITE_ADMIN_URL=https://admin.meridianstay.com
+// To move an app to a subdomain, set e.g. VITE_ADMIN_URL=https://admin.bookmygetaway.in
 const env = import.meta.env
 
 export const appUrls = {

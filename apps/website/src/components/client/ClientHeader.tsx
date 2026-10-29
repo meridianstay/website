@@ -3,8 +3,8 @@ import { LogoMark, useBrand } from '@meridian/ui'
 import type { ClientSiteView } from '@meridian/shared'
 import { AccountMenu } from '../AccountMenu'
 
-// The client's own header: their logo at the size Meridian's own wears on the marketplace, and
-// Meridian alongside it in small print. The client is who the visitor came to see; Meridian is who
+// The client's own header: their logo at the size Book My Get Away's own wears on the marketplace, and
+// Book My Get Away alongside it in small print. The client is who the visitor came to see; Book My Get Away is who
 // takes the booking, and says so rather than hiding it.
 
 export function ClientLogo({ site }: { site: ClientSiteView }) {
@@ -17,7 +17,7 @@ export function ClientLogo({ site }: { site: ClientSiteView }) {
     )
 }
 
-/** The client's mark and name, with Meridian credited beside it. */
+/** The client's mark and name, with Book My Get Away credited beside it. */
 export function AssociationLockup({ site, stacked = false }: { site: ClientSiteView; stacked?: boolean }) {
   const brand = useBrand()
   return (

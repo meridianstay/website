@@ -70,7 +70,7 @@ export function BookingDetail() {
             <dl className="divide-y divide-slate-100 text-sm">
               <Row label="Nights" value={b.kind === 'dayuse' ? 'Day use' : `${b.nights} × ${formatPrice(b.pricePerNight)}`} />
               <Row label="Guests pay" value={formatPrice(b.total)} strong />
-              <Row label={`Meridian's commission (${b.commissionPct}%)`} value={b.commission > 0 ? formatPrice(b.commission) : 'None — the host is on a paid plan'} />
+              <Row label={`Book My Get Away's commission (${b.commissionPct}%)`} value={b.commission > 0 ? formatPrice(b.commission) : 'None — the host is on a paid plan'} />
               <Row label="Host payout" value={formatPrice(b.payout)} strong />
               {b.refunded > 0 && <Row label="Refunded to the guest" value={formatPrice(b.refunded)} />}
               {b.refundPending > 0 && <Row label="Refund that failed" value={formatPrice(b.refundPending)} tone="bad" />}
@@ -88,7 +88,7 @@ export function BookingDetail() {
               {property?.address && <Row label="Address" value={property.address} />}
               <Row label="Dates" value={bookingWhen(b)} />
               <Row label="Guests" value={String(b.guests)} />
-              <Row label="How it was booked" value={b.instantBook ? 'Managed by Meridian — booked instantly' : 'Self-managed — the host accepted it'} />
+              <Row label="How it was booked" value={b.instantBook ? 'Managed by Book My Get Away — booked instantly' : 'Self-managed — the host accepted it'} />
               {b.specialRequests && <Row label="Guest asked for" value={b.specialRequests} />}
             </dl>
             {property && (

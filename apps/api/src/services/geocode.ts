@@ -5,7 +5,7 @@ import { AppError } from '../http/errors'
 // Answers are cached for an hour, which covers the repeated searches of someone adjusting a pin.
 
 const ENDPOINT = 'https://nominatim.openstreetmap.org'
-const AGENT = 'MeridianStay/1.0 (https://meridianstay.com; listings map)'
+const AGENT = 'BookMyGetAway/1.0 (https://bookmygetaway.in; listings map)'
 const CACHE_MS = 60 * 60_000
 const MIN_GAP_MS = 1100
 

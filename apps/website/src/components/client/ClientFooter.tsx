@@ -2,14 +2,14 @@ import type { ClientSiteView } from '@meridian/shared'
 import { versionLabel } from '@meridian/shared'
 import { LogoMark, useBrand, useCredit } from '@meridian/ui'
 
-// The client's footer. Meridian is named here properly rather than in small print: a guest booking
-// through this page is paying Meridian, and should be able to tell before they do.
+// The client's footer. Book My Get Away is named here properly rather than in small print: a guest booking
+// through this page is paying Book My Get Away, and should be able to tell before they do.
 
 export function ClientFooter({ site }: { site: ClientSiteView }) {
   const brand = useBrand()
   const credit = useCredit()
   const year = new Date().getFullYear()
-  const meridian = `https://${brand.name.toLowerCase().replace(/\s+/g, '')}.com`
+  const bookmygetaway = `https://${brand.name.toLowerCase().replace(/\s+/g, '')}.com`
 
   return (
     <footer className="bg-white border-t border-slate-200 mt-16">
@@ -45,7 +45,7 @@ export function ClientFooter({ site }: { site: ClientSiteView }) {
             <span className="flex items-center gap-1.5">
               <span className="uppercase tracking-wider">Bookings powered by</span>
               <LogoMark size="sm" />
-              <a href={meridian} target="_blank" rel="noopener noreferrer" className="font-bold text-slate-500 hover:text-brand-600">
+              <a href={bookmygetaway} target="_blank" rel="noopener noreferrer" className="font-bold text-slate-500 hover:text-brand-600">
                 {brand.name}{brand.accent ? ` ${brand.accent}` : ''}
               </a>
             </span>

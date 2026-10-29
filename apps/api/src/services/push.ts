@@ -76,7 +76,7 @@ export const pushService = {
       url: campaign.content.buttonUrl || '/',
       campaignId: campaign.id,
     })
-    const subject = `mailto:${settings.notifications?.replyTo || settings.notifications?.fromEmail || 'hello@meridianstay.com'}`
+    const subject = `mailto:${settings.notifications?.replyTo || settings.notifications?.fromEmail || 'hello@bookmygetaway.in'}`
 
     let sent = 0
     let failed = 0
@@ -120,7 +120,7 @@ export const pushService = {
       icon: '/icons/icon-192.png',
       url: `${siteOrigin()}/`,
     })
-    const results = await Promise.all(subs.map((s) => sendPush(s, payload, keys, `mailto:admin@meridianstay.com`)))
+    const results = await Promise.all(subs.map((s) => sendPush(s, payload, keys, `mailto:admin@bookmygetaway.in`)))
     const ok = results.filter((r) => r.ok).length
     if (!ok) throw new AppError(502, `The push service refused it: ${results[0]?.detail || 'no reason given'}`)
     return { sentTo: ok }

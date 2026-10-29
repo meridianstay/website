@@ -23,7 +23,7 @@ export const PAYMENT_METHODS: PaymentMethod[] = ['upi', 'card', 'netbanking']
 
 // No 0/O or 1/I so codes are easy to read out over the phone.
 const ALPHABET = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789'
-export const newBookingCode = () => `MS-${Array.from({ length: 6 }, () => ALPHABET[randomInt(ALPHABET.length)]).join('')}`
+export const newBookingCode = () => `BMG-${Array.from({ length: 6 }, () => ALPHABET[randomInt(ALPHABET.length)]).join('')}`
 
 export interface BookingRequest {
   propertyId: number; checkIn: string; checkOut: string; guests: number
@@ -223,7 +223,7 @@ export const bookingService = {
     const totalMinor = slot.totalMinor - discountMinor
     const instant = (property.management ?? 'self') === 'managed'
     const rates = (await contentRepo.settings()).commission
-    // A client on a paid plan has already paid Meridian for the year, so their bookings carry no
+    // A client on a paid plan has already paid Book My Get Away for the year, so their bookings carry no
     // commission. Free clients pay per booking as they always have. The rate is written onto the
     // booking as it stands today, so a plan that lapses later never reaches back into one already made.
     const waived = (await subscriptionService.entitlementsOf(property.hostId)).commissionFree
@@ -381,7 +381,7 @@ export const bookingService = {
   /**
    * Guests can cancel until the day before check-in. Paid stays are refunded up to 48 hours before
    * check-in, otherwise minus the first night; paid day use in full up to 48 hours before, half up to 24 hours
-   * before, nothing later. Meridian's convenience fee (a percent of the total, set in Settings) is earned as
+   * before, nothing later. Book My Get Away's convenience fee (a percent of the total, set in Settings) is earned as
    * soon as the booking is paid, so a refund never returns more than the rest. Requests and unpaid checkouts
    * are cancelled free.
    */

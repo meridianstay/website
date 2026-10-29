@@ -18,7 +18,7 @@ export async function request<T>(path: string, init: RequestInit & { json?: unkn
       body: json === undefined ? rest.body : JSON.stringify(json),
     })
   } catch {
-    throw new ApiError(0, 'Can’t reach Meridian Stay right now. Check your connection and try again.')
+    throw new ApiError(0, 'Can’t reach Book My Get Away right now. Check your connection and try again.')
   }
   if (res.status === 204) return undefined as T
   const body = await res.json().catch(() => ({}))

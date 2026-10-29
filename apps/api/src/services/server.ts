@@ -42,7 +42,7 @@ function environment(): EnvVarCheck[] {
     {
       name: 'PUBLIC_SITE_URL', required: false,
       purpose: 'The address used in emails, texts and the sitemap. Guessed from the request when unset, which is wrong behind a proxy.',
-      fix: 'Set it to the live address, e.g. https://meridianstay.com',
+      fix: 'Set it to the live address, e.g. https://bookmygetaway.in',
     },
     {
       name: 'FIREBASE_STORAGE_BUCKET', required: false,
@@ -52,7 +52,7 @@ function environment(): EnvVarCheck[] {
     {
       name: 'CLIENT_SITE_DOMAIN', required: false,
       purpose: 'The domain clients’ own websites sit under. Decides which client an address belongs to.',
-      fix: 'Set it to the domain the *.<domain> wildcard is on, e.g. meridianstay.com',
+      fix: 'Set it to the domain the *.<domain> wildcard is on, e.g. bookmygetaway.in',
     },
     {
       name: 'CLIENT_DNS_CNAME', required: false,
@@ -62,7 +62,7 @@ function environment(): EnvVarCheck[] {
     {
       name: 'COOKIE_DOMAIN', required: false,
       purpose: 'Lets one sign-in work across the website, account, host and admin panels on the same domain.',
-      fix: 'Set it to the shared domain, e.g. .meridianstay.com',
+      fix: 'Set it to the shared domain, e.g. .bookmygetaway.in',
     },
     {
       name: 'SEED_DEMO_DATA', required: false,

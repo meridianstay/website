@@ -75,7 +75,7 @@ const hi: Dictionary = {
   'search.instantBook': 'तुरंत बुक करें',
   'search.dayUse': 'डे आउट',
   'stay.hostedBy': 'होस्ट: {name}',
-  'stay.verifiedHost': 'मेरिडियन सत्यापित होस्ट',
+  'stay.verifiedHost': 'बुक माय गेट अवे सत्यापित होस्ट',
   'stay.privateTitle': 'नाम और मालिक की जानकारी निजी है।',
   'stay.privateBody': 'प्रॉपर्टी का नाम, मालिक की जानकारी और पूरा पता आपकी बुकिंग कन्फ़र्म और भुगतान पूरा होते ही आपको मिल जाएगा।',
   'stay.aboutSpace': 'इस जगह के बारे में',
@@ -89,7 +89,7 @@ const hi: Dictionary = {
   'stay.watchVideo': 'वीडियो देखें',
   'stay.videoTour': 'वीडियो टूर',
   'stay.similar': 'आसपास ऐसी ही जगहें',
-  'stay.assured': 'मेरिडियन एश्योर्ड',
+  'stay.assured': 'बुक माय गेट अवे एश्योर्ड',
   'stay.promoted': 'प्रमोटेड',
   'stay.new': 'नया',
   'stay.bedrooms': '{count} बेडरूम',
@@ -162,7 +162,7 @@ const hi: Dictionary = {
   'footer.popularSearches': 'लोकप्रिय खोजें',
 
   // Property cards
-  'card.assuredHint': 'मेरिडियन एश्योर्ड: हमारी टीम ने देखा और जाँचा है',
+  'card.assuredHint': 'बुक माय गेट अवे एश्योर्ड: हमारी टीम ने देखा और जाँचा है',
   'card.promotedHint': 'इस होस्ट ने इस ठिकाने को प्रमोट करने के लिए भुगतान किया है',
   'card.view': 'विवरण देखें',
 
@@ -170,7 +170,7 @@ const hi: Dictionary = {
   'box.addDate': 'तारीख़ चुनें',
   'box.bookingType': 'बुकिंग का प्रकार',
   'box.fullyBooked': 'पूरी तरह बुक',
-  'box.instantNote': 'तुरंत बुकिंग · मेरिडियन स्टे द्वारा संचालित',
+  'box.instantNote': 'तुरंत बुकिंग · बुक माय गेट अवे स्टे द्वारा संचालित',
   'box.pickDate': 'तारीख़ चुनिए',
   'box.requestDayOut': 'डे आउट का अनुरोध भेजें',
   'box.reserveDayOut': 'डे आउट बुक करें',
@@ -181,7 +181,7 @@ const hi: Dictionary = {
 
   // Search form
   'form.checkInOut': 'चेक-इन / चेक-आउट',
-  'form.destPlaceholder': 'जगह, ठिकाने का नाम या कोड (MS007)',
+  'form.destPlaceholder': 'जगह, ठिकाने का नाम या कोड (BMG007)',
   'form.includes2': 'क़ीमतों में 2 मेहमान शामिल',
   'form.searchStays': 'ठिकाने खोजें',
   'form.searchDest': 'जगह खोजें',
@@ -304,7 +304,7 @@ const hi: Dictionary = {
   'stay.depositNote': 'चेक-इन पर होस्ट को दिया जाता है (नक़द या UPI) और कुछ नुक़सान न हो तो चेक-आउट पर लौटा दिया जाता है।',
   'stay.promotedStay': 'प्रमोटेड ठिकाना',
   'stay.quoteCode': 'हमारी टीम को यह कोड बताइए, या इसे खोजिए',
-  'stay.promise': 'मेरिडियन का वादा',
+  'stay.promise': 'बुक माय गेट अवे का वादा',
   'stay.theProperty': 'प्रॉपर्टी',
   'stay.theService': 'सेवा',
   'stay.watchTour': 'वीडियो टूर देखें',
@@ -350,7 +350,7 @@ const hi: Dictionary = {
   'checkout.datesJustBooked': 'वे तारीख़ें अभी-अभी बुक हो गईं',
   'checkout.takenNights': 'इनमें से कुछ रातें किसी और ने बुक कर लीं। ठिकाने के पेज पर नई तारीख़ें चुनिए।',
   'checkout.instantBook': 'तुरंत बुकिंग।',
-  'checkout.managedNote': 'मेरिडियन स्टे द्वारा संचालित, इसलिए आपकी बुकिंग तुरंत कन्फ़र्म होती है।',
+  'checkout.managedNote': 'बुक माय गेट अवे स्टे द्वारा संचालित, इसलिए आपकी बुकिंग तुरंत कन्फ़र्म होती है।',
   'checkout.confirmedStraightAway': 'आपकी बुकिंग तुरंत कन्फ़र्म हो जाती है',
   'checkout.requestGoesToHost': 'आपका अनुरोध सीधे होस्ट तक जाता है',
   'checkout.securedBy': 'Razorpay द्वारा सुरक्षित',
@@ -404,7 +404,7 @@ const hi: Dictionary = {
   'request.elsePlaceholder': 'पालतू जानवर चलें, पूल हो, झील के पास…',
 
   // Checkout notes
-  'checkout.testModeNote': 'मेरिडियन स्टे अभी परीक्षण में है, इसलिए कोई पैसा नहीं लिया जाता।',
+  'checkout.testModeNote': 'बुक माय गेट अवे स्टे अभी परीक्षण में है, इसलिए कोई पैसा नहीं लिया जाता।',
   'checkout.authoriseNote': 'आप Razorpay विंडो में भुगतान मंज़ूर करेंगे, पर पैसे तभी कटेंगे जब होस्ट {hours} घंटे में स्वीकार करें। मना करने या जवाब न देने पर रोक हट जाती है।',
 
   // Booking confirmation notes

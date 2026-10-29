@@ -8,7 +8,10 @@ describe('discovery', () => {
   beforeEach(resetDatabase)
 
   test('property codes and distances', () => {
-    assert.equal(propertyCode(7), 'MS007')
+    assert.equal(propertyCode(7), 'BMG007')
+    assert.equal(parsePropertyCode('bmg-7'), 7)
+    assert.equal(parsePropertyCode('BMG 0012'), 12)
+    // Codes printed before the rename are still quoted over the phone, so they still work.
     assert.equal(parsePropertyCode('ms-7'), 7)
     assert.equal(parsePropertyCode('MS 0012'), 12)
     assert.equal(parsePropertyCode('Coorg'), null)

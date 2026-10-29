@@ -1,7 +1,7 @@
 import { blankSubscription, type Subscription } from '@meridian/shared'
 import { C, all, col, nowISO } from '../store/db'
 
-// Collection: subscriptions/{hostId} — what a client has paid Meridian for, and until when.
+// Collection: subscriptions/{hostId} — what a client has paid Book My Get Away for, and until when.
 
 export const subscriptionsRepo = {
   async find(hostId: number): Promise<Subscription | null> {

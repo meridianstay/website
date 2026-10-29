@@ -255,7 +255,7 @@ describe('what leaves the API', () => {
     for (const key of PRIVATE_SETTING_KEYS) assert.ok(!(key in published), `${key} must not be sent to visitors`)
     // Notification wording was the worst of it: twelve messages on every page load.
     assert.ok(!JSON.stringify(published).includes(defaultSiteSettings.notifications.templates['booking.confirmed'].subject))
-    // A host is shown what Meridian's share will be, so commission stays.
+    // A host is shown what Book My Get Away's share will be, so commission stays.
     assert.ok('commission' in published)
     assert.ok('branding' in published && 'theme' in published && 'header' in published)
   })
@@ -327,5 +327,103 @@ describe('the Trips tab after the account panel grew a front page', () => {
     })
     await contentRepo.pointTripsTabAtTrips()
     assert.equal((await storedTabs()).find((t) => t.key === 'trips')!.url, '/offers')
+  })
+})
+
+describe('renaming a site that had already saved its own content', () => {
+  beforeEach(resetDatabase)
+
+  test('the old name is replaced wherever it was stored, and nothing else is', async () => {
+    const { footer } = await contentRepo.settings()
+    await col(C.settings).doc('footer').set({
+      value: { ...footer, copyright: '© {year} Meridian Stay Inc. All rights reserved.' },
+      updatedAt: nowISO(), updatedBy: null,
+    })
+    await col(C.pages).doc('about-us').set({
+      slug: 'about-us', title: 'About Meridian Stay', published: true,
+      intro: 'Meridian connects travellers with nature stays. Write to us at hello@meridianstay.com.',
+      sections: [{ heading: 'Our promise', body: ['Every stay on Meridian is visited by our team.', 'Nothing about this sentence mentions the brand.'] }],
+      updatedAt: nowISO(), updatedBy: null,
+    })
+
+    await contentRepo.renameToBookMyGetAway()
+
+    const stored = (await col(C.settings).doc('footer').get()).data()!.value as { copyright: string; columns: unknown[] }
+    assert.equal(stored.copyright, '© {year} Book My Get Away Inc. All rights reserved.')
+    assert.ok(stored.columns.length, 'the rest of the footer survives')
+
+    const page = (await col(C.pages).doc('about-us').get()).data() as { title: string; intro: string; sections: { body: string[] }[] }
+    assert.equal(page.title, 'About Book My Get Away')
+    assert.equal(page.intro, 'Book My Get Away connects travellers with nature stays. Write to us at hello@bookmygetaway.in.')
+    assert.equal(page.sections[0].body[0], 'Every stay on Book My Get Away is visited by our team.')
+    assert.equal(page.sections[0].body[1], 'Nothing about this sentence mentions the brand.', 'wording around the name is untouched')
+  })
+
+  test('the wordmark is split into the new name and accent', async () => {
+    const { branding } = await contentRepo.settings()
+    const apps = structuredClone(branding.apps)
+    apps.website = { ...apps.website, name: 'Meridian', accent: 'Stay' }
+    apps.admin = { ...apps.admin, name: 'Acme', accent: 'Travel' }
+    await col(C.settings).doc('branding').set({ value: { ...branding, apps }, updatedAt: nowISO(), updatedBy: null })
+
+    await contentRepo.renameToBookMyGetAway()
+
+    const saved = (await col(C.settings).doc('branding').get()).data()!.value as { apps: Record<string, { name: string; accent: string }> }
+    assert.deepEqual([saved.apps.website.name, saved.apps.website.accent], ['Book My', 'Get Away'])
+    assert.deepEqual([saved.apps.admin.name, saved.apps.admin.accent], ['Acme', 'Travel'], 'a name an admin chose is left alone')
+  })
+
+  test('the invoice prefix moves only if it was still the old default', async () => {
+    const { gst } = await contentRepo.settings()
+    await col(C.settings).doc('gst').set({ value: { ...gst, invoicePrefix: 'MS' }, updatedAt: nowISO(), updatedBy: null })
+    await contentRepo.renameToBookMyGetAway()
+    assert.equal(((await col(C.settings).doc('gst').get()).data()!.value as { invoicePrefix: string }).invoicePrefix, 'BMG')
+
+    await col(C.settings).doc('gst').set({ value: { ...gst, invoicePrefix: 'GVF' }, updatedAt: nowISO(), updatedBy: null })
+    await contentRepo.renameToBookMyGetAway()
+    assert.equal(((await col(C.settings).doc('gst').get()).data()!.value as { invoicePrefix: string }).invoicePrefix, 'GVF')
+  })
+
+  test('running it twice changes nothing the second time', async () => {
+    const { footer } = await contentRepo.settings()
+    await col(C.settings).doc('footer').set({
+      value: { ...footer, copyright: '© {year} Meridian Stay Inc.' }, updatedAt: nowISO(), updatedBy: null,
+    })
+    assert.ok((await contentRepo.renameToBookMyGetAway()) > 0)
+    assert.equal(await contentRepo.renameToBookMyGetAway(), 0, 'nothing left to rename')
+  })
+})
+
+describe('what the rename must not touch', () => {
+  beforeEach(resetDatabase)
+
+  test('the registered company name on tax invoices is left alone', async () => {
+    const { gst } = await contentRepo.settings()
+    await col(C.settings).doc('gst').set({
+      value: { ...gst, legalName: 'Meridian Stay Private Limited', gstin: '29ABCDE1234F1Z5', invoicePrefix: 'MS' },
+      updatedAt: nowISO(), updatedBy: null,
+    })
+
+    await contentRepo.renameToBookMyGetAway()
+
+    const saved = (await col(C.settings).doc('gst').get()).data()!.value as { legalName: string; gstin: string; invoicePrefix: string }
+    // Renaming a trading name does not rename the company at the registrar, and a GSTIN belongs to
+    // the registered name. Only the prefix, which is ours to choose, moves.
+    assert.equal(saved.legalName, 'Meridian Stay Private Limited')
+    assert.equal(saved.gstin, '29ABCDE1234F1Z5')
+    assert.equal(saved.invoicePrefix, 'BMG')
+  })
+
+  test('invoices already issued keep the name they were raised under', async () => {
+    const number = 'MS/26-27/0001'
+    await col(C.invoices).doc(number.replace(/\//g, '-')).set({
+      number, kind: 'booking', bookingCode: 'MS-ABC123',
+      supplier: { legalName: 'Meridian Stay Private Limited', gstin: '29ABCDE1234F1Z5' },
+      description: 'Accommodation booked on Meridian Stay',
+    })
+    await contentRepo.renameToBookMyGetAway()
+    const after = (await col(C.invoices).doc(number.replace(/\//g, '-')).get()).data() as { supplier: { legalName: string }; description: string }
+    assert.equal(after.supplier.legalName, 'Meridian Stay Private Limited', 'a tax document is never rewritten')
+    assert.equal(after.description, 'Accommodation booked on Meridian Stay')
   })
 })

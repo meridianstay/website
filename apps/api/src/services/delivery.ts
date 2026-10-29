@@ -126,11 +126,11 @@ export async function sendEmail(cfg: SmtpConfig, message: EmailMessage): Promise
     }).catch((err) => { throw new AppError(502, `Could not reach ${cfg.host}:${cfg.port}. ${(err as Error).message}`) })
 
     await session.say(null, '220')
-    await session.say(`EHLO ${cfg.fromHost ?? 'meridianstay.com'}`, '250')
+    await session.say(`EHLO ${cfg.fromHost ?? 'bookmygetaway.in'}`, '250')
     if (!cfg.secure) {
       await session.say('STARTTLS', '220')
       await session.upgrade(cfg.host)
-      await session.say(`EHLO ${cfg.fromHost ?? 'meridianstay.com'}`, '250')
+      await session.say(`EHLO ${cfg.fromHost ?? 'bookmygetaway.in'}`, '250')
     }
     await session.say('AUTH LOGIN', '334')
     await session.say(Buffer.from(cfg.user, 'utf8').toString('base64'), '334')

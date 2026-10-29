@@ -48,9 +48,9 @@ export function Settings() {
         <PaymentsPanel />
         <div className="space-y-8">
           <SettingsForm title="Commission & convenience fee" save={() => adminApi.saveCommission(commission)}>
-            <p className="text-sm text-slate-500">Meridian’s share of each booking, taken from the host’s payout. Guests pay no booking fee. New rates apply to new bookings only.</p>
+            <p className="text-sm text-slate-500">Book My Get Away’s share of each booking, taken from the host’s payout. Guests pay no booking fee. New rates apply to new bookings only.</p>
             <div className="grid grid-cols-2 gap-4">
-              <PercentField id="managed-pct" label="Managed properties" detail="Run and maintained by Meridian · instant booking" value={commission.managedPct} onChange={(managedPct) => setCommission({ ...commission, managedPct })} />
+              <PercentField id="managed-pct" label="Managed properties" detail="Run and maintained by Book My Get Away · instant booking" value={commission.managedPct} onChange={(managedPct) => setCommission({ ...commission, managedPct })} />
               <PercentField id="self-pct" label="Self-managed properties" detail="Run by the host · request to book" value={commission.selfPct} onChange={(selfPct) => setCommission({ ...commission, selfPct })} />
             </div>
             <p className="text-xs text-slate-500">Set each listing’s type on the Listings page.</p>
@@ -64,7 +64,7 @@ export function Settings() {
             </div>
           </SettingsForm>
           <SettingsForm title="Host payouts" save={() => adminApi.savePayoutSettings(payouts)}>
-            <p className="text-sm text-slate-500">When a host's earnings become payable, and how often you send them. Meridian never moves money on its own — your team makes each transfer.</p>
+            <p className="text-sm text-slate-500">When a host's earnings become payable, and how often you send them. Book My Get Away never moves money on its own — your team makes each transfer.</p>
             <div className="grid sm:grid-cols-2 gap-4">
               <div>
                 <label htmlFor="hold-days" className="block text-xs font-bold uppercase text-slate-500 mb-1">Hold after check-out</label>
@@ -97,7 +97,7 @@ export function Settings() {
 
           <Panel title="Client websites &amp; plans">
             <p className="text-sm text-slate-500">
-              Each client can have a website of their own, at their Meridian address or their own domain, carrying their logo beside yours. What they
+              Each client can have a website of their own, at their Book My Get Away address or their own domain, carrying their logo beside yours. What they
               write is checked by your team before it goes public, and what they pay for it is set on its own page.
             </p>
             <div className="flex flex-wrap gap-3 mt-4">
@@ -156,7 +156,7 @@ export function Settings() {
               {[2, 3, 4, 5, 6, 8, 10].map((n) => <option key={n} value={n}>{n} MB</option>)}
             </select>
             <p className="text-xs text-slate-500">This is the file a host picks. Photos are cropped and shrunk in their browser before they are sent, so what reaches storage is a few hundred kilobytes whatever they choose.</p>
-            <p className="text-xs text-slate-500 pt-2">Video tours aren’t uploaded here: a listing links to a video on the Meridian YouTube channel, which keeps pages fast and storage costs low.</p>
+            <p className="text-xs text-slate-500 pt-2">Video tours aren’t uploaded here: a listing links to a video on the Book My Get Away YouTube channel, which keeps pages fast and storage costs low.</p>
           </SettingsForm>
         </div>
       </div>

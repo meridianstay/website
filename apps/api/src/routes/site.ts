@@ -44,7 +44,7 @@ siteRoutes.get('/ical/:token', async (c) => {
   const body = await calendarSyncService.publish(token)
   return c.body(body, 200, {
     'Content-Type': 'text/calendar; charset=utf-8',
-    'Content-Disposition': 'attachment; filename="meridian-stay.ics"',
+    'Content-Disposition': 'attachment; filename="bookmygetaway-stay.ics"',
     // Other platforms poll this; a few minutes of cache spares us their retries.
     'Cache-Control': 'public, max-age=300',
   })

@@ -153,6 +153,74 @@ export const contentRepo = {
     await clear()
   },
 
+  /**
+   * The platform was renamed from Meridian Stay to Book My Get Away in 0.48.0. Defaults alone
+   * cannot do it: every setting and page the control centre has ever saved is stored, and a stored
+   * value wins over the default, so a site that had saved its footer, its homepage or its About
+   * page would have gone on saying the old name forever.
+   *
+   * This rewrites the old name wherever it is stored as text, in settings, content pages and the
+   * About page alike. Only the name changes — wording anyone has written around it is untouched,
+   * and a document with no mention of it is not written to at all.
+   */
+  async renameToBookMyGetAway() {
+    const rename = (value: unknown): unknown => {
+      if (typeof value === 'string') {
+        return value
+          .replace(/Meridian Stay/g, 'Book My Get Away')
+          .replace(/\bMeridian\b/g, 'Book My Get Away')
+          .replace(/meridianstay\.com/g, 'bookmygetaway.in')
+      }
+      if (Array.isArray(value)) return value.map(rename)
+      if (value && typeof value === 'object') {
+        return Object.fromEntries(Object.entries(value as Record<string, unknown>).map(([k, v]) => [k, rename(v)]))
+      }
+      return value
+    }
+    /**
+     * Writes the document back only when the rename actually changed something in it. The `gst`
+     * document is left out: it holds the registered company name the invoices are raised under,
+     * and renaming a trading name does not rename a company at the registrar. Changing it here
+     * would put a name on a tax document that no GSTIN belongs to.
+     */
+    const sweep = async (ref: FirebaseFirestore.CollectionReference, field: 'value' | null) => {
+      const snap = await ref.get()
+      let touched = 0
+      for (const doc of snap.docs) {
+        if (field === 'value' && doc.id === 'gst') continue
+        const data = doc.data()
+        const before = field ? data[field] : data
+        const after = rename(before)
+        if (JSON.stringify(before) === JSON.stringify(after)) continue
+        await doc.ref.set((field ? { [field]: after } : after) as FirebaseFirestore.DocumentData, { merge: true })
+        touched += 1
+      }
+      return touched
+    }
+    const touched = (await sweep(col(C.settings), 'value')) + (await sweep(col(C.pages), null))
+
+    // The wordmark is a name and a coloured accent, so it is split rather than replaced: a site
+    // still on "Meridian" + "Stay" becomes "Book My" + "Get Away". One an admin has made their own
+    // is left exactly as it is.
+    const brandRef = col(C.settings).doc('branding')
+    const branding = (await brandRef.get()).data()?.value as { apps?: Record<string, { name?: string; accent?: string }> } | undefined
+    if (branding?.apps) {
+      const apps = Object.fromEntries(Object.entries(branding.apps).map(([key, app]) => [
+        key,
+        app?.name === 'Book My Get Away' && app?.accent === 'Stay' ? { ...app, name: 'Book My', accent: 'Get Away' } : app,
+      ]))
+      await brandRef.set({ value: { ...branding, apps } }, { merge: true })
+    }
+
+    // The invoice prefix: only one still on the old default is moved, never one chosen by hand.
+    const gstRef = col(C.settings).doc('gst')
+    const gst = (await gstRef.get()).data()?.value as { invoicePrefix?: string } | undefined
+    if (gst?.invoicePrefix === 'MS') await gstRef.set({ value: { ...gst, invoicePrefix: 'BMG' } }, { merge: true })
+
+    if (touched || branding || gst) await clear()
+    return touched
+  },
+
   /** Adds any missing default settings and pages. Never overwrites admin edits. */
   async ensureDefaults() {
     for (const [key, value] of Object.entries(defaultSiteSettings)) {
@@ -164,5 +232,6 @@ export const contentRepo = {
     await clear()
     await this.fixCreditWording()
     await this.pointTripsTabAtTrips()
+    await this.renameToBookMyGetAway()
   },
 }

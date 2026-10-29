@@ -46,7 +46,7 @@ export const invoiceService = {
       hostTaxRepo.find(booking.hostId),
     ])
     // The client owns the property, so their registration is the one the guest is invoiced under.
-    // A client who hasn't registered falls to Meridian's, which is what the platform is there for.
+    // A client who hasn't registered falls to Book My Get Away's, which is what the platform is there for.
     const supplier = supplierFor(gst, hostGst)
 
     const total = booking.totalMinor / 100
@@ -72,7 +72,7 @@ export const invoiceService = {
       sac: gst.sac,
       nights: booking.nights,
       perNight,
-      // Whose state decides CGST+SGST or IGST is whoever is supplying, not always Meridian.
+      // Whose state decides CGST+SGST or IGST is whoever is supplying, not always Book My Get Away.
       lines: taxLines(total, perNight, { ...gst, stateCode: supplier.stateCode }, placeOfSupply),
       against: null,
     }, gst.invoicePrefix)
@@ -134,7 +134,7 @@ export const invoiceService = {
 
   /**
    * A client saving their own GST registration. Checked rather than trusted: an invoice raised
-   * under a wrong GSTIN is worse than one raised under Meridian's.
+   * under a wrong GSTIN is worse than one raised under Book My Get Away's.
    */
   async saveHostGst(host: Me, body: Record<string, unknown>) {
     const gstin = str(body.gstin).trim().toUpperCase()
@@ -203,7 +203,7 @@ export const invoiceService = {
     return {
       invoices: all,
       registration,
-      /** Invoices raised under Meridian's registration because this client had none at the time. */
+      /** Invoices raised under Book My Get Away's registration because this client had none at the time. */
       raisedByPlatform: all.filter((i) => i.raisedBy === 'platform' && i.kind === 'booking').length,
       totals: {
         count: booked.length,

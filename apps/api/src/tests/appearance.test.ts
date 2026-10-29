@@ -17,13 +17,13 @@ describe('Logos, header and footer', () => {
     const branding = structuredClone(defaultBranding)
     branding.apps.website.logoUrl = 'https://cdn.example.com/website.png'
     branding.apps.host.logoUrl = 'https://cdn.example.com/host.png'
-    branding.apps.host.name = 'Meridian Partners'
+    branding.apps.host.name = 'Book My Get Away Partners'
     branding.apps.host.showName = false
     await appearanceService.saveBranding(admin.me, body(branding))
 
     const saved = (await contentRepo.settings()).branding
     assert.equal(saved.apps.website.logoUrl, 'https://cdn.example.com/website.png')
-    assert.equal(saved.apps.host.name, 'Meridian Partners')
+    assert.equal(saved.apps.host.name, 'Book My Get Away Partners')
     assert.equal(saved.apps.host.showName, false)
     assert.equal(saved.apps.admin.logoUrl, '', 'the control centre keeps its own (empty) logo')
   })
@@ -53,7 +53,7 @@ describe('Logos, header and footer', () => {
     const filled = withBrandingDefaults(old)
     assert.equal(filled.apps.website.logoUrl, 'https://cdn.example.com/old.png')
     assert.equal(filled.apps.website.faviconUrl, '')
-    assert.equal(filled.apps.host.name, 'Meridian')
+    assert.equal(filled.apps.host.name, 'Book My')
     assert.equal(filled.placeholderUrl, '')
   })
 
@@ -90,18 +90,18 @@ describe('Logos, header and footer', () => {
     const admin = await createUser('admin')
     const footer = structuredClone(defaultFooter)
     footer.columns = [{ heading: 'Company', links: [{ label: 'About us', url: '/about' }] }]
-    footer.social.instagram = 'https://instagram.com/meridianstay'
-    footer.copyright = '© {year} Meridian Stay'
+    footer.social.instagram = 'https://instagram.com/bookmygetaway'
+    footer.copyright = '© {year} Book My Get Away'
     const saved = await appearanceService.saveFooter(admin.me, body(footer))
     assert.equal(saved.columns.length, 1)
-    assert.equal(saved.social.instagram, 'https://instagram.com/meridianstay')
+    assert.equal(saved.social.instagram, 'https://instagram.com/bookmygetaway')
     assert.equal(saved.credit.label, defaultFooter.credit.label, 'the studio credit is kept')
-    assert.equal(saved.copyright, '© {year} Meridian Stay')
+    assert.equal(saved.copyright, '© {year} Book My Get Away')
 
     const bad = structuredClone(defaultFooter)
     bad.columns[0].heading = ''
     bad.columns[1].links[0].url = 'ftp://example.com'
-    bad.social.facebook = 'facebook.com/meridian'
+    bad.social.facebook = 'facebook.com/bookmygetaway'
     const err = await appError(() => appearanceService.saveFooter(admin.me, body(bad)))
     assert.ok(err.fields['columns.0.heading'])
     assert.ok(err.fields['columns.1.links.0.url'])

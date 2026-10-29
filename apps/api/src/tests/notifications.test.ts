@@ -94,12 +94,12 @@ describe('notifications', () => {
   test('the wording is saved, and an email still needs a subject', async () => {
     const admin = await createUser('admin')
     const next = structuredClone(defaultNotifications)
-    next.fromName = 'Meridian Stay India'
-    next.fromEmail = 'bookings@meridianstay.com'
+    next.fromName = 'Book My Get Away India'
+    next.fromEmail = 'bookings@bookmygetaway.in'
     next.templates['booking.confirmed'].subject = 'Booked: {property}'
     const saved = await notifyService.saveSettings(admin.me, body(next))
     assert.equal(saved.templates['booking.confirmed'].subject, 'Booked: {property}')
-    assert.equal((await contentRepo.settings()).notifications.fromName, 'Meridian Stay India')
+    assert.equal((await contentRepo.settings()).notifications.fromName, 'Book My Get Away India')
 
     const bad = structuredClone(defaultNotifications)
     bad.fromEmail = 'not-an-address'

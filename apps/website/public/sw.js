@@ -1,6 +1,6 @@
-// Meridian Stay service worker: makes the website installable as an app and shows a friendly page when offline.
+// Book My Get Away service worker: makes the website installable as an app and shows a friendly page when offline.
 // It deliberately caches nothing else, so people always get the latest version of every page, price and booking.
-const CACHE = 'meridian-offline-v1'
+const CACHE = 'bookmygetaway-offline-v1'
 const OFFLINE_URL = '/offline.html'
 
 self.addEventListener('install', (event) => {
@@ -32,9 +32,9 @@ self.addEventListener('push', (event) => {
   try {
     message = event.data.json()
   } catch {
-    message = { title: 'Meridian Stay', body: event.data.text() }
+    message = { title: 'Book My Get Away', body: event.data.text() }
   }
-  event.waitUntil(self.registration.showNotification(message.title || 'Meridian Stay', {
+  event.waitUntil(self.registration.showNotification(message.title || 'Book My Get Away', {
     body: message.body || '',
     icon: message.icon || '/icons/icon-192.png',
     badge: '/icons/icon-192.png',

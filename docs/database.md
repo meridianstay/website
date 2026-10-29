@@ -1,6 +1,6 @@
 # Data and backend
 
-Meridian Stay runs entirely on **Firebase**:
+Book My Get Away runs entirely on **Firebase**:
 
 | Firebase service | What it holds |
 | --- | --- |
@@ -34,7 +34,7 @@ Documents use short numeric ids (listing 7, user 12…) so links stay readable. 
 | `properties` | listing id | Everything about a stay: title, type, location and map position, price, rooms, `status`, `rejectionReason`, `coverImageUrl`, `photos`, `videoUrl`, `amenities`, `ratingAvg`, `reviewCount`, `featuredRank`, `management`, `areaSqft`, `gatheringCapacity`, `checkInTime`, `checkOutTime`, `houseRules`, `securityDepositMinor`, `address` (private), `overnight`, `dayUse` (`enabled`, `blockHours`, `priceMinor`, `extraHourMinor`, `opensAt`, `closesAt`) (`managed`: instant booking; `self`: requests) |
 | `properties/{id}/days` | a date | Day-use bookings that day: `{ slots: [{ ref, start, end, holdUntil }] }`. How they fit around overnight stays is in `repositories/schedule.ts`. |
 | `properties/{id}/nights` | a date, e.g. `2026-10-21` | One document per booked, requested or blocked night: `{ kind: "booking" \| "block", ref, holdUntil }`. `holdUntil` is set while a payment or host answer is pending; once it has passed, the night counts as free. |
-| `bookings` | booking code, e.g. `MS-7K3F9Q` | Dates, guests, a **copy of the price and listing at booking time**, the guest's contact details, `status` (`AwaitingPayment`, `Requested`, `Confirmed`, `Declined`, `Expired`, `Cancelled`), `management`, `commissionPct`, `commissionMinor`, `hostPayoutMinor`, `paymentStatus`, `razorpayOrderId`, `razorpayPaymentId`, `refundedMinor`, `expiresAt`, `declineReason`, `reviewed` |
+| `bookings` | booking code, e.g. `BMG-7K3F9Q` | Dates, guests, a **copy of the price and listing at booking time**, the guest's contact details, `status` (`AwaitingPayment`, `Requested`, `Confirmed`, `Declined`, `Expired`, `Cancelled`), `management`, `commissionPct`, `commissionMinor`, `hostPayoutMinor`, `paymentStatus`, `razorpayOrderId`, `razorpayPaymentId`, `refundedMinor`, `expiresAt`, `declineReason`, `reviewed` |
 | `reviews` | review id | `propertyId`, `rating`, `comment`, `authorName`, `bookingCode`, `hiddenAt` |
 | `availabilityBlocks` | block id | Nights a host has closed: `propertyId`, `checkIn`, `checkOut`, `note` |
 | `wishlists` | `{userId}_{propertyId}` | Stays a guest has saved |

@@ -78,7 +78,7 @@ export function buildICS(name: string, events: CalEvent[]): string {
   const lines = [
     'BEGIN:VCALENDAR',
     'VERSION:2.0',
-    'PRODID:-//Meridian Stay//Calendar//EN',
+    'PRODID:-//Book My Get Away//Calendar//EN',
     'CALSCALE:GREGORIAN',
     'METHOD:PUBLISH',
     `X-WR-CALNAME:${escape(name)}`,

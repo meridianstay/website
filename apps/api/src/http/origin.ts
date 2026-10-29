@@ -15,4 +15,4 @@ export const rememberOrigin: MiddlewareHandler = async (c, next) => {
 }
 
 /** Where the site lives, for links inside emails and texts. */
-export const siteOrigin = () => process.env.PUBLIC_SITE_URL || lastSeen || 'https://meridianstay.com'
+export const siteOrigin = () => process.env.PUBLIC_SITE_URL || lastSeen || 'https://bookmygetaway.in'

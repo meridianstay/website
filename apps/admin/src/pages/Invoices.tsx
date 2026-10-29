@@ -35,7 +35,7 @@ export function Invoices() {
     <>
       <PageHeader
         title="Tax invoices"
-        description="Every invoice and credit note raised, whether under a client's own registration or Meridian's. An invoice is written once and never changed, so a rate you alter today cannot rewrite last month."
+        description="Every invoice and credit note raised, whether under a client's own registration or Book My Get Away's. An invoice is written once and never changed, so a rate you alter today cannot rewrite last month."
       />
 
       {!register.ready && (
@@ -48,7 +48,7 @@ export function Invoices() {
 
       <div className="grid grid-cols-2 lg:grid-cols-6 gap-4 sm:gap-5 mb-8">
         <Stat label="Invoices" value={String(register.totals.count)} hint={register.totals.credits ? `${register.totals.credits} credit notes` : 'no credit notes'} />
-        <Stat label="Raised by Meridian" value={String(register.invoices.filter((i) => i.raisedBy === 'platform' && i.kind === 'booking').length)} hint="yours to file" />
+        <Stat label="Raised by Book My Get Away" value={String(register.invoices.filter((i) => i.raisedBy === 'platform' && i.kind === 'booking').length)} hint="yours to file" />
         <Stat label="Taxable value" value={formatPrice(register.totals.taxable)} hint="before tax" />
         <Stat label="CGST" value={formatPrice(register.totals.cgst)} hint="within the state" />
         <Stat label="SGST" value={formatPrice(register.totals.sgst)} hint="within the state" />
@@ -117,7 +117,7 @@ function Row({ invoice: i }: { invoice: Invoice }) {
       <td className="px-2 py-2.5 text-slate-700">{i.recipient.name}</td>
       <td className="px-2 py-2.5">
         <span className={`px-2 py-0.5 rounded-full text-[10px] font-bold uppercase ${i.raisedBy === 'owner' ? 'bg-slate-100 text-slate-600' : 'bg-brand-100 text-brand-700'}`}>
-          {i.raisedBy === 'owner' ? 'The owner' : 'Meridian'}
+          {i.raisedBy === 'owner' ? 'The owner' : 'Book My Get Away'}
         </span>
         {i.raisedBy === 'owner' && <span className="block text-[11px] text-slate-500 mt-0.5 font-mono">{i.supplier.gstin}</span>}
       </td>
@@ -190,7 +190,7 @@ function GstForm({ settings, onSaved }: { settings: GstSettings; onSaved: () => 
           </div>
           <div>
             <label htmlFor="legalName" className="block text-xs font-bold uppercase text-slate-500 mb-1">Registered name</label>
-            <input id="legalName" value={form.legalName} onChange={(e) => set('legalName', e.target.value)} className={input} placeholder="Meridian Stay Private Limited" />
+            <input id="legalName" value={form.legalName} onChange={(e) => set('legalName', e.target.value)} className={input} placeholder="Book My Get Away Private Limited" />
             {fields.legalName && <p className="text-xs text-rose-600 font-semibold mt-1">{fields.legalName}</p>}
           </div>
           <div>

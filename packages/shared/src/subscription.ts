@@ -1,7 +1,7 @@
-// What a client pays Meridian for, once a year. Listing on the marketplace is what they came for;
+// What a client pays Book My Get Away for, once a year. Listing on the marketplace is what they came for;
 // the plan decides how much of a website of their own they get with it.
 //
-//   Free          — a website at <business-name>.meridianstay.com, one stay. Nobody pays for this.
+//   Free          — a website at <business-name>.bookmygetaway.in, one stay. Nobody pays for this.
 //   Single stay   — the same, at the client's own domain.
 //   Multiple      — every branch they run on that one website.
 //   Everything    — the above, plus rearranging the page themselves.
@@ -16,10 +16,10 @@ export interface PlanFeatures {
   maxStaysOnSite: number
   /** Whether they may rearrange their landing page themselves. */
   pageEditor: boolean
-  /** Whether they may point their own domain at it. Free sites live on the Meridian subdomain. */
+  /** Whether they may point their own domain at it. Free sites live on the Book My Get Away subdomain. */
   customDomain: boolean
   /**
-   * Whether Meridian takes no commission on their bookings. A paid plan is bought instead of the
+   * Whether Book My Get Away takes no commission on their bookings. A paid plan is bought instead of the
    * commission, not as well as it; Free clients pay per booking as they always have.
    */
   commissionFree: boolean
@@ -44,10 +44,10 @@ export const defaultClientPlans: ClientPlan[] = [
     tagline: 'A website on us, from the day you join.',
     features: { maxStaysOnSite: 1, pageEditor: false, customDomain: false, commissionFree: false },
     perks: [
-      'Your stay listed on the Meridian marketplace',
-      'Your own website at your-business-name.meridianstay.com',
+      'Your stay listed on the Book My Get Away marketplace',
+      'Your own website at your-business-name.bookmygetaway.in',
       'Bookings, calendar, guests and payouts in your portal',
-      'Meridian’s commission is taken from each booking, as it always has been',
+      'Book My Get Away’s commission is taken from each booking, as it always has been',
     ],
   },
   {
@@ -169,7 +169,7 @@ export const planById = (plans: ClientPlan[], id: PlanId | null) => plans.find((
 
 /**
  * What this client may actually do right now. Everyone has a website: without a plan that is paid
- * up, they fall back to Free, which is a real website on a Meridian subdomain rather than nothing.
+ * up, they fall back to Free, which is a real website on a Book My Get Away subdomain rather than nothing.
  */
 export function entitlements(plans: ClientPlan[], s: Pick<Subscription, 'status' | 'expiresAt' | 'planId'>, now?: string): PlanFeatures & { ownWebsite: boolean } {
   const paid = subscriptionActive(s, now) ? planById(plans, s.planId) : null

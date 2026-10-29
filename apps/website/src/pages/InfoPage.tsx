@@ -38,7 +38,7 @@ export function InfoPage() {
       {page.draft && (
         <p className="mt-5 text-xs font-semibold text-amber-800 bg-amber-50 border border-amber-100 rounded-xl p-3">
           <i className="fa-solid fa-triangle-exclamation mr-1.5" aria-hidden="true"></i>
-          Draft: this page will be finalised before Meridian Stay launches.
+          Draft: this page will be finalised before Book My Get Away launches.
         </p>
       )}
       <div className="mt-10 space-y-8">

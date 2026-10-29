@@ -1,5 +1,5 @@
 // Paying hosts what they have earned. Every booking already works out the host's share and
-// Meridian's commission; this is the part that collects where to send it, decides when it becomes
+// Book My Get Away's commission; this is the part that collects where to send it, decides when it becomes
 // payable, and keeps a record of what was actually sent.
 
 /** Where a host wants their money. Stored encrypted; views only ever carry the last four digits. */
@@ -84,7 +84,7 @@ export interface PayoutSettings {
   holdDays: number
   /** Nothing smaller than this is paid, so tiny transfers don't cost more than they carry. */
   minimumPayout: number
-  /** How often your team runs payouts. Meridian doesn't send money on its own. */
+  /** How often your team runs payouts. Book My Get Away doesn't send money on its own. */
   schedule: 'weekly' | 'fortnightly' | 'monthly' | 'manual'
 }
 

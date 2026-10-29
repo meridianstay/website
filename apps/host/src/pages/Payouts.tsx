@@ -5,7 +5,7 @@ import { ApiError, hostApi } from '@meridian/shared/client'
 
 // Host portal → Payouts. What you have earned, what is still inside its hold period, what has been
 // sent, and where it goes. Bank details are stored encrypted and only ever shown back as the last
-// four digits — nobody at Meridian sees the whole number unless they are making the transfer.
+// four digits — nobody at Book My Get Away sees the whole number unless they are making the transfer.
 
 const input = 'w-full bg-slate-50 border border-slate-200 rounded-2xl p-3 text-sm focus:outline-none focus:border-brand-500'
 const label = 'block text-xs font-bold uppercase text-slate-500 mb-1'
@@ -52,9 +52,9 @@ export function Payouts() {
   return (
     <>
       <PageHeader
-        eyebrow="Meridian Host Portal"
+        eyebrow="Book My Get Away Host Portal"
         title="Payouts"
-        description="Your share of every booking, after Meridian’s commission. Earnings are released a couple of days after each guest checks out, once any late cancellation has settled."
+        description="Your share of every booking, after Book My Get Away’s commission. Earnings are released a couple of days after each guest checks out, once any late cancellation has settled."
       />
 
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 sm:gap-6 mb-8">

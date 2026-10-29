@@ -39,13 +39,13 @@ export interface PropertySummary {
   overnight: boolean
   /** Day-use price for the base block of hours, when offered. */
   dayUse: { price: number; blockHours: number } | null
-  /** Inspected and verified by the Meridian team. */
+  /** Inspected and verified by the Book My Get Away team. */
   assured: boolean
   /** Host discount in percent; `price` is before it, `priceNow` after. */
   discountPct: number
   /**
    * The client's own website, when they have one. The marketplace links to it, opening it in its
-   * own tab: the guest came through Meridian but finishes on the client's site.
+   * own tab: the guest came through Book My Get Away but finishes on the client's site.
    */
   site: { businessName: string; url: string } | null
   priceNow: number
@@ -280,7 +280,7 @@ export type HostBooking = BookingDetail & {
 }
 
 export interface HostStats {
-  /** Payouts after Meridian's commission. */
+  /** Payouts after Book My Get Away's commission. */
   earnings: number
   /** Requests waiting for this host's answer. */
   requests: number
@@ -289,11 +289,11 @@ export interface HostStats {
   rated: number
   avgRating: number | null
   upcoming: number
-  /** Listings sent back by the Meridian team, waiting on the host. */
+  /** Listings sent back by the Book My Get Away team, waiting on the host. */
   rejected: number
   /** Nights booked across the next 30 days, and how many there were to sell. */
   nights: { booked: number; available: number }
-  /** What Meridian owes this host. */
+  /** What Book My Get Away owes this host. */
   payouts: { due: number; pending: number; processing: number; paidToDate: number }
   /** Their own website. */
   site: {
@@ -304,7 +304,7 @@ export interface HostStats {
     /** Edited since the copy visitors see. */
     unpublished: boolean
   }
-  /** What they are paying Meridian, or Free. */
+  /** What they are paying Book My Get Away, or Free. */
   plan: { id: string; name: string; active: boolean; daysLeft: number | null; maxStaysOnSite: number; customDomain: boolean; commissionFree: boolean }
   /** Calendars kept in step with other platforms. */
   calendars: { feeds: number; failing: number; clashes: number }
@@ -346,13 +346,13 @@ export interface AdminStats {
   upcoming: number
   requests: number
   gbv: number
-  /** Meridian's commission on confirmed bookings. */
+  /** Book My Get Away's commission on confirmed bookings. */
   commission: number
   /** Money hosts have paid for promotions. */
   adRevenue: number
   new_messages: number
   reviews: number
-  /** What clients pay Meridian to be here, once a year. */
+  /** What clients pay Book My Get Away to be here, once a year. */
   subscriptions: {
     paying: number
     /** Had a plan once, not paid up now. */
@@ -393,7 +393,7 @@ export interface MonthPoint {
   bookings: number
   /** Paid by guests that month, after refunds. */
   gbv: number
-  /** Meridian's share of it. */
+  /** Book My Get Away's share of it. */
   commission: number
 }
 

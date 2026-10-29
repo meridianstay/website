@@ -75,7 +75,7 @@ const gu: Dictionary = {
   'search.instantBook': 'તરત બુક કરો',
   'search.dayUse': 'ડે આઉટ',
   'stay.hostedBy': 'હોસ્ટ: {name}',
-  'stay.verifiedHost': 'મેરિડિયન ચકાસેલ હોસ્ટ',
+  'stay.verifiedHost': 'બુક માય ગેટ અવે ચકાસેલ હોસ્ટ',
   'stay.privateTitle': 'નામ અને માલિકની માહિતી ખાનગી છે.',
   'stay.privateBody': 'મિલકતનું નામ, માલિકની માહિતી અને ચોક્કસ સરનામું તમારું બુકિંગ કન્ફર્મ થઈ અને પૂરી ચુકવણી થતાં જ મળી જશે.',
   'stay.aboutSpace': 'આ જગ્યા વિશે',
@@ -89,7 +89,7 @@ const gu: Dictionary = {
   'stay.watchVideo': 'વીડિયો જુઓ',
   'stay.videoTour': 'વીડિયો ટૂર',
   'stay.similar': 'આસપાસની આવી જ જગ્યાઓ',
-  'stay.assured': 'મેરિડિયન એશ્યોર્ડ',
+  'stay.assured': 'બુક માય ગેટ અવે એશ્યોર્ડ',
   'stay.promoted': 'પ્રમોટેડ',
   'stay.new': 'નવું',
   'stay.bedrooms': '{count} બેડરૂમ',
@@ -162,7 +162,7 @@ const gu: Dictionary = {
   'footer.popularSearches': 'લોકપ્રિય શોધ',
 
   // Property cards
-  'card.assuredHint': 'મેરિડિયન એશ્યોર્ડ: અમારી ટીમે જોઈ અને ચકાસી છે',
+  'card.assuredHint': 'બુક માય ગેટ અવે એશ્યોર્ડ: અમારી ટીમે જોઈ અને ચકાસી છે',
   'card.promotedHint': 'આ હોસ્ટે આ ઠેકાણું પ્રમોટ કરવા માટે ચુકવણી કરી છે',
   'card.view': 'વિગતો જુઓ',
 
@@ -170,7 +170,7 @@ const gu: Dictionary = {
   'box.addDate': 'તારીખ પસંદ કરો',
   'box.bookingType': 'બુકિંગનો પ્રકાર',
   'box.fullyBooked': 'સંપૂર્ણ બુક',
-  'box.instantNote': 'તરત બુકિંગ · મેરિડિયન સ્ટે દ્વારા સંચાલિત',
+  'box.instantNote': 'તરત બુકિંગ · બુક માય ગેટ અવે સ્ટે દ્વારા સંચાલિત',
   'box.pickDate': 'તારીખ પસંદ કરો',
   'box.requestDayOut': 'ડે આઉટની વિનંતી મોકલો',
   'box.reserveDayOut': 'ડે આઉટ બુક કરો',
@@ -181,7 +181,7 @@ const gu: Dictionary = {
 
   // Search form
   'form.checkInOut': 'ચેક-ઇન / ચેક-આઉટ',
-  'form.destPlaceholder': 'સ્થળ, ઠેકાણાનું નામ કે કોડ (MS007)',
+  'form.destPlaceholder': 'સ્થળ, ઠેકાણાનું નામ કે કોડ (BMG007)',
   'form.includes2': 'કિંમતમાં 2 મહેમાન સામેલ',
   'form.searchStays': 'ઠેકાણાં શોધો',
   'form.searchDest': 'સ્થળ શોધો',
@@ -304,7 +304,7 @@ const gu: Dictionary = {
   'stay.depositNote': 'ચેક-ઇન વખતે હોસ્ટને આપવામાં આવે છે (રોકડ કે UPI) અને નુકસાન ન હોય તો ચેક-આઉટ વખતે પરત મળે છે.',
   'stay.promotedStay': 'પ્રમોટેડ ઠેકાણું',
   'stay.quoteCode': 'અમારી ટીમને આ કોડ જણાવો, અથવા તેને શોધો',
-  'stay.promise': 'મેરિડિયનનું વચન',
+  'stay.promise': 'બુક માય ગેટ અવેનું વચન',
   'stay.theProperty': 'મિલકત',
   'stay.theService': 'સેવા',
   'stay.watchTour': 'વીડિયો ટૂર જુઓ',
@@ -350,7 +350,7 @@ const gu: Dictionary = {
   'checkout.datesJustBooked': 'એ તારીખો હમણાં જ બુક થઈ ગઈ',
   'checkout.takenNights': 'આમાંથી કેટલીક રાત્રિઓ કોઈએ બુક કરી લીધી. ઠેકાણાના પાના પર નવી તારીખો પસંદ કરો.',
   'checkout.instantBook': 'તરત બુકિંગ.',
-  'checkout.managedNote': 'મેરિડિયન સ્ટે દ્વારા સંચાલિત, તેથી તમારું બુકિંગ તરત કન્ફર્મ થાય છે.',
+  'checkout.managedNote': 'બુક માય ગેટ અવે સ્ટે દ્વારા સંચાલિત, તેથી તમારું બુકિંગ તરત કન્ફર્મ થાય છે.',
   'checkout.confirmedStraightAway': 'તમારું બુકિંગ તરત કન્ફર્મ થાય છે',
   'checkout.requestGoesToHost': 'તમારી વિનંતી સીધી હોસ્ટ પાસે જાય છે',
   'checkout.securedBy': 'Razorpay દ્વારા સુરક્ષિત',
@@ -404,7 +404,7 @@ const gu: Dictionary = {
   'request.elsePlaceholder': 'પાલતુ પ્રાણી ચાલે, પૂલ હોય, તળાવ પાસે…',
 
   // Checkout notes
-  'checkout.testModeNote': 'મેરિડિયન સ્ટે હાલ પરીક્ષણમાં છે, તેથી કોઈ પૈસા લેવાતા નથી.',
+  'checkout.testModeNote': 'બુક માય ગેટ અવે સ્ટે હાલ પરીક્ષણમાં છે, તેથી કોઈ પૈસા લેવાતા નથી.',
   'checkout.authoriseNote': 'તમે Razorpay વિન્ડોમાં ચુકવણી મંજૂર કરશો, પણ હોસ્ટ {hours} કલાકમાં સ્વીકારે તો જ પૈસા કપાશે. ના પાડે કે જવાબ ન આપે, તો રોક હટી જાય છે.',
 
   // Booking confirmation notes
